@@ -6,8 +6,8 @@ window.G = G;
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-canvas.width = W; canvas.height = H;
-ctx.imageSmoothingEnabled = false;
+canvas.width = W * 2; canvas.height = H * 2;
+ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
 G.ctx = ctx;
 
 function fitCanvas() {

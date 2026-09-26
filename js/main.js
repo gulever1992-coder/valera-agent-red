@@ -127,7 +127,7 @@ function update(dt) {
       const a = titleActor.a;
       if (a) {
         a.update(dt);
-        if (a.anim === 'walk') { a.x += a.facing * 40 * dt; if (a.x > 560 || a.x < 80) { a.setAnim('hips'); a.facing *= -1; a.idleT = 0; } }
+        if (a.anim === 'walk') { a.x += a.facing * 50 * dt; if (a.x > 560 || a.x < 80) { a.setAnim(U.choice(['stomp', 'scratch', 'yawn', 'belly'])); a.facing *= -1; a.idleT = 0; } }
         else { a.idleT = (a.idleT || 0) + dt; if (a.idleT > 3) a.setAnim('walk'); }
       }
       break;
@@ -257,24 +257,19 @@ function drawSoon(c) {
   if ((G.t * 2 | 0) % 2) G.text('ENTER — в меню', W / 2, H - 28, { align: 'center' });
 }
 
-// отладка: все позы крупно (?sprites)
-const spriteRigs = {};
+// отладка: все атласы (?sprites)
 function drawSprites(c) {
-  Art.R(c, 0, 0, W, H, '#6a7078');
-  const names = App.spriteList;
-  const sc = App.spriteScale || 2;
-  const cols = Math.floor(W / (40 * sc));
-  names.forEach((n, i) => {
-    const key = App.spriteStyle + n;
-    if (!spriteRigs[key]) spriteRigs[key] = new Hum.Rig(App.spriteStyle);
-    const r = spriteRigs[key];
-    r.update(G.dt, Hum.P[n](G.t % 3), true);
-    const x = (i % cols) * 40 * sc + 20 * sc, y = Math.floor(i / cols) * 84 * sc + 78 * sc;
-    c.save(); c.translate(x, y); c.scale(sc, sc);
-    r.draw(c, 0, 0, 1, { t: G.t });
-    c.restore();
-    G.text(n, x, y + 2, { size: 8, align: 'center' });
-  });
+  Art.R(c, 0, 0, W, H, '#5a6068');
+  let x = 4, y = 4, rowH = 0;
+  const sc = App.spriteScale || 0.5;
+  for (const [name, sh] of Object.entries(Spr.sheets)) {
+    sh.f.forEach((f, i) => {
+      const w = f[2] / 2 * sc, h = f[3] / 2 * sc;
+      if (x + w > W - 4) { x = 4; y += rowH + 4; rowH = 0; }
+      Spr.draw(c, name, i, x + f[4] / 2 * sc, y + f[5] / 2 * sc, 1, { scale: sc });
+      x += w + 3; rowH = Math.max(rowH, h);
+    });
+  }
 }
 
 function drawPause(c) {
@@ -289,6 +284,7 @@ function drawPause(c) {
 
 function draw() {
   const c = ctx;
+  c.setTransform(2, 0, 0, 2, 0, 0);
   c.save();
   c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
   if (G.shakeT > 0) c.translate(Math.round(U.rand(-G.shakeAmt, G.shakeAmt)), Math.round(U.rand(-G.shakeAmt, G.shakeAmt)));
@@ -329,17 +325,15 @@ function frame(now) {
 // ---------- загрузка ----------
 (async function boot() {
   requestAnimationFrame(frame);
-  const [head, street] = await Promise.all([G.loadImage('assets/valera_head.png'), G.loadImage('assets/street.jpg')]);
+  const [head, street] = await Promise.all([G.loadImage('assets/valera_head.png'), G.loadImage('assets/street.jpg'), Spr.load(), Spr.loadBGs()]);
   G.img.valeraHeadSrc = head; G.img.street = street;
   try { await Promise.race([document.fonts.load('8px "Press Start 2P"'), new Promise(r => setTimeout(r, 2500))]); } catch (e) {}
-  Hum.initHead();
-  G.img.aerial = Art.buildAerial();
-  G.img.hall = Art.buildHallScene();
-  G.img.arenaBG = L1.buildArenaBG();
-  titleActor.a = new G.Actor('valera', 120, 330, 1);
+  G.img.valeraHud = G.downscale(head, 52, 54);
+  G.img.valeraPortrait = G.downscale(head, 120, 122);
+  titleActor.a = new G.Actor('valera', 120, 336, 1);
   titleActor.a.setAnim('walk');
   const q = new URLSearchParams(location.search);
-  if (q.has('sprites')) { App.spriteStyle = q.get('style') || 'valera'; App.spriteScale = +(q.get('scale') || 2); App.spriteList = (q.get('list') || 'stand,run,jump,fall,punch,uppercut,throw,hurt,climb,hips,shout,point,scratch,yawn,sitFloor,drink').split(','); setState('sprites'); return; }
+  if (q.has('sprites')) { App.spriteScale = +(q.get('scale') || 0.5); setState('sprites'); return; }
   if (q.has('boss')) { Sound.unlock(); startLevel1({ boss: true }); }
   else if (q.has('climb')) { startLevel1({ skip: true }); }
   else { setState('title'); Music.play('title'); }

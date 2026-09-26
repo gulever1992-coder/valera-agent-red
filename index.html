@@ -11,7 +11,7 @@
 <style>
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; }
   body { display: flex; align-items: center; justify-content: center; }
-  canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; background: #000; }
+  canvas { display: block; background: #000; }
   #touch { display: none; position: fixed; inset: 0; pointer-events: none; }
   body.touch #touch { display: block; }
   .tb { position: absolute; pointer-events: auto; width: 58px; height: 58px; border-radius: 50%;
@@ -30,7 +30,7 @@
 </style>
 </head>
 <body>
-<canvas id="game" width="640" height="360"></canvas>
+<canvas id="game" width="1280" height="720"></canvas>
 <div id="touch">
   <div class="dpad">
     <div class="tb" id="bL" data-a="left">◄</div>
@@ -46,7 +46,8 @@
   <div class="tb" id="bE" data-a="start">OK</div>
 </div>
 <script src="js/engine.js"></script>
-<script src="js/humanoid.js"></script>
+<script src="js/sprites_data.js"></script>
+<script src="js/sprites.js"></script>
 <script src="js/art.js"></script>
 <script src="js/game.js"></script>
 <script src="js/cutscene.js"></script>

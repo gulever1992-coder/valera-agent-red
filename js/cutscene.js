@@ -3,7 +3,7 @@
 const Scene = {
   active: false, gen: null, waitT: 0, pred: null, fast: false, dialog: null, onEnd: null, t: 0,
   run(genFn, onEnd) {
-    this.active = true; this.gen = genFn(); this.waitT = 0; this.pred = null; this.fast = false; this.dialog = null; this.onEnd = onEnd; this.t = 0; this.dialogTop = false;
+    this.active = true; this.gen = genFn(); this.waitT = 0; this.pred = null; this.fast = false; this.dialog = null; this.onEnd = onEnd; this.t = 0; this.dialogTop = true;
     G.bubbles = [];
   },
   tick(dt) {
@@ -49,7 +49,7 @@ const Scene = {
     Art.R(c, bx - 2, by - 2, bw + 4, bh + 4, '#0a0a0c');
     Art.R(c, bx, by, bw, bh, 'rgba(24,26,32,0.95)');
     Art.R(c, bx, by, bw, 2, d.color || '#f06a14');
-    Hum.drawPortrait(c, d.who, bx + 8, by + 9, !(d.shown >= d.text.length), G.t, d.face);
+    G.drawPortrait(c, d.who, bx + 8, by + 9, !(d.shown >= d.text.length));
     G.text(d.name, bx + 84, by + 10, { size: 8, color: d.color || '#ffb070' });
     const lines = G.wrap(d.text.slice(0, d.shown), bw - 100, 8);
     lines.slice(0, 5).forEach((l, i) => G.text(l, bx + 84, by + 26 + i * 12, { size: 8, color: '#f4f0e4' }));
@@ -90,28 +90,45 @@ Scene.tween = function* (dur, fn) {
   fn(1);
 };
 
-// ---------- актёр ----------
+// ---------- портреты ----------
+G.drawPortrait = function (c, who, x, y, talking) {
+  Art.R(c, x - 2, y - 2, 68, 68, '#0a0a0c');
+  Art.R(c, x, y, 64, 64, who === 'valera' ? '#4a2a14' : who === 'natasha' ? '#3a2a34' : '#1e2a1e');
+  const bob = talking ? Math.round(Math.abs(Math.sin(G.t * 14)) * 1) : 0;
+  c.save(); c.beginPath(); c.rect(x, y, 64, 64); c.clip();
+  if (who === 'valera' && G.img.valeraPortrait) {
+    Art.R(c, x + 4, y + 52, 58, 14, '#f06a14'); Art.R(c, x + 30, y + 52, 14, 14, '#1c1c26');
+    c.drawImage(G.img.valeraPortrait, x + 1, y + 2 - bob, 60, 61);
+  } else {
+    const p = G.portraits && G.portraits[who];
+    if (p) c.drawImage(p, x, y - bob, 64, 64);
+  }
+  c.restore();
+};
+
+// ---------- актёр (спрайтовый) ----------
 G.Actor = class {
-  constructor(style, x, y, facing = 1, extra) {
-    this.rig = new Hum.Rig(style, extra);
+  constructor(style, x, y, facing = 1) {
+    this.style = style;
     this.x = x; this.y = y; this.facing = facing; this.anim = 'stand'; this.animT = 0;
-    this.talking = false; this.helmet = false; this.visible = true; this.face = null; this.item = null;
-    this.headH = style === 'valera' ? 74 : 64; this.voice = 260; this.alpha = 1;
-    this.rig.update(0, Hum.P.stand(0), true);
+    this.talking = false; this.helmet = false; this.visible = true; this.alpha = 1; this.rot = 0;
+    this.headH = style === 'valera' ? 92 : style === 'commando' ? 96 : 86; this.voice = 260;
   }
   setAnim(a) { if (this.anim !== a) { this.anim = a; this.animT = 0; } }
-  update(dt) {
-    this.animT += dt;
-    const fn = typeof this.anim === 'function' ? this.anim : Hum.P[this.anim] || Hum.P.stand;
-    const pose = fn(this.animT);
-    if (this.face) pose.face = this.face;
-    if (this.item) pose.item = this.item;
-    this.rig.update(dt, pose);
-  }
+  update(dt) { this.animT += dt; }
   draw(c, cx = 0, cy = 0) {
     if (!this.visible) return;
     if (this.clipY != null) { c.save(); c.beginPath(); c.rect(-50, -50, W + 100, this.clipY - cy + 50); c.clip(); }
-    this.rig.draw(c, this.x - cx, this.y - cy, this.facing, { talking: this.talking, helmet: this.helmet, alpha: this.alpha });
+    const bob = this.talking ? -Math.abs(Math.sin(G.t * 12)) * 1 : 0;
+    const x = this.x - cx, y = this.y - cy + bob;
+    Spr.drawAnim(c, this.style, this.anim, this.animT, x, y, this.facing, { alpha: this.alpha, rot: this.rot });
+    if (this.helmet && this.anim !== 'work' && this.anim !== 'lookUpHat') {
+      const anim = Spr.ANIM[this.style][this.anim] || Spr.ANIM[this.style].stand;
+      const [sh, i] = Spr.frameOf(anim, this.animT);
+      const f = Spr.frame(sh, i);
+      const fc = anim.flip ? -this.facing : this.facing;
+      if (f) Art.item(c, 'helmet', x + (f[6] - f[4]) / 2 * fc, y + (f[7] - f[5]) / 2 + 4, 0, 1.15);
+    }
     if (this.clipY != null) c.restore();
   }
 };

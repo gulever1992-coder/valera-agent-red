@@ -116,15 +116,15 @@ Game.World = class {
 Game.Player = class {
   constructor(x, y) {
     this.x = x; this.y = y; this.vx = 0; this.vy = 0; this.facing = 1;
-    this.rig = new Hum.Rig('valera');
+    this.anim = 'stand'; this.animT = 0;
     this.hp = 100; this.maxHp = 100; this.inv = 0; this.onGround = false; this.ground = null;
     this.coyote = 0; this.jumpBuf = 0; this.climb = null; this.atk = null; this.combo = 0; this.comboT = 0;
     this.throwT = 0; this.throwDone = false; this.hurtT = 0; this.idleT = 0; this.idle = null; this.dropT = 0;
     this.ammo = { nuts: 0, wrench: 0, bricks: 0 }; this.weapon = 'nuts';
-    this.dead = false; this.deadT = 0; this.controls = true; this.headH = 72; this.voice = 260;
+    this.dead = false; this.deadT = 0; this.controls = true; this.headH = 86; this.voice = 260;
     this.anim = 'stand'; this.animT = 0; this.landT = 0; this.stompPh = 0; this.forcePose = null;
   }
-  get box() { return { x: this.x - 9, y: this.y - 58, w: 18, h: 57 }; }
+  get box() { return { x: this.x - 10, y: this.y - 70, w: 20, h: 69 }; }
   hurt(dmg, fromX, world) {
     if (this.inv > 0 || this.dead) return false;
     this.hp -= dmg; world.stats.dmg += dmg;
@@ -150,7 +150,7 @@ Game.Player = class {
       this.deadT += dt;
       this.vy = Math.min(MAXFALL, this.vy + GRAV * dt); this.vx *= 0.9;
       this.moveY(dt, world);
-      this.rig.update(dt, Hum.P.ko(this.animT));
+      this.setAnim('ko');
       return;
     }
     const ctl = this.controls && this.hurtT <= 0;
@@ -185,7 +185,7 @@ Game.Player = class {
       else if (this.y >= l.y + l.h) { this.y = l.y + l.h; this.climb = null; }
       if (ctl && I.pressed('jump') && this.climb) { this.climb = null; this.vy = -JUMPV * 0.7; this.vx = (Rr ? 1 : L ? -1 : 0) * RUN; Sound.play('jump'); }
       if (this.climb) {
-        this.rig.update(dt, Hum.P.climb(this.climbAnimT || 0));
+        this.setAnim('climb'); this.animT = this.climbAnimT || 0;
         return;
       }
     }
@@ -274,8 +274,8 @@ Game.Player = class {
       if (this.idle) {
         this.idle.t += dt;
         if (this.idle.kind === 'hips') {
-          const ph = (this.idle.t * 2.2) % 1;
-          if (this.stompPh < 0.66 && ph >= 0.66) { Sound.play('stomp'); FX.dust(this.x + this.facing * 6, this.y, 3); }
+          const ph = (this.animT * 4.5 / 5) % 1;
+          if (this.stompPh < 0.6 && ph >= 0.6) { Sound.play('stomp'); FX.dust(this.x + 6, this.y, 3); G.shake(1, 0.08); }
           this.stompPh = ph;
         }
         if (this.idle.t > this.idle.dur) { this.idle = null; this.idleT = 1.0; }
@@ -321,13 +321,13 @@ Game.Player = class {
         if (p.oneway) continue;
         if (this.x + 7 < p.x || this.x - 7 > p.x + p.w) continue;
         const bottom = p.y + p.h;
-        if (prevY - 58 >= bottom - 1 && this.y - 58 < bottom) { this.y = bottom + 58; this.vy = 40; }
+        if (prevY - 70 >= bottom - 1 && this.y - 70 < bottom) { this.y = bottom + 70; this.vy = 40; }
       }
     }
     // боковые стенки твёрдых блоков
     for (const p of world.plats) {
       if (p.oneway) continue;
-      if (this.y > p.y + 1 && this.y - 56 < p.y + p.h) {
+      if (this.y > p.y + 1 && this.y - 68 < p.y + p.h) {
         if (this.x + 8 > p.x && this.x - 8 < p.x + p.w) {
           if (this.x < p.x + p.w / 2) this.x = p.x - 8; else this.x = p.x + p.w + 8;
           this.vx = 0;
@@ -335,30 +335,30 @@ Game.Player = class {
       }
     }
   }
+  setAnim(a) { if (this.anim !== a) { this.anim = a; this.animT = 0; } }
   choosePose(dt) {
-    let pose;
-    if (this.forcePose) pose = this.forcePose(this.animT);
-    else if (this.hurtT > 0) pose = Hum.P.hurt(this.animT);
-    else if (this.atk) pose = this.atk.kind === 'upper' ? Hum.P.uppercut(this.atk.t / this.atk.dur) : Hum.P.punch(this.atk.t / this.atk.dur, this.atk.side);
-    else if (this.throwT > 0) pose = Hum.P.throw(1 - this.throwT / 0.32);
-    else if (!this.onGround) pose = this.vy < 0 ? Hum.P.jump() : Hum.P.fall(this.animT);
-    else if (this.landT > 0) pose = Hum.P.crouch();
-    else if (Math.abs(this.vx) > 20) pose = Hum.P.run(this.animT);
-    else if (this.idle) pose = Hum.P[this.idle.kind](this.idle.t);
-    else pose = Hum.P.stand(this.animT);
-    const snap = !!(this.atk && this.atk.t < 0.03);
-    this.rig.update(dt, pose, snap);
+    let a;
+    if (this.forcePose) a = this.forcePose;
+    else if (this.hurtT > 0) a = 'hurt';
+    else if (this.atk) a = this.atk.kind === 'upper' ? 'upper' : this.atk.side ? 'cross' : 'jab';
+    else if (this.throwT > 0) a = this.throwT > 0.2 ? 'throwA' : 'throwB';
+    else if (!this.onGround) a = this.vy < 0 ? 'jump' : 'fall';
+    else if (this.landT > 0) a = 'land';
+    else if (Math.abs(this.vx) > 20) a = 'run';
+    else if (this.idle) a = this.idle.kind === 'hips' ? 'stomp' : this.idle.kind;
+    else a = 'stand';
+    this.setAnim(a);
   }
   draw(c, camX, camY) {
     if (this.inv > 0 && !this.dead && ((this.inv * 16) | 0) % 2 === 0) return;
-    this.rig.draw(c, this.x - camX, this.y - camY, this.facing, { face: this.dead ? 'closed' : (this.hurtT > 0 ? 'scared' : undefined) });
+    Spr.drawAnim(c, 'valera', this.anim, this.animT, this.x - camX, this.y - camY, this.facing);
   }
 };
 
 // ---------- враги ----------
 Game.Rat = class {
   constructor(x, y, x1, x2) { this.x = x; this.y = y; this.x1 = x1; this.x2 = x2; this.dir = 1; this.hp = 1; this.t = 0; this.dead = false; this.score = 50; this.kind = 'rat'; }
-  get box() { return { x: this.x - 9, y: this.y - 8, w: 18, h: 8 }; }
+  get box() { return { x: this.x - 12, y: this.y - 9, w: 24, h: 9 }; }
   update(dt, world, pl) {
     this.t += dt;
     if (this.dieT != null) { this.dieT += dt; this.y += this.vy * dt; this.vy += GRAV * dt; if (this.dieT > 1) this.dead = true; return; }
@@ -370,20 +370,14 @@ Game.Rat = class {
   }
   hit(dmg, dir) { this.hp -= dmg; if (this.hp <= 0 && this.dieT == null) { this.dieT = 0; this.vy = -250; this.dir = dir; Sound.play('squeak'); return true; } return false; }
   draw(c, cx, cy) {
-    const x = Math.round(this.x - cx), y = Math.round(this.y - cy);
-    c.save(); c.translate(x, y); c.scale(this.dir, this.dieT != null ? -1 : 1);
-    const leg = (this.t * 20 | 0) % 2;
-    R(c, -9, -8, 16, 7, '#1a1616'); R(c, -8, -7, 14, 5, '#6a6260'); R(c, 4, -6, 5, 4, '#6a6260'); R(c, 8, -5, 2, 2, '#e89090');
-    R(c, 5, -9, 3, 3, '#6a6260'); R(c, 6, -6, 1, 1, '#000');
-    R(c, -6, -2, 2, 2 + leg, '#1a1616'); R(c, 2, -2, 2, 3 - leg, '#1a1616');
-    c.strokeStyle = '#d88a8a'; c.lineWidth = 1; c.beginPath(); c.moveTo(-9, -4); c.quadraticCurveTo(-15, -4 + Math.sin(this.t * 10) * 3, -18, -8); c.stroke();
-    c.restore();
+    if (this.dieT != null) { Spr.draw(c, 'enemies', 0, this.x - cx, this.y - cy - 6, this.dir, { rot: Math.PI * this.dir }); return; }
+    Spr.draw(c, 'enemies', (this.t * 10 | 0) % 2, this.x - cx, this.y - cy, this.dir);
   }
 };
 
 Game.Gull = class {
   constructor(x, y, dir) { this.x = x; this.y = y; this.dir = dir; this.hp = 1; this.t = 0; this.dead = false; this.state = 'fly'; this.score = 80; this.vx = dir * 90; this.vy = 0; this.kind = 'gull'; }
-  get box() { return { x: this.x - 10, y: this.y - 6, w: 20, h: 12 }; }
+  get box() { return { x: this.x - 12, y: this.y - 7, w: 24, h: 14 }; }
   update(dt, world, pl) {
     this.t += dt;
     if (this.dieT != null) { this.dieT += dt; this.vy += GRAV * dt; this.x += this.vx * dt; this.y += this.vy * dt; if (this.dieT > 1.5) this.dead = true; return; }
@@ -405,14 +399,8 @@ Game.Gull = class {
   }
   hit(dmg, dir) { this.hp -= dmg; if (this.hp <= 0 && this.dieT == null) { this.dieT = 0; this.vy = -150; this.vx = dir * 120; FX.burst(this.x, this.y, 8, { colors: ['#fff', '#ddd'], speed: 90, grav: 60, life: 1, size: 2 }); return true; } return false; }
   draw(c, cx, cy) {
-    const x = Math.round(this.x - cx), y = Math.round(this.y - cy);
-    const f = Math.sin(this.t * 14);
-    c.save(); c.translate(x, y); c.scale(this.vx >= 0 ? 1 : -1, 1);
-    if (this.dieT != null) c.rotate(this.dieT * 8);
-    R(c, -8, -3, 16, 6, '#1a1a1a'); R(c, -7, -2, 14, 4, '#f4f4f0'); R(c, 6, -4, 4, 4, '#f4f4f0'); R(c, 10, -3, 3, 2, '#e8b020'); R(c, 8, -3, 1, 1, '#000');
-    R(c, -10, -1, 3, 2, '#6a6a6a');
-    c.fillStyle = '#9aa0a6'; c.beginPath(); c.moveTo(-3, -2); c.lineTo(5, -2); c.lineTo(-2, -2 - 10 * f); c.fill();
-    c.restore();
+    const fr = this.state === 'dive' ? 3 : 2 + ((this.t * 7 | 0) % 2);
+    Spr.draw(c, 'enemies', fr, this.x - cx, this.y - cy + 8, this.vx >= 0 ? 1 : -1, { rot: this.dieT != null ? this.dieT * 8 : 0 });
   }
 };
 
@@ -420,38 +408,38 @@ Game.Gull = class {
 Game.Drunk = class {
   constructor(x, y, x1, x2, name) {
     this.x = x; this.y = y; this.x1 = x1; this.x2 = x2; this.hp = 3; this.t = 0; this.dead = false; this.facing = -1; this.state = 'idle'; this.st = 0; this.score = 250; this.kind = 'drunk';
-    this.rig = new Hum.Rig('worker', { helmet: '#d8d8d0', mustache: '#4a3020', jacket: '#4a5a44', jacketD: '#36422f', pants: '#3a4436', pantsD: '#2a3226' });
-    this.headH = 62; this.voice = 180; this.name = name; this.flash = 0; this.vx = 0; this.vy = 0;
+    this.anim = 'stand';
+    this.headH = 76; this.voice = 180; this.name = name; this.flash = 0; this.vx = 0; this.vy = 0;
   }
-  get box() { return { x: this.x - 9, y: this.y - 52, w: 18, h: 52 }; }
+  get box() { return { x: this.x - 11, y: this.y - 66, w: 22, h: 66 }; }
   update(dt, world, pl) {
     this.t += dt; this.st += dt; if (this.flash > 0) this.flash -= dt;
     let pose;
     if (this.dieT != null) {
       this.dieT += dt; this.vy += GRAV * dt; this.y += this.vy * dt; this.x += this.vx * dt;
       if (this.dieT > 1.6) this.dead = true;
-      this.rig.update(dt, Hum.P.ko(this.t)); return;
+      this.anim = 'ko'; return;
     }
     const dx = pl.x - this.x, near = Math.abs(pl.y - this.y) < 40 && !pl.dead;
     switch (this.state) {
       case 'idle':
-        pose = Hum.P.dizzy(this.t);
+        pose = 'stand';
         if (near && Math.abs(dx) < 170) { this.state = 'walk'; this.st = 0; if (Math.random() < 0.7) G.say(this, U.choice(['Ты чё, с какого цеха?!', 'Иди сюда, стропаль!', 'Ик! Щас как дам!', 'Моя бутылка! Не трожь!']), 1.8); }
         break;
       case 'walk':
         this.facing = dx > 0 ? 1 : -1;
         this.x += this.facing * 55 * dt * (0.7 + Math.sin(this.t * 4) * 0.3);
         this.x = U.clamp(this.x, this.x1, this.x2);
-        pose = Hum.P.walk(this.t);
+        pose = 'walk';
         if (Math.abs(dx) < 38 && near) { this.state = 'wind'; this.st = 0; }
         else if (!near || Math.abs(dx) > 220) { this.state = 'idle'; this.st = 0; }
         break;
       case 'wind':
-        pose = Hum.P.slapWind(this.t); pose.item = 'wrench';
+        pose = 'wind';
         if (this.st > 0.55) { this.state = 'swing'; this.st = 0; Sound.play('throw'); }
         break;
       case 'swing':
-        pose = Hum.P.slap(this.t); pose.item = 'wrench';
+        pose = 'swing';
         if (this.st < 0.15) {
           const hb = { x: this.x + (this.facing > 0 ? 4 : -34), y: this.y - 50, w: 30, h: 30 };
           if (U.overlap(hb, pl.box)) pl.hurt(12, this.x, world);
@@ -459,12 +447,12 @@ Game.Drunk = class {
         if (this.st > 0.45) { this.state = 'walk'; this.st = 0; }
         break;
       case 'stun':
-        pose = Hum.P.hurt(this.t);
+        pose = 'hurt';
         this.x = U.clamp(this.x + this.vx * dt, this.x1, this.x2); this.vx *= 0.9;
         if (this.st > 0.4) { this.state = 'walk'; this.st = 0; }
         break;
     }
-    this.rig.update(dt, pose);
+    this.anim = pose || 'stand';
   }
   hit(dmg, dir) {
     if (this.dieT != null) return false;
@@ -473,8 +461,13 @@ Game.Drunk = class {
     return false;
   }
   draw(c, cx, cy) {
-    if (this.flash > 0) Hum.drawFlash(c, this.rig, this.x - cx, this.y - cy, this.facing);
-    else this.rig.draw(c, this.x - cx, this.y - cy, this.facing);
+    const fr = this.anim === 'ko' ? 6 : this.anim === 'swing' ? 5 : 4;
+    let x = this.x - cx, y = this.y - cy, rot = 0;
+    if (this.anim === 'walk') y -= Math.abs(Math.sin(this.t * 8)) * 2;
+    if (this.anim === 'stand') rot = Math.sin(this.t * 2) * 0.05;
+    if (this.anim === 'wind') { rot = -0.12; x += Math.sin(this.t * 40) * 1; }
+    if (this.anim === 'hurt') rot = -0.2 * this.facing;
+    Spr.draw(c, 'enemies', fr, x, y, this.facing, { rot, flash: this.flash > 0 ? '#ffffff' : null });
   }
 };
 
@@ -597,7 +590,7 @@ Game.Pickup = class {
 Game.drawHUD = function (c, pl, world) {
   // портрет
   R(c, 6, 6, 32, 32, '#111'); R(c, 7, 7, 30, 30, '#5a2a10');
-  if (G.img.valeraHud) c.drawImage(G.img.valeraHud, 9, 9);
+  if (G.img.valeraHud) c.drawImage(G.img.valeraHud, 9, 9, 26, 27);
   // здоровье
   R(c, 42, 8, 124, 12, '#111');
   const k = pl.hp / pl.maxHp;
