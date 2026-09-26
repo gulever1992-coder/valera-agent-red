@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Валера: Агент RED</title>
+<meta name="description" content="2D-боевик с юмором. Северодвинск, 2000-е. Уровень 1 — Севмаш.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; }
+  body { display: flex; align-items: center; justify-content: center; }
+  canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; background: #000; }
+  #touch { display: none; position: fixed; inset: 0; pointer-events: none; }
+  body.touch #touch { display: block; }
+  .tb { position: absolute; pointer-events: auto; width: 58px; height: 58px; border-radius: 50%;
+        background: rgba(255,255,255,0.14); border: 2px solid rgba(255,255,255,0.35); color: rgba(255,255,255,0.85);
+        font: 14px "Press Start 2P", monospace; display: flex; align-items: center; justify-content: center; }
+  .tb.on { background: rgba(240,106,20,0.5); }
+  .dpad .tb { border-radius: 12px; width: 54px; height: 54px; }
+  #bL { left: 14px; bottom: 70px; } #bR { left: 128px; bottom: 70px; }
+  #bU { left: 71px; bottom: 127px; } #bD { left: 71px; bottom: 14px; }
+  #bA { right: 16px; bottom: 34px; width: 70px; height: 70px; }
+  #bB { right: 98px; bottom: 20px; width: 66px; height: 66px; }
+  #bC { right: 60px; bottom: 112px; }
+  #bS { right: 130px; bottom: 100px; width: 46px; height: 46px; font-size: 9px; }
+  #bP { right: 14px; top: 12px; width: 44px; height: 44px; font-size: 10px; }
+  #bE { left: 14px; top: 12px; width: 44px; height: 44px; font-size: 10px; }
+</style>
+</head>
+<body>
+<canvas id="game" width="640" height="360"></canvas>
+<div id="touch">
+  <div class="dpad">
+    <div class="tb" id="bL" data-a="left">◄</div>
+    <div class="tb" id="bR" data-a="right">►</div>
+    <div class="tb" id="bU" data-a="up">▲</div>
+    <div class="tb" id="bD" data-a="down">▼</div>
+  </div>
+  <div class="tb" id="bA" data-a="jump">A</div>
+  <div class="tb" id="bB" data-a="punch">B</div>
+  <div class="tb" id="bC" data-a="throw">C</div>
+  <div class="tb" id="bS" data-a="switch">SW</div>
+  <div class="tb" id="bP" data-a="pause">II</div>
+  <div class="tb" id="bE" data-a="start">OK</div>
+</div>
+<script src="js/engine.js"></script>
+<script src="js/humanoid.js"></script>
+<script src="js/art.js"></script>
+<script src="js/game.js"></script>
+<script src="js/cutscene.js"></script>
+<script src="js/level1.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
