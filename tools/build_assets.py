@@ -497,6 +497,8 @@ for key in ['club_vip']:
     im.save(os.path.join(OUT, key + '.jpg'), quality=87, optimize=True)
     B3[key] = {'img': 'assets/' + key + '.jpg', 'w': im.width, 'h': im.height, 'floor': 300 / 360}
 B['club_room'] = bg('club_room.png', 'club_room', (1280, 720))
+for n in ['comic4_darts', 'comic4_end']:
+    B[n] = bg(n + '.png', n, (1280, 720))
 # портреты персонажей уровня 4 (лица из листов)
 def pcrop(sheet, fi, box, name, flip=False):
     f = S[sheet]['f'][fi]

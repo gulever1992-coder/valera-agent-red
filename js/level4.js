@@ -38,7 +38,7 @@ Object.assign(WHO, {
 L4.load = async function () {
   const W3 = window.WALLS3 || {};
   await Promise.all(['club_lobby', 'club_hall', 'club_vip'].map(async k => { if (W3[k]) L3.img[k] = await G.loadImage(W3[k].img); }));
-  await Promise.all(['club_back', 'club_floor', 'biker_bg', 'club_room'].map(async k => { L4.img[k] = await G.loadImage('assets/' + k + '.jpg'); }));
+  await Promise.all(['club_back', 'club_floor', 'biker_bg', 'club_room', 'comic4_darts', 'comic4_end'].map(async k => { L4.img[k] = await G.loadImage('assets/' + k + '.jpg'); }));
   G.portraits = G.portraits || {};
   await Promise.all(['maid', 'nurse', 'vova', 'biker'].map(async k => { G.portraits[k] = await G.loadImage('assets/spr/p_' + k + '.png'); }));
 };
@@ -763,17 +763,23 @@ L4.sceneAfterBoss = level => function* () {
   Sound.play('rope'); level.vovaFree = true; const vv = new G.Actor('vova', 340, L4.BOSS_G, -1); st.patrons.push({ update() {}, draw: (c, cx) => vv.draw(c, cx, 0) });
   yield* Scene.say('vova', 'Свобода! Валера, ты лучший!', null);
   Sound.play('glassHit'); G.shake(4, 0.4);
+  level.drawScene = c => { if (L4.img.comic4_darts) c.drawImage(L4.img.comic4_darts, 0, 0, W, H); };
   yield* Scene.say('commando2', 'Отряд, огонь дротиками по всему клубу! Операция «Кошки»!', null);
   yield* Scene.say('vova', 'Смотри — от их яда все посетители превратились в зомби! Шатаются и рычат!', null);
   yield* Scene.say('vova', 'Дай-ка сюда «Осеменитель 3000». У этих зомби совсем другой обмен веществ...', null);
+  level.drawScene = c => { st.draw(c); };
   Sound.play('lever'); G.flash(0.3, '#8cff60');
   yield* Scene.say('vova', 'Щёлк — переключил бак на зелёный режим! Теперь бьёт в два раза злее. Выводи меня отсюда!', null);
 };
 L4.sceneEnd = level => function* () {
-  level.drawScene = c => { if (G.img.street) c.drawImage(G.img.street, 0, 0, W, H); else { c.fillStyle = '#0a0a14'; c.fillRect(0, 0, W, H); } };
+  level.drawScene = c => { if (L4.img.comic4_end) c.drawImage(L4.img.comic4_end, 0, 0, W, H); };
   level.updateScene = () => {};
   yield* Scene.say('vova', '(затягивается из бульбулятора) Валера... спасибо. Нам нужно кое с кем срочно встретиться.', null);
   yield* Scene.say('valera', 'С кем?', null);
   yield* Scene.say('vova', 'Садись назад. По дороге расскажу. Я за рулём.', null);
   Sound.play('door'); yield 0.6;
+  level.titleK = 0;
+  const d0 = level.drawScene; level.drawScene = c => { d0(c); G.bigTitle(c, 'КОНЕЦ УРОВНЯ 4', level.titleK, { size: 24, color: '#ffd84a' }); };
+  yield* Scene.tween(0.5, k => { level.titleK = k; });
+  yield 1.6;
 };
