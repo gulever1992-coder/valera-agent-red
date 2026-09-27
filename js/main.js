@@ -140,6 +140,12 @@ G.onLevelComplete = function (level) {
   setState('results');
 };
 
+function startLevel4(opts = {}) {
+  App.level = new L4.Level();
+  setState('play');
+  App.paused = false;
+  App.level.start(opts);
+}
 function startLevel3(opts = {}) {
   App.level = new L3.Level();
   setState('play');
@@ -162,7 +168,8 @@ const LEVELS = [
   { id: 1, name: 'СЕВМОЛОТ', sub: 'День первый', start: () => startLevel1() },
   { id: 2, name: 'ДОРОГА ДОМОЙ', sub: 'Вечерний Выборгск', start: () => startLevel2() },
   { id: 3, name: 'ГЛЮКИ', sub: 'Квартира Валеры', start: () => startLevel3() },
-  { id: 4, name: '???', sub: 'Скоро', start: null },
+  { id: 4, name: 'ДИКИЕ КОШКИ', sub: 'Клуб. Спасти Вову', start: () => startLevel4() },
+  { id: 5, name: '???', sub: 'Скоро', start: null },
 ];
 function progress() { try { return +(localStorage.getItem('valera_progress') || 1); } catch (e) { return 1; } }
 function applyDiff(i) {
@@ -255,7 +262,7 @@ function update(dt) {
     case 'results': {
       const r = App.results;
       r.shown += dt;
-      if (r.shown > 1 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch'))) { Sound.play('confirm'); if (r.id === 1) startLevel2(); else if (r.id === 2) startLevel3(); else { setState('soon'); Music.play('title'); } }
+      if (r.shown > 1 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch'))) { Sound.play('confirm'); if (r.id === 1) startLevel2(); else if (r.id === 2) startLevel3(); else if (r.id === 3) startLevel4(); else { setState('soon'); Music.play('title'); } }
       break;
     }
     case 'soon':
@@ -385,7 +392,7 @@ function drawResults(c) {
   Art.R(c, 0, 0, W, H, '#14171c');
   if (G.img.street) { c.globalAlpha = 0.18; c.drawImage(G.img.street, 0, 0, W, H); c.globalAlpha = 1; }
   G.text('УРОВЕНЬ ' + r.id + ' ПРОЙДЕН!', W / 2, 18, { size: 16, align: 'center', color: '#ffd84a', outline: true });
-  G.text(['', '«Севмолот. День первый»', '«Дорога домой»', '«Глюки»'][r.id] || '', W / 2, 42, { align: 'center', color: '#c8d0d8' });
+  G.text(['', '«Севмолот. День первый»', '«Дорога домой»', '«Глюки»', '«Дикие кошки»'][r.id] || '', W / 2, 42, { align: 'center', color: '#c8d0d8' });
   const rows = [
     ['Время', fmtTime(st.time)],
     ['Врагов повержено', st.kills],
@@ -418,7 +425,7 @@ function drawResults(c) {
 
 function drawSoon(c) {
   Art.R(c, 0, 0, W, H, '#0e1014');
-  G.text('УРОВЕНЬ 4', W / 2, 90, { size: 24, align: 'center', color: '#e03030', outline: true });
+  G.text('УРОВЕНЬ 5', W / 2, 90, { size: 24, align: 'center', color: '#e03030', outline: true });
   G.text('СКОРО', W / 2, 126, { size: 16, align: 'center', color: '#f4f0e4', outline: true });
   G.text('Клуб «Дикие кошки». Вова ждёт спасения...', W / 2, 180, { align: 'center', color: '#c8d0d8' });
   G.text('(жду описание следующего уровня)', W / 2, 200, { align: 'center', color: '#8a929a' });
@@ -495,7 +502,7 @@ function frame(now) {
 // ---------- загрузка ----------
 (async function boot() {
   requestAnimationFrame(frame);
-  const [head, street] = await Promise.all([G.loadImage('assets/valera_head.png'), G.loadImage('assets/street.jpg'), Spr.load(), Spr.loadBGs(), L2.load(), L3.load()]);
+  const [head, street] = await Promise.all([G.loadImage('assets/valera_head.png'), G.loadImage('assets/street.jpg'), Spr.load(), Spr.loadBGs(), L2.load(), L3.load(), L4.load()]);
   G.img.valeraHeadSrc = head; G.img.street = street;
   try { await Promise.race([document.fonts.load('8px "Press Start 2P"'), new Promise(r => setTimeout(r, 2500))]); } catch (e) {}
   G.img.valeraHud = G.downscale(head, 52, 54);
@@ -504,7 +511,12 @@ function frame(now) {
   titleActor.a.setAnim('walk');
   const q = new URLSearchParams(location.search);
   if (q.has('sprites')) { App.spriteScale = +(q.get('scale') || 0.5); setState('sprites'); return; }
-  if (q.has('l3boss')) startLevel3({ boss: true });
+  if (q.has('l4')) startLevel4();
+  else if (q.has('l4tower')) startLevel4({ tower: true });
+  else if (q.has('l4inner')) startLevel4({ inner: true });
+  else if (q.has('l4boss')) startLevel4({ boss: true });
+  else if (q.has('l4escort')) startLevel4({ escort: true });
+  else if (q.has('l3boss')) startLevel3({ boss: true });
   else if (q.has('l3')) startLevel3();
   else if (q.has('l2boss')) startLevel2({ boss: true });
   else if (q.has('l2')) startLevel2();
