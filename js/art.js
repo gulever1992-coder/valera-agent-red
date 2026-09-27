@@ -47,8 +47,8 @@ Art.platform = function (c, p, t) {
       break;
     }
     case 'floor':
-      R(c, x, y, w, p.h, '#34322f'); R(c, x, y, w, 2, '#57534d'); R(c, x, y + 12, w, 3, '#b8961c');
-      for (let i = x; i < x + w; i += 60) R(c, i, y + 2, 1, p.h, '#2a2826');
+      // пол уже нарисован на фоне цеха — только лёгкая тень у ног
+      c.fillStyle = 'rgba(0,0,0,0.18)'; c.fillRect(x, y, w, 3);
       break;
   }
 };

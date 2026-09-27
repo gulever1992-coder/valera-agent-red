@@ -109,10 +109,20 @@ def anchor(f, mode):
     xs = np.where(band.any(axis=0))[0]
     return (xs[0] + xs[-1]) / 2, bottom + 1
 
-def build_sheet(name, src, n, target, ref=0, keyer='green', grid=None, anchors=None, pad=2):
+def only_largest(f):
+    lab, n = ndimage.label(ndimage.binary_dilation(f[..., 3] > 0, iterations=2))
+    if n <= 1: return f
+    sizes = ndimage.sum(np.ones(lab.shape), lab, range(1, n + 1))
+    keep = lab == (int(np.argmax(sizes)) + 1)
+    f = f.copy(); f[..., 3] = np.where(keep & (f[..., 3] > 0), 255, 0)
+    ys = np.where(f[..., 3].any(axis=1))[0]; xs = np.where(f[..., 3].any(axis=0))[0]
+    return f[ys[0]:ys[-1] + 1, xs[0]:xs[-1] + 1]
+
+def build_sheet(name, src, n, target, ref=0, keyer='green', grid=None, anchors=None, pad=2, strip=()):
     im = Image.open(os.path.join(SRC, src))
     a = key_green(im) if keyer == 'green' else key_black(im) if keyer == 'black' else np.array(im.convert('RGBA'))
     fr = frames_grid(a, *grid) if grid else frames_row(a, n)
+    fr = [only_largest(f) if i in strip else f for i, f in enumerate(fr)]
     if isinstance(target, (int, float)):
         k = target * SCALE / fr[ref].shape[0]
         ks = [k] * len(fr)
@@ -156,7 +166,7 @@ S = {}
 # ---- Валера (логический рост ~80) ----
 S['v_run'] = build_sheet('v_run', 'valera_run.png', 8, 78)
 S['v_jump'] = build_sheet('v_jump', 'valera_jump_idle.png', 6, 80, ref=0)
-S['v_fight'] = build_sheet('v_fight', 'valera_fight.png', 6, 79, ref=1, anchors=['feet'] * 5 + ['center'])
+S['v_fight'] = build_sheet('v_fight', 'valera_fight.png', 6, 79, ref=1, anchors=['feet'] * 5 + ['center'], strip=(3, 4))
 S['v_idle'] = build_sheet('v_idle', 'valera_idle_funny.png', 6, 82, ref=0)
 S['v_story'] = build_sheet('v_story', 'valera_climb_story.png', 6, 80, ref=2)
 S['v_story2'] = build_sheet('v_story2', 'valera_story2.png', 6, 84, ref=1)
@@ -185,7 +195,7 @@ S['cmd_hide'] = build_sheet('cmd_hide', 'commandos_hide.png', 6, [80, -52, -70, 
 S['nat_win'] = build_sheet('nat_win', 'natasha_window.png', 3, [-58, -58, -58], anchors=['center'] * 3)
 S['matiz'] = build_sheet('matiz', 'matiz.png', 3, [-120, -120, -150], anchors=['feet', 'feet', 'feet'])
 S['sub'] = build_sheet('sub', 'sub_sprite.png', 1, [-560], anchors=['center'])
-S['street'] = build_sheet('street', 'prop_street_keyed.png', 12, [-84, -150, -110, -44, -56, -100, -110, -36, 90, 110, 80, -26], keyer='pre', grid=(3, [3, 4, 5]), anchors=['feet'] * 12)
+S['street'] = build_sheet('street', 'prop_street_keyed.png', 12, [96, 92, 106, 58, 40, 86, 62, 34, 116, 150, 112, 40], keyer='pre', grid=(3, [3, 4, 5]), anchors=['feet'] * 12)
 # ---- фоны ----
 B = {}
 B['aerial'] = bg('bg_aerial_v2.png', 'bg_aerial', (None, 720))
@@ -217,3 +227,65 @@ portrait('commandos.png', 5, 3, (0.30, 0.0, 0.85, 0.36), 'p_cmd2')
 with open(os.path.join(ROOT, 'js', 'sprites_data.js'), 'w', encoding='utf-8') as fp:
     fp.write('// автоматически создано tools/build_assets.py\nwindow.SPRITES = ' + json.dumps(S) + ';\nwindow.BGS = ' + json.dumps(B) + ';\n')
 print('готово')
+
+# ================= уровень 2: слоистый бесшовный фон =================
+BDIR = os.path.join(OUT, 'b'); os.makedirs(BDIR, exist_ok=True)
+def keyed_rgba(src):
+    im = Image.open(os.path.join(SRC, src))
+    if im.mode == 'RGBA' and np.array(im)[..., 3].min() == 0:
+        a = np.array(im).astype(np.uint8)
+        g = (a[..., 1].astype(int) > 150) & (a[..., 1].astype(int) - np.maximum(a[..., 0], a[..., 2]).astype(int) > 60)
+        a[..., 3] = np.where(g, 0, a[..., 3])
+        return a
+    return key_green(im)
+def profile(arr, k):
+    # верхний край объекта по столбцам -> горизонтальные отрезки (логические координаты от левого нижнего угла)
+    al = arr[..., 3] > 0
+    h, w = al.shape
+    tops = np.array([np.argmax(al[:, x]) if al[:, x].any() else h for x in range(w)])
+    segs, x0 = [], 0
+    for x in range(1, w + 1):
+        if x == w or abs(int(tops[x]) - int(tops[x0])) > 6:
+            if x - x0 >= 24 and tops[x0] < h:
+                y = int(np.median(tops[x0:x]))
+                segs.append([round(x0 * k, 1), round(x * k, 1), round((h - y) * k, 1)])
+            x0 = x
+    return segs
+B2 = {}
+BUILD = {  # имя: (файл, логическая высота, считать ли верх платформой)
+    'gate': ('b_gate.png', 220, False), 'workshop': ('b_workshop.png', 430, False), 'shop': ('b_shop.png', 600, False),
+    'hrush': ('b_hrush.png', 600, False), 'dk': ('b_dk.png', 520, False), 'stele': ('b_stele.png', 460, False),
+    'nine': ('b_9storey.png', 900, False), 'hero': ('b_hero.png', 600, False), 'garages': ('b_garages.png', 130, True),
+    'pipes': ('b_pipes.png', 200, True), 'embank': ('b_embank.png', 230, False), 'park': ('b_park.png', 300, False),
+}
+for name, (src, th, walk) in BUILD.items():
+    a = keyed_rgba(src)
+    ys = np.where((a[..., 3] > 0).sum(axis=1) > 20)[0]; xs = np.where((a[..., 3] > 0).sum(axis=0) > 20)[0]
+    x0, x1, y0, y1 = xs[0], xs[-1] + 1, ys[0], ys[-1] + 1
+    a = a[y0:y1, x0:x1]
+    k = th / a.shape[0]                    # логических px на пиксель исходника
+    im = Image.fromarray(a, 'RGBA').resize((round(a.shape[1] * k * SCALE), round(a.shape[0] * k * SCALE)), Image.LANCZOS)
+    arr = np.array(im); arr[..., 3] = np.where(arr[..., 3] > 100, 255, 0)
+    Image.fromarray(arr, 'RGBA').save(os.path.join(BDIR, name + '.png'), optimize=True)
+    meta = {'img': 'assets/b/' + name + '.png', 'w': round(arr.shape[1] / SCALE, 1), 'h': round(arr.shape[0] / SCALE, 1)}
+    if walk: meta['tops'] = profile(arr, 1 / SCALE)
+    if name in ('hero', 'shop'): meta['door'] = round((655 - x0) * k, 1)
+    if name == 'hero':  # открытое окно 2 этажа: исходные координаты 392..476 x 815..910
+        meta['win'] = [round((392 - x0) * k, 1), round((815 - y0) * k, 1), round(84 * k, 1), round(95 * k, 1)]
+    B2[name] = meta
+    print('здание', name, meta['w'], meta['h'])
+# небо (бесшовное), дальний город, земля
+sky = Image.open(os.path.join(SRC, 'l2_sky.png')).convert('RGB'); sky = sky.resize((round(sky.width * 720 / sky.height), 720), Image.LANCZOS); sky.save(os.path.join(BDIR, 'sky.jpg'), quality=88)
+far = Image.fromarray(key_green(Image.open(os.path.join(SRC, 'l2_farcity.png'))), 'RGBA')
+fa = np.array(far); ys = np.where((fa[..., 3] > 0).sum(axis=1) > 20)[0]; far = Image.fromarray(fa[ys[0]:], 'RGBA')
+far = far.resize((round(far.width * 380 / far.height), 380), Image.LANCZOS); far.save(os.path.join(BDIR, 'far.png'), optimize=True)
+gr = Image.open(os.path.join(SRC, 'l2_ground.png')).convert('RGB').crop((0, 0, 2172, 300))
+gr = gr.resize((round(2172 * 140 / 300), 140), Image.LANCZOS); gr.save(os.path.join(BDIR, 'ground.jpg'), quality=88)
+B2['_layers'] = {'sky': [sky.width / 2, 360], 'far': [far.width / 2, 190], 'ground': [gr.width / 2, 70]}
+# магазин с дальней камерой и крупный Валера для этой сцены
+B['shop'] = bg('shop2.png', 'bg_shop', (1280, 720))
+S['vb_run'] = build_sheet('vb_run', 'valera_run.png', 8, 150)
+S['vb_story3'] = build_sheet('vb_story3', 'valera_story3.png', 6, 158, ref=1)
+with open(os.path.join(ROOT, 'js', 'sprites_data.js'), 'w', encoding='utf-8') as fp:
+    fp.write('// автоматически создано tools/build_assets.py\nwindow.SPRITES = ' + json.dumps(S) + ';\nwindow.BGS = ' + json.dumps(B) + ';\nwindow.BUILDINGS = ' + json.dumps(B2) + ';\n')
+print('готово 2')

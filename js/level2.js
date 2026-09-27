@@ -4,8 +4,8 @@ const L2 = {};
 G.L2 = L2;
 L2.GROUND = 300;
 L2.PANEL = 640;
-L2.W = L2.PANEL * 8;
-L2.ARENA_X = L2.PANEL * 7;
+L2.ARENA_X = 12000;
+L2.W = L2.ARENA_X + 640;
 
 // ---------- враги ----------
 // кадры листов (см. tools/build_assets.py)
@@ -175,20 +175,28 @@ L2.Matiz = class {
 };
 
 // ---------- шпионы-спецназовцы на фоне ----------
+// corner — выглядывает из-за угла здания (здание рисуется поверх и прячет половину),
+// prone — лежит на крыше, bush — сидит в кустах парка
 L2.Spy = class {
-  constructor(kind, x, y) { this.kind = kind; this.x = x; this.y = y; this.show = 0; this.t = Math.random() * 5; this.seen = false; }
+  constructor(d) { Object.assign(this, d); this.show = 0; this.t = Math.random() * 5; this.out = -(d.dir || 1); }
+  get behind() { return this.kind !== 'prone'; }
   update(dt, pl) {
     this.t += dt;
     const d = Math.abs(pl.x - this.x);
-    const want = d < 420 && d > 90;
-    this.show = U.clamp(this.show + (want ? dt * 1.5 : -dt * 3), 0, 1);
+    const want = d < 460 && d > 110;
+    this.show = U.clamp(this.show + (want ? dt * 1.2 : -dt * 3), 0, 1);
   }
   draw(c, cx) {
     if (this.show <= 0) return;
-    const fr = { peek: 0, bush: 1, prone: 2 }[this.kind];
-    const slide = this.kind === 'peek' ? (1 - this.show) * 14 : 0;
-    const bob = this.kind === 'bush' ? Math.sin(this.t * 2) * 1 : 0;
-    Spr.draw(c, 'cmd_hide', fr, this.x - cx - slide, this.y + bob, this.kind === 'peek' ? -1 : 1, { alpha: this.show * 0.9 });
+    const k = U.easeInOut(this.show);
+    if (this.kind === 'corner') {
+      const x = this.x + this.out * U.lerp(-24, 7, k);
+      Spr.draw(c, 'cmd', 1, x - cx, this.y, this.out > 0 ? -1 : 1, { alpha: 0.95 });
+    } else if (this.kind === 'prone') {
+      Spr.draw(c, 'cmd_hide', 2, this.x - cx, this.y + (1 - k) * 18, -1, { alpha: k });
+    } else {
+      Spr.draw(c, 'cmd_hide', 1, this.x - cx, this.y + Math.sin(this.t * 2) * 1, -1, { alpha: k });
+    }
   }
 };
 
@@ -208,46 +216,146 @@ const PROPS = {
   tlight: { i: 10, deco: true },
   barrel: { i: 11, top: 1, wf: 0.9, oneway: false },
 };
+// здания стоят вплотную к тротуару, слева направо (x — левый край)
+L2.BUILD_LIST = [
+  ['gate', 40], ['workshop', 760], ['hrush', 1720], ['shop', 2360], ['garages', 3060], ['dk', 3820], ['stele', 4700], ['nine', 5110],
+  ['pipes', 6060], ['garages', 6700], ['hrush', 7460], ['nine', 8100], ['embank', 9050], ['embank', 9990], ['park', 11030],
+];
 L2.build = function () {
-  const P = L2.PANEL, G0 = L2.GROUND;
-  const D = { props: [], plats: [], ladders: [], foes: [], pickups: [], checkpoints: [], spies: [], hints: [], shopDoor: { x: P + 392, w: 40 }, zebra: [P * 4 + 150, P * 4 + 330] };
+  const G0 = L2.GROUND, B = window.BUILDINGS;
+  const D = { props: [], plats: [], foes: [], pickups: [], checkpoints: [], spies: [], hints: [], buildings: [], zebra: [8250, 8520] };
   D.plats.push({ x: 0, y: G0, w: L2.W, h: 60, oneway: false, look: 'none' });
+  for (const [name, x] of L2.BUILD_LIST) {
+    const b = B[name];
+    D.buildings.push({ name, x, w: b.w, h: b.h });
+    // крыши гаражей и трубы теплотрассы — по ним можно ходить
+    if (b.tops) for (const [x0, x1, top] of b.tops) if (top > 40) D.plats.push({ x: x + x0 + 4, y: G0 - top, w: x1 - x0 - 8, h: 8, oneway: true, look: 'none' });
+  }
+  const shop = D.buildings.find(b => b.name === 'shop');
+  D.shopDoor = { x: shop.x + B.shop.door, w: 40 };
   const prop = (type, x, y = G0) => D.props.push({ type, x, y });
   const foe = (type, x, o) => D.foes.push({ type, x, o });
-  const pick = (kind, x, y = G0) => D.pickups.push({ kind, x, y });
-  // P1: проходная
-  prop('lamp', 120); prop('bench', 470); foe('gopnik', 580);
-  D.hints.push({ x: 0, w: 400, text: 'Иди домой! Бей хулиганов {punch}, прыгай {jump}, приседай {down}.' });
-  // P2: магазин «ПОД ГОРЛЫШКО»
-  prop('dumpster', P + 90); prop('kiosk', P + 560); foe('alkash', P + 560, { y: 0, onRoof: 'kiosk' }); pick('pie', P + 180);
-  // P3: площадь ДК
-  D.checkpoints.push({ x: P * 2 + 40 });
-  prop('busstop', P * 2 + 170); prop('bench', P * 2 + 330); prop('tlight', P * 2 + 450); prop('car', P * 2 + 540);
-  foe('gopnik', P * 2 + 260); foe('dogS', P * 2 + 420); foe('gopnik', P * 2 + 620); pick('coin', P * 2 + 170, 0); pick('beer', P * 2 + 540, 0);
-  D.hints.push({ x: P * 2, w: 300, text: 'Маленькую собачку бей в прыжке или присев {down}+{punch}!' });
-  // P4: гаражи
-  prop('garages', P * 3 + 120); prop('ladder', P * 3 + 215); prop('garages', P * 3 + 300); prop('barrel', P * 3 + 420); prop('crate', P * 3 + 460); prop('garages', P * 3 + 560);
-  foe('bomzh', P * 3 + 360); foe('punk', P * 3 + 520); foe('alkash', P * 3 + 300, { onRoof: 'garages' });
-  pick('badge', P * 3 + 560, 0); pick('kefir', P * 3 + 440, 0);
-  D.hints.push({ x: P * 3, w: 260, text: 'Бомж испускает газы — не стой в зелёном облаке!' });
-  // P5: проспект и зебра с «Матизом»
-  D.checkpoints.push({ x: P * 4 + 30 });
-  prop('tlight', P * 4 + 140); prop('bench', P * 4 + 400); prop('lamp', P * 4 + 470); prop('fence', P * 4 + 560);
-  D.hints.push({ x: P * 4, w: 200, text: 'Бешеный «Матиз»! Жди сигнала «!» и перепрыгивай машину.' });
-  pick('beer', P * 4 + 400, 0);
-  // P6: набережная
-  prop('lamp', P * 5 + 80); prop('bench', P * 5 + 200); prop('crate', P * 5 + 330); prop('crate', P * 5 + 366); prop('bench', P * 5 + 520);
-  foe('punk', P * 5 + 280); foe('alkash', P * 5 + 450); foe('dogB', P * 5 + 600); pick('pie', P * 5 + 366, 0); pick('badge', P * 5 + 348, 0);
-  // P7: парк
-  D.checkpoints.push({ x: P * 6 + 30 });
-  prop('car', P * 6 + 180); prop('dumpster', P * 6 + 330); prop('bench', P * 6 + 470);
-  foe('dogS', P * 6 + 260); foe('dogS', P * 6 + 300); foe('bomzh', P * 6 + 420); foe('gopnik', P * 6 + 560); foe('dogB', P * 6 + 620);
-  pick('beer', P * 6 + 180, 0); pick('badge', P * 6 + 330, 0); pick('pelmeni', P * 6 + 520);
-  // шпионы на фоне
-  D.spies.push({ kind: 'peek', x: 470, y: G0 - 6 }, { kind: 'bush', x: P * 2 + 90, y: G0 - 4 }, { kind: 'prone', x: P * 3 + 560, y: 196 },
-    { kind: 'peek', x: P * 4 + 520, y: G0 - 8 }, { kind: 'bush', x: P * 5 + 120, y: G0 - 4 }, { kind: 'prone', x: P * 6 + 360, y: 150 }, { kind: 'peek', x: P * 6 + 600, y: G0 - 8 });
+  const pick = (kind, x, y = 0) => D.pickups.push({ kind, x, y });
+  const roofY = name => { const t = B[name].tops.reduce((m, t) => (t[1] - t[0] > m[1] - m[0] ? t : m)); return G0 - t[2]; };
+  // 1. проходная и цех
+  prop('bench', 520); prop('dumpster', 900); prop('crate', 950); prop('barrel', 1300);
+  foe('gopnik', 620); foe('dogS', 1050); foe('gopnik', 1250); foe('punk', 1520);
+  pick('pie', 950); pick('coin', 1300);
+  D.hints.push({ x: 0, w: 450, text: 'Иди домой! Бей хулиганов {punch}, прыгай {jump}, приседай {down}.' });
+  // 2. улица с магазином
+  prop('kiosk', 1880); prop('busstop', 2150); prop('car', 2330);
+  foe('gopnik', 1960); foe('gopnik', 2060); foe('alkash', 1880, { onProp: 'kiosk' }); foe('dogS', 2230);
+  foe('punk', 2860); foe('gopnik', 2960);
+  pick('coin', 2150); pick('kefir', 2330);
+  D.checkpoints.push({ x: 3010 });
+  // 3. ряд гаражей — крыши
+  prop('dumpster', 3035); prop('ladder', 3070);
+  foe('bomzh', 3250); foe('alkash', 3420, { y: roofY('garages'), x1: 3300, x2: 3560 }); foe('punk', 3600, { y: roofY('garages'), x1: 3480, x2: 3700 });
+  pick('badge', 3500, roofY('garages') - 1); pick('beer', 3690);
+  D.hints.push({ x: 2990, w: 200, text: 'Залезай на крыши гаражей: с мусорного бака или по лестнице {up}.' });
+  // 4. ДК и стела
+  prop('bench', 3960); prop('busstop', 4260); prop('tlight', 4660); prop('car', 4860);
+  foe('gopnik', 4000); foe('gopnik', 4110); foe('dogS', 4320); foe('alkash', 4250, { onProp: 'busstop' }); foe('dogB', 4560); foe('punk', 4930);
+  pick('pie', 3960); pick('coin', 4860);
+  D.hints.push({ x: 4200, w: 260, text: 'Маленькую собачку бей присев: {down}+{punch}!' });
+  D.checkpoints.push({ x: 5060 });
+  // 5. девятиэтажка
+  prop('kiosk', 5420); prop('dumpster', 5720); prop('lamp', 5600);
+  foe('bomzh', 5300); foe('gopnik', 5520); foe('alkash', 5420, { onProp: 'kiosk' }); foe('gopnik', 5640); foe('dogS', 5820);
+  pick('beer', 5720);
+  D.hints.push({ x: 5200, w: 260, text: 'Бомж испускает газы — не стой в зелёном облаке!' });
+  // 6. теплотрасса — можно пройти поверху
+  const pb = D.buildings.find(b => b.name === 'pipes');
+  prop('crate', pb.x + 150, G0 - 86); prop('crate', pb.x + 400, G0 - 86);
+  foe('bomzh', pb.x + 120); foe('punk', pb.x + 420); foe('alkash', pb.x + 270, { y: G0 - 198, x1: pb.x + 200, x2: pb.x + 340 });
+  pick('badge', pb.x + 300, G0 - 199); pick('kefir', pb.x + 470);
+  // 7. снова гаражи и хрущёвка
+  prop('ladder', 6705); prop('barrel', 7400);
+  foe('gopnik', 7000, { y: roofY('garages'), x1: 6760, x2: 7340 }); foe('dogB', 7200); foe('bomzh', 7550); foe('punk', 7800); foe('gopnik', 7900);
+  pick('pelmeni', 7200, roofY('garages') - 1);
+  D.checkpoints.push({ x: 8010 });
+  // 8. проспект и зебра с «Матизом»
+  prop('tlight', 8230); prop('tlight', 8540); prop('bench', 8700); prop('fence', 8900);
+  foe('gopnik', 8760); foe('dogS', 8820);
+  pick('beer', 8700);
+  D.hints.push({ x: 8050, w: 200, text: 'Бешеный «Матиз»! Жди сигнала «!» и перепрыгивай машину.' });
+  // 9. набережная
+  prop('lamp', 9150); prop('crate', 9400); prop('crate', 9434); prop('crate', 9417, G0 - 34); prop('bench', 9800); prop('lamp', 10250); prop('dumpster', 10500);
+  foe('alkash', 9300); foe('punk', 9560); foe('alkash', 9417, { y: G0 - 68, x1: 9405, x2: 9430 }); foe('dogB', 9900); foe('gopnik', 10100); foe('bomzh', 10400); foe('punk', 10700);
+  pick('pie', 9800); pick('badge', 10500); pick('coin', 10250);
+  D.checkpoints.push({ x: 10950 });
+  // 10. парк
+  prop('bench', 11250); prop('car', 11700);
+  foe('dogS', 11100); foe('dogS', 11140); foe('dogS', 11190); foe('bomzh', 11420); foe('gopnik', 11600); foe('dogB', 11780);
+  pick('pelmeni', 11300); pick('beer', 11700);
+  // шпионы: за углами зданий, на крышах, в кустах парка
+  const bx = name => D.buildings.filter(b => b.name === name);
+  const ws = bx('workshop')[0], st = bx('stele')[0], nn = bx('nine'), gg = bx('garages'), pk = bx('park')[0];
+  D.spies.push({ kind: 'corner', x: ws.x + ws.w - 4, y: G0, dir: -1 });
+  D.spies.push({ kind: 'prone', x: gg[0].x + 420, y: roofY('garages') + 2 });
+  D.spies.push({ kind: 'corner', x: st.x + 6, y: G0, dir: 1 });
+  D.spies.push({ kind: 'corner', x: nn[0].x + nn[0].w - 4, y: G0, dir: -1 });
+  D.spies.push({ kind: 'prone', x: gg[1].x + 180, y: roofY('garages') + 2 });
+  D.spies.push({ kind: 'corner', x: nn[1].x + 6, y: G0, dir: 1 });
+  D.spies.push({ kind: 'bush', x: pk.x + 520, y: G0 });
+  // фонари на переднем плане (псевдо-объём)
+  D.fg = [];
+  for (let x = 300; x < L2.ARENA_X; x += U.randi(620, 860)) D.fg.push(x);
   return D;
 };
+
+// ---------- слои фона (бесшовно) ----------
+L2.tile = function (c, img, off, y, w, h) {
+  if (!img) return;
+  let x = -((off % w) + w) % w;
+  for (; x < W; x += w) c.drawImage(img, Math.floor(x), y, Math.ceil(w) + 1, h);
+};
+L2.drawLayers = function (c, camX) {
+  const L = window.BUILDINGS._layers;
+  L2.tile(c, L2.img.sky, camX * 0.06, 0, L.sky[0], L.sky[1]);
+  L2.tile(c, L2.img.far, camX * 0.28, L2.GROUND - L.far[1] + 12, L.far[0], L.far[1]);
+  c.fillStyle = 'rgba(20,26,44,0.18)'; c.fillRect(0, 0, W, L2.GROUND);
+};
+L2.drawBuildings = function (c, camX, list) {
+  for (const b of list) {
+    const x = b.x - camX;
+    if (x > W || x + b.w < 0) continue;
+    const img = L2.img['b_' + b.name];
+    if (img) c.drawImage(img, Math.round(x), L2.GROUND - b.h + 2, b.w, b.h);
+  }
+};
+L2.drawGround = function (c, camX, zebra) {
+  const L = window.BUILDINGS._layers;
+  L2.tile(c, L2.img.ground, camX, L2.GROUND - 8, L.ground[0], L.ground[1]);
+  c.fillStyle = '#0c0d10'; c.fillRect(0, L2.GROUND - 8 + L.ground[1], W, H);
+  if (zebra) {
+    for (let x = zebra[0]; x < zebra[1]; x += 26) {
+      const sx = x - camX; if (sx < -30 || sx > W) continue;
+      c.fillStyle = 'rgba(220,220,210,0.75)';
+      c.beginPath(); c.moveTo(sx, L2.GROUND + 14); c.lineTo(sx + 16, L2.GROUND + 14); c.lineTo(sx + 24, L2.GROUND + 58); c.lineTo(sx + 8, L2.GROUND + 58); c.fill();
+    }
+  }
+};
+L2.drawForeground = function (c, camX, list) {
+  if (!list) return;
+  c.save(); c.filter = 'brightness(0.32) saturate(0.6)';
+  for (const x of list) {
+    const sx = x - camX * 1.3 + (x * 0.3);
+    if (sx < -80 || sx > W + 80) continue;
+    Spr.draw(c, 'street', 9, sx, H + 30, 1, { scale: 1.6 });
+  }
+  c.restore();
+};
+L2.img = {};
+L2.load = async function () {
+  const B = window.BUILDINGS; if (!B) return;
+  const jobs = Object.keys(B).filter(k => k[0] !== '_').map(async k => { L2.img['b_' + k] = await G.loadImage(B[k].img); });
+  jobs.push((async () => { L2.img.sky = await G.loadImage('assets/b/sky.jpg'); })());
+  jobs.push((async () => { L2.img.far = await G.loadImage('assets/b/far.png'); })());
+  jobs.push((async () => { L2.img.ground = await G.loadImage('assets/b/ground.jpg'); })());
+  await Promise.all(jobs);
+};
+L2.heroLeft = () => L2.ARENA_X + 320 - window.BUILDINGS.hero.w / 2;
 
 // ---------- режим прохождения ----------
 L2.Run = class {
@@ -271,15 +379,18 @@ L2.Run = class {
       return o;
     });
     const roofOf = (type, x) => { const pr = this.props.filter(p => p.type === type).sort((a, b) => Math.abs(a.x - x) - Math.abs(b.x - x))[0]; return pr && pr.col ? pr.col.y : L2.GROUND; };
+    this.buildings = D.buildings;
     wd.enemies = D.foes.map(f => {
       const o = Object.assign({}, f.o || {});
-      if (o.onRoof) { o.y = roofOf(o.onRoof, f.x); o.x1 = f.x - 30; o.x2 = f.x + 30; }
+      if (o.onProp) { o.y = roofOf(o.onProp, f.x); o.x1 = f.x - 24; o.x2 = f.x + 24; }
+      if (o.x1 == null && o.y != null) { o.x1 = f.x - 60; o.x2 = f.x + 60; }
       const e = new L2.Foe(f.type, f.x, o); e.ground = e.y; return e;
     });
     wd.pickups = D.pickups.map(p => { const k = new Game.Pickup(p.kind, p.x, p.y || 0); if (!p.y) k.falling = true; return k; });
+    this.fg = D.fg;
     wd.checkpoints = D.checkpoints.map(c => Object.assign({ active: false, y: L2.GROUND }, c));
     this.hints = D.hints.map(h => Object.assign({ shown: 0 }, h));
-    this.spies = D.spies.map(s => new L2.Spy(s.kind, s.x, s.y));
+    this.spies = D.spies.map(s => new L2.Spy(s));
     this.matiz = new L2.Matiz(D.zebra[0], D.zebra[1]);
     this.player = new Game.Player(level.startX || 80, L2.GROUND);
     if (level.carry) { Object.assign(this.player.ammo, level.carry.ammo); this.player.bottleHits = level.carry.bottleHits || 0; this.player.weapon = level.carry.weapon || 'nuts'; }
@@ -372,27 +483,16 @@ L2.Run = class {
     // дошёл до двора
     if (!this.done && pl.x > L2.ARENA_X + 30 && !pl.dead) { this.done = true; pl.controls = false; this.level.reachYard(this); }
   }
-  drawBG(c, camX) {
-    const P = L2.PANEL, i0 = Math.floor(camX / P);
-    for (let i = i0; i <= i0 + 1 && i < 8; i++) {
-      const img = G.bg['l2_' + (i + 1)] || G.bg.sky;
-      if (img) c.drawImage(img, Math.round(i * P - camX), 0, P, H);
-    }
-    // мягкий шов между панелями
-    for (let i = i0; i <= i0 + 1 && i < 8; i++) {
-      if (i === 0) continue;
-      const x = Math.round(i * P - camX), img = G.bg['l2_' + (i + 1)];
-      if (!img || x < -30 || x > W + 30) continue;
-      const g = c.createLinearGradient(x - 24, 0, x + 24, 0);
-      g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.5, 'rgba(10,12,18,0.35)'); g.addColorStop(1, 'rgba(0,0,0,0)');
-      c.fillStyle = g; c.fillRect(x - 24, 0, 48, H);
-    }
+  drawBG(c, camX, behind) {
+    L2.drawLayers(c, camX);
+    for (const s of this.spies) if (s.behind) s.draw(c, camX);
+    L2.drawBuildings(c, camX, this.buildings);
+    for (const s of this.spies) if (!s.behind) s.draw(c, camX);
+    L2.drawGround(c, camX, this.D.zebra);
   }
   draw(c) {
     const wd = this.world, cx = Math.round(wd.cam.x);
     this.drawBG(c, cx);
-    for (const s of this.spies) s.draw(c, cx);
-    c.fillStyle = 'rgba(10,14,24,0.12)'; c.fillRect(0, 0, W, H);
     for (const l of wd.ladders) Art.ladder(c, { x: l.x - cx, y: l.y, w: l.w, h: l.h });
     for (const p of this.props) if (!p.def.ladder && p.x - cx > -200 && p.x - cx < W + 200) Spr.draw(c, 'street', p.def.i, p.x - cx, p.y, 1);
     for (const cp of wd.checkpoints) Art.checkpoint(c, cp.x - cx, L2.GROUND, cp.active, wd.t);
@@ -404,6 +504,7 @@ L2.Run = class {
     for (const h of wd.hazards) h.draw(c, cx, 0);
     for (const p of wd.projs) p.draw(c, cx, 0);
     c.save(); c.translate(-cx, 0); FX.draw(c); c.restore();
+    L2.drawForeground(c, cx, this.fg);
     G.drawBubbles(c, cx, 0);
     Game.drawHUD(c, this.player, wd);
     const left = Math.max(0, Math.round((L2.ARENA_X - this.player.x) / 16));
@@ -523,16 +624,30 @@ L2.Kesha = class {
   }
 };
 
-// Наташка в окне — болеет за Кешу
+// Наташка в открытом окне дома героя — болеет за Кешу
 L2.NatWindow = class {
-  constructor(x, y) { this.x = x; this.y = y; this.fr = 0; this.t = 0; this.faceT = 0; this.bx = x; this.by = y - 30; this.voice = 330; this.lineT = 2; }
+  constructor() {
+    const w = window.BUILDINGS.hero.win;
+    this.rx = L2.heroLeft() + w[0]; this.ry = L2.GROUND - window.BUILDINGS.hero.h + 2 + w[1]; this.rw = w[2]; this.rh = w[3];
+    this.t = 0; this.faceT = 0; this.lineT = 2; this.voice = 330;
+    this.bx = this.rx + this.rw / 2; this.by = this.ry - 4;
+  }
   onHit() { this.faceT = 1.2; if (Math.random() < 0.3) G.say(this, U.choice(['Кешенька, держись!', 'Ой, батюшки!', 'Эх, мужики пошли...']), 1.4); }
   update(dt) {
     this.t += dt; if (this.faceT > 0) this.faceT -= dt; this.lineT -= dt;
-    this.fr = this.faceT > 0 ? 2 : ((this.t * 3) | 0) % 2;
     if (this.lineT <= 0) { this.lineT = U.rand(5, 8); G.say(this, U.choice(['Давай, Кешенька!', 'Врежь ему, рыжему!', 'Я тебя в окно вижу, Валера!', 'Кеша, не позорься!']), 1.6); }
   }
-  draw(c, cx) { c.save(); c.filter = 'brightness(0.72) saturate(0.85)'; Spr.drawC(c, 'nat_win', this.fr, this.x - cx, this.y, 0, 0.8); c.restore(); }
+  draw(c, cx) {
+    const x = this.rx - cx, y = this.ry;
+    c.save();
+    c.beginPath(); c.rect(x, y, this.rw, this.rh); c.clip();
+    c.fillStyle = '#16140f'; c.fillRect(x, y, this.rw, this.rh);
+    c.fillStyle = 'rgba(255,200,120,0.18)'; c.fillRect(x, y, this.rw, this.rh);
+    // по пояс в окне; машет рукой или хватается за голову
+    const fr = this.faceT > 0 ? ['n_b', 2] : ((this.t * 2.5) | 0) % 2 ? ['n_a', 3] : ['n_a', 0];
+    Spr.draw(c, fr[0], fr[1], x + this.rw / 2 - 2, y + this.rh + 26, 1, { scale: 0.8 });
+    c.restore();
+  }
 };
 
 L2.Arena = class {
@@ -541,7 +656,7 @@ L2.Arena = class {
     this.world = run.world;
     this.player = run.player; this.player.controls = false;
     this.boss = new L2.Kesha(L2.ARENA_X + 420); this.boss.set('wait');
-    this.nat = new L2.NatWindow(L2.ARENA_X + 205, 172);
+    this.nat = new L2.NatWindow();
     this.bullets = []; this.fighting = false; this.hint = null; this.hintA = 0; this.hintT = 0; this.actors = []; this.birds = false;
     this.world.enemies = []; this.world.hazards = []; this.world.clouds = [];
     this.world.playerAttack = (hb, dmg, atk, pl) => {
@@ -586,9 +701,10 @@ L2.Arena = class {
   }
   draw(c) {
     const wd = this.world, cx = L2.ARENA_X;
-    const img = G.bg.l2_8 || G.bg.sky; if (img) c.drawImage(img, 0, 0, W, H);
+    L2.drawLayers(c, cx);
+    L2.drawBuildings(c, cx, [{ name: 'hero', x: L2.heroLeft(), w: window.BUILDINGS.hero.w, h: window.BUILDINGS.hero.h }]);
     this.nat.draw(c, cx);
-    c.fillStyle = 'rgba(10,14,24,0.12)'; c.fillRect(0, 0, W, H);
+    L2.drawGround(c, cx);
     for (const p of wd.pickups) p.draw(c, cx, 0);
     for (const a of this.actors) a.draw(c, cx, 0);
     if (this.boss && this.boss.draw) this.boss.draw(c, cx);
@@ -616,10 +732,12 @@ L2.Arena = class {
 L2.sceneStart = function (level) {
   const st = { fade: 1, title: 0 };
   const v = new G.Actor('valera', 250, L2.GROUND, 1);
-  const spy = new L2.Spy('peek', 470, L2.GROUND - 6);
+  const spy = new L2.Spy({ kind: 'corner', x: 40 + window.BUILDINGS.gate.w - 4, y: L2.GROUND, dir: -1 });
   level.drawScene = c => {
-    c.drawImage(G.bg.l2_1 || G.bg.sky, 0, 0, W, H);
+    L2.drawLayers(c, 0);
     spy.draw(c, 0);
+    L2.drawBuildings(c, 0, [{ name: 'gate', x: 40, w: window.BUILDINGS.gate.w, h: window.BUILDINGS.gate.h }, { name: 'workshop', x: 760, w: window.BUILDINGS.workshop.w, h: window.BUILDINGS.workshop.h }]);
+    L2.drawGround(c, 0);
     v.draw(c);
     G.drawBubbles(c, 0, 0);
     Scene.drawDialog(c);
@@ -654,7 +772,7 @@ L2.sceneStart = function (level) {
 
 L2.sceneShop = function (level) {
   const st = { fade: 1 };
-  const v = new G.Actor('valera', -30, 332, 1);
+  const v = new G.Actor('valeraBig', -60, 342, 1); v.headH = 170;
   level.drawScene = c => {
     c.drawImage(G.bg.shop, 0, 0, W, H);
     v.draw(c);
@@ -666,7 +784,7 @@ L2.sceneShop = function (level) {
   return function* () {
     Sound.play('bell');
     yield* Scene.tween(0.5, k => { st.fade = 1 - k; });
-    yield* Scene.moveTo(v, 190, 70, 'walk');
+    yield* Scene.moveTo(v, 175, 90, 'walk');
     v.setAnim('tiredStand');
     yield* Scene.say('valera', 'Здрасьте. Дайте пивка... одну. Нет, две.', v);
     yield* Scene.say('seller', 'Паспорт покажи, рыжий!', null);
@@ -737,7 +855,7 @@ L2.sceneFinale = function (level) {
   };
   level.updateScene = dt => { ar.update(dt); spy.update(dt); FX.update(dt); G.updateBubbles(dt); };
   spy.draw = () => {};
-  const door = L2.ARENA_X + 383;
+  const door = L2.heroLeft() + window.BUILDINGS.hero.door;
   return function* () {
     Music.play('cutscene');
     yield 1.0;

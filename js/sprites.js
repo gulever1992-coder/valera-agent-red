@@ -65,7 +65,7 @@ Spr.ANIM = {
     walk: A('v_run', [0, 1, 2, 3, 4, 5, 6, 7], 9),
     jump: A('v_jump', [2]), fall: A('v_jump', [3]), land: A('v_jump', [4]), hurt: A('v_jump', [5]),
     jab: A('v_fight', [0]), cross: A('v_fight', [1]), upper: A('v_fight', [2]),
-    throwA: A('v_fight', [3]), throwB: A('v_fight', [4]), ko: A('v_fight', [5]),
+    throwA: A('v_fight', [2]), throwB: A('v_fight', [4]), ko: A('v_fight', [5]),
     hips: A('v_idle', [0]), stomp: A('v_idle', [0, 1, 1, 2, 0], 4.5), scratch: A('v_idle', [3]), yawn: A('v_idle', [4]), belly: A('v_idle', [5]),
     climb: A('v_climb2', [0, 1], 5), crouch: A('v_bottle', [6]), bCrouch: A('v_bottle', [5]),
     bIdle: A('v_bottle', [0]), bWind: A('v_bottle', [1]), bSwing: A('v_bottle', [2]), bThrow: A('v_bottle', [3]), drink: A('v_bottle', [4]),
@@ -88,6 +88,9 @@ Spr.ANIM = {
     stand: A('kesha_a', [0]), idle: A('kesha_a', [0]), walk: A('kesha_a', [1, 0], 5), master: A('kesha_a', [2]), punch: A('kesha_a', [3]), kick: A('kesha_a', [4]),
     sniff: A('kesha_a', [5]), shout: A('kesha_a', [6]), hurt: A('kesha_a', [7]),
     aim: A('kesha_b', [0]), shoot: A('kesha_b', [1]), run: A('kesha_b', [2]), ko: A('kesha_b', [3]), sit: A('kesha_b', [4]), thumbs: A('kesha_b', [5]), talk: A('kesha_b', [6]),
+  },
+  valeraBig: {
+    stand: A('vb_story3', [3]), walk: A('vb_run', [0, 1, 2, 3, 4, 5, 6, 7], 9), tiredStand: A('vb_story3', [3]), shoutFist: A('vb_story3', [2]), beerHappy: A('vb_story3', [1]),
   },
   spy: { peek: A('cmd_hide', [0]), bush: A('cmd_hide', [1]), prone: A('cmd_hide', [2]), dart: A('cmd_hide', [3]), rope: A('cmd_hide', [4]), run: A('cmd_hide', [5]) },
 };

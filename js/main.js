@@ -353,7 +353,7 @@ function frame(now) {
 // ---------- загрузка ----------
 (async function boot() {
   requestAnimationFrame(frame);
-  const [head, street] = await Promise.all([G.loadImage('assets/valera_head.png'), G.loadImage('assets/street.jpg'), Spr.load(), Spr.loadBGs()]);
+  const [head, street] = await Promise.all([G.loadImage('assets/valera_head.png'), G.loadImage('assets/street.jpg'), Spr.load(), Spr.loadBGs(), L2.load()]);
   G.img.valeraHeadSrc = head; G.img.street = street;
   try { await Promise.race([document.fonts.load('8px "Press Start 2P"'), new Promise(r => setTimeout(r, 2500))]); } catch (e) {}
   G.img.valeraHud = G.downscale(head, 52, 54);

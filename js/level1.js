@@ -230,11 +230,15 @@ L1.BG = class {
     const tmp = document.createElement('canvas'); tmp.width = 1280; tmp.height = top.height;
     const tx = tmp.getContext('2d');
     tx.drawImage(top, 0, 0);
-    tx.globalCompositeOperation = 'destination-in';
-    const g = tx.createLinearGradient(0, top.height - ov, 0, top.height);
+    // маска: сверху полностью видно, внизу плавный переход в нижнюю картинку
+    const mk = document.createElement('canvas'); mk.width = 1280; mk.height = top.height;
+    const mx = mk.getContext('2d');
+    mx.fillStyle = '#000'; mx.fillRect(0, 0, 1280, top.height - ov);
+    const g = mx.createLinearGradient(0, top.height - ov, 0, top.height);
     g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)');
-    tx.fillStyle = g; tx.fillRect(0, top.height - ov, 1280, ov);
-    tx.fillStyle = '#000'; tx.fillRect(0, 0, 1280, top.height - ov);
+    mx.fillStyle = g; mx.fillRect(0, top.height - ov, 1280, ov);
+    tx.globalCompositeOperation = 'destination-in';
+    tx.drawImage(mk, 0, 0);
     x.drawImage(tmp, 0, 0);
     this.img = cv;
     this.farH = cv.height / 2;
@@ -535,7 +539,6 @@ L1.Climb = class {
     for (const v of wd.vents) {
       if (v.y < cy - 20 || v.y > cy + H + 20) continue;
       Art.valve(c, v.x + 8, v.y - cy + 1);
-      if (v.state === 'warn') { c.fillStyle = 'rgba(255,120,40,0.5)'; c.fillRect(v.x + 2, v.y - 14 - cy, 12, 3); }
     }
     // провода
     for (const s of wd.sparks) {
@@ -577,26 +580,26 @@ L1.FLOOR = 210;
 L1.Natasha = class {
   constructor(x) {
     this.x = x; this.y = L1.FLOOR; this.facing = -1; this.anim = 'idle';
-    this.maxHp = 34; this.hp = 34; this.combo = 0; this.lastHit = -9; this.inv = 0;
+    this.maxHp = 46; this.hp = 46; this.combo = 0; this.lastHit = -9; this.inv = 0;
     this.state = 'idle'; this.st = 0; this.t = 0; this.flash = 0; this.actions = 0; this.volley = 0; this.throwT = 0;
     this.headH = 88; this.voice = 330; this.vx = 0; this.name = 'natasha';
   }
   get box() { return { x: this.x - 14, y: this.y - 70, w: 28, h: 70 }; }
   get weak() { return this.state === 'drink' || this.state === 'dizzy'; }
-  get phase2() { return this.hp <= this.maxHp / 2; }
+  get phase2() { return this.hp <= this.maxHp * 0.6; }
   set(s) { this.state = s; this.st = 0; }
   update(dt, arena) {
     const pl = arena.player;
     this.t += dt; this.st += dt; if (this.flash > 0) this.flash -= dt; if (this.inv > 0) this.inv -= dt;
     const dx = pl.x - this.x, adx = Math.abs(dx);
-    const spd = this.phase2 ? 1.2 : 1;
+    const spd = this.phase2 ? 1.35 : 1.1;
     let a = 'idle';
     switch (this.state) {
       case 'wait': a = 'idle'; break;
       case 'idle':
         this.facing = dx > 0 ? 1 : -1;
         if (this.st > 0.6 / spd) {
-          if (this.actions >= 3) {
+          if (this.actions >= 2) {
             this.actions = 0; this.pickEnd(pl);
             if (this.phase2 && Math.random() < 0.5) { this.set('chargeWind'); G.say(this, 'Задавлю-у-у!', 1.4, { shout: true }); }
             else { this.set('retreat'); G.say(this, U.choice(['Отстань, окаянный!', 'Ишь, какой!', 'Сейчас-сейчас...']), 1.4); }
@@ -612,17 +615,17 @@ L1.Natasha = class {
         break;
       case 'wind':
         this.facing = dx > 0 ? 1 : -1; a = 'wind';
-        if (this.st > 0.6 / spd) { this.set('slap'); Sound.play('throw'); }
+        if (this.st > 0.5 / spd) { this.set('slap'); Sound.play('throw'); }
         break;
       case 'slap':
         a = 'slap';
-        if (this.st < 0.14) { const hb = { x: this.x + (this.facing > 0 ? 4 : -38), y: this.y - 64, w: 34, h: 40 }; if (U.overlap(hb, pl.box)) pl.hurt(11, this.x, arena.world); }
+        if (this.st < 0.14) { const hb = { x: this.x + (this.facing > 0 ? 4 : -38), y: this.y - 64, w: 34, h: 40 }; if (U.overlap(hb, pl.box)) pl.hurt(14, this.x, arena.world); }
         if (this.st > 0.55) { this.actions++; this.set('idle'); }
         break;
       case 'retreat':
         this.facing = this.target > this.x ? 1 : -1; a = 'run';
         this.x = U.approach(this.x, this.target, 140 * spd * dt);
-        if (Math.abs(this.x - this.target) < 2) { this.set('throw'); this.volley = this.phase2 ? 4 : 3; this.throwT = 0.4; }
+        if (Math.abs(this.x - this.target) < 2) { this.set('throw'); this.volley = this.phase2 ? 5 : 4; this.throwT = 0.35; }
         break;
       case 'throw':
         this.facing = dx > 0 ? 1 : -1;
@@ -631,13 +634,13 @@ L1.Natasha = class {
         a = this.throwT < 0.25 ? 'throw' : 'idle';
         if (this.throwT <= 0) {
           if (this.volley > 0) {
-            this.volley--; this.throwT = 0.65;
+            this.volley--; this.throwT = this.phase2 ? 0.45 : 0.55;
             arena.throwBottle(this, pl);
             if (Math.random() < 0.35) G.say(this, U.choice(['Получай, сопляк!', 'На, закуси!', 'Лови, стропаль!']), 1.2);
           } else { this.set('drink'); G.say(this, 'Буль-буль... ик!', 1.8); Sound.play('swig'); }
         }
         break;
-      case 'drink': a = 'drink'; if (this.st > 2.3) { this.set('idle'); this.actions = 0; } break;
+      case 'drink': a = 'drink'; if (this.st > 1.8) { this.set('idle'); this.actions = 0; } break;
       case 'chargeWind':
         this.facing = this.target > this.x ? 1 : -1; a = 'wind';
         if (this.st > 0.9) { this.set('charge'); Sound.play('shout'); }
@@ -645,10 +648,10 @@ L1.Natasha = class {
       case 'charge':
         this.x += this.facing * 220 * dt; a = 'charge';
         if (Math.random() < dt * 20) FX.dust(this.x - this.facing * 10, this.y, 1);
-        if (U.overlap(this.box, pl.box)) pl.hurt(13, this.x, arena.world);
+        if (U.overlap(this.box, pl.box)) pl.hurt(16, this.x, arena.world);
         if (this.x < 150 || this.x > 600) { this.x = U.clamp(this.x, 150, 600); this.set('dizzy'); G.shake(6, 0.3); Sound.play('boom'); G.say(this, 'Ой-ёй-ёй...', 1.6); }
         break;
-      case 'dizzy': a = 'dizzy'; if (this.st > 2.2) { this.set('idle'); this.actions = 0; } break;
+      case 'dizzy': a = 'dizzy'; if (this.st > 1.8) { this.set('idle'); this.actions = 0; } break;
       case 'shove':
         a = 'slap';
         if (this.st < 0.12 && adx < 56) { pl.hurt(5, this.x, arena.world); pl.vx = (dx > 0 ? 1 : -1) * 320; }
@@ -675,7 +678,7 @@ L1.Natasha = class {
     if (this.hp <= 0) { this.hp = 0; this.set('down'); arena.bossDown(); return; }
     if (!this.weak) {
       this.combo = this.t - this.lastHit < 1.1 ? this.combo + 1 : 1; this.lastHit = this.t;
-      if (this.combo >= 4 && ['idle', 'walk', 'wind', 'hurt'].includes(this.state)) {
+      if (this.combo >= 3 && ['idle', 'walk', 'wind', 'hurt'].includes(this.state)) {
         this.combo = 0; this.set('shove'); Sound.play('shout');
         G.say(this, U.choice(['А ну брысь!', 'Отвали, окаянный!', 'Кыш!']), 1.2);
         return;
@@ -779,9 +782,11 @@ L1.Arena = class {
     const wd = this.world;
     c.drawImage(G.bg.arena, 0, 0, W, H);
     for (const r of this.ropes) {
-      let len = r.len;
-      if (r.actor && r.actor.anim === 'rappel') { const f = Spr.frame('cmd', 0); len = Math.min(len, r.actor.y - f[5] / 2 + 4); }
-      if (len > 0) Art.R(c, r.x, 0, 2, len, '#3a3226');
+      if (!r.actor || r.actor.anim !== 'rappel') continue;
+      const f = Spr.frame('cmd', 0), len = r.actor.y - f[5] / 2 + 6;
+      if (len <= 0) continue;
+      Art.R(c, r.x, 0, 2, len, '#2a2418'); Art.R(c, r.x, 0, 1, len, '#6a5a3e');
+      for (let y = (G.t * 60) % 6; y < len; y += 6) Art.R(c, r.x, y, 2, 1, '#1a160e');
     }
     for (const p of wd.pickups) p.draw(c, 0, 0);
     for (const a of this.actors) a.draw(c, 0, 0);

@@ -610,8 +610,10 @@ Game.Pickup = class {
 // ---------- HUD ----------
 Game.drawHUD = function (c, pl, world) {
   // портрет
-  R(c, 6, 6, 32, 32, '#111'); R(c, 7, 7, 30, 30, '#5a2a10');
-  if (G.img.valeraHud) c.drawImage(G.img.valeraHud, 9, 9, 26, 27);
+  R(c, 5, 5, 34, 34, '#0a0a0c'); R(c, 6, 6, 32, 32, '#c8601a'); R(c, 7, 7, 30, 30, '#3a2414');
+  const pv = G.portraits && G.portraits.valera;
+  if (pv) { c.save(); c.beginPath(); c.rect(7, 7, 30, 30); c.clip(); c.drawImage(pv, 4, 5, 36, 36); c.restore(); }
+  if (pl.hp / pl.maxHp < 0.3 && (G.t * 4 | 0) % 2) R(c, 7, 7, 30, 30, 'rgba(220,40,40,0.35)');
   // здоровье
   R(c, 42, 8, 124, 12, '#111');
   const k = pl.hp / pl.maxHp;
