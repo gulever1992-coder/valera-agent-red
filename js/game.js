@@ -127,8 +127,9 @@ Game.Player = class {
   get box() { return this.crouch ? { x: this.x - 11, y: this.y - 44, w: 22, h: 43 } : { x: this.x - 10, y: this.y - 70, w: 20, h: 69 }; }
   hurt(dmg, fromX, world) {
     if (this.inv > 0 || this.dead) return false;
+    dmg = Math.round(dmg * (G.DMG_MULT || 1.5));
     this.hp -= dmg; world.stats.dmg += dmg;
-    this.inv = 1.3; this.hurtT = 0.35; this.atk = null; this.climb = null;
+    this.inv = 0.9; this.hurtT = 0.35; this.atk = null; this.climb = null;
     const dir = this.x < fromX ? -1 : 1;
     this.vx = dir * 170; this.vy = -230; this.onGround = false;
     Sound.play('hurt'); G.shake(4, 0.2); G.hitStop = 0.04;
@@ -424,7 +425,7 @@ Game.Gull = class {
 // пьяный слесарь — дерётся гаечным ключом
 Game.Drunk = class {
   constructor(x, y, x1, x2, name) {
-    this.x = x; this.y = y; this.x1 = x1; this.x2 = x2; this.hp = 3; this.t = 0; this.dead = false; this.facing = -1; this.state = 'idle'; this.st = 0; this.score = 250; this.kind = 'drunk';
+    this.x = x; this.y = y; this.x1 = x1; this.x2 = x2; this.hp = 5; this.t = 0; this.dead = false; this.facing = -1; this.state = 'idle'; this.st = 0; this.score = 250; this.kind = 'drunk';
     this.anim = 'stand';
     this.headH = 76; this.voice = 180; this.name = name; this.flash = 0; this.vx = 0; this.vy = 0;
   }
@@ -441,19 +442,19 @@ Game.Drunk = class {
     switch (this.state) {
       case 'idle':
         pose = 'stand';
-        if (near && Math.abs(dx) < 170) { this.state = 'walk'; this.st = 0; if (Math.random() < 0.7) G.say(this, U.choice(['Ты чё, с какого цеха?!', 'Иди сюда, стропаль!', 'Ик! Щас как дам!', 'Моя бутылка! Не трожь!']), 1.8); }
+        if (near && (Math.abs(dx) < 170 || this.aggro)) { this.state = 'walk'; this.st = 0; if (Math.random() < 0.7) G.say(this, U.choice(['Ты чё, с какого цеха?!', 'Иди сюда, стропаль!', 'Ик! Щас как дам!', 'Моя бутылка! Не трожь!']), 1.8); }
         break;
       case 'walk':
         this.facing = dx > 0 ? 1 : -1;
-        this.x += this.facing * 55 * dt * (0.7 + Math.sin(this.t * 4) * 0.3);
+        this.x += this.facing * 75 * dt * (0.7 + Math.sin(this.t * 4) * 0.3);
         this.x = U.clamp(this.x, this.x1, this.x2);
         pose = 'walk';
         if (Math.abs(dx) < 38 && near) { this.state = 'wind'; this.st = 0; }
-        else if (!near || Math.abs(dx) > 220) { this.state = 'idle'; this.st = 0; }
+        else if (!this.aggro && (!near || Math.abs(dx) > 220)) { this.state = 'idle'; this.st = 0; }
         break;
       case 'wind':
         pose = 'wind';
-        if (this.st > 0.55) { this.state = 'swing'; this.st = 0; Sound.play('throw'); }
+        if (this.st > 0.42) { this.state = 'swing'; this.st = 0; Sound.play('throw'); }
         break;
       case 'swing':
         pose = 'swing';
@@ -567,9 +568,9 @@ Game.Proj = class {
 
 // ---------- подбираемые предметы ----------
 Game.PICK = {
-  pie: { name: 'Пирожок', heal: 15 },
-  kefir: { name: 'Кефир', heal: 30 },
-  pelmeni: { name: 'Пельмени!', heal: 60 },
+  pie: { name: 'Пирожок', heal: 10 },
+  kefir: { name: 'Кефир', heal: 20 },
+  pelmeni: { name: 'Пельмени!', heal: 40 },
   coin: { name: '+100', score: 100 },
   badge: { name: 'Значок «Ударник»!', score: 1000, secret: true },
   nutsbox: { name: 'Гайки +10', ammo: ['nuts', 10] },

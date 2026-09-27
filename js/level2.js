@@ -83,26 +83,27 @@ L2.Foe = class {
     const face = () => { this.facing = dx > 0 ? 1 : -1; };
     const move = sp => { this.x = U.clamp(this.x + this.facing * sp * dt, this.x1, this.x2); };
     const talk = () => { if (!this.said && Math.random() < 0.8) { this.said = true; G.say(this, U.choice(FOE_LINES[this.type]), 1.6); } };
+    if (!pl.dead) this.bodyHit(pl, wd, dt);
     if (this.state === 'hurt') { this.x = U.clamp(this.x + this.vx * dt, this.x1, this.x2); this.vx *= 0.85; if (this.st > 0.3) this.set('chase'); return; }
     switch (this.type) {
       case 'gopnik':
-        if (this.state === 'idle') { if (near && adx < 210) { this.set('rise'); talk(); } if (Math.random() < dt * 0.6) FX.spawn({ x: this.x + this.facing * 8, y: this.y - 30, vx: this.facing * 40, vy: -30, life: 0.5, color: '#2a2a2a', size: 2 }); }
+        if (this.state === 'idle') { if (near && (adx < 210 || this.aggro)) { this.set('rise'); talk(); } if (Math.random() < dt * 0.6) FX.spawn({ x: this.x + this.facing * 8, y: this.y - 30, vx: this.facing * 40, vy: -30, life: 0.5, color: '#2a2a2a', size: 2 }); }
         else if (this.state === 'rise') { face(); if (this.st > 0.45) this.set('chase'); }
-        else if (this.state === 'chase') { face(); move(75); if (adx < 34 && near) this.set('wind'); }
-        else if (this.state === 'wind') { if (this.st > 0.45) this.set('attack'); }
-        else if (this.state === 'attack') { if (this.st < 0.12) this.meleeHit(pl, wd, 34, 8); if (this.st > 0.3) this.set('recover'); }
-        else if (this.state === 'recover') { if (this.st > 0.5) this.set('chase'); }
+        else if (this.state === 'chase') { face(); move(95); if (adx < 34 && near) this.set('wind'); }
+        else if (this.state === 'wind') { if (this.st > 0.32) this.set('attack'); }
+        else if (this.state === 'attack') { if (this.st < 0.12) this.meleeHit(pl, wd, 36, 10); if (this.st > 0.3) this.set('recover'); }
+        else if (this.state === 'recover') { if (this.st > 0.35) this.set('chase'); }
         break;
       case 'punk':
-        if (this.state === 'idle') { if (near && adx < 240) { this.set('chase'); talk(); } }
-        else if (this.state === 'chase') { face(); move(100); if (adx < 44 && near) this.set('wind'); }
+        if (this.state === 'idle') { if (near && (adx < 240 || this.aggro)) { this.set('chase'); talk(); } }
+        else if (this.state === 'chase') { face(); move(125); if (adx < 44 && near) this.set('wind'); }
         else if (this.state === 'wind') { if (this.st > 0.3) { this.set('attack'); Sound.play('throw'); } }
-        else if (this.state === 'attack') { if (this.st < 0.14) this.meleeHit(pl, wd, 46, 10); if (this.st > 0.35) this.set('recover'); }
+        else if (this.state === 'attack') { if (this.st < 0.14) this.meleeHit(pl, wd, 48, 13); if (this.st > 0.35) this.set('recover'); }
         else if (this.state === 'recover') { if (this.st > 0.6) this.set('chase'); }
         break;
       case 'bomzh':
         if (this.state === 'idle' || this.state === 'chase') {
-          if (near && adx < 280) { face(); move(28); talk(); this.state = 'chase'; }
+          if (near && (adx < 280 || this.aggro)) { face(); move(this.aggro ? 45 : 28); talk(); this.state = 'chase'; }
           if (near && adx < 130 && this.cool <= 0) { this.set('fart'); this.cool = 4.5; }
         } else if (this.state === 'fart') {
           if (this.st > 0.3 && !this.farted) { this.farted = true; wd.clouds.push({ x: this.x - this.facing * 14, y: this.y - 26, t: 0, life: 4.5, r: 44 }); Sound.play('fart'); G.say(this, U.choice(['Ой... простите...', 'Пардон муа...', 'Это не я!']), 1.4); }
@@ -111,7 +112,7 @@ L2.Foe = class {
         break;
       case 'alkash':
         face();
-        if (this.state === 'idle' && Math.abs(pl.y - this.y) < 150 && !pl.dead && adx > 50 && adx < 330 && this.cool <= 0) { this.set('throw'); talk(); }
+        if (this.state === 'idle' && Math.abs(pl.y - this.y) < 150 && !pl.dead && adx > 50 && (adx < 330 || this.aggro) && this.cool <= 0) { this.set('throw'); talk(); }
         else if (this.state === 'throw') {
           if (this.st > 0.25 && !this.thrown) {
             this.thrown = true;
@@ -120,29 +121,34 @@ L2.Foe = class {
             wd.hazards.push(new Game.Hazard('bottle', sx, sy, (tx - sx) / T, (ty - sy - 0.5 * g * T * T) / T));
             Sound.play('throw');
           }
-          if (this.st > 0.6) { this.thrown = false; this.cool = 2.2; this.set('idle'); }
+          if (this.st > 0.6) { this.thrown = false; this.cool = 1.5; this.set('idle'); }
         }
         break;
       case 'dogS':
-        if (near && adx < 320) {
+        if (near && (adx < 320 || this.aggro)) {
           face();
-          if (adx > 14) { this.x = U.clamp(this.x + this.facing * 170 * dt, this.x1, this.x2); this.state = 'chase'; } else this.state = 'bark';
-          if (this.cool <= 0 && U.overlap(this.box, pl.box)) { pl.hurt(5, this.x, wd); this.cool = 0.9; }
+          if (adx > 14) { this.x = U.clamp(this.x + this.facing * 200 * dt, this.x1, this.x2); this.state = 'chase'; } else this.state = 'bark';
+          if (this.cool <= 0 && U.overlap(this.box, pl.box)) { pl.hurt(7, this.x, wd); this.cool = 0.7; }
           if (Math.random() < dt * 1.5) { Sound.play('bark'); if (Math.random() < 0.3) G.say(this, 'Тяв!', 0.6, { sound: false }); }
         } else this.state = 'idle';
         break;
       case 'dogB':
         if (this.state === 'lunge') {
           this.vy += 1500 * dt; this.x += this.vx * dt; this.y += this.vy * dt;
-          if (U.overlap(this.box, pl.box) && !this.bit) { this.bit = true; pl.hurt(10, this.x, wd); }
+          if (U.overlap(this.box, pl.box) && !this.bit) { this.bit = true; pl.hurt(12, this.x, wd); }
           const gl = wd.groundAt(this.x, this.y - this.vy * dt, this.y, 6);
           if (this.vy > 0 && gl) { this.y = gl.y; this.set('chase'); this.cool = 1.6; this.bit = false; this.fitPatrol(wd); }
-        } else if (near && adx < 340) {
-          face(); this.state = 'chase'; this.x = U.clamp(this.x + this.facing * 125 * dt, this.x1, this.x2);
+        } else if (near && (adx < 340 || this.aggro)) {
+          face(); this.state = 'chase'; this.x = U.clamp(this.x + this.facing * 170 * dt, this.x1, this.x2);
           if (adx < 130 && this.cool <= 0) { this.set('lunge'); this.vx = this.facing * 250; this.vy = -330; Sound.play('bark'); G.say(this, 'ГАВ!', 0.6, { sound: false }); }
         } else this.state = 'idle';
         break;
     }
+  }
+  bodyHit(pl, wd, dt) {
+    // толкучка: влетел в хулигана — получи
+    this.bodyCool = (this.bodyCool || 0) - dt;
+    if (this.bodyCool <= 0 && (this.type === 'gopnik' || this.type === 'punk' || this.type === 'bomzh') && U.overlap(this.box, pl.box)) { this.bodyCool = 0.8; pl.hurt(4, this.x, wd); }
   }
   meleeHit(pl, wd, reach, dmg) {
     const hb = { x: this.x + (this.facing > 0 ? 4 : -reach), y: this.y - 60, w: reach, h: 36 };
@@ -475,13 +481,13 @@ L2.Run = class {
     for (const cl of wd.clouds) {
       cl.t += dt;
       if (Math.random() < dt * 14) FX.spawn({ x: cl.x + U.rand(-cl.r, cl.r) * 0.7, y: cl.y + U.rand(-20, 20), vx: U.rand(-10, 10), vy: -8, grav: -4, life: 1.2, color: U.choice(['#8ab83a', '#a8c848', '#6a9a2a']), size: 5, type: 'puff' });
-      if (cl.t < cl.life && Math.abs(pl.x - cl.x) < cl.r && Math.abs(pl.y - 30 - cl.y) < 40) { cl.dmgT = (cl.dmgT || 0) - dt; if (cl.dmgT <= 0) { cl.dmgT = 0.5; if (pl.hurt(4, cl.x, wd) && Math.random() < 0.5) G.say(pl, U.choice(['Фу-у-у!', 'Чем тут воняет?!', 'Глаза режет!']), 1.2); } }
+      if (cl.t < cl.life && Math.abs(pl.x - cl.x) < cl.r && Math.abs(pl.y - 30 - cl.y) < 40) { cl.dmgT = (cl.dmgT || 0) - dt; if (cl.dmgT <= 0) { cl.dmgT = 0.5; if (pl.hurt(6, cl.x, wd) && Math.random() < 0.5) G.say(pl, U.choice(['Фу-у-у!', 'Чем тут воняет?!', 'Глаза режет!']), 1.2); } }
     }
     wd.clouds = wd.clouds.filter(cl => cl.t < cl.life);
     this.matiz.update(dt, wd, pl, wd.cam.x);
     for (const s of this.spies) s.update(dt, pl);
     // чекпоинты
-    for (const cp of wd.checkpoints) if (!cp.active && Math.abs(pl.x - cp.x) < 24 && !pl.dead) { cp.active = true; this.respawn = { x: cp.x }; Sound.play('checkpoint'); pl.heal(25); FX.popText(cp.x, L2.GROUND - 70, 'КОНТРОЛЬНАЯ ТОЧКА', '#8cf08c'); }
+    for (const cp of wd.checkpoints) if (!cp.active && Math.abs(pl.x - cp.x) < 24 && !pl.dead) { cp.active = true; this.respawn = { x: cp.x }; Sound.play('checkpoint'); pl.heal(15); FX.popText(cp.x, L2.GROUND - 70, 'КОНТРОЛЬНАЯ ТОЧКА', '#8cf08c'); }
     // подсказки
     let hint = null;
     for (const h of this.hints) if (!h.done && pl.x > h.x && pl.x < h.x + h.w) { hint = h; h.shown += dt; if (h.shown > 6) h.done = true; }

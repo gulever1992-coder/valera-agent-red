@@ -436,7 +436,7 @@ L1.Climb = class {
         wd.checkpoints.forEach(c => { if (c.y >= cp.y) c.active = true; });
         cp.active = true; this.respawn = { x: cp.x, y: cp.y };
         Sound.play('checkpoint'); FX.popText(cp.x, cp.y - 60, 'КОНТРОЛЬНАЯ ТОЧКА', '#8cf08c');
-        pl.heal(25);
+        pl.heal(15);
         if (Math.random() < 0.7) G.say(pl, U.choice(['Перекур!', 'Полпути... наверное.', 'Ух, высоко!']), 1.6);
       }
     }
@@ -457,7 +457,7 @@ L1.Climb = class {
     if (!pl.dead && pl.y < D.floorY - 180 && !nearCP) {
       this.spawnT -= dt;
       if (this.spawnT <= 0) {
-        this.spawnT = inBottle ? U.rand(0.7, 1.1) : U.lerp(3.0, 1.35, prog) * U.rand(0.8, 1.2);
+        this.spawnT = inBottle ? U.rand(0.55, 0.9) : U.lerp(2.1, 0.95, prog) * U.rand(0.8, 1.2);
         const x = U.clamp(Math.random() < 0.7 ? pl.x + U.rand(-140, 140) : U.rand(30, 610), 24, 616);
         let kind;
         if (inBottle) kind = 'bottle';
