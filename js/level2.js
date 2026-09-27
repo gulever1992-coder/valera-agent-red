@@ -531,7 +531,7 @@ L2.Run = class {
     for (const l of wd.ladders) Art.ladder(c, { x: l.x - cx, y: l.y, w: l.w, h: l.h });
     for (const p of this.props) if (!p.def.ladder && p.x - cx > -200 && p.x - cx < W + 200) Spr.draw(c, 'street', p.def.i, p.x - cx, p.y, 1);
     for (const cp of wd.checkpoints) Art.checkpoint(c, cp.x - cx, L2.GROUND, cp.active, wd.t);
-    for (const cl of wd.clouds) { const k = 1 - cl.t / cl.life; c.fillStyle = `rgba(130,180,50,${0.25 * k})`; c.beginPath(); c.ellipse(cl.x - cx, cl.y, cl.r, 30, 0, 0, Math.PI * 2); c.fill(); }
+    for (const cl of wd.clouds) L3.drawCloud(c, cl, cx, 0);
     for (const p of wd.pickups) p.draw(c, cx, 0);
     for (const e of wd.enemies) e.draw(c, cx, 0);
     this.player.draw(c, cx, 0);

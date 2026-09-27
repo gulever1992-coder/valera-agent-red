@@ -27,6 +27,33 @@ def key_green(im):
         edge = op2 & ~edge & ~(np.roll(op2, 1, 0) & np.roll(op2, -1, 0) & np.roll(op2, 1, 1) & np.roll(op2, -1, 1)) | edge
     return a.astype(np.uint8)
 
+def key_green_strict(im):
+    # только чистый хромакей, связанный с краями (+ явные дырки) — арбузная каска не выедается
+    a = np.array(im.convert('RGBA')).astype(np.int32)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    cand = (g > 185) & (r < 110) & (b < 110) & (g - np.maximum(r, b) > 110)
+    lab, n = ndimage.label(cand)
+    edge_ids = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
+    sizes = ndimage.sum(np.ones(lab.shape), lab, range(1, n + 1))
+    big = {i + 1 for i, sz in enumerate(sizes) if sz > 400}
+    bg = np.isin(lab, list(edge_ids | big))
+    a[..., 3] = np.where(bg, 0, 255)
+    # кайма: пиксели рядом с фоном с сильным зелёным перекосом тоже убираем/гасим
+    near = ndimage.binary_dilation(bg, iterations=2) & ~bg
+    spill = near & (g - np.maximum(r, b) > 70) & (g > 150)
+    a[..., 3] = np.where(spill, 0, a[..., 3])
+    near = ndimage.binary_dilation(a[..., 3] == 0, iterations=1) & (a[..., 3] > 0)
+    m = near & (a[..., 1] > np.maximum(a[..., 0], a[..., 2]) + 20)
+    a[..., 1] = np.where(m, np.maximum(a[..., 0], a[..., 2]) + 20, a[..., 1])
+    return a.astype(np.uint8)
+
+def key_magenta(im):
+    a = np.array(im.convert('RGBA')).astype(np.int32)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    bg = (r > 170) & (b > 170) & (g < 110)
+    a[..., 3] = np.where(bg, 0, 255)
+    return a.astype(np.uint8)
+
 def key_black(im):
     a = np.array(im.convert('RGBA')).astype(np.int32)
     dark = a[..., :3].max(axis=2) < 22
@@ -118,10 +145,10 @@ def only_largest(f):
     ys = np.where(f[..., 3].any(axis=1))[0]; xs = np.where(f[..., 3].any(axis=0))[0]
     return f[ys[0]:ys[-1] + 1, xs[0]:xs[-1] + 1]
 
-def build_sheet(name, src, n, target, ref=0, keyer='green', grid=None, anchors=None, pad=2, strip=()):
+def build_sheet(name, src, n, target, ref=0, keyer='green', grid=None, anchors=None, pad=2, strip=(), dil=4):
     im = Image.open(os.path.join(SRC, src))
-    a = key_green(im) if keyer == 'green' else key_black(im) if keyer == 'black' else np.array(im.convert('RGBA'))
-    fr = frames_grid(a, *grid) if grid else frames_row(a, n)
+    a = key_green(im) if keyer == 'green' else key_green_strict(im) if keyer == 'strict' else key_black(im) if keyer == 'black' else key_magenta(im) if keyer == 'magenta' else np.array(im.convert('RGBA'))
+    fr = frames_grid(a, *grid) if grid else segment(a, n, dil=dil)
     fr = [only_largest(f) if i in strip else f for i, f in enumerate(fr)]
     if isinstance(target, (int, float)):
         k = target * SCALE / fr[ref].shape[0]
@@ -292,3 +319,38 @@ S['vb_story3'] = build_sheet('vb_story3', 'valera_story3.png', 6, 158, ref=1)
 with open(os.path.join(ROOT, 'js', 'sprites_data.js'), 'w', encoding='utf-8') as fp:
     fp.write('// автоматически создано tools/build_assets.py\nwindow.SPRITES = ' + json.dumps(S) + ';\nwindow.BGS = ' + json.dumps(B) + ';\nwindow.BUILDINGS = ' + json.dumps(B2) + ';\n')
 print('готово 2')
+
+# ================= уровень 3: квартира-глюк =================
+S['v3_run'] = build_sheet('v3_run', 'v3_run.png', 8, 84, keyer='strict')
+S['v3_act'] = build_sheet('v3_act', 'v3_act.png', 8, 86, ref=0, anchors=['feet'] * 6 + ['center', 'feet'], keyer='strict')
+S['v3_melee'] = build_sheet('v3_melee', 'v3_melee.png', 6, 86, ref=1, dil=1, keyer='strict')
+S['v3_up'] = build_sheet('v3_up', 'v3_up.png', 6, 81, ref=1, keyer='pre', strip=range(6))
+S['moth'] = build_sheet('moth', 'moth.png', 6, [-66] * 5 + [-60], keyer='magenta', anchors=['center'] * 6)
+S['boss4'] = build_sheet('boss4', 'boss2_body.png', 4, 250, ref=0, keyer='magenta')
+S['parts4'] = build_sheet('parts4', 'boss2_parts.png', 8, [-150, -150, -150, -120, -150, -70, -50, -60], keyer='magenta', grid=(2, 4), anchors=['center'] * 8)
+S['roach'] = build_sheet('roach', 'roach.png', 7, 84, ref=0, anchors=['feet'] * 6 + ['center'])
+S['bedbug'] = build_sheet('bedbug', 'bedbug.png', 7, 70, ref=0, anchors=['feet'] * 6 + ['center'])
+S['fly'] = build_sheet('fly', 'fly.png', 6, [-64, -64, -64, -64, -60, -64], anchors=['center'] * 6)
+S['spider'] = build_sheet('spider', 'spider_misc.png', 7, [-72, -72, -72, -72, -30, -30, -44], anchors=['center'] * 7)
+S['items3'] = build_sheet('items3', 'items3.png', 12, [-16, 18, 22, 16, -24, -22, 16, -22, 20, -14, 12, -16], grid=(3, 4), anchors=['center'] * 12)
+S['f_corr'] = build_sheet('f_corr', 'furn_corridor.png', 6, [82, 40, 96, 48, -54, 104], grid=(2, 3))
+S['f_kit'] = build_sheet('f_kit', 'furn_kitchen.png', 6, [76, 44, 40, 44, 40, -72], grid=(2, 3))
+S['f_liv'] = build_sheet('f_liv', 'furn_living.png', 6, [44, 60, 102, 46, 24, 78], grid=(2, 3))
+S['f_bed'] = build_sheet('f_bed', 'furn_bed_balcony.png', 8, [46, 48, 96, 62, 66, 88, 72, 44], grid=(2, 4))
+S['boss3'] = build_sheet('boss3', 'boss_body.png', 5, 330, ref=0, keyer='pre')
+S['arms3'] = build_sheet('arms3', 'boss_arms.png', 5, [-230, -240, -210, -230, -190], keyer='pre', anchors=['center'] * 5)
+S['acid'] = build_sheet('acid', 'acid_puddle.png', 6, [-72] * 6, keyer='pre')
+portrait('v3_act.png', 8, 7, (0.08, 0.0, 0.92, 0.46), 'p_valera3')
+S['gas'] = build_sheet('gas', 'gas_clouds.png', 12, [-48] * 12, keyer='magenta', grid=(3, 4), anchors=['center'] * 12)
+B3 = {}
+for n, ff in [('wall_corridor', 0.783), ('wall_kitchen', 0.80), ('wall_living', 0.86), ('wall_bedroom', 0.805), ('wall_balcony', 0.83)]:
+    im = Image.open(os.path.join(SRC, n + '.png')).convert('RGB')
+    im.save(os.path.join(OUT, n + '.jpg'), quality=86, optimize=True)
+    B3[n] = {'img': 'assets/' + n + '.jpg', 'w': im.width, 'h': im.height, 'floor': ff}
+for n in ['boss2_bg', 'boss_room', 'boss_read', 'comic1', 'comic2', 'comic3', 'comic4', 'comic5', 'comic6', 'comic7']:
+    B[n] = bg(n + '.png', n, (1280, 720))
+im = Image.open(os.path.join(SRC, 'boss_read.png')).convert('RGB'); w, h = im.size
+im.crop((int(w * 0.56), int(h * 0.12), int(w * 0.78), int(h * 0.12) + int(w * 0.22))).resize((128, 128), Image.LANCZOS).save(os.path.join(SPR, 'p_roach.png'))
+with open(os.path.join(ROOT, 'js', 'sprites_data.js'), 'w', encoding='utf-8') as fp:
+    fp.write('// автоматически создано tools/build_assets.py\nwindow.SPRITES = ' + json.dumps(S) + ';\nwindow.BGS = ' + json.dumps(B) + ';\nwindow.BUILDINGS = ' + json.dumps(B2) + ';\nwindow.WALLS3 = ' + json.dumps(B3) + ';\n')
+print('готово 3')

@@ -225,6 +225,8 @@ Game.Player = class {
     this.x = U.clamp(this.x, 10, world.w - 10);
     this.moveY(dt, world);
 
+    if (this.customAttack) this.attackUpdate(dt, world, ctl, I);
+    else {
     // ---- удар ----
     if (ctl && I.pressed('punch') && (!this.atk || this.atk.t > this.atk.dur * 0.7) && this.throwT <= 0) {
       const idx = this.comboT > 0 || this.atk ? (this.combo + 1) % 3 : 0;
@@ -272,6 +274,7 @@ Game.Player = class {
       }
     }
 
+    }
     // ---- idle-кривляния ----
     if (this.onGround && !anyInput && !this.atk && this.throwT <= 0 && Math.abs(this.vx) < 5) {
       this.idleT += dt;
@@ -369,7 +372,7 @@ Game.Player = class {
   }
   draw(c, camX, camY) {
     if (this.inv > 0 && !this.dead && ((this.inv * 16) | 0) % 2 === 0) return;
-    Spr.drawAnim(c, 'valera', this.anim, this.animT, this.x - camX, this.y - camY, this.facing);
+    Spr.drawAnim(c, this.animSet || 'valera', this.anim, this.animT, this.x - camX, this.y - camY, this.facing, this.drawOpts ? this.drawOpts() : {});
   }
 };
 
@@ -612,7 +615,7 @@ Game.Pickup = class {
 Game.drawHUD = function (c, pl, world) {
   // портрет
   R(c, 5, 5, 34, 34, '#0a0a0c'); R(c, 6, 6, 32, 32, '#c8601a'); R(c, 7, 7, 30, 30, '#3a2414');
-  const pv = G.portraits && G.portraits.valera;
+  const pv = G.portraits && G.portraits[pl.portraitKey || 'valera'];
   if (pv) { c.save(); c.beginPath(); c.rect(7, 7, 30, 30); c.clip(); c.drawImage(pv, 4, 5, 36, 36); c.restore(); }
   if (pl.hp / pl.maxHp < 0.3 && (G.t * 4 | 0) % 2) R(c, 7, 7, 30, 30, 'rgba(220,40,40,0.35)');
   // здоровье
@@ -623,6 +626,7 @@ Game.drawHUD = function (c, pl, world) {
   R(c, 44, 10, Math.round(120 * k), 2, 'rgba(255,255,255,0.35)');
   for (let i = 1; i < 10; i++) R(c, 44 + i * 12, 10, 1, 8, 'rgba(0,0,0,0.4)');
   G.text('ВАЛЕРА', 42, 23, { size: 8, color: '#ffb070' });
+  if (!pl.ammo3) {
   // оружие
   R(c, 172, 6, 60, 22, '#111'); R(c, 173, 7, 58, 20, '#23262b');
   const wk = pl.weapon === 'nuts' ? 'nut' : pl.weapon === 'wrench' ? 'wrench' : pl.weapon === 'bottles' ? 'bottle' : 'brick';
@@ -632,6 +636,7 @@ Game.drawHUD = function (c, pl, world) {
     R(c, 236, 6, 64, 22, '#111'); R(c, 237, 7, 62, 20, '#1c2a1c');
     Art.item(c, 'bottle', 248, 17, -0.6);
     G.text('БЬЁТ ' + pl.bottleHits, 258, 13, { size: 8, color: '#8cf08c' });
+  }
   }
   // очки
   G.text('ОЧКИ ' + String(world.score).padStart(6, '0'), W - 8, 8, { size: 8, align: 'right', color: '#ffd84a' });

@@ -133,7 +133,7 @@ G.bg = {};
 Spr.loadBGs = async function () {
   const names = { aerial: 'assets/bg_aerial.jpg', hall: 'assets/bg_hall.jpg', arena: 'assets/bg_arena.jpg', climbBottom: 'assets/bg_climb_bottom.jpg', climbTop: 'assets/bg_climb_top.jpg', shop: 'assets/bg_shop.jpg', l1floor: 'assets/l1_floor.jpg', l1cab: 'assets/l1_cab.png', sky: 'assets/bg_sky.jpg', fgCars: 'assets/fg_cars.png' };
   await Promise.all(Object.entries(names).map(async ([k, src]) => { G.bg[k] = await G.loadImage(src); }));
-  const ps = { valera: 'assets/spr/p_valera.png', natasha: 'assets/spr/p_natasha.png', commando: 'assets/spr/p_cmd.png', commando2: 'assets/spr/p_cmd2.png', kesha: 'assets/spr/p_kesha.png', seller: 'assets/spr/p_seller.png' };
+  const ps = { valera: 'assets/spr/p_valera.png', natasha: 'assets/spr/p_natasha.png', commando: 'assets/spr/p_cmd.png', commando2: 'assets/spr/p_cmd2.png', kesha: 'assets/spr/p_kesha.png', valera3: 'assets/spr/p_valera3.png', seller: 'assets/spr/p_seller.png' };
   G.portraits = {};
   await Promise.all(Object.entries(ps).map(async ([k, src]) => { G.portraits[k] = await G.loadImage(src); }));
 };

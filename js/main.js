@@ -64,6 +64,37 @@ Music.songs = {
       { drum: true, vol: 0.14, notes: 'k . h . s . h k . k h . s . h h' },
     ],
   },
+  epic: {
+    bpm: 132, loop: true, tracks: [
+      { wave: 'square', vol: 0.075, notes: bar(`
+        D5 - - - A4 - D5 - F5 - E5 - D5 - C5 -   D5 - - - - - A4 - F4 - G4 - A4 - - -
+        A#4 - - - A#4 - C5 - D5 - C5 - A#4 - A4 -   A4 - - - G4 - F4 - E4 - F4 - G4 - A4 -
+        D5 - - - F5 - A5 - G5 - F5 - E5 - D5 -   C5 - - - D5 - E5 - F5 - - - E5 - D5 -
+        A#4 - - - D5 - F5 - A5 - G5 - F5 - D5 -   E5 - - - C#5 - - - A4 - - - - - - -`) },
+      { wave: 'sawtooth', vol: 0.05, notes: bar(`
+        D4 - - - - - - - F4 - - - - - - -   D4 - - - - - - - A3 - - - - - - -
+        A#3 - - - - - - - D4 - - - - - - -   A3 - - - - - - - C#4 - - - - - - -
+        D4 - - - - - - - F4 - - - - - - -   C4 - - - - - - - F4 - - - - - - -
+        A#3 - - - - - - - D4 - - - - - - -   A3 - - - - - - - E4 - - - - - - -`) },
+      { wave: 'triangle', vol: 0.2, notes: bar(`
+        D2 . D3 . D2 . D3 . D2 . D3 . D2 . D3 .   D2 . D3 . D2 . D3 . D2 . D3 . D2 . D3 .
+        A#1 . A#2 . A#1 . A#2 . A#1 . A#2 . A#1 . A#2 .   A1 . A2 . A1 . A2 . A1 . A2 . A1 . A2 .
+        D2 . D3 . D2 . D3 . D2 . D3 . D2 . D3 .   C2 . C3 . C2 . C3 . C2 . C3 . C2 . C3 .
+        A#1 . A#2 . A#1 . A#2 . A#1 . A#2 . A#1 . A#2 .   A1 . A2 . A1 . A2 . A1 . A2 . C#2 . E2 .`) },
+      { drum: true, vol: 0.15, notes: 'k . h . s . h k k . h . s . s s' },
+    ],
+  },
+  epicBoss: {
+    bpm: 164, loop: true, tracks: [
+      { wave: 'square', vol: 0.075, notes: bar(`
+        E5 - E5 - G5 - E5 - B5 - - - A5 - G5 -   F#5 - - - D5 - F#5 - A5 - - - G5 - F#5 -
+        E5 - E5 - G5 - B5 - E6 - - - D6 - B5 -   C6 - - - B5 - A5 - G5 - F#5 - D#5 - - -`) },
+      { wave: 'sawtooth', vol: 0.06, notes: bar(`
+        E2 E2 E3 E2 E2 E3 E2 E3 E2 E2 E3 E2 E2 E3 E2 E3   D2 D2 D3 D2 D2 D3 D2 D3 D2 D2 D3 D2 D2 D3 D2 D3
+        E2 E2 E3 E2 E2 E3 E2 E3 E2 E2 E3 E2 E2 E3 E2 E3   C2 C2 C3 C2 C2 C3 C2 C3 B1 B1 B2 B1 B1 B2 D#2 F#2`) },
+      { drum: true, vol: 0.16, notes: 'k . h k s . h . k k h k s . s s' },
+    ],
+  },
   sting: {
     bpm: 120, loop: false, tracks: [
       { wave: 'sawtooth', vol: 0.08, notes: 'A2 - - - - - - - A#2 - - - - - - - A2 - - - - - - - - - - - - - - -' },
@@ -109,6 +140,12 @@ G.onLevelComplete = function (level) {
   setState('results');
 };
 
+function startLevel3(opts = {}) {
+  App.level = new L3.Level();
+  setState('play');
+  App.paused = false;
+  App.level.start(opts);
+}
 function startLevel2(opts = {}) {
   App.level = new L2.Level();
   setState('play');
@@ -124,7 +161,8 @@ const DIFFS = [
 const LEVELS = [
   { id: 1, name: 'СЕВМОЛОТ', sub: 'День первый', start: () => startLevel1() },
   { id: 2, name: 'ДОРОГА ДОМОЙ', sub: 'Вечерний Выборгск', start: () => startLevel2() },
-  { id: 3, name: '???', sub: 'Скоро', start: null },
+  { id: 3, name: 'ГЛЮКИ', sub: 'Квартира Валеры', start: () => startLevel3() },
+  { id: 4, name: '???', sub: 'Скоро', start: null },
 ];
 function progress() { try { return +(localStorage.getItem('valera_progress') || 1); } catch (e) { return 1; } }
 function applyDiff(i) {
@@ -217,7 +255,7 @@ function update(dt) {
     case 'results': {
       const r = App.results;
       r.shown += dt;
-      if (r.shown > 1 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch'))) { Sound.play('confirm'); if (r.id === 1) startLevel2(); else { setState('soon'); Music.play('title'); } }
+      if (r.shown > 1 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch'))) { Sound.play('confirm'); if (r.id === 1) startLevel2(); else if (r.id === 2) startLevel3(); else { setState('soon'); Music.play('title'); } }
       break;
     }
     case 'soon':
@@ -286,14 +324,20 @@ function drawLevels(c) {
   c.fillStyle = 'rgba(8,10,14,0.72)'; c.fillRect(0, 0, W, H);
   G.text('ВЫБОР УРОВНЯ', W / 2, 16, { size: 16, align: 'center', color: '#f06a14', outline: true });
   const open = progress();
-  LEVELS.forEach((L, i) => {
-    const cw = 194, x = 16 + i * (cw + 11), y = 50, ch = 260, sel = App.lvlSel === i, locked = !L.start || L.id > open;
+  // видно три карточки, остальные — прокруткой
+  const first = U.clamp(App.lvlSel - 1, 0, Math.max(0, LEVELS.length - 3));
+  if (first > 0 && (G.t * 3 | 0) % 2) G.text('<', 6, 170, { size: 16, color: '#ffd84a', outline: true });
+  if (first + 3 < LEVELS.length && (G.t * 3 | 0) % 2) G.text('>', W - 18, 170, { size: 16, color: '#ffd84a', outline: true });
+  LEVELS.slice(first, first + 3).forEach((L, j) => {
+    const i = first + j;
+    const cw = 194, x = 16 + j * (cw + 11), y = 50, ch = 260, sel = App.lvlSel === i, locked = !L.start || L.id > open;
     Art.R(c, x - 2, y - 2, cw + 4, ch + 4, sel ? (locked ? '#8a2a2a' : '#ffd84a') : '#2a2e34');
     Art.R(c, x, y, cw, ch, 'rgba(20,22,26,0.95)');
     const px = x + 6, py = y + 6, pw = cw - 12, ph = 150;
     c.save(); c.beginPath(); c.rect(px, py, pw, ph); c.clip();
     if (L.id === 1 && G.bg.hall) { c.drawImage(G.bg.hall, 200, 0, 880, 720, px, py, pw, ph); Spr.draw(c, 'sub', 0, px + pw / 2 + 10, py + 120, 1, { scale: 0.35 }); }
     else if (L.id === 2 && L2.img.sky) { c.drawImage(L2.img.sky, 0, 0, 900, 720, px, py, pw * 1.3, ph * 1.3); if (L2.img.b_shop) c.drawImage(L2.img.b_shop, px + 10, py + 10, pw - 20, (pw - 20) * 0.99); }
+    else if (L.id === 3 && L3.img.comic4) c.drawImage(L3.img.comic4, 200, 0, 880, 720, px, py, pw, ph);
     else { c.fillStyle = '#0c0d10'; c.fillRect(px, py, pw, ph); G.text('?', px + pw / 2, py + 55, { align: 'center', size: 32, color: '#3a3f45' }); }
     if (locked) {
       c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(px, py, pw, ph);
@@ -341,7 +385,7 @@ function drawResults(c) {
   Art.R(c, 0, 0, W, H, '#14171c');
   if (G.img.street) { c.globalAlpha = 0.18; c.drawImage(G.img.street, 0, 0, W, H); c.globalAlpha = 1; }
   G.text('УРОВЕНЬ ' + r.id + ' ПРОЙДЕН!', W / 2, 18, { size: 16, align: 'center', color: '#ffd84a', outline: true });
-  G.text(r.id === 1 ? '«Севмолот. День первый»' : '«Дорога домой»', W / 2, 42, { align: 'center', color: '#c8d0d8' });
+  G.text(['', '«Севмолот. День первый»', '«Дорога домой»', '«Глюки»'][r.id] || '', W / 2, 42, { align: 'center', color: '#c8d0d8' });
   const rows = [
     ['Время', fmtTime(st.time)],
     ['Врагов повержено', st.kills],
@@ -374,9 +418,9 @@ function drawResults(c) {
 
 function drawSoon(c) {
   Art.R(c, 0, 0, W, H, '#0e1014');
-  G.text('УРОВЕНЬ 3', W / 2, 90, { size: 24, align: 'center', color: '#e03030', outline: true });
+  G.text('УРОВЕНЬ 4', W / 2, 90, { size: 24, align: 'center', color: '#e03030', outline: true });
   G.text('СКОРО', W / 2, 126, { size: 16, align: 'center', color: '#f4f0e4', outline: true });
-  G.text('Что было в дротике? Агент RED засыпает...', W / 2, 180, { align: 'center', color: '#c8d0d8' });
+  G.text('Клуб «Дикие кошки». Вова ждёт спасения...', W / 2, 180, { align: 'center', color: '#c8d0d8' });
   G.text('(жду описание следующего уровня)', W / 2, 200, { align: 'center', color: '#8a929a' });
   if ((G.t * 2 | 0) % 2) G.text('ENTER — в меню', W / 2, H - 28, { align: 'center' });
 }
@@ -451,7 +495,7 @@ function frame(now) {
 // ---------- загрузка ----------
 (async function boot() {
   requestAnimationFrame(frame);
-  const [head, street] = await Promise.all([G.loadImage('assets/valera_head.png'), G.loadImage('assets/street.jpg'), Spr.load(), Spr.loadBGs(), L2.load()]);
+  const [head, street] = await Promise.all([G.loadImage('assets/valera_head.png'), G.loadImage('assets/street.jpg'), Spr.load(), Spr.loadBGs(), L2.load(), L3.load()]);
   G.img.valeraHeadSrc = head; G.img.street = street;
   try { await Promise.race([document.fonts.load('8px "Press Start 2P"'), new Promise(r => setTimeout(r, 2500))]); } catch (e) {}
   G.img.valeraHud = G.downscale(head, 52, 54);
@@ -460,7 +504,9 @@ function frame(now) {
   titleActor.a.setAnim('walk');
   const q = new URLSearchParams(location.search);
   if (q.has('sprites')) { App.spriteScale = +(q.get('scale') || 0.5); setState('sprites'); return; }
-  if (q.has('l2boss')) startLevel2({ boss: true });
+  if (q.has('l3boss')) startLevel3({ boss: true });
+  else if (q.has('l3')) startLevel3();
+  else if (q.has('l2boss')) startLevel2({ boss: true });
   else if (q.has('l2')) startLevel2();
   else if (q.has('boss')) { Sound.unlock(); startLevel1({ boss: true }); }
   else if (q.has('climb')) { startLevel1({ skip: true }); }

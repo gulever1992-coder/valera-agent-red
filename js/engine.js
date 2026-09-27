@@ -1,7 +1,7 @@
 'use strict';
 // ============ ДВИЖОК: экран, ввод, звук, утилиты, частицы, текст ============
 const W = 640, H = 360;
-const G = { W, H, t: 0, dt: 0, debug: false, VER: '9' };
+const G = { W, H, t: 0, dt: 0, debug: false, VER: '15' };
 window.G = G;
 
 const canvas = document.getElementById('game');
@@ -217,6 +217,7 @@ const Sound = {
       case 'glassHit': s.noise(0.12, { freq: 1200, slide: 200, vol: 0.35 }); s.tone(2600, 0.08, { type: 'triangle', vol: 0.1 }); break;
       case 'bell': s.tone(1320, 0.4, { type: 'triangle', vol: 0.15 }); s.tone(1760, 0.5, { type: 'triangle', vol: 0.12, delay: 0.12 }); break;
       case 'door': s.noise(0.3, { freq: 500, vol: 0.3 }); s.tone(90, 0.3, { type: 'square', vol: 0.12, slide: 60 }); break;
+      case 'splash': s.noise(0.8, { freq: 1400, slide: 200, vol: 0.35 }); s.tone(300, 0.4, { type: 'sine', vol: 0.15, slide: 90 }); break;
       case 'sting': [[220, 0], [233, 0.25], [220, 0.5]].forEach(([f, d]) => { s.tone(f, 0.5, { type: 'sawtooth', vol: 0.15, delay: d }); s.tone(f / 2, 0.6, { type: 'square', vol: 0.12, delay: d }); }); break;
     }
   },
@@ -337,7 +338,15 @@ const FX = {
       c.fillStyle = p.color;
       if (p.type === 'puff') {
         const s = p.size * (1 + p.t * 3);
-        c.beginPath(); c.arc(p.x, p.y, s, 0, Math.PI * 2); c.fill();
+        if (G.Spr && G.Spr.sheets.gas) {
+          if (p.gasRow == null) {
+            const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i.exec(p.color) || [0, '88', '88', '88'];
+            const r = parseInt(m[1], 16), g = parseInt(m[2], 16), b = parseInt(m[3], 16);
+            p.gasRow = g > r + 25 && g > b + 15 ? 0 : (r + g + b) / 3 > 190 ? 2 : 1;
+            p.gasFr = Math.floor(Math.random() * 4); p.rot = Math.random() * 0.6 - 0.3;
+          }
+          G.Spr.drawC(c, 'gas', p.gasRow * 4 + p.gasFr, p.x, p.y, p.rot, s * 2.6 / 48);
+        } else { c.beginPath(); c.arc(p.x, p.y, s, 0, Math.PI * 2); c.fill(); }
       } else if (p.type === 'shard') {
         c.save(); c.translate(p.x, p.y); c.rotate(p.rot); c.fillRect(-p.size, -1, p.size * 2, 2); c.restore();
       } else if (p.type === 'text') {
