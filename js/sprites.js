@@ -90,7 +90,7 @@ Spr.ANIM = {
     aim: A('kesha_b', [0]), shoot: A('kesha_b', [1]), run: A('kesha_b', [2]), ko: A('kesha_b', [3]), sit: A('kesha_b', [4]), thumbs: A('kesha_b', [5]), talk: A('kesha_b', [6]),
   },
   valeraBig: {
-    stand: A('vb_story3', [3]), walk: A('vb_run', [0, 1, 2, 3, 4, 5, 6, 7], 9), tiredStand: A('vb_story3', [3]), shoutFist: A('vb_story3', [2]), beerHappy: A('vb_story3', [1]),
+    stand: A('vb_story3', [3]), walk: A('vb_run', [0, 1, 2, 3, 4, 5, 6, 7], 9), tiredStand: A('vb_story3', [3]), dazed: A('vb_story3', [4]), shoutFist: A('vb_story3', [2]), beerHappy: A('vb_story3', [1]),
   },
   spy: { peek: A('cmd_hide', [0]), bush: A('cmd_hide', [1]), prone: A('cmd_hide', [2]), dart: A('cmd_hide', [3]), rope: A('cmd_hide', [4]), run: A('cmd_hide', [5]) },
 };

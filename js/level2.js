@@ -553,7 +553,7 @@ L2.Run = class {
 const KESHA_LINES = ['Ты чё, в натуре?!', 'Я чемпион района!', 'Пьяный мастер, ё!', 'Ща как дам!', 'Чистофф — сила!', 'Ты кого рыжим назвал?!'];
 L2.Kesha = class {
   constructor(x) {
-    this.x = x; this.y = L2.GROUND; this.facing = -1; this.maxHp = 66; this.hp = 66; this.state = 'idle'; this.st = 0; this.t = 0;
+    this.x = x; this.y = L2.GROUND; this.facing = -1; this.maxHp = Math.round(66 * (G.BOSS_MULT || 1)); this.hp = this.maxHp; this.state = 'idle'; this.st = 0; this.t = 0;
     this.flash = 0; this.scale = 1; this.phase = 1; this.anim = 'master'; this.animT = 0; this.vx = 0; this.vy = 0; this.inv = 0;
     this.cool = 1; this.sniffT = 7; this.shots = 0; this.headH = 96; this.voice = 210; this.quip = 4; this.combo = 0; this.lastHit = -9;
   }

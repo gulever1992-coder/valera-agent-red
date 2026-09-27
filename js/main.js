@@ -115,10 +115,28 @@ function startLevel2(opts = {}) {
   App.paused = false;
   App.level.start(opts);
 }
+// ---------- сложность и выбор уровня ----------
+const DIFFS = [
+  { name: 'ВАЛЕРА ПОСЛЕ ОТПУСКА', tag: 'ЛЁГКИЙ', color: '#8cf08c', anim: 'beerHappy', dmg: 1.0, heal: 1.5, boss: 0.75, text: ['Отдохнул, выспался.', 'Враги бьют слабее,', 'еда лечит больше.'] },
+  { name: 'ВАЛЕРА ПОСЛЕ СМЕНЫ', tag: 'НОРМАЛЬНЫЙ', color: '#ffd84a', anim: 'tiredStand', dmg: 1.5, heal: 1.0, boss: 1.0, text: ['Устал, но держится.', 'Честная драка', 'как задумано.'] },
+  { name: 'ВАЛЕРА С ПОХМЕЛЬЯ', tag: 'ХАРДКОР', color: '#ff5a3a', anim: 'dazed', dmg: 2.2, heal: 0.7, boss: 1.3, text: ['Голова трещит.', 'Бьют очень больно,', 'боссы крепче.'] },
+];
+const LEVELS = [
+  { id: 1, name: 'СЕВМОЛОТ', sub: 'День первый', start: () => startLevel1() },
+  { id: 2, name: 'ДОРОГА ДОМОЙ', sub: 'Вечерний Выборгск', start: () => startLevel2() },
+  { id: 3, name: '???', sub: 'Скоро', start: null },
+];
+function progress() { try { return +(localStorage.getItem('valera_progress') || 1); } catch (e) { return 1; } }
+function applyDiff(i) {
+  const d = DIFFS[i];
+  G.DMG_MULT = d.dmg; G.HEAL_MULT = d.heal; G.BOSS_MULT = d.boss; G.DIFF = i;
+  try { localStorage.setItem('valera_diff', String(i)); } catch (e) {}
+}
+try { const sd = localStorage.getItem('valera_diff'); if (sd != null) applyDiff(+sd); else applyDiff(1); } catch (e) { applyDiff(1); }
+function chooseDiff(levelIdx) { App.pendingLevel = levelIdx; App.diffSel = G.DIFF != null ? G.DIFF : 1; setState('difficulty'); }
 function menuItems() {
-  let prog = 1; try { prog = +(localStorage.getItem('valera_progress') || 1); } catch (e) {}
-  const it = [['НАЧАТЬ ИГРУ', () => startLevel1()]];
-  if (prog >= 2) it.push(['УРОВЕНЬ 2: ДОРОГА ДОМОЙ', () => startLevel2()]);
+  const it = [['НАЧАТЬ ИГРУ', () => chooseDiff(0)]];
+  it.push(['ВЫБОР УРОВНЯ', () => { App.lvlSel = Math.min(progress(), 2) - 1; setState('levels'); }]);
   it.push(['УПРАВЛЕНИЕ', () => setState('controls')]);
   it.push(['ЗВУК: ' + (Sound.muted ? 'ВЫКЛ' : 'ВКЛ'), () => Sound.toggleMute()]);
   return it;
@@ -156,6 +174,26 @@ function update(dt) {
         if (a.anim === 'walk') { a.x += a.facing * 50 * dt; if (a.x > 600 || a.x < 40) { a.setAnim(U.choice(['stomp', 'scratch', 'yawn', 'belly'])); a.facing *= -1; a.idleT = 0; } }
         else { a.idleT = (a.idleT || 0) + dt; if (a.idleT > 3) a.setAnim('walk'); }
       }
+      break;
+    }
+    case 'difficulty': {
+      if (I.pressed('left')) { App.diffSel = (App.diffSel + 2) % 3; Sound.play('select'); }
+      if (I.pressed('right')) { App.diffSel = (App.diffSel + 1) % 3; Sound.play('select'); }
+      if (App.t > 0.2 && I.pressed('pause')) { Sound.play('select'); setState('title'); }
+      if (App.t > 0.2 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch'))) { Sound.play('confirm'); applyDiff(App.diffSel); LEVELS[App.pendingLevel].start(); }
+      break;
+    }
+    case 'levels': {
+      const open = progress();
+      if (I.pressed('left')) { App.lvlSel = (App.lvlSel + LEVELS.length - 1) % LEVELS.length; Sound.play('select'); }
+      if (I.pressed('right')) { App.lvlSel = (App.lvlSel + 1) % LEVELS.length; Sound.play('select'); }
+      if (App.t > 0.2 && I.pressed('pause')) { Sound.play('select'); setState('title'); }
+      if (App.t > 0.2 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch'))) {
+        const L = LEVELS[App.lvlSel];
+        if (L.start && L.id <= open) { Sound.play('confirm'); chooseDiff(App.lvlSel); }
+        else { Sound.play('warn'); App.lockedT = 1; }
+      }
+      if (App.lockedT > 0) App.lockedT -= dt;
       break;
     }
     case 'controls':
@@ -216,6 +254,64 @@ function drawTitle(c) {
   if (best) G.text('Рекорд ур.1: ' + best.total + ' (' + best.rank + ')', W / 2, 258, { align: 'center', size: 8, color: '#ffd84a' });
   if ((G.t * 2 | 0) % 2) G.text('Нажми ENTER', W / 2, H - 22, { align: 'center', color: '#e8e0c8' });
   G.text('v0.3 · уровни 1–2', 6, H - 12, { size: 8, color: 'rgba(255,255,255,0.4)' });
+}
+
+function drawDifficulty(c) {
+  if (G.img.street) c.drawImage(G.img.street, 0, 0, W, H);
+  c.fillStyle = 'rgba(8,10,14,0.72)'; c.fillRect(0, 0, W, H);
+  G.text('ВЫБЕРИ ВАЛЕРУ', W / 2, 16, { size: 16, align: 'center', color: '#f06a14', outline: true });
+  G.text('Уровень: ' + LEVELS[App.pendingLevel].name, W / 2, 40, { align: 'center', color: '#c8d0d8' });
+  DIFFS.forEach((d, i) => {
+    const cw = 194, x = 16 + i * (cw + 11), y = 58, ch = 262, sel = App.diffSel === i;
+    Art.R(c, x - 2, y - 2, cw + 4, ch + 4, sel ? d.color : '#2a2e34');
+    Art.R(c, x, y, cw, ch, sel ? 'rgba(40,34,30,0.96)' : 'rgba(20,22,26,0.94)');
+    // портрет-сцена
+    Art.R(c, x + 6, y + 6, cw - 12, 150, '#15181e');
+    c.save(); c.beginPath(); c.rect(x + 6, y + 6, cw - 12, 150); c.clip();
+    const g = c.createLinearGradient(0, y + 6, 0, y + 156);
+    g.addColorStop(0, i === 0 ? '#3a6a8a' : i === 1 ? '#5a3a2a' : '#2a1a2a'); g.addColorStop(1, '#101216');
+    c.fillStyle = g; c.fillRect(x + 6, y + 6, cw - 12, 150);
+    Spr.drawAnim(c, 'valeraBig', d.anim, G.t, x + cw / 2, y + 158, 1, { scale: sel ? 0.9 : 0.84, alpha: sel ? 1 : 0.65 });
+    c.restore();
+    G.text(d.tag, x + cw / 2, y + 166, { align: 'center', size: 16, color: d.color, outline: true });
+    G.wrap(d.name, cw - 12, 8).forEach((l, k) => G.text(l, x + cw / 2, y + 190 + k * 12, { align: 'center', color: '#f4f0e4' }));
+    d.text.forEach((l, k) => G.text(l, x + cw / 2, y + 216 + k * 12, { align: 'center', size: 8, color: '#9aa4ae' }));
+    if (sel) G.text('<  >', x + cw / 2, y + ch - 12, { align: 'center', color: d.color });
+  });
+  if ((G.t * 2 | 0) % 2) G.text('ENTER — играть     ESC — назад', W / 2, H - 22, { align: 'center', color: '#e8e0c8' });
+}
+
+function drawLevels(c) {
+  if (G.img.street) c.drawImage(G.img.street, 0, 0, W, H);
+  c.fillStyle = 'rgba(8,10,14,0.72)'; c.fillRect(0, 0, W, H);
+  G.text('ВЫБОР УРОВНЯ', W / 2, 16, { size: 16, align: 'center', color: '#f06a14', outline: true });
+  const open = progress();
+  LEVELS.forEach((L, i) => {
+    const cw = 194, x = 16 + i * (cw + 11), y = 50, ch = 260, sel = App.lvlSel === i, locked = !L.start || L.id > open;
+    Art.R(c, x - 2, y - 2, cw + 4, ch + 4, sel ? (locked ? '#8a2a2a' : '#ffd84a') : '#2a2e34');
+    Art.R(c, x, y, cw, ch, 'rgba(20,22,26,0.95)');
+    const px = x + 6, py = y + 6, pw = cw - 12, ph = 150;
+    c.save(); c.beginPath(); c.rect(px, py, pw, ph); c.clip();
+    if (L.id === 1 && G.bg.hall) { c.drawImage(G.bg.hall, 200, 0, 880, 720, px, py, pw, ph); Spr.draw(c, 'sub', 0, px + pw / 2 + 10, py + 120, 1, { scale: 0.35 }); }
+    else if (L.id === 2 && L2.img.sky) { c.drawImage(L2.img.sky, 0, 0, 900, 720, px, py, pw * 1.3, ph * 1.3); if (L2.img.b_shop) c.drawImage(L2.img.b_shop, px + 10, py + 10, pw - 20, (pw - 20) * 0.99); }
+    else { c.fillStyle = '#0c0d10'; c.fillRect(px, py, pw, ph); G.text('?', px + pw / 2, py + 55, { align: 'center', size: 32, color: '#3a3f45' }); }
+    if (locked) {
+      c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(px, py, pw, ph);
+      // замок
+      const lx = px + pw / 2, ly = py + ph / 2;
+      c.strokeStyle = '#c8a020'; c.lineWidth = 4; c.beginPath(); c.arc(lx, ly - 8, 11, Math.PI, 0); c.stroke();
+      Art.R(c, lx - 16, ly - 8, 32, 26, '#c8a020'); Art.R(c, lx - 3, ly, 6, 10, '#3a2a10');
+    }
+    c.restore();
+    G.text('УРОВЕНЬ ' + L.id, x + cw / 2, y + 164, { align: 'center', color: locked ? '#6a6e74' : '#ffd84a' });
+    G.text(L.name, x + cw / 2, y + 180, { align: 'center', size: L.name.length > 10 ? 12 : 16, color: locked ? '#6a6e74' : '#f4f0e4', outline: true });
+    G.text(L.sub, x + cw / 2, y + 204, { align: 'center', color: '#9aa4ae' });
+    let best = null; try { best = JSON.parse(localStorage.getItem('valera_best_l' + L.id) || 'null'); } catch (e) {}
+    if (best && !locked) G.text('Рекорд: ' + best.total + ' (' + best.rank + ')', x + cw / 2, y + 226, { align: 'center', size: 8, color: '#8cf08c' });
+    if (locked) G.text(L.start ? 'Пройди уровень ' + (L.id - 1) : 'В разработке', x + cw / 2, y + 226, { align: 'center', size: 8, color: '#a86a5a' });
+  });
+  if (App.lockedT > 0) G.text('ЭТОТ УРОВЕНЬ ЕЩЁ ЗАКРЫТ!', W / 2, 322, { align: 'center', color: '#ff5a3a', outline: true });
+  else if ((G.t * 2 | 0) % 2) G.text('ENTER — выбрать     ESC — назад', W / 2, H - 22, { align: 'center', color: '#e8e0c8' });
 }
 
 function drawControls(c) {
@@ -322,6 +418,8 @@ function draw() {
       break;
     case 'title': drawTitle(c); break;
     case 'controls': drawControls(c); break;
+    case 'difficulty': drawDifficulty(c); break;
+    case 'levels': drawLevels(c); break;
     case 'play': App.level.draw(c); if (App.paused) drawPause(c); break;
     case 'results': drawResults(c); break;
     case 'soon': drawSoon(c); break;

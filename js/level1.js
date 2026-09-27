@@ -580,7 +580,7 @@ L1.FLOOR = 210;
 L1.Natasha = class {
   constructor(x) {
     this.x = x; this.y = L1.FLOOR; this.facing = -1; this.anim = 'idle';
-    this.maxHp = 60; this.hp = 60; this.combo = 0; this.lastHit = -9; this.inv = 0;
+    this.maxHp = Math.round(60 * (G.BOSS_MULT || 1)); this.hp = this.maxHp; this.combo = 0; this.lastHit = -9; this.inv = 0;
     this.state = 'idle'; this.st = 0; this.t = 0; this.flash = 0; this.actions = 0; this.volley = 0; this.throwT = 0;
     this.headH = 88; this.voice = 330; this.vx = 0; this.name = 'natasha';
   }

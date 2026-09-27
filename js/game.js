@@ -139,7 +139,7 @@ Game.Player = class {
     else if (Math.random() < 0.35) G.say(this, U.choice(['Ай!', 'Больно же!', 'Кто кидает?!', 'Ну ёлки!', 'Моя голова!']), 1.1);
     return true;
   }
-  heal(n) { this.hp = Math.min(this.maxHp, this.hp + n); }
+  heal(n) { this.hp = Math.min(this.maxHp, this.hp + Math.round(n * (G.HEAL_MULT || 1))); }
   update(dt, world) {
     const I = G.Input;
     this.animT += dt;
