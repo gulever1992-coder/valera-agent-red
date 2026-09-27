@@ -403,7 +403,7 @@ S['bedbug'] = build_sheet('bedbug', 'bedbug.png', 7, 70, ref=0, anchors=['feet']
 S['fly'] = build_sheet('fly', 'fly.png', 6, [-64, -64, -64, -64, -60, -64], anchors=['center'] * 6)
 S['spider'] = build_sheet('spider', 'spider_misc.png', 7, [-72, -72, -72, -72, -30, -30, -44], anchors=['center'] * 7)
 S['items3'] = build_sheet('items3', 'items3.png', 12, [-27, 30, 38, 27, -40, -38, 27, -38, 34, -23, 21, -27], grid=(3, 4), anchors=['center'] * 12)
-S['f_corr'] = build_sheet('f_corr', 'furn_corridor.png', 6, [144, 70, 169, 85, -88, 125], grid=(2, 3))
+S['f_corr'] = build_sheet('f_corr', 'furn_corridor.png', 6, [118, 70, 169, 85, -58, 125], grid=(2, 3))
 S['f_kit'] = build_sheet('f_kit', 'furn_kitchen.png', 6, [134, 77, 70, 77, 70, -126], grid=(2, 3))
 S['f_liv'] = build_sheet('f_liv', 'furn_living.png', 6, [77, 105, 179, 81, 42, 136], grid=(2, 3))
 S['f_bed'] = build_sheet('f_bed', 'furn_bed_balcony.png', 8, [81, 84, 169, 109, 116, 155, 126, 77], grid=(2, 4))
@@ -434,7 +434,7 @@ def seamless(im, k=110):
         t[:, w - 2 * k + i] = a[:, w - k + i] * (1 - wgt) + a[:, i] * wgt
     return Image.fromarray(t[:, :w - k].clip(0, 255).astype(np.uint8))
 B3 = {}
-for key, src in [('wall_corridor', 'w3_corridor'), ('wall_kitchen', 'w2_kitchen'), ('wall_living', 'w2_living'), ('wall_bedroom', 'w2_bedroom'), ('wall_balcony', 'w2_balcony')]:
+for key, src in [('wall_corridor', 'w3_corridor'), ('wall_kitchen', 'w3_kitchen'), ('wall_living', 'w2_living'), ('wall_bedroom', 'w2_bedroom'), ('wall_balcony', 'w2_balcony')]:
     im = seamless(Image.open(os.path.join(SRC, src + '.png')))
     im = im.resize((round(im.width * 720 / im.height), 720), Image.LANCZOS)
     im.save(os.path.join(OUT, key + '.jpg'), quality=87, optimize=True)
@@ -442,6 +442,32 @@ for key, src in [('wall_corridor', 'w3_corridor'), ('wall_kitchen', 'w2_kitchen'
 S['partition'] = build_sheet('partition', 'partition.png', 1, 282, keyer='clean')
 S['boss5'] = build_sheet('boss5', 'boss5_body.png', 6, 230, ref=0, keyer='magenta', even=True)
 S['parts5'] = build_sheet('parts5', 'boss5_parts.png', 9, [210, -70, 130, -120, -120, -120, -120, -60, -44], keyer='clean', grid=(3, 3), anchors=['feet', 'center', 'feet'] + ['center'] * 6)
+S['boss6'] = build_sheet('boss6', 'boss6_body.png', 6, 172, ref=0, keyer='magenta', even=True)
+S['legs6'] = build_sheet('legs6', 'boss6_legs.png', 4, [-70, -84, -70, -84], keyer='clean', anchors=['center'] * 4)
+B['boss_read2'] = bg('boss_read2.png', 'boss_read2', (1280, 720))
+S['moth2'] = build_sheet('moth2', 'moth_spit.png', 5, [-66, -66, -66, -80, -48], keyer='magenta', grid=(2, [3, 2]), anchors=['center'] * 5)
+S['fg'] = build_sheet('fg', 'fg_props.png', 8, [70, 130, 110, 150, 110, 150, 120, 125], keyer='clean', grid=(2, 4))
+# стена-переход: кирпичный торец + распахнутая дверь; всё уменьшаем (дверь ~1.45 роста Валеры), верх стены достраиваем тем же торцом
+dw = Image.open(os.path.join(SRC, 'door_wall.png'))
+da = key_magenta(dw); op = da[..., 3] > 0
+cov = op.mean(axis=0); wallx = int(np.where(cov > 0.9)[0].min())
+ys = np.where(op.any(axis=1))[0]; da = da[ys[0]:ys[-1] + 1]
+H0, W0 = da.shape[:2]; k = 0.74
+full = Image.fromarray(da, 'RGBA'); fk = full.resize((round(W0 * k), round(H0 * k)), Image.LANCZOS)
+comp = Image.new('RGBA', (fk.width, H0), (0, 0, 0, 0))
+top = H0 - fk.height; sx = round(wallx * k)
+strip = fk.crop((sx, 0, fk.width, fk.height))
+y = top
+while y > 0:
+    y -= strip.height
+    comp.alpha_composite(strip, (sx, max(0, y)) if y >= 0 else (sx, 0), (0, 0 if y >= 0 else -y) if False else (0, 0))
+    if y < 0:
+        part = strip.crop((0, -y, strip.width, strip.height)); comp.alpha_composite(part, (sx, 0))
+comp.alpha_composite(fk, (0, top))
+comp = comp.resize((round(comp.width * 720 / comp.height), 720), Image.LANCZOS)
+ca = np.array(comp); ca[..., 3] = np.where(ca[..., 3] > 100, 255, 0); comp = Image.fromarray(ca, 'RGBA')
+comp.save(os.path.join(SPR, 'doorwall.png')); wallx = sx
+S['doorwall'] = {'img': 'assets/spr/doorwall.png', 'f': [[0, 0, comp.width, comp.height, round((wallx + 0.0) * 720 / H0), comp.height, 0, 0]]}
 with open(os.path.join(ROOT, 'js', 'sprites_data.js'), 'w', encoding='utf-8') as fp:
     fp.write('// автоматически создано tools/build_assets.py\nwindow.SPRITES = ' + json.dumps(S) + ';\nwindow.BGS = ' + json.dumps(B) + ';\nwindow.BUILDINGS = ' + json.dumps(B2) + ';\nwindow.WALLS3 = ' + json.dumps(B3) + ';\n')
 print('готово 4')

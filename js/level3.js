@@ -26,7 +26,7 @@ L3.img = {};
 L3.load = async function () {
   const W3 = window.WALLS3 || {};
   await Promise.all(Object.keys(W3).map(async k => { L3.img[k] = await G.loadImage(W3[k].img); }));
-  const extra = ['boss2_bg', 'boss_room', 'boss_read', 'comic1', 'comic2', 'comic3', 'comic4', 'comic5', 'comic6', 'comic7'];
+  const extra = ['boss2_bg', 'boss_read2', 'boss_room', 'boss_read', 'comic1', 'comic2', 'comic3', 'comic4', 'comic5', 'comic6', 'comic7'];
   await Promise.all(extra.map(async k => { L3.img[k] = await G.loadImage('assets/' + k + '.jpg'); }));
   L3.img.p_roach = await G.loadImage('assets/spr/p_roach.png');
   if (G.portraits) G.portraits.roach = L3.img.p_roach;
@@ -302,7 +302,7 @@ L3.Bug = class {
         if (!aware) { this.y = this.baseY + Math.sin(this.t * 2) * 8; break; }
         talk();
         if (this.state === 'spit') {
-          if (this.st > 0.25 && !this.spat) { this.spat = true; wd.globs.push(new L3.Glob('acid', this.x + this.facing * 22, this.y + 6, U.clamp(dx / 0.75, -230, 230), -90)); Sound.play('squeak'); }
+          if (this.st > 0.3 && !this.spat) { this.spat = true; wd.globs.push(new L3.Glob('acid', this.x + this.facing * 60, this.y + 4, U.clamp(dx / 0.75, -230, 230), -90)); Sound.play('squeak'); }
           if (this.st > 0.6) { this.spat = false; this.set('idle'); this.cool = U.rand(2.2, 3.4); }
           break;
         }
@@ -328,7 +328,7 @@ L3.Bug = class {
       case 'fly': return s === 'drop' ? f.drop : s === 'dive' ? f.dive : f.walk[Math.floor(this.t * 14) % 2];
       case 'spider': return s === 'bite' ? f.attack : s === 'down' || s === 'up' ? f.walk[0] : f.idle;
       case 'mini': return f.walk[Math.floor(this.t * 12) % 2];
-      case 'moth': return s === 'spit' ? f.attack : f.walk[Math.floor(this.t * 14) % 6];
+      case 'moth': return s === 'spit' ? -1 : f.walk[Math.floor(this.t * 14) % 6];
       default: return f.idle;
     }
   }
@@ -340,7 +340,13 @@ L3.Bug = class {
     if (this.dieT != null && this.type === 'mini') rot = Math.PI;
     const alpha = this.dieT != null && this.dieT > 1.3 ? (1.8 - this.dieT) / 0.5 : 1;
     const flash = this.flash > 0 ? '#ffffff' : this.slowT > 0 && (G.t * 8 | 0) % 2 ? '#80c0ff' : null;
-    Spr.draw(c, this.d.sheet, this.frame(), x, y, this.d.flip ? -this.facing : this.facing, { rot, flash, alpha });
+    const fr = this.frame(), fc = this.d.flip ? -this.facing : this.facing;
+    if (fr === -1) { // моль: замах — плевок — отдача (кадры moth2) и струя кислоты изо рта
+      const k = this.st < 0.25 ? 0 : this.st < 0.45 ? 1 : 2;
+      Spr.draw(c, 'moth2', k, x, y, fc, { flash, alpha });
+      if (k === 1) Spr.draw(c, 'moth2', 3, x + this.facing * 58, y - 22, fc, { alpha: 0.95 });
+      if (k === 2) Spr.draw(c, 'moth2', 4, x + this.facing * 50, y - 20, fc, { alpha: 0.7 });
+    } else Spr.draw(c, this.d.sheet, fr, x, y, fc, { rot, flash, alpha });
   }
 };
 
@@ -370,14 +376,14 @@ L3.Glob = class {
   draw(c, cx) {
     if (this.kind === 'bomb') Art.item(c, 'bomb3', this.x - cx, this.y, this.rot, 0.9);
     else if (this.kind === 'soup') { Art.R(c, this.x - cx - 3, this.y - 3, 6, 6, '#e0a848'); Art.R(c, this.x - cx - 1, this.y - 2, 2, 2, '#fff'); }
-    else Art.item(c, 'acid3', this.x - cx, this.y, 0, 1.4);
+    else { const f = Spr.frame('moth2', 4); if (f) { c.save(); c.translate(this.x - cx, this.y); c.rotate(Math.atan2(this.vy, this.vx) + Math.PI); c.scale(0.6, 0.6); Spr.drawC(c, 'moth2', 4, -24, 0, 0, 1); c.restore(); } else Art.item(c, 'acid3', this.x - cx, this.y, 0, 1.4); }
   }
 };
 
 // ---------- мебель ----------
 // [лист, кадр, верх опоры (доля высоты), доля ширины, deco]
 const FURN = {
-  coat: ['f_corr', 0, 0, 0, true], shoe: ['f_corr', 1, 0.9, 0.9], wardrobe: ['f_corr', 2, 0.98, 0.92], bike: ['f_corr', 3, 0, 0, true], door: ['f_corr', 5, 0, 0, true],
+  coat: ['f_corr', 0, 0, 0, true, 34], shoe: ['f_corr', 1, 0.9, 0.9], wardrobe: ['f_corr', 2, 0.98, 0.92], bike: ['f_corr', 3, 0, 0, true], door: ['f_corr', 5, 0, 0, true],
   fridge: ['f_kit', 0, 0.97, 0.9], stove: ['f_kit', 1, 0.7, 0.92], table: ['f_kit', 2, 0.74, 0.6], sink: ['f_kit', 3, 0.82, 0.92], washer: ['f_kit', 4, 0.9, 0.8], cabinet: ['f_kit', 5, 0.98, 0.95],
   sofa: ['f_liv', 0, 0.62, 0.95], tv: ['f_liv', 1, 0.52, 0.92], unit: ['f_liv', 2, 0.98, 0.95], armchair: ['f_liv', 3, 0.55, 0.85], ctable: ['f_liv', 4, 0.95, 0.9], lamp: ['f_liv', 5, 0, 0, true],
   bed: ['f_bed', 0, 0.56, 0.92], dresser: ['f_bed', 1, 0.97, 0.92], wardrobe2: ['f_bed', 2, 0.98, 0.92], doll1: ['f_bed', 3, 0, 0, true], doll2: ['f_bed', 4, 0, 0, true],
@@ -402,10 +408,10 @@ L3.build = function () {
   D.hints.push({ x: 1300, w: 260, text: 'Мухи бомбят сверху, а моль плюётся кислотой! Не наступай в зелёные лужи — прыгай по мебели.' });
   // 2. КУХНЯ
   D.checkpoints.push({ x: 3660 });
-  f('fridge', 3820); f('stove', 4100); f('table', 4420); f('sink', 4720); f('washer', 5000); f('cabinet', 5230, 175); f('fridge', 5520); f('table', 5900); f('stove', 6220);
+  f('fridge', 3820); f('stove', 4100); f('table', 4420); f('sink', 4720); f('washer', 5000); f('fridge', 5520); f('table', 5900); f('stove', 6220);
   acid(3930, 4040); acid(4540, 4650); acid(5080, 5380); acid(5640, 5790); acid(6050, 6150);
   bug('bedbug', 3950); bug('bedbug', 4300); bug('roach', 4560); bug('fly', 4650); bug('moth', 4850); bug('fly', 5050); bug('roach', 5350); bug('moth', 5600); bug('bedbug', 5750); bug('spider', 5950); bug('roach', 6120); bug('mini', 6300); bug('mini', 6330); bug('mini', 6360);
-  pick('jar', 3820, 'fridge'); pick('pelmeni3', 4420, 'table'); pick('battery', 5230, 'cabinet'); pick('jar', 5520, 'fridge'); pick('chalkbox', 6220, 'stove');
+  pick('jar', 3820, 'fridge'); pick('pelmeni3', 4420, 'table'); pick('battery', 5230); pick('jar', 5520, 'fridge'); pick('chalkbox', 6220, 'stove');
   D.hints.push({ x: 3700, w: 260, text: 'На холодильнике — коробка мелков! {switch} — сменить оружие, {up}+{punch} — бросок вверх.' });
   // 3. ГОСТИНАЯ
   D.checkpoints.push({ x: 6460 });
@@ -444,7 +450,7 @@ L3.Run = class {
     this.furn = D.furn.map(p => {
       const def = FURN[p.type];
       const [w, h] = Spr.size(def[0], def[1]);
-      const o = Object.assign({ w, h, def }, p);
+      const o = Object.assign({ w, h, def }, p); if (def[5]) o.y -= def[5];
       if (!def[4]) { const cw = w * def[3], top = p.y - h * def[2]; o.col = wd.addPlat({ x: p.x - cw / 2, y: top, w: cw, h: 8, oneway: true, look: 'none' }); }
       return o;
     });
@@ -576,7 +582,7 @@ L3.Run = class {
       c.restore();
     }
     // стена с проёмом между комнатами — закрывает стык фонов (от потолка до пола)
-    for (const r of L3.ROOMS) if (r.x0 > 0) { const x = r.x0 - camX; if (x > -100 && x < VW + 100) Spr.draw(c, 'partition', 0, x, 284, 1); }
+    for (const r of L3.ROOMS) if (r.x0 > 0) { const x = r.x0 - camX; if (x > -200 && x < VW + 200) Spr.draw(c, 'doorwall', 0, x, H, 1); }
     // дверь туалета в конце
     const tx = L3.W - 40 - camX;
     if (tx < VW + 60) { Spr.draw(c, 'f_corr', 5, tx, L3.GROUND + 2, -1); G.text('WC', tx, L3.GROUND - 118, { align: 'center', color: '#8cd0ff', outline: true }); }
@@ -608,6 +614,7 @@ L3.Run = class {
     for (const p of wd.projs) p.draw(c, cx);
     c.save(); c.translate(-cx, 0); FX.draw(c); c.restore();
     G.drawBubbles(c, cx, 0);
+    L3.drawFG(c, cx);
     c.restore();
     L3.drawHUD(c, this.player, wd);
     const left = Math.max(0, Math.round((L3.W - this.player.x) / 16));
@@ -619,6 +626,21 @@ L3.Run = class {
 };
 
 // HUD уровня 3: здоровье + три оружия + газ
+// передний план: предметы у самой камеры (кадры fg), двигаются быстрее фона
+L3.FG = [
+  [0, 520, 5], [2, 1500, 1], [5, 2700, 0], [1, 3400, 0],
+  [0, 4300, 0], [7, 5000, 1], [0, 5850, 4],
+  [1, 6900, 1], [3, 7700, 0], [2, 8700, 1], [0, 9500, 0],
+  [4, 10300, 1], [6, 11100, 0], [2, 11900, 1], [1, 12600, 0],
+  [6, 13400, 1], [7, 14200, 0], [2, 15000, 1],
+];
+L3.drawFG = function (c, camX) {
+  for (const [fr, wx] of L3.FG) {
+    const x = wx - camX * 1.35 + 0.35 * wx; // параллакс: ближе к камере — быстрее
+    if (x < -160 || x > W + 160) continue;
+    Spr.draw(c, 'fg', fr, x, H + 18, 1, { scale: 1.15, flash: null });
+  }
+};
 L3.drawHUD = function (c, pl, wd) {
   const R = Art.R;
   Game.drawHUD(c, pl, wd);
@@ -639,7 +661,7 @@ L3.drawHUD = function (c, pl, wd) {
 // БОСС: шестирукий таракан на унитазе — фронтально, во весь экран (как финал Contra)
 // таракан, унитаз, ноги и лапы — отдельные спрайты; лапы двухсегментные (сгибаются в локте)
 // =====================================================================
-L3.AZ = 1; L3.AVW = W; L3.AVH = H; L3.AG = 318; L3.BCX = W / 2; L3.BS = 1.02; L3.AS = 1.45; L3.TS = 1.08;
+L3.AZ = 1; L3.AVW = W; L3.AVH = H; L3.AG = 318; L3.BCX = W / 2; L3.BS = 1; L3.AS = 1.45; L3.TS = 1.08; L3.LS = 1.4;
 L3.segDist = (px, py, ax, ay, bx, by) => { const dx = bx - ax, dy = by - ay, t = U.clamp(((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy || 1), 0, 1); return Math.hypot(px - ax - dx * t, py - ay - dy * t); };
 // кадры parts5: 0 унитаз, 1 плечо, 2 нога, 3 клешня, 4 сигарета, 5 газета, 6 палец, 7 кровь, 8 культя
 // сегменты: сустав (j) и кончик (t) в долях кадра
@@ -650,14 +672,14 @@ const SEG5 = {
   paper: { fr: 5, j: [0.06, 0.527], t: [0.95, 0.32] },
   point: { fr: 6, j: [0.06, 0.581], t: [0.99, 0.164] },
 };
-L3.segLen = (g, sc) => { const f = Spr.frame('parts5', g.fr) || [0, 0, 240, 100]; return (g.t[0] - g.j[0]) * f[2] / 2 * sc; };
+L3.segLen = (g, sc) => { const f = Spr.frame(g.sheet || 'parts5', g.fr) || [0, 0, 240, 100]; return (g.t[0] - g.j[0]) * f[2] / 2 * sc; };
 // нарисовать сегмент: сустав в точке (x,y), направление ang; если смотрит влево — отражаем по вертикали, чтобы «верх» оставался верхом
 L3.drawSeg = function (c, g, x, y, ang, sc, o = {}) {
-  const f = Spr.frame('parts5', g.fr); if (!f) return;
-  const k = sc / 2, flip = Math.cos(ang) < 0;
+  const sh = g.sheet || 'parts5', f = Spr.frame(sh, g.fr); if (!f) return;
+  const k = sc / 2, flip = o.flip != null ? o.flip : Math.cos(ang) < 0;
   c.save(); c.translate(x, y); c.rotate(ang); if (flip) c.scale(1, -1);
   if (o.filter) c.filter = o.filter;
-  Spr.draw(c, 'parts5', g.fr, (f[4] - g.j[0] * f[2]) * k, (f[5] - g.j[1] * f[3]) * k, 1, { scale: sc, flash: o.flash, alpha: o.alpha });
+  Spr.draw(c, sh, g.fr, (f[4] - g.j[0] * f[2]) * k, (f[5] - g.j[1] * f[3]) * k, 1, { scale: sc, flash: o.flash, alpha: o.alpha });
   c.restore();
 };
 L3.segPoint = function (g, x, y, ang, sc, p) {
@@ -666,11 +688,13 @@ L3.segPoint = function (g, x, y, ang, sc, p) {
   return [x + Math.cos(ang) * lx - Math.sin(ang) * ly, y + Math.sin(ang) * lx + Math.cos(ang) * ly];
 };
 // точки тела относительно низа-центра корпуса (в мировых px при масштабе 1)
-const BODY5 = { shoulderUp: [50, -103], shoulderMid: [50, -57], edgeUp: [74, -104], edgeMid: [76, -60], hip: [40, -40], mouth: [0, -122], head: [-45, -186, 90, 76] };
+const BODY5 = { shoulderUp: [32, -100], shoulderMid: [34, -72], edgeUp: [42, -100], edgeMid: [48, -72], hip: [28, -26], mouth: [0, -121], head: [-32, -158, 64, 52] };
+// сегменты ног (legs6): бедро и голень со ступнёй
+const LEG6 = { thigh: { sheet: 'legs6', fr: 0, j: [0.08, 0.456], t: [0.92, 0.49] }, shin: { sheet: 'legs6', fr: 1, j: [0.06, 0.246], t: [0.66, 0.26] } };
 L3.Arm5 = class {
   constructor(boss, side, slot, kind) {
     Object.assign(this, { boss, side, slot, kind, st: 0, state: 'grow', flash: 0, dead: false, grow: 0, cool: U.rand(0.8, 2.6), boomed: false, pointT: 0 });
-    this.hp = this.maxHp = Math.round((kind === 'claw' ? 14 : 24) * (G.BOSS_MULT || 1));
+    this.hp = this.maxHp = Math.round((kind === 'claw' ? 10 : 14) * (G.BOSS_MULT || 1));
     this.a = L3.segLen(SEG5.upper, L3.AS); this.b = L3.segLen(SEG5[kind], L3.AS);
     this.tip = null; this.target = null;
   }
@@ -686,7 +710,9 @@ L3.Arm5 = class {
     let [tx, ty] = this.tip; let dx = tx - sx, dy = ty - sy, d = Math.hypot(dx, dy) || 1;
     const dm = Math.max(Math.abs(a - b) + 2, Math.min(a + b - 2, d));
     const base = Math.atan2(dy, dx), cosA = U.clamp((a * a + dm * dm - b * b) / (2 * a * dm || 1), -1, 1);
-    const th1 = base + (this.side > 0 ? -1 : 1) * Math.acos(cosA);
+    // из двух вариантов изгиба берём тот, где локоть снаружи тела и повыше
+    const acA = Math.acos(cosA), score = t => { const x = Math.cos(t) * a, y = Math.sin(t) * a; return this.side * x - y * 0.5; };
+    const th1 = score(base + acA) > score(base - acA) ? base + acA : base - acA;
     const ex = sx + Math.cos(th1) * a, ey = sy + Math.sin(th1) * a;
     const rx = sx + dx / d * dm, ry = sy + dy / d * dm;
     return { sx, sy, ex, ey, th1, th2: Math.atan2(ry - ey, rx - ex), rx, ry };
@@ -728,7 +754,7 @@ L3.Arm5 = class {
         const [sx, sy] = this.shoulder;
         this.moveTip(sx + this.side * 110, sy - 120 + Math.sin(this.st * 30) * 3, 5, dt);
         this.tx = U.clamp(pl.x + pl.vx * 0.15, 12, L3.AVW - 12);
-        if (this.st > (this.kind === 'paper' ? 0.75 : 0.6)) { this.set('slam'); Sound.play('throw'); }
+        if (this.st > (this.kind === 'paper' ? 0.95 : 0.85)) { this.set('slam'); Sound.play('throw'); }
         break;
       }
       case 'slam': {
@@ -741,12 +767,12 @@ L3.Arm5 = class {
         }
         if (this.st > 0.05 && this.st < 0.32 && pl && !pl.dead) {
           const r = this.kind === 'paper' ? 30 : 20;
-          for (const [hx, hy] of hp.slice(1)) if (U.overlap({ x: hx - r, y: hy - r, w: r * 2, h: r * 2 }, pl.box)) { pl.hurt(this.kind === 'paper' ? 16 : 12, hx, ar.world); break; }
+          for (const [hx, hy] of hp.slice(1)) if (U.overlap({ x: hx - r, y: hy - r, w: r * 2, h: r * 2 }, pl.box)) { pl.hurt(this.kind === 'paper' ? 11 : 9, hx, ar.world); break; }
         }
-        if (this.st > 1.0) { this.boomed = false; this.set('back'); } // лапа лежит на полу — удобно отстреливать
+        if (this.st > 1.3) { this.boomed = false; this.set('back'); } // лапа лежит на полу — удобно отстреливать
         break;
       }
-      case 'back': this.moveTip(rx, ry, 4, dt); if (this.st > 0.7) { this.set('idle'); this.cool = U.rand(1.6, 3.0); } break;
+      case 'back': this.moveTip(rx, ry, 4, dt); if (this.st > 0.7) { this.set('idle'); this.cool = U.rand(2.6, 4.0); } break;
       case 'toMouth': { // подносит сигарету ко рту и затягивается
         const [mx, my] = b.mouth;
         this.moveTip(mx + this.side * 34, my + 14, 4, dt);
@@ -773,22 +799,22 @@ L3.Arm5 = class {
 };
 L3.Boss5 = class {
   constructor() {
-    this.phase = 1; this.head = this.headMax = Math.round(110 * (G.BOSS_MULT || 1)); this.flash = 0; this.beamCool = 1.2; this.spitT = 3;
+    this.phase = 1; this.head = this.headMax = Math.round(70 * (G.BOSS_MULT || 1)); this.flash = 0; this.beamCool = 1.2; this.spitT = 3;
     this.x = L3.BCX; this.y = L3.AG; this.headH = 250; this.voice = 110;
     this.face = 0; this.faceT = 0; this.breath = 1; this.sway = 0; this.dy = 0;
     this.legs = [{ side: -1, lift: 0 }, { side: 1, lift: 0 }]; this.stompT = 4; this.stomp = null; this.tauntT = 7;
     this.stumps = [];
-    this.arms = [new L3.Arm5(this, -1, 'mid', 'claw'), new L3.Arm5(this, 1, 'mid', 'claw'), new L3.Arm5(this, -1, 'up', 'claw'), new L3.Arm5(this, 1, 'up', 'claw')];
+    this.arms = [new L3.Arm5(this, -1, 'up', 'claw'), new L3.Arm5(this, 1, 'up', 'claw')];
     for (const a of this.arms) { a.grow = 1; a.state = 'idle'; }
   }
   // низ корпуса: сидит в чаше унитаза
-  get base() { return [L3.BCX, L3.AG - 210 * 0.43 * L3.TS + 14 + this.dy]; }
+  get base() { return [L3.BCX, L3.AG - 210 * 0.43 * L3.TS + 8 + this.dy]; }
   pt(ox, oy) { const [bx, by] = this.base, s = L3.BS; const x = ox * s, y = oy * s * this.breath; return [bx + x * Math.cos(this.sway) - y * Math.sin(this.sway), by + x * Math.sin(this.sway) + y * Math.cos(this.sway)]; }
   get mouth() { return this.pt(BODY5.mouth[0], BODY5.mouth[1]); }
   get headBox() { const h = BODY5.head, [x, y] = this.pt(h[0], h[1]); return { x, y, w: h[2] * L3.BS, h: h[3] * L3.BS }; }
   get totalHp() {
     const m = G.BOSS_MULT || 1, arms = this.arms.reduce((s, a) => s + (a.dead ? 0 : Math.max(0, a.hp)), 0);
-    return this.head + arms + (this.phase === 1 ? Math.round(48 * m) : 0);
+    return this.head + arms + (this.phase === 1 ? Math.round(28 * m) : 0);
   }
   setFace(f, t) { this.face = f; this.faceT = t; }
 };
@@ -811,14 +837,14 @@ L3.Arena = class {
   startFight(pl) {
     this.player = pl; pl.controls = true; this.fighting = true;
     const oh = pl.hurt.bind(pl); pl.hurt = (...a) => { const r = oh(...a); if (r) this.onPlayerHurt(); return r; };
-    this.hint = 'Отбивай лапы мухобойкой, когда они бьют в пол, и кидай мелки — {up}+удар бросает вверх.'; this.hintT = 7;
+    this.hint = 'Сбей две клешни: бей мухобойкой, когда лапа лежит на полу, или кидай мелки ({up}+удар — вверх).'; this.hintT = 7;
     this.boss.setFace(2, 1.5); G.say(this.boss, 'Шесть лап против одного арбуза? Смешно!', 2.2, { shout: true });
   }
   onPlayerHurt() { const b = this.boss; if (b.phase === 3 && this.beam) return; b.setFace(2, 1.3); if (Math.random() < 0.45) G.say(b, U.choice(LAUGHS), 1.4); }
   canAttack(a) {
     const pl = this.player, b = this.boss;
     const busy = b.arms.filter(x => !x.dead && x !== a && ['raise', 'slam', 'toMouth', 'drag', 'point'].includes(x.state)).length;
-    if (busy >= (b.phase === 1 ? (G.DIFF === 2 ? 2 : 1) : 2) || b.stomp) return false;
+    if (busy >= (G.DIFF === 2 && b.phase > 1 ? 2 : 1) || b.stomp) return false;
     if (a.kind === 'claw') return a.side > 0 ? pl.x > L3.BCX - 60 : pl.x < L3.BCX + 60;
     return true;
   }
@@ -868,9 +894,8 @@ L3.Arena = class {
     if (b.phase === 1) {
       b.phase = 2;
       this.pending = { t: 1.6, fn: () => {
-        b.stumps = b.stumps.filter(st => st.slot !== 'up');
-        b.arms = [new L3.Arm5(b, 1, 'up', 'paper'), new L3.Arm5(b, -1, 'up', 'smoke')];
-        b.setFace(2, 1.5); G.say(b, 'Сюрприз! Отрастил! Сейчас почитаем «Вечерочек»!', 2.2, { shout: true });
+        b.arms = [new L3.Arm5(b, 1, 'mid', 'paper'), new L3.Arm5(b, -1, 'mid', 'smoke')];
+        b.setFace(2, 1.5); G.say(b, 'Думаешь, всё? Ещё две есть! Сейчас почитаем «Вечерочек»!', 2.2, { shout: true });
         this.hint = 'Газета бьёт сверху, дым стелется по полу — перепрыгивай!'; this.hintT = 6;
       } };
     } else if (b.phase === 2) {
@@ -889,7 +914,7 @@ L3.Arena = class {
     const b = this.boss, pl = this.player, s = b.stomp;
     if (!s) {
       b.stompT -= dt;
-      if (b.stompT <= 0 && this.fighting && !this.beam) { b.stomp = { leg: b.legs[pl && pl.x > L3.BCX ? 1 : 0], t: 0, hit: false }; b.stompT = U.rand(5, 8); b.setFace(1, 0.9); }
+      if (b.stompT <= 0 && this.fighting && !this.beam) { b.stomp = { leg: b.legs[pl && pl.x > L3.BCX ? 1 : 0], t: 0, hit: false }; b.stompT = U.rand(7, 10); b.setFace(1, 0.9); }
       return;
     }
     s.t += dt; const L = s.leg;
@@ -897,10 +922,10 @@ L3.Arena = class {
     else { L.lift = Math.max(0, L.lift - dt * 420); }
     if (s.t >= 0.45 && L.lift <= 0 && !s.hit) {
       s.hit = true; G.shake(10, 0.45); Sound.play('stomp'); Sound.play('boom');
-      const fx = L3.BCX + L.side * 98;
+      const fx = L3.BCX + L.side * 108;
       FX.dust(fx, L3.AG, 16);
       for (let i = 0; i < 12; i++) FX.spawn({ x: U.rand(20, L3.AVW - 20), y: 0, vx: 0, vy: U.rand(40, 120), grav: 500, life: 1.2, color: U.choice(['#d8d0c0', '#a8a090']), size: 2 });
-      if (pl && !pl.dead && pl.onGround && Math.abs(pl.x - fx) < 110) { pl.hurt(8, fx, this.world); pl.vy = -320; }
+      if (pl && !pl.dead && pl.onGround && Math.abs(pl.x - fx) < 80) { pl.hurt(6, fx, this.world); pl.vy = -300; }
     }
     if (s.t > 0.9) b.stomp = null;
   }
@@ -913,15 +938,15 @@ L3.Arena = class {
       if (bm.t > 0.95) { bm.st = 'fire'; bm.t = 0; bm.lastX = bm.x; this.addAcid(bm.x, 30, 5.5); Sound.play('steam'); G.shake(3, 0.3); }
       return;
     }
-    const sp = 112 * (G.DIFF === 2 ? 1.2 : G.DIFF === 0 ? 0.8 : 1);
+    const sp = 85 * (G.DIFF === 2 ? 1.2 : G.DIFF === 0 ? 0.8 : 1);
     bm.x = U.clamp(U.approach(bm.x, pl.x, sp * dt), 8, L3.AVW - 8);
     if (Math.abs(bm.x - bm.lastX) > 18) { this.addAcid(bm.x, 28, 5.5); bm.lastX = bm.x; }
     if (Math.random() < dt * 40) FX.spawn({ x: bm.x + U.rand(-6, 6), y: L3.AG - 2, vx: U.rand(-60, 60), vy: U.rand(-160, -60), grav: 500, life: 0.4, color: U.choice(['#8ce040', '#c8ff60', '#eaffc0']), size: 2 });
     if (!pl.dead) {
       const d = Math.min(L3.segDist(pl.x, pl.y - 20, mx, my, bm.x, L3.AG), L3.segDist(pl.x, pl.y - 60, mx, my, bm.x, L3.AG));
-      if (d < 12 && pl.hurt(14, bm.x, wd) && Math.random() < 0.5) G.say(pl, U.choice(['Жжётся!!!', 'Мой арбуз!']), 1);
+      if (d < 11 && pl.hurt(10, bm.x, wd) && Math.random() < 0.5) G.say(pl, U.choice(['Жжётся!!!', 'Мой арбуз!']), 1);
     }
-    if (bm.t > 1.9) { this.beam = null; b.beamCool = U.rand(1.4, 2.2); }
+    if (bm.t > 1.6) { this.beam = null; b.beamCool = U.rand(2.6, 3.6); }
   }
   update(dt) {
     const wd = this.world, pl = this.player, b = this.boss;
@@ -965,18 +990,18 @@ L3.Arena = class {
         if (s.y < L3.AG - 28) { s.y += s.vy * dt; s.x += s.vx * dt; } else { s.y = L3.AG - 28; s.x += s.dir * 135 * dt; }
         s.r = Math.min(36, 16 + s.t * 24);
         if (!pl.dead && Math.abs(pl.x - s.x) < s.r * 0.7 && pl.y > s.y - s.r * 0.6 && pl.y - 70 < s.y + s.r * 0.5) {
-          if (pl.hurt(10, s.x, wd) && Math.random() < 0.5) G.say(pl, U.choice(['Кха-кха!', 'Фу, «Прима»!']), 1);
+          if (pl.hurt(7, s.x, wd) && Math.random() < 0.5) G.say(pl, U.choice(['Кха-кха!', 'Фу, «Прима»!']), 1);
         }
       }
       this.smoke = this.smoke.filter(s => s.x > -60 && s.x < L3.AVW + 60);
       // кислотные лужи жгут ноги
       if (pl.onGround && !pl.dead) {
         const a = this.acid.find(a => pl.x > a.x1 + 4 && pl.x < a.x2 - 4);
-        if (a) { this.acidT = (this.acidT || 0) - dt; if (this.acidT <= 0) { this.acidT = 0.4; if (pl.hurt(8, pl.x - pl.facing * 10, wd)) pl.vy = -380; } }
+        if (a) { this.acidT = (this.acidT || 0) - dt; if (this.acidT <= 0) { this.acidT = 0.5; if (pl.hurt(6, pl.x - pl.facing * 10, wd)) pl.vy = -380; } }
       }
       // мелки падают сверху
       this.dropT -= dt;
-      if (this.dropT <= 0) { this.dropT = U.rand(5, 8); const p = new Game.Pickup(U.choice(['chalkbox', 'chalkbox', 'battery', 'bread']), U.rand(24, L3.AVW - 24), 0); p.falling = true; wd.pickups.push(p); }
+      if (this.dropT <= 0) { this.dropT = U.rand(4, 6); const p = new Game.Pickup(U.choice(['chalkbox', 'chalkbox', 'bread', 'pelmeni3']), U.rand(24, L3.AVW - 24), 0); p.falling = true; wd.pickups.push(p); }
       if (pl.dead && pl.deadT > 1.6 && !this.resetting) { this.resetting = true; this.level.stats.deaths++; this.pending = { t: 0.4, fn: () => { this.resetting = false; this.level.restartBoss(); } }; }
     }
     for (const a of this.acid) a.temp -= dt;
@@ -987,7 +1012,7 @@ L3.Arena = class {
       if (this.dying > 1.1) {
         if (!this.sinkSnd) { this.sinkSnd = true; Sound.play('splash'); }
         this.sinkK = Math.min(1, (this.dying - 1.1) / 1.5);
-        if (this.sinkK < 1 && Math.random() < dt * 40) FX.spawn({ x: L3.BCX + U.rand(-40, 40), y: L3.AG - 92, vx: U.rand(-90, 90), vy: U.rand(-220, -80), grav: 600, life: 0.6, color: U.choice(['#bfe8ff', '#ffffff', '#8cc8f0']), size: 2 });
+        if (this.sinkK < 1 && Math.random() < dt * 40) FX.spawn({ x: L3.BCX + U.rand(-40, 40), y: L3.AG - 98, vx: U.rand(-90, 90), vy: U.rand(-220, -80), grav: 600, life: 0.6, color: U.choice(['#bfe8ff', '#ffffff', '#8cc8f0']), size: 2 });
         if (this.sinkK >= 1 && !this.doneSink) { this.doneSink = true; this.pending = { t: 0.5, fn: () => this.level.bossDefeated() }; }
       }
     }
@@ -1011,7 +1036,14 @@ L3.Arena = class {
   drawLegs(c) {
     const b = this.boss;
     for (const L of b.legs) {
-      Spr.draw(c, 'parts5', 2, L3.BCX + L.side * 98, L3.AG - L.lift + b.dy * 0.3, L.side, { scale: 1.05, rot: -L.side * L.lift * 0.004 });
+      const [hx, hy] = b.pt(BODY5.hip[0] * L.side, BODY5.hip[1]);
+      const a = L3.segLen(LEG6.thigh, L3.LS), bl = L3.segLen(LEG6.shin, L3.LS);
+      const tx = L3.BCX + L.side * 108, ty = L3.AG - 34 - L.lift;
+      let dx = tx - hx, dy = ty - hy; const d = Math.hypot(dx, dy) || 1, dm = Math.min(a + bl - 2, Math.max(Math.abs(a - bl) + 2, d));
+      const base = Math.atan2(dy, dx), th1 = base + (L.side > 0 ? -1 : 1) * Math.acos(U.clamp((a * a + dm * dm - bl * bl) / (2 * a * dm), -1, 1));
+      const kx = hx + Math.cos(th1) * a, ky = hy + Math.sin(th1) * a, th2 = Math.atan2(hy + dy / d * dm - ky, hx + dx / d * dm - kx);
+      L3.drawSeg(c, LEG6.shin, kx, ky, th2, L3.LS, { flip: L.side > 0 });
+      L3.drawSeg(c, LEG6.thigh, hx, hy, th1, L3.LS);
     }
   }
   drawBody(c) {
@@ -1019,15 +1051,12 @@ L3.Arena = class {
     const tf = Spr.frame('parts5', 0), th = (tf ? tf[3] / 2 : 210) * L3.TS, rimY = L3.AG - th * 0.43;
     const body = () => {
       c.save(); c.translate(bx, by + K * 190); c.rotate(b.sway); c.scale(L3.BS * (1 - 0.7 * K), L3.BS * b.breath);
-      Spr.draw(c, 'boss5', fr, 0, 0, 1, { flash: b.flash > 0 ? '#ffffff' : null });
+      Spr.draw(c, 'boss6', fr, 0, 0, 1, { flash: b.flash > 0 ? '#ffffff' : null });
       c.restore();
     };
-    // унитаз целиком (с бачком) — стоит неподвижно
-    Spr.draw(c, 'parts5', 0, L3.BCX, L3.AG, 1, { scale: L3.TS });
-    if (K <= 0) this.drawLegs(c);
     if (K > 0) { c.save(); c.beginPath(); c.rect(0, 0, L3.AVW, rimY + 6); c.clip(); body(); c.restore(); }
-    else body();
-    // передняя часть чаши закрывает низ таракана
+    else { body(); return; }
+    // когда тонет — передняя часть чаши закрывает его
     if (tf) { const k = 0.5 * L3.TS, sy = tf[3] * 0.56; c.drawImage(Spr.sheets.parts5.img, tf[0], tf[1] + sy, tf[2], tf[3] - sy, L3.BCX - tf[4] * k, L3.AG - (tf[3] - sy) * k, tf[2] * k, (tf[3] - sy) * k); }
   }
   drawStumps(c) {
@@ -1057,8 +1086,9 @@ L3.Arena = class {
     c.save(); c.imageSmoothingEnabled = false;
     if (L3.img.boss2_bg) c.drawImage(L3.img.boss2_bg, 0, 0, L3.AVW, L3.AVH);
     const alive = this.sinkK <= 0;
-    // порядок: лапы (из-за корпуса) → ноги → унитаз и тело → культи
-    if (alive) { for (const a of b.arms) if (a.slot === 'mid') a.draw(c); for (const a of b.arms) if (a.slot === 'up') a.draw(c, 'back'); }
+    // порядок: унитаз → лапы и ноги (из-за корпуса) → тело (целиком, сидит на сиденье) → культи
+    Spr.draw(c, 'parts5', 0, L3.BCX, L3.AG, 1, { scale: L3.TS });
+    if (alive) { for (const a of b.arms) a.draw(c, 'back'); this.drawLegs(c); }
     this.drawBody(c);
     if (alive) for (const a of b.arms) if (a.front) a.draw(c, 'fore');
     if (alive) this.drawStumps(c);
@@ -1140,7 +1170,7 @@ L3.sceneIntro = level => L3.comic(level, [
   { img: 'comic4', cap: 'ОПЕРАЦИЯ «ДЕЗИНСЕКЦИЯ»', lines: [['Зря я в столовке у Машки взял тот пирожок...', 330, 60]], title: 'УРОВЕНЬ 3: ГЛЮКИ' },
 ]);
 L3.sceneBoss = level => L3.comic(level, [
-  { img: 'boss_read', cap: 'Туалет. Последний рубеж.', lines: [['Теперь это мой туалет! Проваливай!', 400, 40, true], ['Мой сральник никто не займёт! Туалетная бумага стала слишком дорогой!', 200, 220]], title: 'БОЙ!' },
+  { img: 'boss_read2', cap: 'Туалет. Последний рубеж.', lines: [['Теперь это мой туалет! Проваливай!', 480, 30, true], ['Мой сральник никто не займёт! Туалетная бумага стала слишком дорогой!', 150, 36]], title: 'БОЙ!' },
 ]);
 L3.sceneEnd = level => L3.comic(level, [
   { img: 'comic5', sfx: 'splash', cap: 'Валера очнулся...', lines: [['Так это всё глюки?! И бумага кончилась!!!', 320, 50, true]] },
