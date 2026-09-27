@@ -43,6 +43,7 @@ Spr.ANIM.valera3 = {
   stand: { fr: [['v4_act', 0]], fps: 1 }, angry: { fr: [['v4_act', 6]], fps: 1 },
   run: { fr: [0, 1, 2, 3, 4, 5, 6, 7].map(i => ['v4_run', i]), fps: 14 }, walk: { fr: [0, 1, 2, 3, 4, 5, 6, 7].map(i => ['v4_run', i]), fps: 9 },
   crouch: { fr: [['v4_act', 1]], fps: 1 }, chalkUp: { fr: [['v4_act', 7]], fps: 1 },
+  chalkV0: { fr: [['v4_up', 0]], fps: 1 }, chalkV1: { fr: [['v4_up', 1]], fps: 1 }, chalkVair: { fr: [['v4_up', 2]], fps: 1 },
   jump: { fr: [['v4_act', 2]], fps: 1 }, fall: { fr: [['v4_act', 3]], fps: 1 }, land: { fr: [['v4_act', 1]], fps: 1 },
   hurt: { fr: [['v4_act', 4]], fps: 1 }, ko: { fr: [['v4_act', 5]], fps: 1 },
   swatWind: { fr: [['v3_melee', 0]], fps: 1 }, swat: { fr: [['v3_melee', 1]], fps: 1 },
@@ -113,7 +114,8 @@ L3.Player = class extends Game.Player {
         this.atk = { t: 0, dur: 0.34, kind: 'swat', hit: new Set() };
         Sound.play('punch');
       } else if (this.weapon === 'chalk' && I.pressed('punch') && !this.atk) {
-        this.atk = { t: 0, dur: 0.26, kind: 'chalk', hit: new Set(), done: false, up: I.held('up') && !this.crouch };
+        const up = I.held('up') && !this.crouch;
+        this.atk = { t: 0, dur: 0.26, kind: 'chalk', hit: new Set(), done: false, up, vert: up && !I.held('left') && !I.held('right') };
       }
     }
     if (this.shootT > 0) this.shootT -= dt;
@@ -126,7 +128,7 @@ L3.Player = class extends Game.Player {
       }
       if (a.kind === 'chalk' && a.t > 0.14 && !a.done) {
         a.done = true; this.ammo3.chalk--;
-        const s = new L3.Shot('chalk', this.x + this.facing * 24, this.y - (this.crouch ? 34 : 52), this.facing); if (a.up) { s.vx = this.facing * 300; s.vy = -440; s.y = this.y - 84; }
+        const s = new L3.Shot('chalk', this.x + this.facing * 24, this.y - (this.crouch ? 34 : 52), this.facing); if (a.vert) { s.vx = this.facing * 10; s.vy = -560; s.x = this.x + this.facing * 8; s.y = this.y - 100; } else if (a.up) { s.vx = this.facing * 300; s.vy = -440; s.y = this.y - 84; }
         world.projs.push(s); Sound.play('throw');
       }
       if (a.t >= a.dur) this.atk = null;
@@ -137,7 +139,7 @@ L3.Player = class extends Game.Player {
     if (this.hurtT > 0) a = 'hurt';
     else if (this.fartT > 0) a = 'fart';
     else if (this.atk && this.atk.kind === 'swat') a = this.atk.t < 0.12 ? 'swatWind' : 'swat';
-    else if (this.atk && this.atk.kind === 'chalk') a = this.atk.up ? (this.atk.t < 0.1 ? 'chalkA' : 'chalkUp') : this.atk.t < 0.14 ? 'chalkA' : 'chalkB';
+    else if (this.atk && this.atk.kind === 'chalk') a = this.atk.vert ? (!this.onGround ? 'chalkVair' : this.atk.t < 0.1 ? 'chalkV0' : 'chalkV1') : this.atk.up ? (this.atk.t < 0.1 ? 'chalkA' : 'chalkUp') : this.atk.t < 0.14 ? 'chalkA' : 'chalkB';
     else if (!this.onGround) a = this.vy < 0 ? 'jump' : 'fall';
     else if (this.crouch) a = 'crouch';
     else if (Math.abs(this.vx) > 20) a = 'run';
@@ -370,7 +372,7 @@ L3.Glob = class {
         FX.burst(this.x, this.y, 16, { colors: ['#ffb040', '#ff6020', '#fff6a0', '#444'], speed: 170, life: 0.5 });
         if (pl && U.dist(pl.x, pl.y - 30, this.x, this.y) < 48) pl.hurt(14, this.x, wd);
       } else if (this.kind === 'soup') {
-        FX.burst(this.x, this.y, 5, { colors: ['#d8a040', '#fff'], speed: 60, life: 0.3 });
+        (wd.decals || (wd.decals = [])).push({ x: this.x, y: g && g.y != null ? g.y : (g ? floorY : this.y), t0: G.t, floor: !!g });
         if (hit) pl.hurt(7, this.x, wd);
       } else {
         FX.burst(this.x, this.y, 8, { colors: ['#8ce040', '#c8ff60'], speed: 90, life: 0.4 });
@@ -381,7 +383,7 @@ L3.Glob = class {
   }
   draw(c, cx) {
     if (this.kind === 'bomb') Art.item(c, 'bomb3', this.x - cx, this.y, this.rot, 0.9);
-    else if (this.kind === 'soup') { Art.R(c, this.x - cx - 3, this.y - 3, 6, 6, '#e0a848'); Art.R(c, this.x - cx - 1, this.y - 2, 2, 2, '#fff'); }
+    else if (this.kind === 'soup') { c.save(); c.translate(this.x - cx, this.y); c.rotate(Math.atan2(this.vy, this.vx) + Math.PI); Spr.drawC(c, 'soup', 1, 0, 0, 0, 1); c.restore(); }
     else { const f = Spr.frame('moth2', 4); if (f) { c.save(); c.translate(this.x - cx, this.y); c.rotate(Math.atan2(this.vy, this.vx) + Math.PI); c.scale(0.6, 0.6); Spr.drawC(c, 'moth2', 4, -24, 0, 0, 1); c.restore(); } else Art.item(c, 'acid3', this.x - cx, this.y, 0, 1.4); }
   }
 };
@@ -541,6 +543,7 @@ L3.Run = class {
       else if (c.state === 'fall') {
         c.vy += 1500 * dt; c.y += c.vy * dt;
         if (!pl.dead && Math.abs(pl.x - c.x) < 26 && c.y + 20 > pl.y - 70 && c.y < pl.y) { pl.hurt(18, c.x, wd); }
+        for (const e of wd.enemies) if (e.dieT == null && !c.hitSet?.has(e) && Math.abs(e.x - c.x) < 34 && c.y + 20 > e.y - (e.d.air ? 20 : e.d.h) && c.y < e.y + 10) { (c.hitSet || (c.hitSet = new Set())).add(e); if (e.hit(6, e.x > c.x ? 1 : -1)) { wd.addScore(e.score * 2); wd.stats.kills++; FX.popText(e.x, e.y - 60, 'БАЦ!', '#ffd84a'); } }
         if (c.y >= L3.GROUND - 18) { c.y = L3.GROUND - 18; c.state = 'broken'; c.rot = 0.3; Sound.play('glass'); G.shake(5, 0.3); FX.burst(c.x, L3.GROUND - 10, 18, { colors: ['#e8f4ff', '#fff', '#c8a040'], speed: 180, type: 'shard', size: 2, life: 0.7 }); }
       }
     }
@@ -624,6 +627,7 @@ L3.Run = class {
     for (const e of wd.enemies) e.draw(c, cx);
     this.player.draw(c, cx, 0);
     for (const g of wd.globs) g.draw(c, cx);
+    if (wd.decals) { wd.decals = wd.decals.filter(d => G.t - d.t0 < 2.2); for (const d of wd.decals) { const age = G.t - d.t0; if (age < 0.22) Spr.drawC(c, 'soup', 3, d.x - cx, d.y - 10, 0, 0.6 + age * 3); if (d.floor) Spr.draw(c, 'soup', 2, d.x - cx, d.y + 3, 1, { alpha: Math.min(1, (2.2 - age) * 2) }); } }
     for (const p of wd.projs) p.draw(c, cx);
     this.drawDoorways(c, cx);
     c.save(); c.translate(-cx, 0); FX.draw(c); c.restore();
@@ -858,7 +862,7 @@ L3.Arena = class {
   startFight(pl) {
     this.player = pl; pl.controls = true; this.fighting = true; L3.arenaPlayer = pl;
     const oh = pl.hurt.bind(pl); pl.hurt = (...a) => { const r = oh(...a); if (r) this.onPlayerHurt(); return r; };
-    this.hint = 'Сбей две нижние клешни — ими он бьёт. Бей мухобойкой, когда лапа на полу, или кидай мелки ({up}+удар — вверх).'; this.hintT = 7;
+    this.hint = 'Сбей две нижние клешни — ими он бьёт. Бей мухобойкой, когда лапа на полу, или кидай мелки ({up}+удар — вверх, {up}+стрелка+удар — по диагонали).'; this.hintT = 7;
     this.boss.setFace(2, 1.5); G.say(this.boss, 'Шесть лап против одного арбуза? Смешно!', 2.2, { shout: true });
   }
   onPlayerHurt() { const b = this.boss; if (b.phase === 3 && this.beam) return; b.setFace(2, 1.3); if (Math.random() < 0.45) G.say(b, U.choice(LAUGHS), 1.4); }
@@ -928,7 +932,7 @@ L3.Arena = class {
   }
   bossDown() {
     const pl = this.player;
-    this.fighting = false; pl.controls = false; pl.vx = 0; this.world.globs = []; this.smoke = []; this.beam = null;
+    this.fighting = false; pl.controls = false; pl.vx = 0; this.world.globs = []; this.smoke = []; this.beam = null; this.hint = null; this.hintT = 0;
     this.world.addScore(9000); this.level.stats.kills++; Music.stop(); Sound.play('squeak'); G.shake(6, 0.5);
     this.dying = 0; this.boss.setFace(5, 99); G.say(this.boss, 'Не-е-ет! Мой трон!..', 1.6, { shout: true });
   }
@@ -1033,9 +1037,9 @@ L3.Arena = class {
       this.dying += dt;
       if (this.dying > 1.1) {
         if (!this.sinkSnd) { this.sinkSnd = true; Sound.play('splash'); }
-        this.sinkK = Math.min(1, (this.dying - 1.1) / 1.5);
-        if (this.sinkK < 1 && Math.random() < dt * 40) FX.spawn({ x: L3.BCX + U.rand(-40, 40), y: L3.AG - 98, vx: U.rand(-90, 90), vy: U.rand(-220, -80), grav: 600, life: 0.6, color: U.choice(['#bfe8ff', '#ffffff', '#8cc8f0']), size: 2 });
-        if (this.sinkK >= 1 && !this.doneSink) { this.doneSink = true; this.pending = { t: 0.5, fn: () => this.level.bossDefeated() }; }
+        if (!this.flushing) this.sinkK = Math.min(0.5, (this.dying - 1.1) / 1.5); // застрял: торчат голова и усы
+        if (this.sinkK < 0.5 && Math.random() < dt * 40) FX.spawn({ x: L3.BCX + U.rand(-40, 40), y: L3.AG - 98, vx: U.rand(-90, 90), vy: U.rand(-220, -80), grav: 600, life: 0.6, color: U.choice(['#bfe8ff', '#ffffff', '#8cc8f0']), size: 2 });
+        if (this.sinkK >= 0.5 && !this.doneSink) { this.doneSink = true; this.pending = { t: 0.6, fn: () => this.level.bossDefeated() }; }
       }
     }
     for (const g of wd.globs) g.update(dt, wd, pl, L3.AG);
@@ -1071,7 +1075,7 @@ L3.Arena = class {
     const b = this.boss, fr = this.bossFace(), [bx, by] = b.base, K = this.sinkK;
     const tf = Spr.frame('parts5', 0), th = (tf ? tf[3] / 2 : 210) * L3.TS, rimY = L3.AG - th * 0.43;
     const body = () => {
-      c.save(); c.translate(bx, by + K * 190); c.rotate(b.sway); c.scale(L3.BS * (1 - 0.7 * K), L3.BS * b.breath);
+      c.save(); c.translate(bx, by + K * 190); c.rotate(b.sway + (this.spin || 0)); c.scale(L3.BS * (1 - 0.4 * K), L3.BS * b.breath);
       Spr.draw(c, 'boss6', fr, 0, 0, 1, { flash: b.flash > 0 ? '#ffffff' : null });
       c.restore();
     };
@@ -1106,6 +1110,7 @@ L3.Arena = class {
     c.fillStyle = '#12100e'; c.fillRect(0, 0, W, H);
     c.save(); c.imageSmoothingEnabled = false;
     if (L3.img.boss2_bg) c.drawImage(L3.img.boss2_bg, 0, 0, L3.AVW, L3.AVH);
+    Spr.drawC(c, 'poster', 0, 168, 176, -0.04, 1);
     const alive = this.sinkK <= 0;
     // порядок: унитаз → лапы и ноги (из-за корпуса) → тело (целиком, сидит на сиденье) → культи
     Spr.draw(c, 'parts5', 0, L3.BCX, L3.AG, 1, { scale: L3.TS });
@@ -1171,7 +1176,7 @@ L3.comic = function (level, panels, after) {
       st.i = i; st.t = 0; st.bubbles = []; st.cap = ''; st.title = 0;
       Sound.play(p.sfx || 'boom');
       yield* Scene.tween(0.35, k => { st.fade = 1 - k; });
-      if (p.cap) { st.cap = p.cap; yield 0.4; }
+      if (p.cap) { st.cap = p.cap; yield 0.4; } else st.cap = '';
       for (const [text, x, y, shout, tx, ty] of p.lines || []) {
         st.bubbles.push({ text, x, y, shout, tail: tx != null ? [tx, ty] : null }); Sound.play('blip', 300);
         yield* waitKey();
@@ -1191,7 +1196,7 @@ L3.sceneIntro = level => L3.comic(level, [
   { img: 'comic4', cap: 'ОПЕРАЦИЯ «ДЕЗИНСЕКЦИЯ»', lines: [['Зря я в столовке у Машки взял тот пирожок...', 330, 60]], title: 'УРОВЕНЬ 3: ГЛЮКИ' },
 ]);
 L3.sceneBoss = level => L3.comic(level, [
-  { img: 'boss_read2', cap: 'Туалет. Последний рубеж.', lines: [['Теперь это мой туалет! Проваливай!', 128, 70, false, 348, 120], ['Мой сральник никто не займёт! Туалетная бумага стала слишком дорогой!', 540, 104, false, 360, 122]], title: 'БОЙ!' },
+  { img: 'boss_read2', lines: [['Теперь это мой туалет! Проваливай!', 520, 64, false, 362, 120], ['Мой сральник никто не займёт! Туалетная бумага стала слишком дорогой!', 150, 118, false, 118, 176]], title: 'БОЙ!' },
 ]);
 L3.sceneEnd = level => L3.comic(level, [
   { img: 'comic5', sfx: 'splash', cap: 'Валера очнулся...', lines: [['Так это всё глюки?! И бумага кончилась!!!', 118, 74, false, 292, 98]] },
@@ -1204,30 +1209,41 @@ L3.sceneFlush = function (level) {
   const ar = level.arena;
   const v = new G.Actor('valera3', ar.player.x, L3.AG, ar.player.facing);
   ar.player = null; ar.actors = [v];
-  const toilet = { x: L3.BCX, y: L3.AG, headH: 120, voice: 90 };
+  const b = ar.boss, head = { get x() { return L3.BCX; }, y: L3.AG, headH: 150, voice: 90, get tail() { return [L3.BCX + 10, L3.AG - 118]; }, bx: L3.BCX + 170, by: 120 };
   level.drawScene = c => { ar.draw(c); Scene.drawDialog(c); };
   level.updateScene = dt => { ar.update(dt); FX.update(dt); G.updateBubbles(dt); };
+  const topY = L3.AG - 210 * L3.TS + 4; // крышка бачка
+  const hop = function* (x0, y0, x1, y1, h, dur) { v.setAnim('jump'); Sound.play('jump'); yield* Scene.tween(dur, k => { v.x = U.lerp(x0, x1, k); v.y = U.lerp(y0, y1, k) - Math.sin(k * Math.PI) * h; v.setAnim(k < 0.5 ? 'jump' : 'fall'); }); };
   return function* () {
-    G.say(toilet, 'Бульк... Я ещё вернусь... через канализацию...', 2.2);
-    yield 2.0;
-    const ry = L3.AG - 92, side = v.x < L3.BCX ? -1 : 1, x0 = v.x, sx = L3.BCX + side * 70;
+    G.say(head, 'Бульк... Я застрял... Я ещё вернусь... через канализацию!', 2.4);
+    yield 2.2;
+    // подбегает к унитазу
+    const side = v.x < L3.BCX ? -1 : 1, x0 = v.x, sx = L3.BCX + side * 90;
     v.facing = -side; v.setAnim('run');
-    yield* Scene.tween(Math.abs(sx - x0) / 160 + 0.05, k => { v.x = U.lerp(x0, sx, k); });
-    v.setAnim('jump'); Sound.play('jump');
-    yield* Scene.tween(0.6, k => { v.x = U.lerp(sx, L3.BCX + side * 12, k); v.y = U.lerp(L3.AG, ry + 4, k) - Math.sin(k * Math.PI) * 50; });
-    v.setAnim('stand'); v.facing = 1;
-    yield 0.3;
-    Sound.play('lever'); G.shake(3, 0.3);
-    yield 0.25;
-    Sound.play('splash'); Sound.play('steam');
-    for (let i = 0; i < 40; i++) FX.spawn({ x: L3.BCX + U.rand(-30, 30), y: ry, vx: U.rand(-90, 90), vy: U.rand(-200, -60), grav: 500, life: 0.9, color: U.choice(['#bfe8ff', '#ffffff', '#8cc8f0']), size: 3 });
+    yield* Scene.tween(Math.abs(sx - x0) / 170 + 0.05, k => { v.x = U.lerp(x0, sx, k); });
+    // запрыгивает на бачок
+    yield* hop(sx, L3.AG, L3.BCX + side * 26, topY, 70, 0.7);
+    v.setAnim('angry'); v.facing = -side; G.shake(2, 0.2); Sound.play('stomp');
+    G.say(v, 'Ну всё, усатый. Счёт за воду — за мой счёт!', 1.8);
+    yield 1.9;
+    // прыгает на кнопку смыва
+    yield* hop(v.x, topY, L3.BCX, topY - 2, 44, 0.5);
+    v.setAnim('crouch'); Sound.play('lever'); G.shake(4, 0.3);
     G.say(v, 'СМЫВАЮ!!!', 1.4, { shout: true });
-    yield 1.5;
-    const x2 = v.x;
-    v.setAnim('jump');
-    yield* Scene.tween(0.55, k => { v.x = U.lerp(x2, L3.BCX - 90, k); v.y = U.lerp(ry + 4, L3.AG, k) - Math.sin(k * Math.PI) * 30; });
+    yield 0.25;
+    // водоворот: таракана крутит и смывает
+    ar.flushing = true; Sound.play('splash'); Sound.play('steam');
+    G.say(head, 'Не-е-ет! Только не в канализаци-и-и...', 1.4, { shout: true });
+    yield* Scene.tween(1.4, k => {
+      ar.sinkK = U.lerp(0.5, 1, k); ar.spin = Math.sin(k * 30) * 0.3 * (1 - k) + k * 6;
+      if (Math.random() < 0.8) FX.spawn({ x: L3.BCX + U.rand(-34, 34), y: L3.AG - 96, vx: U.rand(-80, 80), vy: U.rand(-200, -60), grav: 500, life: 0.8, color: U.choice(['#bfe8ff', '#ffffff', '#8cc8f0']), size: 3 });
+    });
+    G.bubbles = G.bubbles.filter(x => x.target !== head);
+    yield 0.5;
+    // спрыгивает и ставит точку
+    yield* hop(v.x, topY, L3.BCX - 100, L3.AG, 40, 0.6);
     v.setAnim('angry'); v.facing = 1;
-    yield 0.4;
+    yield 0.3;
     G.say(v, 'Мой туалет — мои правила.', 1.8);
     yield 2.0;
   };

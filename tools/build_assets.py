@@ -469,6 +469,9 @@ ca = np.array(comp); ca[..., 3] = np.where(ca[..., 3] > 100, 255, 0); comp = Ima
 comp.save(os.path.join(SPR, 'doorwall.png')); wallx = sx
 S['doorwall'] = {'img': 'assets/spr/doorwall.png', 'f': [[0, 0, comp.width, comp.height, round((wallx + 0.0) * 720 / H0), comp.height, 0, 0]]}
 S['shin7'] = build_sheet('shin7', 'boss6_shin.png', 2, 104, ref=0, keyer='clean')
+S['v4_up'] = build_sheet('v4_up', 'v4_up.png', 3, 86, ref=0, keyer='clean', anchors=['body', 'body', 'body'])
+S['poster'] = build_sheet('poster', 'poster.png', 1, 70, keyer='clean', anchors=['center'])
+S['soup'] = build_sheet('soup', 'soup.png', 4, [-12, -16, -26, -18], keyer='clean', anchors=['center'] * 4)
 with open(os.path.join(ROOT, 'js', 'sprites_data.js'), 'w', encoding='utf-8') as fp:
     fp.write('// автоматически создано tools/build_assets.py\nwindow.SPRITES = ' + json.dumps(S) + ';\nwindow.BGS = ' + json.dumps(B) + ';\nwindow.BUILDINGS = ' + json.dumps(B2) + ';\nwindow.WALLS3 = ' + json.dumps(B3) + ';\n')
 print('готово 4')
