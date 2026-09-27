@@ -448,7 +448,7 @@ L3.Run = class {
       if (!def[4]) { const cw = w * def[3], top = p.y - h * def[2]; o.col = wd.addPlat({ x: p.x - cw / 2, y: top, w: cw, h: 8, oneway: true, look: 'none' }); }
       return o;
     });
-    const topOf = (type, x) => { const f = this.furn.filter(p => p.type === type && p.col).sort((a, b) => Math.abs(a.x - x) - Math.abs(b.x - x))[0]; return f ? f.col.y : L3.GROUND; };
+    const topOf = (type, x) => { const f = this.furn.filter(p => p.type === type && p.col).sort((a, b) => Math.abs(a.x - x) - Math.abs(b.x - x))[0]; return f && f.col.y > L3.GROUND - 96 ? f.col.y : L3.GROUND; }; // слишком высоко для прыжка — кладём на пол
     wd.enemies = D.bugs.map(b => new L3.Bug(b.type, b.x, b.o || {}));
     wd.pickups = D.picks.map(p => new Game.Pickup(p.kind, p.x, p.onType ? topOf(p.onType, p.x) : L3.GROUND));
     wd.checkpoints = D.checkpoints.map(c => Object.assign({ active: false }, c));

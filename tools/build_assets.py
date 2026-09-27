@@ -153,6 +153,13 @@ def anchor(f, mode):
     h, w = al.shape
     if mode == 'center':
         return w / 2, h
+    if mode == 'body':
+        # по корпусу/голове (без синей мухобойки): тело не «ездит» между кадрами бега
+        ys = np.where(al.any(axis=1))[0]; top, bottom = ys[0], ys[-1]
+        band = f[int(top + (bottom - top) * 0.08):int(top + (bottom - top) * 0.5)]
+        m = (band[..., 3] > 0) & ~(band[..., 2].astype(int) > band[..., 0].astype(int) + 20)
+        xs = np.nonzero(m)[1]
+        return float(np.median(xs)), bottom + 1
     ys = np.where(al.any(axis=1))[0]
     bottom = ys[-1]
     band = al[max(0, int(bottom - h * 0.14)):bottom + 1]
@@ -172,11 +179,42 @@ def build_sheet(name, src, n, target, ref=0, keyer='green', grid=None, anchors=N
     im = Image.open(os.path.join(SRC, src))
     a = key_green(im) if keyer == 'green' else key_green_strict(im) if keyer == 'strict' else key_black(im) if keyer == 'black' else key_magenta(im) if keyer == 'magenta' else key_pre(im) if keyer == 'clean' else np.array(im.convert('RGBA'))
     if even:
+        # кадры стоят в ряд: крупные куски — тела (слипшиеся делим по «перешейку»), мелочь — к ближайшему телу
+        op = a[..., 3] > 0
+        lab, nl = ndimage.label(ndimage.binary_dilation(op, iterations=1))
+        objs = ndimage.find_objects(lab)
+        areas = ndimage.sum(np.ones(lab.shape), lab, range(1, nl + 1))
+        big = sorted([j for j in range(nl) if areas[j] > areas.max() * 0.2], key=lambda j: objs[j][1].start)
+        mw = float(np.median([objs[j][1].stop - objs[j][1].start for j in big]))
+        ranges = []  # (id, x0, x1)
+        for j in big:
+            x0, x1 = objs[j][1].start, objs[j][1].stop
+            k = max(1, int(round((x1 - x0) / mw)))
+            if len(big) + k - 1 > n: k = 1
+            cuts = [x0]
+            prof = ((lab == j + 1) & op).sum(axis=0)
+            for q in range(1, k):
+                c0 = x0 + (x1 - x0) * q / k; r = (x1 - x0) / k * 0.35
+                lo, hi = int(c0 - r), int(c0 + r)
+                cuts.append(lo + int(np.argmin(prof[lo:hi])))
+            cuts.append(x1)
+            for q in range(k): ranges.append((j + 1, cuts[q], cuts[q + 1]))
+        ranges.sort(key=lambda t: t[1])
+        cms = ndimage.center_of_mass(np.ones(lab.shape), lab, range(1, nl + 1))
+        centers = [(r[1] + r[2]) / 2 for r in ranges]
         fr = []
-        for i in range(n):
-            sub = a[:, a.shape[1] * i // n: a.shape[1] * (i + 1) // n]
-            ys = np.where(a[..., 3].any(axis=1))[0]
-            fr.append(sub[ys[0]:ys[-1] + 1])
+        cols = np.arange(a.shape[1])[None, :]
+        for fi, (jid, x0, x1) in enumerate(ranges):
+            m = (lab == jid) & (cols >= x0) & (cols < x1)
+            for j in range(nl):
+                if j + 1 in [r[0] for r in ranges]: continue
+                if int(np.argmin([abs(cms[j][1] - c) for c in centers])) == fi: m |= lab == j + 1
+            m &= op
+            ys = np.where(m.any(axis=1))[0]; xs = np.where(m.any(axis=0))[0]
+            sub = a[ys[0]:ys[-1] + 1, xs[0]:xs[-1] + 1].copy()
+            sub[..., 3] = np.where(m[ys[0]:ys[-1] + 1, xs[0]:xs[-1] + 1], sub[..., 3], 0)
+            fr.append(sub)
+        if len(fr) != n: print('  !! кадров', len(fr), 'из', n)
     else:
         fr = frames_grid(a, *grid) if grid else segment(a, n, dil=dil)
     fr = [only_largest(f) if i in strip else f for i, f in enumerate(fr)]
@@ -354,8 +392,8 @@ print('готово 2')
 S['v3_run'] = build_sheet('v3_run', 'v3_run.png', 8, 84, keyer='strict')
 S['v3_act'] = build_sheet('v3_act', 'v3_act.png', 8, 86, ref=0, anchors=['feet'] * 6 + ['center', 'feet'], keyer='strict')
 S['v3_melee'] = build_sheet('v3_melee', 'v3_melee.png', 6, 86, ref=1, dil=1, keyer='strict')
-S['v4_run'] = build_sheet('v4_run', 'v4_run.png', 8, 84, keyer='clean')
-S['v4_act'] = build_sheet('v4_act', 'v4_act.png', 8, 86, ref=0, keyer='clean', anchors=['feet'] * 5 + ['center', 'feet', 'feet'])
+S['v4_run'] = build_sheet('v4_run', 'v4_run.png', 8, 84, keyer='clean', anchors=['body'] * 8, even=True)
+S['v4_act'] = build_sheet('v4_act', 'v4_act.png', 8, 86, ref=0, keyer='clean', anchors=['body'] * 5 + ['center', 'body', 'body'])
 S['v3_up'] = build_sheet('v3_up', 'v3_up.png', 6, 81, ref=1, keyer='pre', strip=range(6))
 S['moth'] = build_sheet('moth', 'moth.png', 6, [-66] * 5 + [-60], keyer='magenta', anchors=['center'] * 6)
 S['boss4'] = build_sheet('boss4', 'boss2_body.png', 4, 250, ref=0, keyer='magenta')
@@ -364,11 +402,11 @@ S['roach'] = build_sheet('roach', 'roach.png', 7, 84, ref=0, anchors=['feet'] * 
 S['bedbug'] = build_sheet('bedbug', 'bedbug.png', 7, 70, ref=0, anchors=['feet'] * 6 + ['center'])
 S['fly'] = build_sheet('fly', 'fly.png', 6, [-64, -64, -64, -64, -60, -64], anchors=['center'] * 6)
 S['spider'] = build_sheet('spider', 'spider_misc.png', 7, [-72, -72, -72, -72, -30, -30, -44], anchors=['center'] * 7)
-S['items3'] = build_sheet('items3', 'items3.png', 12, [-16, 18, 22, 16, -24, -22, 16, -22, 20, -14, 12, -16], grid=(3, 4), anchors=['center'] * 12)
-S['f_corr'] = build_sheet('f_corr', 'furn_corridor.png', 6, [82, 40, 96, 48, -54, 104], grid=(2, 3))
-S['f_kit'] = build_sheet('f_kit', 'furn_kitchen.png', 6, [76, 44, 40, 44, 40, -72], grid=(2, 3))
-S['f_liv'] = build_sheet('f_liv', 'furn_living.png', 6, [44, 60, 102, 46, 24, 78], grid=(2, 3))
-S['f_bed'] = build_sheet('f_bed', 'furn_bed_balcony.png', 8, [46, 48, 96, 62, 66, 88, 72, 44], grid=(2, 4))
+S['items3'] = build_sheet('items3', 'items3.png', 12, [-27, 30, 38, 27, -40, -38, 27, -38, 34, -23, 21, -27], grid=(3, 4), anchors=['center'] * 12)
+S['f_corr'] = build_sheet('f_corr', 'furn_corridor.png', 6, [144, 70, 169, 85, -88, 125], grid=(2, 3))
+S['f_kit'] = build_sheet('f_kit', 'furn_kitchen.png', 6, [134, 77, 70, 77, 70, -126], grid=(2, 3))
+S['f_liv'] = build_sheet('f_liv', 'furn_living.png', 6, [77, 105, 179, 81, 42, 136], grid=(2, 3))
+S['f_bed'] = build_sheet('f_bed', 'furn_bed_balcony.png', 8, [81, 84, 169, 109, 116, 155, 126, 77], grid=(2, 4))
 S['boss3'] = build_sheet('boss3', 'boss_body.png', 5, 330, ref=0, keyer='pre')
 S['arms3'] = build_sheet('arms3', 'boss_arms.png', 5, [-230, -240, -210, -230, -190], keyer='pre', anchors=['center'] * 5)
 S['acid'] = build_sheet('acid', 'acid_puddle.png', 6, [-72] * 6, keyer='pre')
