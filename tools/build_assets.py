@@ -282,6 +282,9 @@ gr = gr.resize((round(2172 * 140 / 300), 140), Image.LANCZOS); gr.save(os.path.j
 B2['_layers'] = {'sky': [sky.width / 2, 360], 'far': [far.width / 2, 190], 'ground': [gr.width / 2, 70]}
 # магазин с дальней камерой и крупный Валера для этой сцены
 B['shop'] = bg('shop2.png', 'bg_shop', (1280, 720))
+cab = Image.open(os.path.join(SRC, 'cab_entrance.png')).convert('RGBA').resize((1280, 721), Image.LANCZOS)
+ca = np.array(cab); ca[..., 3] = np.where(ca[..., 3] > 100, 255, 0)
+Image.fromarray(ca, 'RGBA').quantize(256, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE).save(os.path.join(OUT, 'l1_cab.png'), optimize=True)
 fl = Image.open(os.path.join(SRC, 'l1_floor.png')).convert('RGB').crop((0, 0, 2172, 400))
 fl = fl.resize((round(2172 * 140 / 400), 140), Image.LANCZOS); fl.save(os.path.join(OUT, 'l1_floor.jpg'), quality=88)
 S['vb_run'] = build_sheet('vb_run', 'valera_run.png', 8, 150)

@@ -181,8 +181,8 @@ L1.build = function () {
   D.bottleZone = { y1: topY - 40, y2: cur.y + 10 };
   D.hints.push({ x: 0, y: cur.y - 300, w: 640, h: 310, once: true, text: 'Кто-то швыряет бутылки из кабины! Лезь быстрее!' });
   // площадка кабины
-  P(0, topY, 640, 'cab');
-  D.cabDoor = { x: lx < 320 ? 520 : 40, y: topY - 70, w: 90, h: 70 };
+  P(0, topY, 640, 'none');
+  D.cabDoor = { x: 285, y: topY - 70, w: 70, h: 70 };
   D.topY = topY;
 
   // ---- сдвиг: пол внизу мира ----
@@ -524,13 +524,11 @@ L1.Climb = class {
     this.bg.drawGalleries(c, cy);
     for (const g of this.groups) if (g.g.y > cy - 80 && g.g.y < cy + H + 80) g.draw(c, 0, cy);
     c.fillStyle = 'rgba(14,18,24,0.25)'; c.fillRect(0, 0, W, H);
-    // дверь кабины наверху
-    const cd = this.D.cabDoor;
-    if (cd.y - cy > -80 && cd.y - cy < H) {
-      const dx = cd.x + 20, dy = cd.y + cd.h - cy;
-      Rr(c, dx - 4, dy - 70, 50, 70, '#15171a'); Rr(c, dx, dy - 66, 42, 66, '#3a4046'); Rr(c, dx + 4, dy - 62, 34, 22, '#8a9aa6');
-      Rr(c, dx + 34, dy - 34, 3, 4, '#c8a020');
-      Rr(c, dx - 12, dy - 88, 66, 14, '#b8342e'); G.text('КАБИНА', dx + 21, dy - 85, { align: 'center', size: 8, color: '#fff' });
+    // кабина крановщика наверху (настил на 312 px ниже верха картинки)
+    const cabY = this.D.topY - 312 - cy;
+    if (G.bg.l1cab && cabY < H && cabY > -380) {
+      c.drawImage(G.bg.l1cab, 0, Math.round(cabY), W, 360);
+      if (!this.done && Math.abs(this.player.y - this.D.topY) < 4 && (G.t * 3 | 0) % 2) G.text('ВХОД', W / 2, cabY + 150, { align: 'center', color: '#ffd84a', outline: true });
     }
     // лестницы и платформы
     for (const l of wd.ladders) if (l.y < cy + H && l.y + l.h > cy) Art.ladder(c, { x: l.x, y: l.y - cy, w: l.w, h: l.h });
