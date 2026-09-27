@@ -4,17 +4,29 @@ const L4 = {};
 G.L4 = L4;
 L4.GROUND = 300;
 L4.img = {};
-// ВРЕМЕННЫЕ скины из прошлых уровней — заменяются графикой уровня 4 по мере готовности (см. L4.SKIN)
+// анимации персонажей уровня 4 (листы нарисованы лицом ВЛЕВО → flip)
+{
+  const A = (sheet, fr, fps = 1, o = {}) => Object.assign({ fr: fr.map(i => [sheet, i]), fps }, o);
+  const F = { flip: true };
+  Spr.ANIM.whip = { stand: A('l4a', [0], 1, F), walk: A('l4a', [1, 0], 5, F), wind: A('l4a', [2], 1, F), attack: A('l4a', [3], 1, F) };
+  Spr.ANIM.sailor = { stand: A('l4a', [4], 1, F), walk: A('l4a', [5, 4], 5, F), attack: A('l4a', [6], 1, F), ko: A('l4a', [7], 1, F) };
+  Spr.ANIM.sumo = { stand: A('l4b', [0], 1, F), walk: A('l4b', [1], 1, F), air: A('l4b', [2], 1, F), ko: A('l4b', [3], 1, F) };
+  Spr.ANIM.bouncy = { stand: A('l4b', [4], 1, F), walk: A('l4b', [5], 1, F), air: A('l4b', [6], 1, F), ko: A('l4b', [7], 1, F) };
+  Spr.ANIM.biker = { stand: A('biker', [0], 1, F), run: A('biker', [1, 0], 8, F), jump: A('biker', [2], 1, F), throw: A('biker', [3], 1, F), roar: A('biker', [4], 1, F), hurt: A('biker', [5], 1, F), land: A('biker', [6], 1, F), ko: A('biker', [7], 1, F) };
+  Spr.ANIM.zombie = { stand: A('patrons', [4], 1, F), walk: A('patrons', [5, 6], 4, F), attack: A('patrons', [4], 1, F), ko: A('patrons', [7], 1, F) };
+  Spr.ANIM.maid = { stand: A('hostess', [0], 1, F), walk: A('hostess', [1, 2], 5, F), beckon: A('hostess', [3], 1, F) };
+  Spr.ANIM.nurse = { stand: A('hostess', [4], 1, F), walk: A('hostess', [5, 6], 5, F), shrug: A('hostess', [7], 1, F) };
+  Spr.ANIM.vova = { stand: A('vova', [0]), walk: A('vova', [1, 2, 3, 4], 8), hurt: A('vova', [5]), ko: A('vova', [6]), chained: A('vova', [7]) };
+}
+// скины: набор анимаций и имена поз
 L4.SKIN = {
-  maid: { set: 'natasha', stand: 'stand', walk: 'walk', attack: 'slap', hurt: 'hurt', ko: 'sitFloor' },
-  whip: { set: 'natasha', stand: 'stand', walk: 'walk', attack: 'slap', hurt: 'hurt', ko: 'sitFloor' },
-  sailor: { set: 'natasha', stand: 'stand', walk: 'walk', attack: 'throw', hurt: 'hurt', ko: 'sitFloor' },
-  sumo: { set: 'kesha', stand: 'stand', walk: 'walk', attack: 'kick', hurt: 'hurt', ko: 'ko', scale: 1.2 },
-  bouncy: { set: 'kesha', stand: 'stand', walk: 'walk', attack: 'punch', hurt: 'hurt', ko: 'ko', scale: 1.05 },
-  zombie: { set: 'drunk', stand: 'stand', walk: 'stand', attack: 'swing', hurt: 'stand', ko: 'ko', tint: '#7ad060' },
-  patron: { set: 'natasha', stand: 'stand', walk: 'walk', dance: 'charge' },
-  biker: { set: 'kesha', stand: 'stand', walk: 'run', attack: 'kick', hurt: 'hurt', ko: 'ko', throw: 'punch', shout: 'shout', scale: 1.5 },
-  vova: { set: 'valera', stand: 'stand', walk: 'walk', hurt: 'hurt', ko: 'ko' },
+  whip: { set: 'whip', stand: 'stand', walk: 'walk', wind: 'wind', attack: 'attack', hurt: 'stand', ko: 'stand', koRot: true },
+  sailor: { set: 'sailor', stand: 'stand', walk: 'walk', attack: 'attack', hurt: 'stand', ko: 'ko' },
+  sumo: { set: 'sumo', stand: 'stand', walk: 'walk', air: 'air', attack: 'walk', hurt: 'stand', ko: 'ko' },
+  bouncy: { set: 'bouncy', stand: 'stand', walk: 'walk', air: 'air', attack: 'walk', hurt: 'stand', ko: 'ko' },
+  zombie: { set: 'zombie', stand: 'stand', walk: 'walk', attack: 'attack', hurt: 'stand', ko: 'ko' },
+  biker: { set: 'biker', stand: 'stand', walk: 'run', jump: 'jump', attack: 'throw', hurt: 'hurt', ko: 'ko', throw: 'throw', shout: 'roar', land: 'land' },
+  vova: { set: 'vova', stand: 'stand', walk: 'walk', hurt: 'hurt', ko: 'ko', chained: 'chained' },
 };
 Object.assign(WHO, {
   vova: { name: 'ВОВА', color: '#8cd0ff', voice: 250 },
@@ -23,7 +35,13 @@ Object.assign(WHO, {
   hatch: { name: '??? ИЗ ЛЮКА', color: '#c0c0c0', voice: 120 },
   biker: { name: 'БАЙКЕР', color: '#ff7040', voice: 110 },
 });
-L4.load = async function () { /* фоны уровня 4 появятся здесь после отрисовки в Codex */ };
+L4.load = async function () {
+  const W3 = window.WALLS3 || {};
+  await Promise.all(['club_lobby', 'club_hall'].map(async k => { if (W3[k]) L3.img[k] = await G.loadImage(W3[k].img); }));
+  await Promise.all(['club_back', 'club_floor', 'biker_bg'].map(async k => { L4.img[k] = await G.loadImage('assets/' + k + '.jpg'); }));
+  G.portraits = G.portraits || {};
+  await Promise.all(['maid', 'nurse', 'vova', 'biker'].map(async k => { G.portraits[k] = await G.loadImage('assets/spr/p_' + k + '.png'); }));
+};
 
 // ---------- Валера с «Осеменителем 3000» (пока — старые кадры с автоматом и баком) ----------
 Spr.ANIM.valera3gun = Object.assign({}, Spr.ANIM.valera3, {
@@ -170,9 +188,11 @@ L4.Foe = class {
     const x = this.x - cx, y = this.y - cy;
     if (this.d.dark) { L4.drawEyes(c, x, y, this.facing, this.dieT != null ? 1 - this.dieT / 1.6 : 1, this.state === 'lunge'); return; }
     const sk = L4.SKIN[this.type] || L4.SKIN.whip, s = this.state;
-    const anim = this.dieT != null ? sk.ko : s === 'hurt' ? sk.hurt : s === 'wind' || s === 'attack' || s === 'throw' ? sk.attack : this.moving || this.d.bounce && !this.onGround ? sk.walk : sk.stand;
+    const bounceAir = this.d.bounce && !this.onGround, crouch = this.d.bounce && this.onGround && this.cool < 0.25;
+    const anim = this.dieT != null ? sk.ko : s === 'hurt' ? sk.hurt : s === 'wind' ? (sk.wind || sk.attack) : s === 'attack' || s === 'throw' ? sk.attack : bounceAir ? sk.air : crouch ? sk.walk : this.moving ? sk.walk : sk.stand;
     const alpha = this.dieT != null && this.dieT > 1.1 ? (1.6 - this.dieT) / 0.5 : 1;
-    Spr.drawAnim(c, sk.set, anim, this.t, x, y, this.facing, { scale: sk.scale || 1, flash: this.flash > 0 ? '#ffffff' : sk.tint || null, alpha: sk.tint ? alpha * 0.95 : alpha });
+    const rot = this.dieT != null && sk.koRot ? -this.facing * Math.min(1.4, this.dieT * 5) : 0;
+    Spr.drawAnim(c, sk.set, anim, this.t, x, y, this.facing, { flash: this.flash > 0 ? '#ffffff' : null, alpha, rot });
   }
 };
 // глаза в темноте (временно — кодом; заменятся нарисованными)
@@ -199,7 +219,7 @@ L4.Missile = class {
 
 // ---------- мирные посетители (танцуют, машут) ----------
 L4.Patron = class {
-  constructor(x, o = {}) { Object.assign(this, { x, y: L4.GROUND, t: Math.random() * 6, facing: Math.random() < 0.5 ? 1 : -1, home: x, dance: Math.random() < 0.5, headH: 90, voice: 300 + Math.random() * 100, said: false }, o); }
+  constructor(x, o = {}) { Object.assign(this, { x, y: L4.GROUND, t: Math.random() * 6, facing: Math.random() < 0.5 ? 1 : -1, home: x, dance: Math.random() < 0.5, headH: 90, voice: 300 + Math.random() * 100, said: false, fr: U.randi(0, 3) }, o); }
   update(dt, r) {
     this.t += dt;
     if (!this.dance) { this.x = this.home + Math.sin(this.t * 0.5) * 40; this.facing = Math.cos(this.t * 0.5) > 0 ? 1 : -1; }
@@ -207,11 +227,27 @@ L4.Patron = class {
     if (!this.said && Math.abs(pl.x - this.x) < 70 && Math.random() < dt * 2) { this.said = true; G.say(this, U.choice(r.patronLines || ['Приве-е-ет, рыжий!', 'Классная каска!', 'Потанцуем?', 'Бар — налево!']), 1.8); }
   }
   draw(c, cx, cy = 0) {
-    const sk = L4.SKIN.patron;
-    Spr.drawAnim(c, sk.set, this.dance ? (Math.floor(this.t * 2) % 2 ? sk.dance : sk.stand) : sk.walk, this.t, this.x - cx, this.y - cy, this.facing, { alpha: 0.95 });
+    const x = this.x - cx; if (x < -80 || x > W + 80) return;
+    // танец: подпрыгивание и покачивание в ритм музыки
+    const beat = Math.abs(Math.sin(this.t * 4.2)), bob = this.dance ? -beat * 4 : -Math.abs(Math.sin(this.t * 6)) * 2;
+    c.save(); c.translate(x, this.y - cy + bob); c.rotate(this.dance ? Math.sin(this.t * 2.1) * 0.08 : 0); c.scale(1, this.dance ? 1 - beat * 0.03 : 1);
+    Spr.draw(c, 'patrons', this.fr, 0, 0, this.facing);
+    c.restore();
   }
 };
 
+// ---------- горничная ведёт Валеру через клуб к кулисам ----------
+L4.Guide = class {
+  constructor(st) { Object.assign(this, { st, x: 330, y: L4.GROUND, t: 0, facing: 1, headH: 96, voice: 380, said: 0 }); }
+  update(dt, st) {
+    this.t += dt; const pl = st.player, target = L4.DOOR_X - 90;
+    const gap = this.x - pl.x;
+    if (this.x < target && gap < 160) { this.x += 70 * dt; this.moving = true; this.facing = 1; } else { this.moving = false; this.facing = pl.x > this.x ? 1 : -1; }
+    const lines = [[1500, 'Не отставай, красавчик.'], [3200, 'Руками ничего не трогать!'], [5200, 'Почти пришли.'], [target - 2, 'Вова — там, за железной дверью. Только тебя не пустят без пароля. Хи-хи.']];
+    if (this.said < lines.length && this.x >= lines[this.said][0]) { G.say(this, lines[this.said][1], 2.6); this.said++; if (this.said === lines.length) st.level.guided = true; }
+  }
+  draw(c, cx, cy = 0) { Spr.drawAnim(c, 'maid', this.moving ? 'walk' : this.said >= 4 ? 'beckon' : 'stand', this.t, this.x - cx, this.y - cy, this.facing); }
+};
 // ---------- Вова (эскорт) ----------
 L4.Vova = class {
   constructor(x, y) { Object.assign(this, { x, y, vx: 0, vy: 0, facing: 1, hp: 100, maxHp: 100, dead: false, hurtT: 0, inv: 0, t: 0, headH: 92, voice: 250 }); }
@@ -235,18 +271,18 @@ L4.Vova = class {
   draw(c, cx, cy = 0) {
     const sk = L4.SKIN.vova;
     if (this.inv > 0 && (G.t * 20 | 0) % 2) return;
-    Spr.drawAnim(c, sk.set, this.dead ? sk.ko : this.hurtT > 0 ? sk.hurt : this.moving ? sk.walk : sk.stand, this.t, this.x - cx, this.y - cy, this.facing, { flash: '#bfe0ff', alpha: 0.9 });
+    Spr.drawAnim(c, sk.set, this.dead ? sk.ko : this.hurtT > 0 ? sk.hurt : this.moving ? sk.walk : sk.stand, this.t, this.x - cx, this.y - cy, this.facing);
   }
 };
 
 // =====================================================================
 // СЦЕНЫ-ЛОКАЦИИ: club (клуб), tower (5 этажей), room (комната), inner (за железной дверью), escort
 // =====================================================================
-L4.CLUB_W = 6800; L4.DOOR_X = 6560; L4.STAIRS_X = 6150;
+L4.BACK_X = 6100; L4.CLUB_W = 6740; L4.DOOR_X = 6660; L4.STAIRS_X = 6520;
 L4.INNER_W = 7200; L4.DARK_X0 = 3500; L4.LEVER_X = 7000;
 L4.ZONES = {
-  club: [{ name: 'РЕСЕПШЕН', x0: 0, x1: 1400, wall: 'wall_living' }, { name: 'ТАНЦПОЛ', x0: 1400, x1: 5600, wall: 'wall_bedroom' }, { name: 'ЗА КУЛИСАМИ', x0: 5600, x1: 6800, wall: 'wall_corridor' }],
-  inner: [{ name: 'VIP-ЛАУНЖ', x0: 0, x1: 3500, wall: 'wall_living' }, { name: 'ЧЁРНАЯ КОМНАТА', x0: 3500, x1: 7200, wall: 'wall_corridor' }],
+  club: [{ name: 'РЕСЕПШЕН', x0: 0, x1: 1400, wall: 'club_lobby' }, { name: 'ТАНЦПОЛ', x0: 1400, x1: 6100, wall: 'club_hall' }, { name: 'ЗА КУЛИСАМИ', x0: 6100, x1: 6740, wall: 'club_back' }],
+  inner: [{ name: 'VIP-ЛАУНЖ', x0: 0, x1: 3500, wall: 'club_hall' }, { name: 'ЧЁРНАЯ КОМНАТА', x0: 3500, x1: 7200, wall: 'wall_corridor' }],
 };
 L4.Stage = class {
   constructor(level, kind, o = {}) {
@@ -379,37 +415,37 @@ L4.Door = class {
 };
 
 // ---------- постройка локаций ----------
-L4.TOWER_FH = 230; L4.TOWER_H = 5 * L4.TOWER_FH + 90;
+L4.BOSS_G = 296; L4.TOWER_FH = 300; L4.TOWER_H = 5 * L4.TOWER_FH + 60;
 L4.floorY = i => L4.TOWER_H - 40 - i * L4.TOWER_FH;
 L4.BUILD = {
   club(wd, o) {
     wd.addPlat({ x: 0, y: L4.GROUND, w: L4.CLUB_W, h: 60, oneway: false, look: 'none' });
     // сцена с шестами — платформа, барная стойка
-    for (const x of [2100, 3300, 4500]) wd.addPlat({ x: x - 90, y: L4.GROUND - 40, w: 180, h: 8, oneway: true, look: 'none' });
     this.poles = [2060, 2140, 3260, 3340, 4460, 4540];
-    for (let x = 400; x < 5500; x += U.randi(170, 260)) this.patrons.push(new L4.Patron(x, { dance: this.poles.some(p => Math.abs(p - x) < 120) || Math.random() < 0.4 }));
-    for (const p of this.poles) this.patrons.push(new L4.Patron(p, { dance: true, pole: true, y: L4.GROUND - 40 }));
+    for (let x = 400; x < 5500; x += U.randi(170, 260)) this.patrons.push(new L4.Patron(x, { dance: x > 1400 || Math.random() < 0.3 }));
     // выход наверх — в башню с комнатами
-    this.doors.push(new L4.Door(L4.STAIRS_X, L4.GROUND, 'ЛЕСТНИЦА НАВЕРХ', st => st.level.enterTower(), { tag: 'ЭТАЖИ' }));
-    this.doors.push(new L4.Door(L4.DOOR_X, L4.GROUND, 'ЖЕЛЕЗНАЯ ДВЕРЬ', st => st.level.metalDoor(), { tag: 'ЛЮК', sprite: 'door' }));
+    this.doors.push(new L4.Door(L4.STAIRS_X, L4.GROUND, 'ЛЕСТНИЦА НАВЕРХ', st => st.level.enterTower(), { sprite: 'none' }));
+    this.doors.push(new L4.Door(L4.DOOR_X, L4.GROUND, 'ЖЕЛЕЗНАЯ ДВЕРЬ', st => st.level.metalDoor(), { sprite: 'none' }));
+    // горничная ведёт к кулисам
+    if (!o.escort && !o.scene && !this.level.guided) this.patrons.push(new L4.Guide(this));
     // эскорт назад: зомби
     if (o.escort) { for (let x = 600; x < 6400; x += U.randi(260, 420)) wd.enemies.push(new L4.Foe('zombie', x, L4.GROUND)); this.patrons = []; }
     this.patronLines = ['Приве-е-ет, рыжий!', 'Классная каска!', 'Потанцуем?', 'Бар — налево!', 'Ты к кому, красавчик?'];
   },
   tower(wd) {
-    const lv = this.level;
+    const lv = this.level; // лестницы нарисованы на фоне по краям
     for (let i = 0; i < 5; i++) {
-      const y = L4.floorY(i), lx = i % 2 ? 580 : 60;
+      const y = L4.floorY(i), lx = i % 2 ? 604 : 36;
       if (i === 0) wd.addPlat({ x: 0, y, w: 640, h: 60, oneway: false, look: 'none' });
       else wd.addPlat({ x: 0, y, w: 640, h: 10, oneway: true, look: 'none' });
       if (i < 4) wd.ladders.push({ x: lx - 8, y: L4.floorY(i + 1), w: 16, h: L4.TOWER_FH });
       // три двери в комнаты
-      [200, 320, 440].forEach((x, k) => {
+      [165, 320, 475].forEach((x, k) => {
         const id = i * 3 + k, room = lv.rooms[id];
-        this.doors.push(new L4.Door(x, y, 'КОМНАТА ' + (i + 1) + '0' + (k + 1), st => st.level.enterRoom(id), { tag: room.cleared ? 'ПУСТО' : (i + 1) + '0' + (k + 1), done: room.cleared }));
+        this.doors.push(new L4.Door(x, y, 'КОМНАТА ' + (i + 1) + '0' + (k + 1), st => st.level.enterRoom(id), { tag: room.cleared ? 'ПУСТО' : (i + 1) + '0' + (k + 1), done: room.cleared, sprite: 'none' }));
       });
     }
-    this.doors.push(new L4.Door(560, L4.floorY(0), 'ВЫХОД В КЛУБ', st => st.level.leaveTower(), { tag: 'ВЫХОД' }));
+    this.doors.push(new L4.Door(560, L4.floorY(0), 'ВЫХОД В КЛУБ', st => st.level.leaveTower(), { tag: 'ВЫХОД', sprite: 'none' }));
   },
   room(wd, o) {
     const r = o.room;
@@ -433,9 +469,9 @@ L4.BUILD = {
     }
   },
   boss(wd) {
-    wd.addPlat({ x: -40, y: L4.GROUND + 18, w: 720, h: 60, oneway: false, look: 'none' });
-    for (const [x, y, w] of [[30, 230, 150], [460, 230, 150], [240, 160, 160]]) wd.addPlat({ x, y, w, h: 10, oneway: true, look: 'none' });
-    this.platsB = [[30, 230, 150], [460, 230, 150], [240, 160, 160]];
+    wd.addPlat({ x: -40, y: L4.BOSS_G, w: 720, h: 60, oneway: false, look: 'none' });
+    this.platsB = [[22, 212, 160], [456, 212, 164], [222, 116, 196]];
+    for (const [x, y, w] of this.platsB) wd.addPlat({ x, y, w, h: 10, oneway: true, look: 'none' });
   },
 };
 // ---------- фоны (ВРЕМЕННО: стены третьего уровня; заменятся клубом из Codex) ----------
@@ -451,20 +487,17 @@ L4.drawWallStrip = function (c, key, x0, x1, cx, cy, tint) {
 };
 L4.DRAW_BG = {
   club(c, cx) {
-    for (const z of L4.ZONES.club) L4.drawWallStrip(c, z.wall, z.x0, z.x1, cx, 0, 'rgba(120,20,90,0.35)');
+    for (const z of L4.ZONES.club) if (z.wall !== 'club_back') L4.drawWallStrip(c, z.wall, z.x0, z.x1, cx, 0, null);
+    const bx = L4.BACK_X - cx; if (bx < W && L4.img.club_back) c.drawImage(L4.img.club_back, bx, 0, W, H);
     // мигающий свет клуба
     const k = (Math.sin(G.t * 6) + 1) / 2;
     c.fillStyle = `rgba(${200 + 55 * k | 0},40,${160 + 80 * (1 - k) | 0},0.12)`; c.fillRect(0, 0, W, H);
-    for (const p of this.poles) { const x = p - cx; if (x > -20 && x < W + 20) { Art.R(c, x - 1, 60, 3, L4.GROUND - 100, '#d8d8e0'); } }
-    for (const x of [2100, 3300, 4500]) { const sx = x - cx; if (sx > -120 && sx < W + 120) Art.R(c, sx - 90, L4.GROUND - 40, 180, 40, '#3a1030'); }
   },
   tower(c, cx, cy) {
     for (let i = 0; i < 5; i++) {
       const y = L4.floorY(i);
-      L4.drawWallStrip(c, 'wall_corridor', 0, 640, cx, cy + (L4.GROUND - y), 'rgba(80,20,60,0.3)');
-      Art.R(c, 0, y - cy, 640, 10, '#2a1a1a');
-      if (i < 4) Art.ladder(c, { x: (i % 2 ? 580 : 60) - 8 - cx, y: L4.floorY(i + 1) - cy, w: 16, h: L4.TOWER_FH });
-      G.text('ЭТАЖ ' + (i + 1), 320, y - cy - 150, { align: 'center', size: 8, color: '#ff8ad8', outline: true });
+      if (L4.img.club_floor) c.drawImage(L4.img.club_floor, -cx, y - L4.GROUND - cy, W, H);
+      G.text('ЭТАЖ ' + (i + 1), 320, y - cy - 250, { align: 'center', size: 8, color: '#ff8ad8', outline: true });
     }
   },
   room(c, cx) {
@@ -472,14 +505,10 @@ L4.DRAW_BG = {
     Spr.draw(c, 'f_bed', 0, 205, L4.GROUND, 1);
   },
   inner(c, cx) {
-    for (const z of L4.ZONES.inner) L4.drawWallStrip(c, z.wall, z.x0, z.x1, cx, 0, z.x0 > 0 ? 'rgba(0,0,0,0.5)' : 'rgba(60,20,120,0.35)');
+    for (const z of L4.ZONES.inner) L4.drawWallStrip(c, z.wall, z.x0, z.x1, cx, 0, z.x0 > 0 ? 'rgba(0,0,0,0.5)' : 'rgba(20,0,40,0.25)');
     const lx = L4.LEVER_X - cx; if (lx > -40 && lx < W + 40) { Art.R(c, lx - 6, L4.GROUND - 70, 12, 40, '#555'); Art.R(c, lx - 2, L4.GROUND - 100, 4, 34, this.lever ? '#8cf08c' : '#d04040'); }
   },
-  boss(c) {
-    if (L3.img.boss2_bg) c.drawImage(L3.img.boss2_bg, 0, 0, W, H);
-    c.fillStyle = 'rgba(120,20,90,0.35)'; c.fillRect(0, 0, W, H);
-    for (const [x, y, w] of this.platsB) { Art.R(c, x, y, w, 10, '#4a3020'); Art.R(c, x, y, w, 2, '#8a6040'); }
-  },
+  boss(c) { if (L4.img.biker_bg) c.drawImage(L4.img.biker_bg, 0, 0, W, H); },
 };
 L4.BUILD.escortClub = L4.BUILD.club;
 
@@ -488,7 +517,7 @@ L4.BUILD.escortClub = L4.BUILD.club;
 // =====================================================================
 L4.Biker = class {
   constructor(st) {
-    Object.assign(this, { st, x: 520, y: L4.GROUND + 18, vx: 0, vy: 0, facing: -1, hp: Math.round(120 * (G.BOSS_MULT || 1)), t: 0, s: 'idle', stT: 0, cool: 1.5, onGround: true, flash: 0, headH: 140, voice: 110, dieT: null, d: { w: 44, h: 120 } });
+    Object.assign(this, { st, x: 520, y: L4.BOSS_G, vx: 0, vy: 0, facing: -1, hp: Math.round(120 * (G.BOSS_MULT || 1)), t: 0, s: 'idle', stT: 0, cool: 1.5, onGround: true, flash: 0, headH: 140, voice: 110, dieT: null, d: { w: 44, h: 120 } });
     this.maxHp = this.hp;
   }
   get box() { return { x: this.x - 24, y: this.y - 124, w: 48, h: 124 }; }
@@ -543,8 +572,8 @@ L4.Biker = class {
   }
   draw(c, cx, cy) {
     const sk = L4.SKIN.biker, s = this.s;
-    const anim = this.dieT != null ? sk.ko : s === 'charge' ? sk.walk : s === 'throw' || s === 'snakes' ? sk.throw : s === 'rainbow' ? sk.shout : !this.onGround ? sk.walk : sk.stand;
-    Spr.drawAnim(c, sk.set, anim, this.t, this.x - cx, this.y - cy, this.facing, { scale: sk.scale, flash: this.flash > 0 ? '#ffffff' : null });
+    const anim = this.dieT != null ? sk.ko : this.flash > 0 ? sk.hurt : s === 'charge' ? sk.walk : s === 'throw' || s === 'snakes' ? sk.throw : s === 'rainbow' ? sk.shout : !this.onGround ? sk.jump : sk.stand;
+    Spr.drawAnim(c, sk.set, anim, this.t, this.x - cx, this.y - cy, this.facing, { flash: this.flash > 0 ? '#ffffff' : null });
     if (s === 'rainbow' && this.stT < 0.7) { c.globalAlpha = 0.4 + Math.sin(G.t * 30) * 0.3; Art.R(c, Math.min(this.x + this.facing * 20, this.facing > 0 ? 640 : 0) - cx, this.y - 105 - cy, Math.abs((this.facing > 0 ? 640 : 0) - this.x), 2, '#ffffff'); c.globalAlpha = 1; }
     if (this.beam) { const [x0, y0, x1] = this.beam, cols = ['#ff3030', '#ff9a20', '#ffe030', '#40d040', '#30a0ff', '#a040ff']; cols.forEach((col, k) => Art.R(c, Math.min(x0, x1) - cx, y0 - 9 + k * 3 - cy + Math.sin(G.t * 30 + k) * 1.5, Math.abs(x1 - x0), 3, col)); }
     // стрелка «бить сюда» у спины
@@ -629,7 +658,7 @@ L4.Level = class {
   }
   pullLever() { this.stage.carry(); this.playScene(L4.sceneLever(this), () => this.startBoss()); }
   startBoss() {
-    this.setStage('boss', { x: 80 });
+    this.setStage('boss', { x: 80, y: L4.BOSS_G });
     const st = this.stage; st.boss = new L4.Biker(st);
     st.onUpdate = dt => st.boss.update(dt, st);
     Music.play('epicBoss'); st.say('Байкер непробиваем спереди — бей в СПИНУ! Перепрыгивай его и стреляй вслед.', 7);
@@ -687,20 +716,22 @@ L4.shuffleTaunts = () => {};
 // =====================================================================
 L4.sceneStage = (level, kind, o) => { const st = new L4.Stage(level, kind, o); st.fade = 0; level.drawScene = c => st.draw(c); level.updateScene = dt => { for (const p of st.patrons) p.update(dt, st); st.world.t += dt; }; return st; };
 L4.sceneIntro = level => function* () {
-  const st = L4.sceneStage(level, 'club', { x: 60 }); st.player.controls = false;
-  const v = st.player, maid = new G.Actor('natasha', 300, L4.GROUND, -1), nurse = new G.Actor('natasha', 350, L4.GROUND, -1);
+  const st = L4.sceneStage(level, 'club', { x: 60, scene: true }); st.player.controls = false;
+  const v = st.player, maid = new G.Actor('maid', 300, L4.GROUND, -1), nurse = new G.Actor('nurse', 350, L4.GROUND, -1);
   st.patrons.push({ update() {}, draw: (c, cx) => { maid.draw(c, cx, 0); nurse.draw(c, cx, 0); } });
   yield* Scene.moveTo(v, 230, 90, 'walk'); v.setAnim('stand');
   yield* Scene.say('maid', 'Добро пожаловать в «Дикие кошки»! Вы к кому, молодой человек?', maid);
   yield* Scene.say('valera', 'Я к Вове.', v);
   yield* Scene.say('nurse', '...', nurse);
+  maid.setAnim('beckon');
   yield* Scene.say('maid', 'Следуйте за мной.', maid);
+  nurse.setAnim('shrug');
   yield* Scene.say('nurse', 'Ещё один голубчик... Сколько их тут уже.', nurse);
 };
 L4.sceneHatch = (level, hasPass) => function* () {
-  const st = L4.sceneStage(level, 'club', { x: L4.DOOR_X - 40, facing: 1 }); st.player.controls = false;
+  const st = L4.sceneStage(level, 'club', { x: L4.DOOR_X - 40, facing: 1, scene: true }); st.player.controls = false;
   let eyesA = 0; const draw0 = st.draw.bind(st);
-  level.drawScene = c => { draw0(c); const x = L4.DOOR_X - st.world.cam.x; Art.R(c, x - 14, L4.GROUND - 96, 28, 14, '#050505'); L4.drawEyes(c, x, L4.GROUND - 89, -1, eyesA, false); };
+  level.drawScene = c => { draw0(c); const x = L4.DOOR_X - st.world.cam.x; Art.R(c, x - 13, 141, 26, 12, '#050505'); L4.drawEyes(c, x, 147, -1, eyesA, false); };
   Sound.play('door');
   yield* Scene.tween(0.6, k => { eyesA = k; });
   yield* Scene.say('hatch', 'ПАРОЛЬ?', null);
@@ -725,7 +756,7 @@ L4.sceneLever = level => function* () {
   yield* Scene.say('biker', 'Не так быстро, рыжий. Я с вами справлюсь!', null);
 };
 L4.sceneAfterBoss = level => function* () {
-  const st = L4.sceneStage(level, 'boss', { x: 200 }); st.player.controls = false;
+  const st = L4.sceneStage(level, 'boss', { x: 200, y: L4.BOSS_G }); st.player.controls = false;
   yield* Scene.say('valera', 'Отдыхай, железный конь. Вова, я иду!', st.player);
   Sound.play('rope');
   yield* Scene.say('vova', 'Свобода! Валера, ты лучший!', null);

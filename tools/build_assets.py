@@ -472,6 +472,35 @@ S['shin7'] = build_sheet('shin7', 'boss6_shin.png', 2, 104, ref=0, keyer='clean'
 S['v4_up'] = build_sheet('v4_up', 'v4_up.png', 3, 86, ref=0, keyer='clean', anchors=['body', 'body', 'body'])
 S['poster'] = build_sheet('poster', 'poster.png', 1, 70, keyer='clean', anchors=['center'])
 S['soup'] = build_sheet('soup', 'soup.png', 4, [-12, -16, -26, -18], keyer='clean', anchors=['center'] * 4)
+# ================= уровень 4: «Дикие кошки» =================
+S['vova'] = build_sheet('vova', 'vova.png', 8, 86, ref=0, keyer='clean', even=True)
+S['l4a'] = build_sheet('l4a', 'foes4a.png', 8, 88, ref=0, keyer='magenta', even=True)
+S['l4b'] = build_sheet('l4b', 'foes4b.png', 8, 84, ref=4, keyer='clean', even=True)
+S['biker'] = build_sheet('biker', 'biker.png', 8, 130, ref=0, keyer='magenta', even=True)
+S['patrons'] = build_sheet('patrons', 'patrons.png', 8, 88, ref=0, keyer='clean', even=True)
+for key, src in [('club_lobby', 'club_lobby'), ('club_hall', 'club_hall')]:
+    im = seamless(Image.open(os.path.join(SRC, src + '.png')))
+    im = im.resize((round(im.width * 720 / im.height), 720), Image.LANCZOS)
+    im.save(os.path.join(OUT, key + '.jpg'), quality=87, optimize=True)
+    B3[key] = {'img': 'assets/' + key + '.jpg', 'w': im.width, 'h': im.height, 'floor': 300 / 360}
+B['shop'] = bg('shop3.png', 'bg_shop', (1280, 720))
+im = Image.open(os.path.join(SRC, 'shop3.png')).convert('RGB'); w, h = im.size
+im.crop((925, 368, 1035, 478)).resize((128, 128), Image.LANCZOS).save(os.path.join(SPR, 'p_seller.png'))
+S['hostess'] = build_sheet('hostess', 'hostess.png', 8, 88, ref=0, keyer='clean', even=True)
+for n in ['club_back', 'club_floor', 'biker_bg']:
+    B[n] = bg(n + '.png', n, (1280, 720))
+# портреты персонажей уровня 4 (лица из листов)
+def pcrop(sheet, fi, box, name, flip=False):
+    f = S[sheet]['f'][fi]
+    im = Image.open(os.path.join(SPR, sheet + '.png')).convert('RGBA').crop((f[0], f[1], f[0] + f[2], f[1] + f[3]))
+    w, h = im.size
+    p = im.crop((int(box[0] * w), int(box[1] * h), int(box[2] * w), int(box[3] * h)))
+    if flip: p = p.transpose(Image.FLIP_LEFT_RIGHT)
+    p.resize((128, 128), Image.LANCZOS).save(os.path.join(SPR, name + '.png'))
+pcrop('hostess', 0, (0.12, 0.0, 0.88, 0.38), 'p_maid', True)
+pcrop('hostess', 4, (0.12, 0.0, 0.88, 0.36), 'p_nurse', True)
+pcrop('vova', 0, (0.14, 0.0, 0.86, 0.36), 'p_vova')
+pcrop('biker', 0, (0.18, 0.0, 0.86, 0.3), 'p_biker', True)
 with open(os.path.join(ROOT, 'js', 'sprites_data.js'), 'w', encoding='utf-8') as fp:
     fp.write('// автоматически создано tools/build_assets.py\nwindow.SPRITES = ' + json.dumps(S) + ';\nwindow.BGS = ' + json.dumps(B) + ';\nwindow.BUILDINGS = ' + json.dumps(B2) + ';\nwindow.WALLS3 = ' + json.dumps(B3) + ';\n')
 print('готово 4')
