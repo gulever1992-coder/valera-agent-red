@@ -205,8 +205,6 @@ B['climb_bottom'] = bg('bg_climb_bottom_v2.png', 'bg_climb_bottom', (1280, None)
 B['climb_top'] = bg('bg_climb_top_v2.png', 'bg_climb_top', (1280, None))
 B['shop'] = bg('shop_interior.png', 'bg_shop', (1280, 720))
 B['sky'] = bg('city_sky_far.png', 'bg_sky', (None, 720))
-for i in range(1, 9):
-    if os.path.exists(os.path.join(SRC, 'l2_bg%d.png' % i)): B['l2_%d' % i] = bg('l2_bg%d.png' % i, 'bg_l2_%d' % i, (1280, 720))
 # передний план титульного экрана: машины
 fg = Image.fromarray(key_green(Image.open(os.path.join(SRC, 'street_cars.png'))), 'RGBA').resize((1280, 720), Image.LANCZOS)
 a_ = np.array(fg); a_[..., 3] = np.where(a_[..., 3] > 90, 255, 0); Image.fromarray(a_, 'RGBA').save(os.path.join(OUT, 'fg_cars.png'), optimize=True)
