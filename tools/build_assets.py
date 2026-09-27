@@ -264,7 +264,7 @@ for name, (src, th, walk) in BUILD.items():
     k = th / a.shape[0]                    # логических px на пиксель исходника
     im = Image.fromarray(a, 'RGBA').resize((round(a.shape[1] * k * SCALE), round(a.shape[0] * k * SCALE)), Image.LANCZOS)
     arr = np.array(im); arr[..., 3] = np.where(arr[..., 3] > 100, 255, 0)
-    Image.fromarray(arr, 'RGBA').save(os.path.join(BDIR, name + '.png'), optimize=True)
+    Image.fromarray(arr, 'RGBA').quantize(256, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE).save(os.path.join(BDIR, name + '.png'), optimize=True)
     meta = {'img': 'assets/b/' + name + '.png', 'w': round(arr.shape[1] / SCALE, 1), 'h': round(arr.shape[0] / SCALE, 1)}
     if walk: meta['tops'] = profile(arr, 1 / SCALE)
     if name in ('hero', 'shop'): meta['door'] = round((655 - x0) * k, 1)
