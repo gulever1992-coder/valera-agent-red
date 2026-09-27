@@ -46,10 +46,13 @@ Art.platform = function (c, p, t) {
       if (f) c.drawImage(Spr.sheets.props.img, f[0], f[1], f[2], f[3], x - 2, y - 2, w + 4, p.h + 2);
       break;
     }
-    case 'floor':
-      // пол уже нарисован на фоне цеха — только лёгкая тень у ног
-      c.fillStyle = 'rgba(0,0,0,0.18)'; c.fillRect(x, y, w, 3);
+    case 'floor': {
+      // бесшовный пол цеха (жёлтая разметка, плиты, лужи)
+      const img = G.bg.l1floor;
+      if (img) { const tw = img.width / 2 * (p.h + 8) / (img.height / 2); for (let tx = x; tx < x + w; tx += tw) c.drawImage(img, Math.floor(tx), y - 6, Math.ceil(tw) + 1, p.h + 8); }
+      else R(c, x, y, w, p.h, '#34322f');
       break;
+    }
   }
 };
 

@@ -580,7 +580,7 @@ L1.FLOOR = 210;
 L1.Natasha = class {
   constructor(x) {
     this.x = x; this.y = L1.FLOOR; this.facing = -1; this.anim = 'idle';
-    this.maxHp = 46; this.hp = 46; this.combo = 0; this.lastHit = -9; this.inv = 0;
+    this.maxHp = 60; this.hp = 60; this.combo = 0; this.lastHit = -9; this.inv = 0;
     this.state = 'idle'; this.st = 0; this.t = 0; this.flash = 0; this.actions = 0; this.volley = 0; this.throwT = 0;
     this.headH = 88; this.voice = 330; this.vx = 0; this.name = 'natasha';
   }
@@ -767,7 +767,7 @@ L1.Arena = class {
     wd.pickups = wd.pickups.filter(p => !p.dead);
     for (const a of this.actors) a.update(dt);
     if (this.fighting) {
-      [22, 11].forEach(th => { if (b.hp <= th && !this.dropped[th]) { this.dropped[th] = 1; const p = new Game.Pickup(th === 22 ? 'pie' : 'kefir', U.rand(200, 560), -10); p.falling = true; wd.pickups.push(p); } });
+      [40, 20].forEach(th => { if (b.hp <= th && !this.dropped[th]) { this.dropped[th] = 1; const p = new Game.Pickup(th === 40 ? 'pie' : 'kefir', U.rand(200, 560), -10); p.falling = true; wd.pickups.push(p); } });
       this.quipT -= dt;
       if (this.quipT <= 0) { this.quipT = U.rand(6, 9); G.say(pl, U.choice(['Слабая женщина!', 'Это всё в твоей голове, сног!', 'Ахахахах!', 'Лол!', 'Чё, рак, ты живой?']), 1.8); }
       if (pl.dead && pl.deadT > 1.6 && !this.resetting) {

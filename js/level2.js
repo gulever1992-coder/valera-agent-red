@@ -43,11 +43,39 @@ L2.Foe = class {
     if (this.state !== 'lunge' && this.state !== 'fart' && this.state !== 'throw') this.set('hurt');
     return false;
   }
+  // опора под ногами: при появлении сужаем зону патруля до её краёв
+  support(wd) {
+    let best = null;
+    for (const p of wd.plats) {
+      if (this.x < p.x - 2 || this.x > p.x + p.w + 2) continue;
+      if (Math.abs(p.y - this.y) <= 3 && (!best || p.y < best.y)) best = p;
+    }
+    return best;
+  }
+  fitPatrol(wd) {
+    const p = this.support(wd);
+    if (!p) { this.falling = true; return; }
+    if (p.w < L2.W) { this.x1 = Math.max(this.x1, p.x + 10); this.x2 = Math.min(this.x2, p.x + p.w - 10); }
+    if (this.x1 > this.x2) this.x1 = this.x2 = p.x + p.w / 2;
+    this.x = U.clamp(this.x, this.x1, this.x2);
+  }
+  gravity(dt, wd) {
+    if (this.state === 'lunge') return;
+    if (!this.falling && !this.support(wd)) this.falling = true;
+    if (!this.falling) return;
+    const py = this.y;
+    this.vy = Math.min(700, (this.vy || 0) + 1500 * dt); this.y += this.vy * dt;
+    const g = wd.groundAt(this.x, py, this.y, 4);
+    if (g) { this.y = g.y; this.vy = 0; this.falling = false; this.ground = g.y; this.x1 = this.x - 260; this.x2 = this.x + 260; this.fitPatrol(wd); }
+  }
   update(dt, wd, pl) {
     this.t += dt; this.st += dt; if (this.flash > 0) this.flash -= dt; this.cool -= dt;
+    if (!this.fitted) { this.fitted = true; this.fitPatrol(wd); }
+    if (this.dieT == null) this.gravity(dt, wd);
     if (this.dieT != null) {
       this.dieT += dt; this.vy += 1200 * dt; this.x += this.vx * dt; this.y += this.vy * dt;
-      if (this.y >= this.ground) { this.y = this.ground; this.vy = 0; this.vx *= 0.85; }
+      const gg = wd.groundAt(this.x, this.y - this.vy * dt, this.y, 4);
+      if (this.vy > 0 && gg) { this.y = gg.y; this.vy = 0; this.vx *= 0.85; }
       if (this.dieT > 1.8) this.dead = true;
       return;
     }
@@ -55,7 +83,7 @@ L2.Foe = class {
     const face = () => { this.facing = dx > 0 ? 1 : -1; };
     const move = sp => { this.x = U.clamp(this.x + this.facing * sp * dt, this.x1, this.x2); };
     const talk = () => { if (!this.said && Math.random() < 0.8) { this.said = true; G.say(this, U.choice(FOE_LINES[this.type]), 1.6); } };
-    if (this.state === 'hurt') { this.x += this.vx * dt; this.vx *= 0.85; if (this.st > 0.3) this.set('chase'); return; }
+    if (this.state === 'hurt') { this.x = U.clamp(this.x + this.vx * dt, this.x1, this.x2); this.vx *= 0.85; if (this.st > 0.3) this.set('chase'); return; }
     switch (this.type) {
       case 'gopnik':
         if (this.state === 'idle') { if (near && adx < 210) { this.set('rise'); talk(); } if (Math.random() < dt * 0.6) FX.spawn({ x: this.x + this.facing * 8, y: this.y - 30, vx: this.facing * 40, vy: -30, life: 0.5, color: '#2a2a2a', size: 2 }); }
@@ -98,7 +126,7 @@ L2.Foe = class {
       case 'dogS':
         if (near && adx < 320) {
           face();
-          if (adx > 14) { this.x += this.facing * 170 * dt; this.state = 'chase'; } else this.state = 'bark';
+          if (adx > 14) { this.x = U.clamp(this.x + this.facing * 170 * dt, this.x1, this.x2); this.state = 'chase'; } else this.state = 'bark';
           if (this.cool <= 0 && U.overlap(this.box, pl.box)) { pl.hurt(5, this.x, wd); this.cool = 0.9; }
           if (Math.random() < dt * 1.5) { Sound.play('bark'); if (Math.random() < 0.3) G.say(this, 'Тяв!', 0.6, { sound: false }); }
         } else this.state = 'idle';
@@ -107,9 +135,10 @@ L2.Foe = class {
         if (this.state === 'lunge') {
           this.vy += 1500 * dt; this.x += this.vx * dt; this.y += this.vy * dt;
           if (U.overlap(this.box, pl.box) && !this.bit) { this.bit = true; pl.hurt(10, this.x, wd); }
-          if (this.y >= this.ground) { this.y = this.ground; this.set('chase'); this.cool = 1.6; this.bit = false; }
+          const gl = wd.groundAt(this.x, this.y - this.vy * dt, this.y, 6);
+          if (this.vy > 0 && gl) { this.y = gl.y; this.set('chase'); this.cool = 1.6; this.bit = false; this.fitPatrol(wd); }
         } else if (near && adx < 340) {
-          face(); this.state = 'chase'; this.x += this.facing * 125 * dt;
+          face(); this.state = 'chase'; this.x = U.clamp(this.x + this.facing * 125 * dt, this.x1, this.x2);
           if (adx < 130 && this.cool <= 0) { this.set('lunge'); this.vx = this.facing * 250; this.vy = -330; Sound.play('bark'); G.say(this, 'ГАВ!', 0.6, { sound: false }); }
         } else this.state = 'idle';
         break;
@@ -179,7 +208,7 @@ L2.Matiz = class {
 // prone — лежит на крыше, bush — сидит в кустах парка
 L2.Spy = class {
   constructor(d) { Object.assign(this, d); this.show = 0; this.t = Math.random() * 5; this.out = -(d.dir || 1); }
-  get behind() { return this.kind !== 'prone'; }
+  get behind() { return true; }
   update(dt, pl) {
     this.t += dt;
     const d = Math.abs(pl.x - this.x);
@@ -190,12 +219,12 @@ L2.Spy = class {
     if (this.show <= 0) return;
     const k = U.easeInOut(this.show);
     if (this.kind === 'corner') {
-      const x = this.x + this.out * U.lerp(-24, 7, k);
-      Spr.draw(c, 'cmd', 1, x - cx, this.y, this.out > 0 ? -1 : 1, { alpha: 0.95 });
-    } else if (this.kind === 'prone') {
-      Spr.draw(c, 'cmd_hide', 2, this.x - cx, this.y + (1 - k) * 18, -1, { alpha: k });
+      // стоит за углом: видна только голова и плечо, остальное закрыто зданием
+      const x = this.x + this.out * U.lerp(-30, -8, k);
+      Spr.draw(c, 'cmd', 4, x - cx, this.y, this.out > 0 ? 1 : -1);
     } else {
-      Spr.draw(c, 'cmd_hide', 1, this.x - cx, this.y + Math.sin(this.t * 2) * 1, -1, { alpha: k });
+      // поднимается из-за крыши: пока спрятан — целиком за зданием
+      Spr.draw(c, 'cmd', 4, this.x - cx, this.y + U.lerp(92, 34, k) + Math.sin(this.t * 2), -1);
     }
   }
 };
@@ -292,12 +321,12 @@ L2.build = function () {
   const bx = name => D.buildings.filter(b => b.name === name);
   const ws = bx('workshop')[0], st = bx('stele')[0], nn = bx('nine'), gg = bx('garages'), pk = bx('park')[0];
   D.spies.push({ kind: 'corner', x: ws.x + ws.w - 4, y: G0, dir: -1 });
-  D.spies.push({ kind: 'prone', x: gg[0].x + 420, y: roofY('garages') + 2 });
+  D.spies.push({ kind: 'roof', x: gg[0].x + 430, y: roofY('garages') });
   D.spies.push({ kind: 'corner', x: st.x + 6, y: G0, dir: 1 });
   D.spies.push({ kind: 'corner', x: nn[0].x + nn[0].w - 4, y: G0, dir: -1 });
-  D.spies.push({ kind: 'prone', x: gg[1].x + 180, y: roofY('garages') + 2 });
+  D.spies.push({ kind: 'roof', x: gg[1].x + 200, y: roofY('garages') });
   D.spies.push({ kind: 'corner', x: nn[1].x + 6, y: G0, dir: 1 });
-  D.spies.push({ kind: 'bush', x: pk.x + 520, y: G0 });
+  D.spies.push({ kind: 'corner', x: pk.x + 706, y: G0, dir: 1 });
   // фонари на переднем плане (псевдо-объём)
   D.fg = [];
   for (let x = 300; x < L2.ARENA_X; x += U.randi(620, 860)) D.fg.push(x);
@@ -518,7 +547,7 @@ L2.Run = class {
 const KESHA_LINES = ['Ты чё, в натуре?!', 'Я чемпион района!', 'Пьяный мастер, ё!', 'Ща как дам!', 'Чистофф — сила!', 'Ты кого рыжим назвал?!'];
 L2.Kesha = class {
   constructor(x) {
-    this.x = x; this.y = L2.GROUND; this.facing = -1; this.maxHp = 44; this.hp = 44; this.state = 'idle'; this.st = 0; this.t = 0;
+    this.x = x; this.y = L2.GROUND; this.facing = -1; this.maxHp = 66; this.hp = 66; this.state = 'idle'; this.st = 0; this.t = 0;
     this.flash = 0; this.scale = 1; this.phase = 1; this.anim = 'master'; this.animT = 0; this.vx = 0; this.vy = 0; this.inv = 0;
     this.cool = 1; this.sniffT = 7; this.shots = 0; this.headH = 96; this.voice = 210; this.quip = 4; this.combo = 0; this.lastHit = -9;
   }
@@ -692,7 +721,7 @@ L2.Arena = class {
     wd.pickups = wd.pickups.filter(p => !p.dead);
     for (const a of this.actors) a.update(dt);
     if (this.fighting) {
-      [30, 14].forEach(th => { if (b.hp <= th && !this.dropped[th]) { this.dropped[th] = 1; const p = new Game.Pickup(th === 30 ? 'beer' : 'kefir', L2.ARENA_X + U.rand(120, 520), -10); p.falling = true; wd.pickups.push(p); } });
+      [46, 22].forEach(th => { if (b.hp <= th && !this.dropped[th]) { this.dropped[th] = 1; const p = new Game.Pickup(th === 46 ? 'beer' : 'kefir', L2.ARENA_X + U.rand(120, 520), -10); p.falling = true; wd.pickups.push(p); } });
       this.quipT -= dt;
       if (this.quipT <= 0) { this.quipT = U.rand(7, 10); G.say(pl, U.choice(['Кеша, иди проспись!', 'Порошок не поможет!', 'Граблионок!', 'Я просто хочу домой!']), 1.6); }
       if (pl.dead && pl.deadT > 1.6 && !this.resetting) { this.resetting = true; this.level.stats.deaths++; setTimeout(() => { this.resetting = false; this.level.restartBoss(); }, 400); }
@@ -845,7 +874,11 @@ L2.sceneFinale = function (level) {
     ar.draw(c);
     if (spy.visible) {
       const sx = spy.x - L2.ARENA_X;
-      if (spy.anim === 'rope') Art.R(c, sx + 5, 0, 2, spy.y - 70, '#3a3226');
+      if (spy.ropeX != null) {
+        const top = spy.anim === 'rope' ? spy.y - 110 + 4 : L2.GROUND - 4;
+        const rx = spy.ropeX - L2.ARENA_X;
+        Art.R(c, rx, 0, 2, top, '#2a2418'); Art.R(c, rx, 0, 1, top, '#6a5a3e');
+      }
       Spr.drawAnim(c, 'spy', spy.anim, spy.animT, sx, spy.y, spy.facing);
     }
     if (st.dart) { Art.R(c, st.dart.x - L2.ARENA_X - 6, st.dart.y, 10, 2, '#c0c8d0'); Art.R(c, st.dart.x - L2.ARENA_X + 4, st.dart.y - 1, 3, 4, '#e04040'); }
@@ -868,7 +901,7 @@ L2.sceneFinale = function (level) {
     yield* Scene.moveTo(v, door, 55, 'walk');
     v.setAnim('stand'); v.facing = 1;
     // спецназовец спускается с соседней крыши
-    spy.visible = true; spy.setAnim('rope'); Sound.play('rope');
+    spy.visible = true; spy.setAnim('rope'); spy.ropeX = spy.x + 4.5; Sound.play('rope');
     yield* Scene.tween(1.2, kk => { spy.y = U.lerp(-60, L2.GROUND, U.easeOut(kk)); });
     spy.setAnim('dart');
     yield 0.5;

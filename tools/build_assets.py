@@ -282,6 +282,8 @@ gr = gr.resize((round(2172 * 140 / 300), 140), Image.LANCZOS); gr.save(os.path.j
 B2['_layers'] = {'sky': [sky.width / 2, 360], 'far': [far.width / 2, 190], 'ground': [gr.width / 2, 70]}
 # магазин с дальней камерой и крупный Валера для этой сцены
 B['shop'] = bg('shop2.png', 'bg_shop', (1280, 720))
+fl = Image.open(os.path.join(SRC, 'l1_floor.png')).convert('RGB').crop((0, 0, 2172, 400))
+fl = fl.resize((round(2172 * 140 / 400), 140), Image.LANCZOS); fl.save(os.path.join(OUT, 'l1_floor.jpg'), quality=88)
 S['vb_run'] = build_sheet('vb_run', 'valera_run.png', 8, 150)
 S['vb_story3'] = build_sheet('vb_story3', 'valera_story3.png', 6, 158, ref=1)
 with open(os.path.join(ROOT, 'js', 'sprites_data.js'), 'w', encoding='utf-8') as fp:
