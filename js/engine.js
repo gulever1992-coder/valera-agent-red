@@ -1,7 +1,7 @@
 'use strict';
 // ============ ДВИЖОК: экран, ввод, звук, утилиты, частицы, текст ============
 const W = 640, H = 360;
-const G = { W, H, t: 0, dt: 0, debug: false };
+const G = { W, H, t: 0, dt: 0, debug: false, VER: '3' };
 window.G = G;
 
 const canvas = document.getElementById('game');
@@ -133,7 +133,7 @@ const Sound = {
     this.master = this.ac.createGain(); this.master.gain.value = this.muted ? 0 : 0.8;
     this.master.connect(this.ac.destination);
     this.sfxG = this.ac.createGain(); this.sfxG.gain.value = 0.55; this.sfxG.connect(this.master);
-    this.musG = this.ac.createGain(); this.musG.gain.value = 0.32; this.musG.connect(this.master);
+    this.musG = this.ac.createGain(); this.musG.gain.value = 0.55; this.musG.connect(this.master);
     const len = this.ac.sampleRate;
     this.noiseBuf = this.ac.createBuffer(1, len, this.ac.sampleRate);
     const d = this.noiseBuf.getChannelData(0);
@@ -210,6 +210,13 @@ const Sound = {
       case 'crumble': s.noise(0.3, { freq: 700, slide: 200, vol: 0.25 }); break;
       case 'select': s.tone(520, 0.05, { vol: 0.12 }); break;
       case 'confirm': s.tone(520, 0.06, { vol: 0.14 }); s.tone(780, 0.1, { vol: 0.14, delay: 0.06 }); break;
+      case 'fart': s.noise(0.7, { freq: 220, slide: 90, vol: 0.4 }); s.tone(70, 0.6, { type: 'sawtooth', vol: 0.12, slide: 50 }); break;
+      case 'bark': s.tone(520 * p, 0.08, { type: 'square', vol: 0.12, slide: 300 }); s.noise(0.08, { freq: 1500, vol: 0.12 }); break;
+      case 'honk': s.tone(392, 0.25, { type: 'square', vol: 0.12 }); s.tone(466, 0.25, { type: 'square', vol: 0.1 }); break;
+      case 'shot': s.noise(0.25, { freq: 3000, slide: 200, vol: 0.45 }); s.tone(90, 0.2, { type: 'sine', vol: 0.3, slide: 40 }); break;
+      case 'glassHit': s.noise(0.12, { freq: 1200, slide: 200, vol: 0.35 }); s.tone(2600, 0.08, { type: 'triangle', vol: 0.1 }); break;
+      case 'bell': s.tone(1320, 0.4, { type: 'triangle', vol: 0.15 }); s.tone(1760, 0.5, { type: 'triangle', vol: 0.12, delay: 0.12 }); break;
+      case 'door': s.noise(0.3, { freq: 500, vol: 0.3 }); s.tone(90, 0.3, { type: 'square', vol: 0.12, slide: 60 }); break;
       case 'sting': [[220, 0], [233, 0.25], [220, 0.5]].forEach(([f, d]) => { s.tone(f, 0.5, { type: 'sawtooth', vol: 0.15, delay: d }); s.tone(f / 2, 0.6, { type: 'square', vol: 0.12, delay: d }); }); break;
     }
   },
@@ -361,7 +368,7 @@ G.loadImage = src => new Promise(res => {
   const im = new Image();
   im.onload = () => res(im);
   im.onerror = () => res(null);
-  im.src = src;
+  im.src = src + (src.indexOf('?') < 0 ? '?v=' + G.VER : '');
 });
 // качественное уменьшение (для «пиксельного» вида)
 G.downscale = function (img, w, h) {

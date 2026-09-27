@@ -1,5 +1,5 @@
 'use strict';
-// ============ УРОВЕНЬ 1: «СЕВМАШ. ДЕНЬ ПЕРВЫЙ» ============
+// ============ УРОВЕНЬ 1: «СЕВМОЛОТ. ДЕНЬ ПЕРВЫЙ» ============
 const L1 = {};
 G.L1 = L1;
 const Rr = Art.R;
@@ -25,11 +25,6 @@ L1.build = function () {
   pick('nutsbox', 452, 0);
   D.ladders.push({ x: 572, y: -150, w: 16, h: 150 });
   P(470, -150, 150);
-  D.hints.push({ x: 0, y: -90, w: 170, h: 100, text: 'Добро пожаловать на Севмаш! {left} {right} — ходить.' });
-  D.hints.push({ x: 170, y: -90, w: 100, h: 100, text: '{jump} — прыжок. Держи дольше — прыгнешь выше.' });
-  D.hints.push({ x: 270, y: -90, w: 150, h: 100, text: '{punch} — удар. Жми 3 раза подряд — серия с апперкотом!' });
-  D.hints.push({ x: 420, y: -90, w: 110, h: 100, text: 'Гайки! {throw} — бросить. {switch} — сменить снаряд.' });
-  D.hints.push({ x: 530, y: -150, w: 110, h: 160, text: '{up} у лестницы — лезть наверх, {down} — вниз.' });
   D.hints.push({ x: 380, y: -250, w: 260, h: 100, text: 'Сверху падает всякое! Смотри на «!» и прячься под балками.' });
   D.posters.push({ x: 40, y: -110, kind: 'tb' }, { x: 120, y: -150, kind: 'helmet' }, { x: 250, y: -130, kind: 'load' });
   cur = { x1: 470, x2: 620, y: -150 };
@@ -337,6 +332,16 @@ L1.Climb = class {
     wd.playerAttack = (hb, dmg, atk, pl) => this.playerAttack(hb, dmg, atk, pl);
     wd.spawnPlayerProj = (k, x, y, d) => wd.projs.push(new Game.Proj(k, x, y, d));
     this.quipT = 25;
+    this.tut = new Game.Tutorial([
+      { id: 'move', text: 'Идти', prompt: 'Иди вправо' },
+      { id: 'jump', text: 'Прыжок', prompt: 'Перепрыгни ящик' },
+      { id: 'crouch', text: 'Присесть', prompt: 'Присядь' },
+      { id: 'punch', text: 'Удар', prompt: 'Ударь крысу' },
+      { id: 'upper', text: 'Серия+апперкот', prompt: 'Жми 3 раза подряд' },
+      { id: 'throw', text: 'Бросок', prompt: 'Подбери гайки и брось' },
+      { id: 'climb', text: 'Лестница', prompt: 'Лезь по лестнице' },
+    ]);
+    wd.ev = id => this.tut.ev(id);
   }
   spawnAll() {
     const wd = this.world, D = this.D;
@@ -370,6 +375,8 @@ L1.Climb = class {
     const wd = this.world, pl = this.player, D = this.D;
     wd.t += dt;
     if (!this.done) this.level.stats.time += dt;
+    this.tut.update(dt);
+    if (pl.y < D.floorY - 400) this.tut.hidden = true;
     if (this.fade > 0 && !this.respawning && !this.done) this.fade = Math.max(0, this.fade - dt * 2);
     wd.updatePlats(dt);
     pl.update(dt, wd);
@@ -529,7 +536,6 @@ L1.Climb = class {
       if (v.y < cy - 20 || v.y > cy + H + 20) continue;
       Art.valve(c, v.x + 8, v.y - cy + 1);
       if (v.state === 'warn') { c.fillStyle = 'rgba(255,120,40,0.5)'; c.fillRect(v.x + 2, v.y - 14 - cy, 12, 3); }
-      if (v.state === 'on') { c.fillStyle = 'rgba(235,240,242,0.55)'; c.fillRect(v.x - 2, v.y - 88 - cy, 20, 80); }
     }
     // провода
     for (const s of wd.sparks) {
@@ -556,6 +562,7 @@ L1.Climb = class {
       G.text(w.good ? '+' : '!', w.x, 30, { align: 'center', size: 8, color: '#fff', shadow: false });
     }
     Game.drawHUD(c, this.player, wd);
+    this.tut.draw(c, this.player.x, this.player.y - cy);
     const m = Math.max(0, Math.round((this.player.y - this.D.topY) / 16));
     G.text('ДО КАБИНЫ: ' + m + ' м', W - 8, 22, { align: 'right', color: '#c8d0d8' });
     if (this.hint) Game.drawHint(c, this.hint.text, this.hintA);
@@ -570,7 +577,7 @@ L1.FLOOR = 210;
 L1.Natasha = class {
   constructor(x) {
     this.x = x; this.y = L1.FLOOR; this.facing = -1; this.anim = 'idle';
-    this.maxHp = 26; this.hp = 26; this.combo = 0; this.lastHit = -9; this.inv = 0;
+    this.maxHp = 34; this.hp = 34; this.combo = 0; this.lastHit = -9; this.inv = 0;
     this.state = 'idle'; this.st = 0; this.t = 0; this.flash = 0; this.actions = 0; this.volley = 0; this.throwT = 0;
     this.headH = 88; this.voice = 330; this.vx = 0; this.name = 'natasha';
   }
@@ -605,17 +612,17 @@ L1.Natasha = class {
         break;
       case 'wind':
         this.facing = dx > 0 ? 1 : -1; a = 'wind';
-        if (this.st > 0.75 / spd) { this.set('slap'); Sound.play('throw'); }
+        if (this.st > 0.6 / spd) { this.set('slap'); Sound.play('throw'); }
         break;
       case 'slap':
         a = 'slap';
-        if (this.st < 0.14) { const hb = { x: this.x + (this.facing > 0 ? 4 : -38), y: this.y - 64, w: 34, h: 40 }; if (U.overlap(hb, pl.box)) pl.hurt(8, this.x, arena.world); }
+        if (this.st < 0.14) { const hb = { x: this.x + (this.facing > 0 ? 4 : -38), y: this.y - 64, w: 34, h: 40 }; if (U.overlap(hb, pl.box)) pl.hurt(11, this.x, arena.world); }
         if (this.st > 0.55) { this.actions++; this.set('idle'); }
         break;
       case 'retreat':
         this.facing = this.target > this.x ? 1 : -1; a = 'run';
         this.x = U.approach(this.x, this.target, 140 * spd * dt);
-        if (Math.abs(this.x - this.target) < 2) { this.set('throw'); this.volley = this.phase2 ? 3 : 2; this.throwT = 0.4; }
+        if (Math.abs(this.x - this.target) < 2) { this.set('throw'); this.volley = this.phase2 ? 4 : 3; this.throwT = 0.4; }
         break;
       case 'throw':
         this.facing = dx > 0 ? 1 : -1;
@@ -624,13 +631,13 @@ L1.Natasha = class {
         a = this.throwT < 0.25 ? 'throw' : 'idle';
         if (this.throwT <= 0) {
           if (this.volley > 0) {
-            this.volley--; this.throwT = 0.8;
+            this.volley--; this.throwT = 0.65;
             arena.throwBottle(this, pl);
             if (Math.random() < 0.35) G.say(this, U.choice(['Получай, сопляк!', 'На, закуси!', 'Лови, стропаль!']), 1.2);
           } else { this.set('drink'); G.say(this, 'Буль-буль... ик!', 1.8); Sound.play('swig'); }
         }
         break;
-      case 'drink': a = 'drink'; if (this.st > 3.0) { this.set('idle'); this.actions = 0; } break;
+      case 'drink': a = 'drink'; if (this.st > 2.3) { this.set('idle'); this.actions = 0; } break;
       case 'chargeWind':
         this.facing = this.target > this.x ? 1 : -1; a = 'wind';
         if (this.st > 0.9) { this.set('charge'); Sound.play('shout'); }
@@ -638,10 +645,10 @@ L1.Natasha = class {
       case 'charge':
         this.x += this.facing * 220 * dt; a = 'charge';
         if (Math.random() < dt * 20) FX.dust(this.x - this.facing * 10, this.y, 1);
-        if (U.overlap(this.box, pl.box)) pl.hurt(10, this.x, arena.world);
+        if (U.overlap(this.box, pl.box)) pl.hurt(13, this.x, arena.world);
         if (this.x < 150 || this.x > 600) { this.x = U.clamp(this.x, 150, 600); this.set('dizzy'); G.shake(6, 0.3); Sound.play('boom'); G.say(this, 'Ой-ёй-ёй...', 1.6); }
         break;
-      case 'dizzy': a = 'dizzy'; if (this.st > 2.8) { this.set('idle'); this.actions = 0; } break;
+      case 'dizzy': a = 'dizzy'; if (this.st > 2.2) { this.set('idle'); this.actions = 0; } break;
       case 'shove':
         a = 'slap';
         if (this.st < 0.12 && adx < 56) { pl.hurt(5, this.x, arena.world); pl.vx = (dx > 0 ? 1 : -1) * 320; }
@@ -661,14 +668,14 @@ L1.Natasha = class {
     if (this.state === 'down' || this.state === 'wait' || this.state === 'shove') return;
     if (this.inv > 0 && !this.weak) return;
     const mult = this.weak ? 2 : 1;
-    if (!this.weak) this.inv = 0.1;
+    if (!this.weak) this.inv = 0.15;
     this.hp -= dmg * mult; this.flash = 0.12;
     Sound.play('hit'); G.hitStop = 0.06;
     if (mult > 1) FX.popText(this.x, this.y - 90, 'x2!', '#ffd84a', 16);
     if (this.hp <= 0) { this.hp = 0; this.set('down'); arena.bossDown(); return; }
     if (!this.weak) {
       this.combo = this.t - this.lastHit < 1.1 ? this.combo + 1 : 1; this.lastHit = this.t;
-      if (this.combo >= 5 && ['idle', 'walk', 'wind', 'hurt'].includes(this.state)) {
+      if (this.combo >= 4 && ['idle', 'walk', 'wind', 'hurt'].includes(this.state)) {
         this.combo = 0; this.set('shove'); Sound.play('shout');
         G.say(this, U.choice(['А ну брысь!', 'Отвали, окаянный!', 'Кыш!']), 1.2);
         return;
@@ -757,7 +764,7 @@ L1.Arena = class {
     wd.pickups = wd.pickups.filter(p => !p.dead);
     for (const a of this.actors) a.update(dt);
     if (this.fighting) {
-      [17, 8].forEach(th => { if (b.hp <= th && !this.dropped[th]) { this.dropped[th] = 1; const p = new Game.Pickup(th === 17 ? 'pie' : 'kefir', U.rand(200, 560), -10); p.falling = true; wd.pickups.push(p); } });
+      [22, 11].forEach(th => { if (b.hp <= th && !this.dropped[th]) { this.dropped[th] = 1; const p = new Game.Pickup(th === 22 ? 'pie' : 'kefir', U.rand(200, 560), -10); p.falling = true; wd.pickups.push(p); } });
       this.quipT -= dt;
       if (this.quipT <= 0) { this.quipT = U.rand(6, 9); G.say(pl, U.choice(['Слабая женщина!', 'Это всё в твоей голове, сног!', 'Ахахахах!', 'Лол!', 'Чё, рак, ты живой?']), 1.8); }
       if (pl.dead && pl.deadT > 1.6 && !this.resetting) {
@@ -771,7 +778,11 @@ L1.Arena = class {
   draw(c) {
     const wd = this.world;
     c.drawImage(G.bg.arena, 0, 0, W, H);
-    for (const r of this.ropes) Art.R(c, r.x, 0, 2, r.len, '#6a5a3a');
+    for (const r of this.ropes) {
+      let len = r.len;
+      if (r.actor && r.actor.anim === 'rappel') { const f = Spr.frame('cmd', 0); len = Math.min(len, r.actor.y - f[5] / 2 + 4); }
+      if (len > 0) Art.R(c, r.x, 0, 2, len, '#3a3226');
+    }
     for (const p of wd.pickups) p.draw(c, 0, 0);
     for (const a of this.actors) a.draw(c, 0, 0);
     if (this.boss && this.boss.draw) this.boss.draw(c);
@@ -804,7 +815,7 @@ L1.Arena = class {
 // =====================================================================
 // 6. КАТСЦЕНЫ
 // =====================================================================
-// --- 6.1 Вид на Севмаш: «ДЕНЬ ПЕРВЫЙ» ---
+// --- 6.1 Вид на Севмолот: «ДЕНЬ ПЕРВЫЙ» ---
 L1.sceneAerial = function (level) {
   const st = { pan: 0, cap: '', title: 0, fade: 1, gulls: [] };
   const img = G.bg.aerial, iw = img.width / 2;
@@ -820,7 +831,7 @@ L1.sceneAerial = function (level) {
     if (st.cap) { Art.R(c, 14, 14, G.textWidth(st.cap, 8) + 16, 20, 'rgba(0,0,0,0.6)'); G.text(st.cap, 22, 20, { color: '#e8e0c8' }); }
     if (st.title > 0) { c.fillStyle = `rgba(0,0,0,${0.35 * st.title})`; c.fillRect(0, 0, W, H); }
     G.bigTitle(c, 'ДЕНЬ ПЕРВЫЙ', st.title, { size: 32, y: H / 2 - 10 });
-    if (st.title > 0) G.text('Северодвинск. Судостроительный завод', W / 2, H / 2 + 26, { align: 'center', color: '#c8d0d8', outline: true });
+    if (st.title > 0) G.text('Выборгск. Судоверфь «Севмолот»', W / 2, H / 2 + 26, { align: 'center', color: '#c8d0d8', outline: true });
     if (st.fade > 0) { c.fillStyle = `rgba(0,0,0,${st.fade})`; c.fillRect(0, 0, W, H); }
   };
   level.updateScene = dt => {
@@ -830,7 +841,7 @@ L1.sceneAerial = function (level) {
   return function* () {
     Music.play('intro');
     yield* Scene.tween(1.0, k => { st.fade = 1 - k; });
-    const full = 'Северодвинск, 2003 год.';
+    const full = 'Выборгск, Лемурия. 2003 год.';
     for (let i = 1; i <= full.length; i++) { st.cap = full.slice(0, i); Sound.play('blip', 500); yield Scene.fast ? 0 : 0.05; }
     yield* Scene.tween(5.0, k => { st.pan = U.easeInOut(k) * (iw - W); });
     Sound.play('boom'); G.shake(5, 0.4);
@@ -850,12 +861,14 @@ L1.sceneIntro = function (level) {
   level.drawScene = c => {
     const img = G.bg.hall;
     c.drawImage(img, 0, 0, W, H);
-    if (st.lift > 0) {
-      // приподнимаем подлодку с крюком и стропами
-      const d = st.lift;
-      c.drawImage(img, 700, 110, 180, 300, 350, 55 - d, 90, 150);
-      c.drawImage(img, 84, 300, 1080, 270, 42, 150 - d, 540, 135);
+    // подлодка — отдельный спрайт, крюк висит на тросах мостового крана
+    const sx = L1.SUB_X, sy = L1.SUB_Y - st.lift;
+    const f = Spr.frame('sub', 0);
+    if (f) {
+      const hx = sx + (f[6] - f[4]) / 2, hy = sy + (f[7] - f[5]) / 2;
+      Art.R(c, hx - 4, L1.TROLLEY_Y, 2, hy - L1.TROLLEY_Y + 4, '#1a1a1a'); Art.R(c, hx + 2, L1.TROLLEY_Y, 2, hy - L1.TROLLEY_Y + 4, '#1a1a1a');
     }
+    Spr.draw(c, 'sub', 0, sx, sy, 1);
     Spr.draw(c, 'wk_a', 6, smoker.x, smoker.y, 1);
     v.draw(c);
     if (st.helmet) Art.item(c, 'helmet', st.helmet.x, st.helmet.y, st.helmet.r, 1.2);
@@ -884,9 +897,9 @@ L1.sceneIntro = function (level) {
   };
   const liftTry = function* () {
     Sound.play('crane');
-    yield* Scene.tween(0.7, k => { st.lift = 6 * k; });
+    yield* Scene.tween(0.7, k => { st.lift = 10 * k; });
     yield 0.25;
-    yield* Scene.tween(0.12, k => { st.lift = 6 * (1 - k); });
+    yield* Scene.tween(0.12, k => { st.lift = 10 * (1 - k); });
     st.lift = 0;
     Sound.play('boom'); G.shake(7, 0.35);
     FX.dust(200, 290, 10); FX.dust(450, 290, 10);
@@ -945,6 +958,7 @@ L1.sceneIntro = function (level) {
 
 // --- 6.3 В кабине: разговор с Наташкой ---
 L1.CHAIR_X = 52;
+L1.SUB_X = 373; L1.SUB_Y = 288; L1.TROLLEY_Y = 58; L1.ROPE_DX = 3;
 L1.sceneCab = function (level) {
   const ar = level.arena;
   const st = { fade: 1, title: 0 };
@@ -1042,10 +1056,7 @@ L1.sceneFinale = function (level) {
     yield 1.2;
     v.setAnim('tired');
     yield* Scene.say('valera', 'Ух, вот это денёк... Я устал, пойду домой.', v);
-    yield* Scene.moveTo(v, 582, 60, 'walk');
-    v.clipY = L1.FLOOR + 2;
-    v.setAnim('climb');
-    yield* Scene.tween(1.3, k => { v.y = L1.FLOOR + 95 * k; });
+    yield* Scene.moveTo(v, 700, 60, 'walk');
     v.visible = false;
     yield 1.2;
     Music.stop();
@@ -1058,6 +1069,7 @@ L1.sceneFinale = function (level) {
       const a = new G.Actor('commando', x + 2, -40 - i * 40, 1);
       a.setAnim('rappel'); a.voice = i === 1 ? 150 : 170;
       cmd.push(a); ar.actors.push(a);
+      const f = Spr.frame('cmd', 0); ar.ropes[i].x = x + 2 + (L1.ROPE_DX || 0); ar.ropes[i].actor = a;
     });
     Sound.play('rope');
     yield* Scene.tween(1.6, k => { cmd.forEach((a, i) => { const kk = U.clamp(k * 1.3 - i * 0.1, 0, 1); a.y = U.lerp(-40 - i * 40, L1.FLOOR, U.easeOut(kk)); }); });

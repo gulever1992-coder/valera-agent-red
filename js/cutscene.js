@@ -62,6 +62,8 @@ G.Scene = Scene;
 const WHO = {
   valera: { name: 'ВАЛЕРА', color: '#ff8a3a', voice: 240 },
   natasha: { name: 'НАТАШКА-КРАНОВЩИЦА', color: '#e06070', voice: 330 },
+  kesha: { name: 'КЕША', color: '#8cc8ff', voice: 210 },
+  seller: { name: 'ПРОДАВЩИЦА', color: '#d8a0d8', voice: 380 },
   commando: { name: 'СПЕЦНАЗОВЕЦ', color: '#8ac070', voice: 170 },
   commando2: { name: 'КОМАНДИР', color: '#8ac070', voice: 150 },
 };
@@ -93,13 +95,10 @@ Scene.tween = function* (dur, fn) {
 // ---------- портреты ----------
 G.drawPortrait = function (c, who, x, y, talking) {
   Art.R(c, x - 2, y - 2, 68, 68, '#0a0a0c');
-  Art.R(c, x, y, 64, 64, who === 'valera' ? '#4a2a14' : who === 'natasha' ? '#3a2a34' : '#1e2a1e');
+  Art.R(c, x, y, 64, 64, { valera: '#4a2a14', natasha: '#3a2a34', kesha: '#1a2a3a', seller: '#3a2a3a' }[who] || '#1e2a1e');
   const bob = talking ? Math.round(Math.abs(Math.sin(G.t * 14)) * 1) : 0;
   c.save(); c.beginPath(); c.rect(x, y, 64, 64); c.clip();
-  if (who === 'valera' && G.img.valeraPortrait) {
-    Art.R(c, x + 4, y + 52, 58, 14, '#f06a14'); Art.R(c, x + 30, y + 52, 14, 14, '#1c1c26');
-    c.drawImage(G.img.valeraPortrait, x + 1, y + 2 - bob, 60, 61);
-  } else {
+  {
     const p = G.portraits && G.portraits[who];
     if (p) c.drawImage(p, x, y - bob, 64, 64);
   }

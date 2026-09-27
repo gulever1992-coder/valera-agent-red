@@ -75,7 +75,9 @@ def segment(a, n, ncols=None, dil=4):
     if len(comps) < n: print('  !! кадров', len(comps), 'из', n)
     if ncols:
         comps.sort(key=lambda c: (c['y0'] + c['y1']) / 2)
-        rows = [comps[i:i + ncols] for i in range(0, len(comps), ncols)]
+        counts = ncols if isinstance(ncols, list) else [ncols] * (len(comps) // ncols)
+        rows, k0 = [], 0
+        for cnt in counts: rows.append(comps[k0:k0 + cnt]); k0 += cnt
         comps = [c for r in rows for c in sorted(r, key=lambda c: c['x0'] + c['x1'])]
     else:
         comps.sort(key=lambda c: c['x0'] + c['x1'])
@@ -93,6 +95,7 @@ def frames_row(a, n):
     return segment(a, n)
 
 def frames_grid(a, nrows, ncols):
+    if isinstance(ncols, list): return segment(a, sum(ncols), ncols=ncols)
     return segment(a, nrows * ncols, ncols=ncols)
 
 def anchor(f, mode):
@@ -108,7 +111,7 @@ def anchor(f, mode):
 
 def build_sheet(name, src, n, target, ref=0, keyer='green', grid=None, anchors=None, pad=2):
     im = Image.open(os.path.join(SRC, src))
-    a = key_green(im) if keyer == 'green' else key_black(im)
+    a = key_green(im) if keyer == 'green' else key_black(im) if keyer == 'black' else np.array(im.convert('RGBA'))
     fr = frames_grid(a, *grid) if grid else frames_row(a, n)
     if isinstance(target, (int, float)):
         k = target * SCALE / fr[ref].shape[0]
@@ -169,13 +172,34 @@ S['wk_b'] = build_sheet('wk_b', 'workers_b.png', 8, 58, ref=6)
 # ---- предметы и платформы (чёрный фон) ----
 S['items'] = build_sheet('items', 'items.png', 16, [-15, -14, -20, 16, -10, -17, 17, 18, -9, -18, 17, -13, -19, -17, 16, 17], keyer='black', grid=(4, 4), anchors=['center'] * 16)
 S['props'] = build_sheet('props', 'props_platforms.png', 10, [-160, -160, -80, -160, -64, 60, -36, -64, 48, -24], keyer='black', grid=(5, 2), anchors=['center'] * 10)
+# ---- новое: уровень 2 и правки ----
+S['v_bottle'] = build_sheet('v_bottle', 'valera_bottle.png', 7, 80, ref=0)
+S['v_climb2'] = build_sheet('v_climb2', 'valera_climb2.png', 6, 80, ref=3, anchors=['feet'] * 5 + ['center'])
+S['v_story3'] = build_sheet('v_story3', 'valera_story3.png', 6, 80, ref=1)
+S['gopnik'] = build_sheet('gopnik', 'gopnik.png', 7, 78, ref=1)
+S['bomzh'] = build_sheet('bomzh', 'bomzh_alkash.png', 8, 76, ref=0)
+S['punk'] = build_sheet('punk', 'punk_dogs.png', 8, [80, 80, 76, -80, -28, -28, -52, -52])
+S['kesha_a'] = build_sheet('kesha_a', 'kesha_a.png', 8, 82, ref=0)
+S['kesha_b'] = build_sheet('kesha_b', 'kesha_b.png', 7, 82, ref=0)
+S['cmd_hide'] = build_sheet('cmd_hide', 'commandos_hide.png', 6, [80, -52, -70, 60, 110, 70], anchors=['feet', 'feet', 'feet', 'feet', 'center', 'feet'])
+S['nat_win'] = build_sheet('nat_win', 'natasha_window.png', 3, [-58, -58, -58], anchors=['center'] * 3)
+S['matiz'] = build_sheet('matiz', 'matiz.png', 3, [-120, -120, -150], anchors=['feet', 'feet', 'feet'])
+S['sub'] = build_sheet('sub', 'sub_sprite.png', 1, [-560], anchors=['center'])
+S['street'] = build_sheet('street', 'prop_street_keyed.png', 12, [-84, -150, -110, -44, -56, -100, -110, -36, 90, 110, 80, -26], keyer='pre', grid=(3, [3, 4, 5]), anchors=['feet'] * 12)
 # ---- фоны ----
 B = {}
-B['aerial'] = bg('bg_aerial.png', 'bg_aerial', (None, 720))
-B['hall'] = bg('hall_intro.png', 'bg_hall', (1280, 720))
-B['arena'] = bg('bg_arena.png', 'bg_arena', (1280, 720))
-B['climb_bottom'] = bg('bg_climb_bottom.png', 'bg_climb_bottom', (1280, None))
-B['climb_top'] = bg('bg_climb_top.png', 'bg_climb_top', (1280, None))
+B['aerial'] = bg('bg_aerial_v2.png', 'bg_aerial', (None, 720))
+B['hall'] = bg('hall_empty.png', 'bg_hall', (1280, 720))
+B['arena'] = bg('bg_arena_v2.png', 'bg_arena', (1280, 720))
+B['climb_bottom'] = bg('bg_climb_bottom_v2.png', 'bg_climb_bottom', (1280, None))
+B['climb_top'] = bg('bg_climb_top_v2.png', 'bg_climb_top', (1280, None))
+B['shop'] = bg('shop_interior.png', 'bg_shop', (1280, 720))
+B['sky'] = bg('city_sky_far.png', 'bg_sky', (None, 720))
+for i in range(1, 9):
+    if os.path.exists(os.path.join(SRC, 'l2_bg%d.png' % i)): B['l2_%d' % i] = bg('l2_bg%d.png' % i, 'bg_l2_%d' % i, (1280, 720))
+# передний план титульного экрана: машины
+fg = Image.fromarray(key_green(Image.open(os.path.join(SRC, 'street_cars.png'))), 'RGBA').resize((1280, 720), Image.LANCZOS)
+a_ = np.array(fg); a_[..., 3] = np.where(a_[..., 3] > 90, 255, 0); Image.fromarray(a_, 'RGBA').save(os.path.join(OUT, 'fg_cars.png'), optimize=True)
 # портреты для диалогов
 def portrait(src, n, idx, box, name, ref=0):
     a = key_green(Image.open(os.path.join(SRC, src)))
@@ -185,6 +209,8 @@ def portrait(src, n, idx, box, name, ref=0):
     p = Image.fromarray(f[y0:y1, x0:x1], 'RGBA').resize((128, 128), Image.LANCZOS)
     p.save(os.path.join(SPR, name + '.png'))
 portrait('natasha_a.png', 6, 0, (0.08, 0.0, 0.92, 0.42), 'p_natasha')
+portrait('valera_climb2.png', 6, 5, (0.0, 0.0, 1.0, 1.0), 'p_valera')
+portrait('kesha_a.png', 8, 0, (0.12, 0.0, 0.88, 0.36), 'p_kesha')
 portrait('commandos.png', 5, 1, (0.08, 0.0, 0.62, 0.36), 'p_cmd')
 portrait('commandos.png', 5, 3, (0.30, 0.0, 0.85, 0.36), 'p_cmd2')
 

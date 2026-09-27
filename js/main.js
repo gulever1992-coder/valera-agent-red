@@ -53,6 +53,17 @@ Music.songs = {
       { drum: true, vol: 0.09, notes: 'k . . . s . . . k . k . s . . h' },
     ],
   },
+  city: {
+    bpm: 118, loop: true, tracks: [
+      { wave: 'square', vol: 0.07, notes: bar(`
+        E4 - - G4 - - A4 - B4 - A4 - G4 - E4 -   D4 - - - E4 - - - G4 - - - . . . .
+        E4 - - G4 - - A4 - B4 - D5 - B4 - A4 -   G4 - - - E4 - - - . . . . . . . .`) },
+      { wave: 'triangle', vol: 0.2, notes: bar(`
+        E2 . E3 . E2 . E3 . E2 . E3 . D2 . D3 .   C2 . C3 . C2 . C3 . D2 . D3 . D2 . B1 .
+        E2 . E3 . E2 . E3 . E2 . E3 . D2 . D3 .   C2 . C3 . D2 . D3 . E2 . E3 . E2 . . .`) },
+      { drum: true, vol: 0.14, notes: 'k . h . s . h k . k h . s . h h' },
+    ],
+  },
   sting: {
     bpm: 120, loop: false, tracks: [
       { wave: 'sawtooth', vol: 0.08, notes: 'A2 - - - - - - - A#2 - - - - - - - A2 - - - - - - - - - - - - - - -' },
@@ -85,17 +96,33 @@ G.onLevelComplete = function (level) {
   if (total > 22000 && st.deaths === 0) { rank = 'S'; title = 'Бригадир от Бога'; }
   else if (total > 16000) { rank = 'A'; title = 'Стропальщик 6-го разряда'; }
   else if (total > 10000) { rank = 'B'; title = 'Крепкий середнячок'; }
-  App.results = { st, score: level.score, timeBonus, noDeath, total, rank, title, shown: 0 };
+  App.results = { st, score: level.score, timeBonus, noDeath, total, rank, title, shown: 0, id: level.id || 1 };
   try {
-    const best = JSON.parse(localStorage.getItem('valera_best_l1') || 'null');
+    const key = 'valera_best_l' + (level.id || 1);
+    const best = JSON.parse(localStorage.getItem(key) || 'null');
     App.results.best = best;
-    if (!best || total > best.total) localStorage.setItem('valera_best_l1', JSON.stringify({ total, rank, time: st.time }));
-    localStorage.setItem('valera_progress', '2');
+    if (!best || total > best.total) localStorage.setItem(key, JSON.stringify({ total, rank, time: st.time }));
+    const prog = +(localStorage.getItem('valera_progress') || 1);
+    localStorage.setItem('valera_progress', String(Math.max(prog, (level.id || 1) + 1)));
   } catch (e) {}
   Music.play('victory');
   setState('results');
 };
 
+function startLevel2(opts = {}) {
+  App.level = new L2.Level();
+  setState('play');
+  App.paused = false;
+  App.level.start(opts);
+}
+function menuItems() {
+  let prog = 1; try { prog = +(localStorage.getItem('valera_progress') || 1); } catch (e) {}
+  const it = [['НАЧАТЬ ИГРУ', () => startLevel1()]];
+  if (prog >= 2) it.push(['УРОВЕНЬ 2: ДОРОГА ДОМОЙ', () => startLevel2()]);
+  it.push(['УПРАВЛЕНИЕ', () => setState('controls')]);
+  it.push(['ЗВУК: ' + (Sound.muted ? 'ВЫКЛ' : 'ВКЛ'), () => Sound.toggleMute()]);
+  return it;
+}
 function startLevel1(opts = {}) {
   App.level = new L1.Level();
   setState('play');
@@ -116,18 +143,17 @@ function update(dt) {
   if (I.pressed('mute')) Sound.toggleMute();
   switch (App.state) {
     case 'title': {
-      if (I.pressed('up')) { App.menu = (App.menu + 2) % 3; Sound.play('select'); }
-      if (I.pressed('down')) { App.menu = (App.menu + 1) % 3; Sound.play('select'); }
+      const mi = menuItems(); App.menu = Math.min(App.menu, mi.length - 1);
+      if (I.pressed('up')) { App.menu = (App.menu + mi.length - 1) % mi.length; Sound.play('select'); }
+      if (I.pressed('down')) { App.menu = (App.menu + 1) % mi.length; Sound.play('select'); }
       if (I.pressed('start') || I.pressed('jump') || I.pressed('punch')) {
         Sound.unlock(); Sound.play('confirm');
-        if (App.menu === 0) startLevel1();
-        else if (App.menu === 1) setState('controls');
-        else Sound.toggleMute();
+        mi[App.menu][1]();
       }
       const a = titleActor.a;
       if (a) {
         a.update(dt);
-        if (a.anim === 'walk') { a.x += a.facing * 50 * dt; if (a.x > 560 || a.x < 80) { a.setAnim(U.choice(['stomp', 'scratch', 'yawn', 'belly'])); a.facing *= -1; a.idleT = 0; } }
+        if (a.anim === 'walk') { a.x += a.facing * 50 * dt; if (a.x > 600 || a.x < 40) { a.setAnim(U.choice(['stomp', 'scratch', 'yawn', 'belly'])); a.facing *= -1; a.idleT = 0; } }
         else { a.idleT = (a.idleT || 0) + dt; if (a.idleT > 3) a.setAnim('walk'); }
       }
       break;
@@ -153,7 +179,7 @@ function update(dt) {
     case 'results': {
       const r = App.results;
       r.shown += dt;
-      if (r.shown > 1 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch'))) { Sound.play('confirm'); setState('soon'); Music.play('title'); }
+      if (r.shown > 1 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch'))) { Sound.play('confirm'); if (r.id === 1) startLevel2(); else { setState('soon'); Music.play('title'); } }
       break;
     }
     case 'soon':
@@ -175,10 +201,11 @@ function drawTitle(c) {
   const bob = Math.sin(G.t * 2) * 2;
   G.text('ВАЛЕРА', W / 2, 36 + bob, { size: 40, align: 'center', color: '#f06a14', outline: true });
   G.text('АГЕНТ RED', W / 2, 84 + bob, { size: 16, align: 'center', color: '#e03030', outline: true });
-  G.text('СЕВЕРОДВИНСК · 2000-е', W / 2, 108, { size: 8, align: 'center', color: '#c8d0d8' });
+  G.text('ВЫБОРГСК · ЛЕМУРИЯ · 2000-е', W / 2, 108, { size: 8, align: 'center', color: '#c8d0d8' });
   if (titleActor.a) titleActor.a.draw(c);
+  if (G.bg.fgCars) c.drawImage(G.bg.fgCars, 0, 0, W, H);
   // меню
-  const items = ['НАЧАТЬ ИГРУ', 'УПРАВЛЕНИЕ', 'ЗВУК: ' + (Sound.muted ? 'ВЫКЛ' : 'ВКЛ')];
+  const items = menuItems().map(m => m[0]);
   items.forEach((s, i) => {
     const y = 160 + i * 22, sel = App.menu === i;
     if (sel) { Art.R(c, W / 2 - 110, y - 5, 220, 18, 'rgba(240,106,20,0.25)'); G.text('>', W / 2 - 100 + Math.sin(G.t * 8) * 2, y, { color: '#ffd84a' }); }
@@ -186,9 +213,9 @@ function drawTitle(c) {
   });
   let best = null;
   try { best = JSON.parse(localStorage.getItem('valera_best_l1') || 'null'); } catch (e) {}
-  if (best) G.text('Рекорд ур.1: ' + best.total + ' (' + best.rank + ')', W / 2, 232, { align: 'center', size: 8, color: '#ffd84a' });
+  if (best) G.text('Рекорд ур.1: ' + best.total + ' (' + best.rank + ')', W / 2, 258, { align: 'center', size: 8, color: '#ffd84a' });
   if ((G.t * 2 | 0) % 2) G.text('Нажми ENTER', W / 2, H - 22, { align: 'center', color: '#e8e0c8' });
-  G.text('v0.1 · уровень 1', 6, H - 12, { size: 8, color: 'rgba(255,255,255,0.4)' });
+  G.text('v0.3 · уровни 1–2', 6, H - 12, { size: 8, color: 'rgba(255,255,255,0.4)' });
 }
 
 function drawControls(c) {
@@ -198,6 +225,7 @@ function drawControls(c) {
     ['СТРЕЛКИ / A D', 'Бег'],
     ['ВВЕРХ ВНИЗ / W S', 'Лестницы'],
     ['Z / ПРОБЕЛ / K', 'Прыжок (держи — выше)'],
+    ['ВНИЗ', 'Присесть (пули и удары пролетят мимо)'],
     ['ВНИЗ + ПРЫЖОК', 'Спрыгнуть с балки'],
     ['X / J', 'Удар (3 раза — апперкот)'],
     ['C / L', 'Бросить гайку/ключ/кирпич'],
@@ -216,8 +244,8 @@ function drawResults(c) {
   const r = App.results, st = r.st;
   Art.R(c, 0, 0, W, H, '#14171c');
   if (G.img.street) { c.globalAlpha = 0.18; c.drawImage(G.img.street, 0, 0, W, H); c.globalAlpha = 1; }
-  G.text('УРОВЕНЬ 1 ПРОЙДЕН!', W / 2, 18, { size: 16, align: 'center', color: '#ffd84a', outline: true });
-  G.text('«Севмаш. День первый»', W / 2, 42, { align: 'center', color: '#c8d0d8' });
+  G.text('УРОВЕНЬ ' + r.id + ' ПРОЙДЕН!', W / 2, 18, { size: 16, align: 'center', color: '#ffd84a', outline: true });
+  G.text(r.id === 1 ? '«Севмолот. День первый»' : '«Дорога домой»', W / 2, 42, { align: 'center', color: '#c8d0d8' });
   const rows = [
     ['Время', fmtTime(st.time)],
     ['Врагов повержено', st.kills],
@@ -250,9 +278,9 @@ function drawResults(c) {
 
 function drawSoon(c) {
   Art.R(c, 0, 0, W, H, '#0e1014');
-  G.text('УРОВЕНЬ 2', W / 2, 90, { size: 24, align: 'center', color: '#e03030', outline: true });
+  G.text('УРОВЕНЬ 3', W / 2, 90, { size: 24, align: 'center', color: '#e03030', outline: true });
   G.text('СКОРО', W / 2, 126, { size: 16, align: 'center', color: '#f4f0e4', outline: true });
-  G.text('Индийский спецназ уже идёт по следу агента RED...', W / 2, 180, { align: 'center', color: '#c8d0d8' });
+  G.text('Что было в дротике? Агент RED засыпает...', W / 2, 180, { align: 'center', color: '#c8d0d8' });
   G.text('(жду описание следующего уровня)', W / 2, 200, { align: 'center', color: '#8a929a' });
   if ((G.t * 2 | 0) % 2) G.text('ENTER — в меню', W / 2, H - 28, { align: 'center' });
 }
@@ -330,11 +358,13 @@ function frame(now) {
   try { await Promise.race([document.fonts.load('8px "Press Start 2P"'), new Promise(r => setTimeout(r, 2500))]); } catch (e) {}
   G.img.valeraHud = G.downscale(head, 52, 54);
   G.img.valeraPortrait = G.downscale(head, 120, 122);
-  titleActor.a = new G.Actor('valera', 120, 336, 1);
+  titleActor.a = new G.Actor('valera', 120, 312, 1);
   titleActor.a.setAnim('walk');
   const q = new URLSearchParams(location.search);
   if (q.has('sprites')) { App.spriteScale = +(q.get('scale') || 0.5); setState('sprites'); return; }
-  if (q.has('boss')) { Sound.unlock(); startLevel1({ boss: true }); }
+  if (q.has('l2boss')) startLevel2({ boss: true });
+  else if (q.has('l2')) startLevel2();
+  else if (q.has('boss')) { Sound.unlock(); startLevel1({ boss: true }); }
   else if (q.has('climb')) { startLevel1({ skip: true }); }
   else { setState('title'); Music.play('title'); }
 })();

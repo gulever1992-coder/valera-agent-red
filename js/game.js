@@ -120,11 +120,11 @@ Game.Player = class {
     this.hp = 100; this.maxHp = 100; this.inv = 0; this.onGround = false; this.ground = null;
     this.coyote = 0; this.jumpBuf = 0; this.climb = null; this.atk = null; this.combo = 0; this.comboT = 0;
     this.throwT = 0; this.throwDone = false; this.hurtT = 0; this.idleT = 0; this.idle = null; this.dropT = 0;
-    this.ammo = { nuts: 0, wrench: 0, bricks: 0 }; this.weapon = 'nuts';
+    this.ammo = { nuts: 0, wrench: 0, bricks: 0, bottles: 0 }; this.weapon = 'nuts'; this.bottleHits = 0; this.crouch = false;
     this.dead = false; this.deadT = 0; this.controls = true; this.headH = 86; this.voice = 260;
     this.anim = 'stand'; this.animT = 0; this.landT = 0; this.stompPh = 0; this.forcePose = null;
   }
-  get box() { return { x: this.x - 10, y: this.y - 70, w: 20, h: 69 }; }
+  get box() { return this.crouch ? { x: this.x - 11, y: this.y - 44, w: 22, h: 43 } : { x: this.x - 10, y: this.y - 70, w: 20, h: 69 }; }
   hurt(dmg, fromX, world) {
     if (this.inv > 0 || this.dead) return false;
     this.hp -= dmg; world.stats.dmg += dmg;
@@ -179,7 +179,7 @@ Game.Player = class {
       let moving = 0;
       if (Up) { this.y -= sp * dt; moving = 1; }
       if (Dn) { this.y += sp * dt; moving = 1; }
-      if (moving) this.climbAnimT = (this.climbAnimT || 0) + dt;
+      if (moving) { this.climbAnimT = (this.climbAnimT || 0) + dt; if (world.ev) world.ev('climb'); }
       this.onGround = false;
       if (this.y <= l.y) { this.y = l.y; this.climb = null; this.onGround = true; this.vy = 0; }
       else if (this.y >= l.y + l.h) { this.y = l.y + l.h; this.climb = null; }
@@ -190,11 +190,17 @@ Game.Player = class {
       }
     }
 
+    // ---- присед ----
+    const wasCrouch = this.crouch;
+    this.crouch = !!(Dn && this.onGround && !this.climb && ctl && !I.held('jump'));
+    if (this.crouch && !wasCrouch) world.ev && world.ev('crouch');
     // ---- горизонталь ----
     const busy = this.atk && this.onGround;
     let target = 0;
     if (L) target -= RUN; if (Rr) target += RUN;
+    if ((L || Rr) && world.ev) world.ev('move');
     if (busy) target *= 0.25;
+    if (this.crouch) target = 0;
     if (this.hurtT > 0) target = this.vx;
     const acc = this.onGround ? 1500 : 900;
     this.vx = U.approach(this.vx, target, acc * dt);
@@ -205,7 +211,7 @@ Game.Player = class {
     if (ctl && I.pressed('jump')) this.jumpBuf = 0.13; else this.jumpBuf -= dt;
     if (this.jumpBuf > 0 && this.coyote > 0) {
       if (Dn && this.ground && this.ground.oneway) { this.dropT = 0.25; this.onGround = false; this.y += 2; }
-      else { this.vy = -JUMPV; this.onGround = false; this.coyote = 0; Sound.play('jump'); FX.dust(this.x, this.y, 4); }
+      else { this.vy = -JUMPV; this.onGround = false; this.coyote = 0; Sound.play('jump'); FX.dust(this.x, this.y, 4); world.ev && world.ev('jump'); }
       this.jumpBuf = 0;
     }
     if (!I.held('jump') && this.vy < -200 && ctl) this.vy += GRAV * 1.3 * dt; // короткий прыжок
@@ -222,19 +228,28 @@ Game.Player = class {
     if (ctl && I.pressed('punch') && (!this.atk || this.atk.t > this.atk.dur * 0.7) && this.throwT <= 0) {
       const idx = this.comboT > 0 || this.atk ? (this.combo + 1) % 3 : 0;
       this.combo = idx;
-      this.atk = { t: 0, dur: idx === 2 ? 0.34 : 0.24, kind: idx === 2 ? 'upper' : 'punch', side: idx % 2, hit: new Set() };
+      const bottle = this.bottleHits > 0;
+      this.atk = { t: 0, dur: bottle ? 0.32 : idx === 2 ? 0.34 : 0.24, kind: bottle ? 'bottle' : idx === 2 ? 'upper' : 'punch', side: idx % 2, hit: new Set(), low: this.crouch };
       Sound.play('punch');
+      if (world.ev) world.ev(idx === 2 && !bottle ? 'upper' : 'punch');
       if (this.onGround) this.vx += this.facing * 40;
     }
     if (this.atk) {
       const a = this.atk;
       a.t += dt;
-      const on = a.kind === 'upper' ? a.t > 0.08 && a.t < 0.22 : a.t > 0.05 && a.t < 0.15;
+      const on = a.kind === 'upper' ? a.t > 0.08 && a.t < 0.22 : a.kind === 'bottle' ? a.t > 0.12 && a.t < 0.24 : a.t > 0.05 && a.t < 0.15;
       if (on) {
         const hb = a.kind === 'upper'
           ? { x: this.x + (this.facing > 0 ? 2 : -30), y: this.y - 72, w: 28, h: 42 }
+          : a.kind === 'bottle' ? { x: this.x + (this.facing > 0 ? 4 : -44), y: this.y - 62, w: 40, h: 40 }
+          : a.low ? { x: this.x + (this.facing > 0 ? 6 : -36), y: this.y - 34, w: 30, h: 24 }
           : { x: this.x + (this.facing > 0 ? 6 : -36), y: this.y - 52, w: 30, h: 24 };
-        world.playerAttack(hb, a.kind === 'upper' ? 2 : 1, a, this);
+        const before = a.hit.size;
+        world.playerAttack(hb, a.kind === 'upper' ? 2 : a.kind === 'bottle' ? 2 : 1, a, this);
+        if (a.kind === 'bottle' && a.hit.size > before) {
+          this.bottleHits--;
+          if (this.bottleHits <= 0) { Sound.play('glass'); FX.burst(this.x + this.facing * 20, this.y - 48, 12, { colors: ['#2f8a3a', '#7fd08a', '#e8e0c0'], speed: 150, type: 'shard', size: 2 }); G.say(this, U.choice(['Эх, бутылочка...', 'Тара кончилась!']), 1.3); }
+        }
       }
       if (a.t >= a.dur) { this.atk = null; this.comboT = 0.35; }
     }
@@ -251,6 +266,7 @@ Game.Player = class {
         this.throwDone = true;
         this.ammo[this.weapon]--;
         world.spawnPlayerProj(this.weapon, this.x + this.facing * 12, this.y - 48, this.facing);
+        if (world.ev) world.ev('throw');
         Sound.play('throw');
       }
     }
@@ -285,10 +301,10 @@ Game.Player = class {
     this.choosePose(dt);
   }
   switchWeapon(silent) {
-    const order = ['nuts', 'wrench', 'bricks'];
+    const order = ['nuts', 'wrench', 'bricks', 'bottles'];
     let i = order.indexOf(this.weapon);
-    for (let k = 1; k <= 3; k++) {
-      const n = order[(i + k) % 3];
+    for (let k = 1; k <= order.length; k++) {
+      const n = order[(i + k) % order.length];
       if (this.ammo[n] > 0) { this.weapon = n; if (!silent) Sound.play('select'); return; }
     }
   }
@@ -340,13 +356,14 @@ Game.Player = class {
     let a;
     if (this.forcePose) a = this.forcePose;
     else if (this.hurtT > 0) a = 'hurt';
-    else if (this.atk) a = this.atk.kind === 'upper' ? 'upper' : this.atk.side ? 'cross' : 'jab';
-    else if (this.throwT > 0) a = this.throwT > 0.2 ? 'throwA' : 'throwB';
+    else if (this.atk) a = this.atk.kind === 'bottle' ? (this.atk.t < 0.12 ? 'bWind' : 'bSwing') : this.atk.kind === 'upper' ? 'upper' : this.atk.side ? 'cross' : 'jab';
+    else if (this.throwT > 0) a = this.weapon === 'bottles' ? (this.throwT > 0.2 ? 'bWind' : 'bThrow') : this.throwT > 0.2 ? 'throwA' : 'throwB';
+    else if (this.crouch) a = this.bottleHits > 0 ? 'bCrouch' : 'crouch';
     else if (!this.onGround) a = this.vy < 0 ? 'jump' : 'fall';
     else if (this.landT > 0) a = 'land';
     else if (Math.abs(this.vx) > 20) a = 'run';
     else if (this.idle) a = this.idle.kind === 'hips' ? 'stomp' : this.idle.kind;
-    else a = 'stand';
+    else a = this.bottleHits > 0 ? 'bIdle' : 'stand';
     this.setAnim(a);
   }
   draw(c, camX, camY) {
@@ -516,6 +533,7 @@ Game.Proj = class {
     if (kind === 'nuts') { this.vx = dir * 430; this.vy = -30; this.dmg = 1; this.grav = 200; }
     if (kind === 'wrench') { this.vx = dir * 330; this.vy = 0; this.dmg = 2; this.grav = 0; this.pierce = true; }
     if (kind === 'bricks') { this.vx = dir * 250; this.vy = -330; this.dmg = 3; this.grav = GRAV * 0.8; }
+    if (kind === 'bottles') { this.vx = dir * 300; this.vy = -260; this.dmg = 3; this.grav = GRAV * 0.7; }
   }
   get box() { return { x: this.x - 6, y: this.y - 6, w: 12, h: 12 }; }
   update(dt, world, pl) {
@@ -537,11 +555,12 @@ Game.Proj = class {
     if (this.kind !== 'wrench' && (this.x < -20 || this.x > world.w + 20 || this.y > world.cam.y + H + 50)) this.dead = true;
   }
   poof() {
-    if (this.kind === 'bricks') { Sound.play('brick'); FX.burst(this.x, this.y, 8, { colors: ['#a8452e', '#7a2e1e'], speed: 100, size: 3 }); }
+    if (this.kind === 'bottles') { Sound.play('glass'); FX.burst(this.x, this.y, 10, { colors: ['#2f8a3a', '#7fd08a', '#e8e0c0'], speed: 130, type: 'shard', size: 2 }); }
+    else if (this.kind === 'bricks') { Sound.play('brick'); FX.burst(this.x, this.y, 8, { colors: ['#a8452e', '#7a2e1e'], speed: 100, size: 3 }); }
     else { Sound.play('clank'); FX.burst(this.x, this.y, 4, { colors: ['#ffd84a', '#fff'], speed: 80, life: 0.3 }); }
   }
   draw(c, cx, cy) {
-    const k = this.kind === 'nuts' ? 'nut' : this.kind === 'wrench' ? 'wrench' : 'brick';
+    const k = this.kind === 'nuts' ? 'nut' : this.kind === 'wrench' ? 'wrench' : this.kind === 'bottles' ? 'bottle' : 'brick';
     Art.item(c, k, this.x - cx, this.y - cy, this.rot);
   }
 };
@@ -556,6 +575,7 @@ Game.PICK = {
   nutsbox: { name: 'Гайки +10', ammo: ['nuts', 10] },
   wrenchpk: { name: 'Гаечный ключ', ammo: ['wrench', 1] },
   bricks: { name: 'Кирпичи +4', ammo: ['bricks', 4] },
+  beer: { name: 'Пиво! +бутылка', ammo: ['bottles', 2], bottle: 8 },
 };
 Game.Pickup = class {
   constructor(kind, x, y) { this.kind = kind; this.x = x; this.y = y; this.t = Math.random() * 6; this.dead = false; this.vy = 0; this.falling = false; }
@@ -572,6 +592,7 @@ Game.Pickup = class {
       this.dead = true;
       if (d.heal) { pl.heal(d.heal); Sound.play('heal'); world.stats.food++; }
       if (d.score) { world.addScore(d.score); Sound.play(d.secret ? 'checkpoint' : 'coin'); if (d.secret) world.stats.secrets++; }
+      if (d.bottle) pl.bottleHits = Math.max(pl.bottleHits, 0) + d.bottle;
       if (d.ammo) { const had = pl.ammo[d.ammo[0]]; pl.ammo[d.ammo[0]] += d.ammo[1]; if (had <= 0 && pl.ammo[pl.weapon] <= 0 || had <= 0) pl.weapon = d.ammo[0]; Sound.play('pickup'); }
       FX.popText(this.x, this.y - 24, d.name, d.heal ? '#8cf08c' : d.ammo ? '#8cd0ff' : '#ffd84a');
       if (this.kind === 'pelmeni') G.say(pl, 'Пельмешки!!!', 1.4);
@@ -601,11 +622,83 @@ Game.drawHUD = function (c, pl, world) {
   G.text('ВАЛЕРА', 42, 23, { size: 8, color: '#ffb070' });
   // оружие
   R(c, 172, 6, 60, 22, '#111'); R(c, 173, 7, 58, 20, '#23262b');
-  const wk = pl.weapon === 'nuts' ? 'nut' : pl.weapon === 'wrench' ? 'wrench' : 'brick';
+  const wk = pl.weapon === 'nuts' ? 'nut' : pl.weapon === 'wrench' ? 'wrench' : pl.weapon === 'bottles' ? 'bottle' : 'brick';
   Art.item(c, wk, 186, 17, pl.weapon === 'wrench' ? 0.7 : 0);
   G.text('x' + pl.ammo[pl.weapon], 198, 13, { size: 8, color: pl.ammo[pl.weapon] > 0 ? '#fff' : '#777' });
+  if (pl.bottleHits > 0) {
+    R(c, 236, 6, 64, 22, '#111'); R(c, 237, 7, 62, 20, '#1c2a1c');
+    Art.item(c, 'bottle', 248, 17, -0.6);
+    G.text('БЬЁТ ' + pl.bottleHits, 258, 13, { size: 8, color: '#8cf08c' });
+  }
   // очки
   G.text('ОЧКИ ' + String(world.score).padStart(6, '0'), W - 8, 8, { size: 8, align: 'right', color: '#ffd84a' });
+};
+
+// ---------- клавиши на экране ----------
+G.keycap = function (c, x, y, label, pulse = 0) {
+  const isArrow = label === 'L' || label === 'R' || label === 'U' || label === 'D';
+  const w = isArrow ? 16 : Math.max(16, G.textWidth(label, 8) + 8), h = 16;
+  const yy = y - (pulse > 0 ? Math.abs(Math.sin(G.t * 6)) * 2 : 0);
+  R(c, x, yy + 2, w, h, '#0c0c0e');
+  R(c, x, yy, w, h, '#1c1f24'); R(c, x + 1, yy + 1, w - 2, h - 3, pulse ? '#f4e8c8' : '#d8d4c8'); R(c, x + 1, yy + 1, w - 2, 2, '#fff');
+  c.fillStyle = '#1a1a1a';
+  const cx = x + w / 2, cy = yy + 7;
+  if (label === 'L') { c.beginPath(); c.moveTo(cx - 4, cy); c.lineTo(cx + 3, cy - 4); c.lineTo(cx + 3, cy + 4); c.fill(); }
+  else if (label === 'R') { c.beginPath(); c.moveTo(cx + 4, cy); c.lineTo(cx - 3, cy - 4); c.lineTo(cx - 3, cy + 4); c.fill(); }
+  else if (label === 'U') { c.beginPath(); c.moveTo(cx, cy - 4); c.lineTo(cx - 4, cy + 3); c.lineTo(cx + 4, cy + 3); c.fill(); }
+  else if (label === 'D') { c.beginPath(); c.moveTo(cx, cy + 4); c.lineTo(cx - 4, cy - 3); c.lineTo(cx + 4, cy - 3); c.fill(); }
+  else G.text(label, cx, yy + 4, { align: 'center', color: '#1a1a1a', shadow: false });
+  return w;
+};
+Game.keyCaps = function (a) {
+  const d = G.Input.lastDevice;
+  if (d === 'touch') return { move: ['L', 'R'], jump: ['A'], crouch: ['D'], punch: ['B'], upper: ['B', 'B', 'B'], throw: ['C'], climb: ['U'], switch: ['SW'] }[a];
+  if (d === 'gamepad') return { move: ['L', 'R'], jump: ['A'], crouch: ['D'], punch: ['X'], upper: ['X', 'X', 'X'], throw: ['B'], climb: ['U'], switch: ['Y'] }[a];
+  return { move: ['L', 'R'], jump: ['Z'], crouch: ['D'], punch: ['X'], upper: ['X', 'X', 'X'], throw: ['C'], climb: ['U'], switch: ['Q'] }[a];
+};
+Game.capsWidth = caps => caps.reduce((s, k) => s + ((k.length === 1 && 'LRUD'.indexOf(k) >= 0) ? 16 : Math.max(16, G.textWidth(k, 8) + 8)) + 2, 0);
+
+// обучение: список заданий с галочками
+Game.Tutorial = class {
+  constructor(tasks) { this.tasks = tasks.map(t => Object.assign({ done: false }, t)); this.alpha = 1; this.finishedT = 0; this.hidden = false; }
+  ev(id) {
+    const cur = this.current;
+    if (!cur || cur.id !== id) return;
+    cur.done = true; Sound.play('coin');
+  }
+  update(dt) {
+    if (!this.current) { this.finishedT += dt; if (this.finishedT > 2.5) this.alpha = Math.max(0, this.alpha - dt * 2); }
+    if (this.hidden) this.alpha = Math.max(0, this.alpha - dt * 2);
+  }
+  get current() { return this.tasks.find(t => !t.done); }
+  draw(c, px, py) {
+    if (this.alpha <= 0) return;
+    c.save(); c.globalAlpha = this.alpha;
+    const x = 6, y = 44, w = 196, h = 22 + this.tasks.length * 19;
+    R(c, x, y, w, h, 'rgba(12,14,18,0.82)'); R(c, x, y, w, 2, '#c8a020');
+    G.text('ОБУЧЕНИЕ', x + 6, y + 6, { size: 8, color: '#ffd84a' });
+    const cur = this.current;
+    this.tasks.forEach((t, i) => {
+      const ry = y + 20 + i * 19;
+      if (t === cur) R(c, x + 2, ry - 2, w - 4, 18, 'rgba(240,106,20,0.25)');
+      R(c, x + 6, ry + 2, 10, 10, '#0c0c0e'); R(c, x + 7, ry + 3, 8, 8, t.done ? '#48c048' : '#3a3f45');
+      let kx = x + 20;
+      for (const k of Game.keyCaps(t.id)) kx += G.keycap(c, kx, ry, k, t === cur ? 1 : 0) + 2;
+      G.text(t.text, kx + 3, ry + 4, { size: 8, color: t.done ? '#7a8a7a' : '#f0e8c8' });
+    });
+    if (!cur) G.text('ОТЛИЧНО! ВПЕРЁД, НА КРАН!', W / 2, 70, { align: 'center', size: 8, color: '#8cf08c', outline: true });
+    if (cur && px != null) {
+      const caps = Game.keyCaps(cur.id);
+      const label = cur.prompt || cur.text;
+      const total = Game.capsWidth(caps) + G.textWidth(label, 8) + 8;
+      let bx = Math.round(U.clamp(px - total / 2, this.alpha > 0.5 ? 208 : 4, W - total - 4));
+      const by = Math.round(Math.max(96, py - 116));
+      R(c, bx - 4, by - 5, total + 8, 25, 'rgba(12,14,18,0.85)');
+      for (const k of caps) bx += G.keycap(c, bx, by, k, 1) + 2;
+      G.text(label, bx + 6, by + 4, { size: 8, color: '#ffd84a' });
+    }
+    c.restore();
+  }
 };
 
 // ---------- подсказки обучения ----------

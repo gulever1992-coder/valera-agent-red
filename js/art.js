@@ -6,7 +6,7 @@ const R = (c, x, y, w, h, col) => { c.fillStyle = col; c.fillRect(Math.round(x),
 Art.R = R;
 
 // индексы в атласе items
-const ITEM = { brick: 0, bolt: 1, wrench: 2, wrenchpk: 2, bottle: 3, shard: 4, pie: 5, kefir: 6, pelmeni: 7, nut: 8, nutsbox: 9, badge: 10, coin: 11, helmet: 12, helmetRaw: 12, bricks: 13, thermos: 14, extinguisher: 15 };
+const ITEM = { brick: 0, bolt: 1, wrench: 2, wrenchpk: 2, bottle: 3, beer: 3, shard: 4, pie: 5, kefir: 6, pelmeni: 7, nut: 8, nutsbox: 9, badge: 10, coin: 11, helmet: 12, helmetRaw: 12, bricks: 13, thermos: 14, extinguisher: 15 };
 Art.item = function (c, kind, x, y, rot = 0, s = 1) {
   const i = ITEM[kind];
   if (i == null) return;

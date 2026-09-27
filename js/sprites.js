@@ -67,7 +67,11 @@ Spr.ANIM = {
     jab: A('v_fight', [0]), cross: A('v_fight', [1]), upper: A('v_fight', [2]),
     throwA: A('v_fight', [3]), throwB: A('v_fight', [4]), ko: A('v_fight', [5]),
     hips: A('v_idle', [0]), stomp: A('v_idle', [0, 1, 1, 2, 0], 4.5), scratch: A('v_idle', [3]), yawn: A('v_idle', [4]), belly: A('v_idle', [5]),
-    climb: A('v_story', [0, 1], 5), shout: A('v_story', [2]), point: A('v_story', [3]), slamHat: A('v_story', [4]), scared: A('v_story', [5]),
+    climb: A('v_climb2', [0, 1], 5), crouch: A('v_bottle', [6]), bCrouch: A('v_bottle', [5]),
+    bIdle: A('v_bottle', [0]), bWind: A('v_bottle', [1]), bSwing: A('v_bottle', [2]), bThrow: A('v_bottle', [3]), drink: A('v_bottle', [4]),
+    hang: A('v_climb2', [2]), walkAway: A('v_climb2', [3]), backDoor: A('v_climb2', [4]),
+    sting: A('v_story3', [0]), beerHappy: A('v_story3', [1]), shoutFist: A('v_story3', [2]), tiredStand: A('v_story3', [3]), dazed: A('v_story3', [4]), victory: A('v_story3', [5]),
+    shout: A('v_story', [2]), point: A('v_story', [3]), slamHat: A('v_story', [4]), scared: A('v_story', [5]),
     work: A('v_story2', [0]), lookUpHat: A('v_story2', [1]), lever: A('v_story2', [2], 1, { flip: true }), sitChair: A('v_story2', [3], 1, { flip: true }),
     tired: A('v_story2', [4]), lookUp: A('v_story2', [5]),
   },
@@ -80,6 +84,12 @@ Spr.ANIM = {
     rappel: A('cmd', [0]), rifle: A('cmd', [1]), rifleL: A('cmd', [2], 1, { flip: true }), point: A('cmd', [3], 1, { flip: true }), surprised: A('cmd', [4]),
   },
   drunk: { stand: A('enemies', [4]), swing: A('enemies', [5]), ko: A('enemies', [6]) },
+  kesha: {
+    stand: A('kesha_a', [0]), idle: A('kesha_a', [0]), walk: A('kesha_a', [1, 0], 5), master: A('kesha_a', [2]), punch: A('kesha_a', [3]), kick: A('kesha_a', [4]),
+    sniff: A('kesha_a', [5]), shout: A('kesha_a', [6]), hurt: A('kesha_a', [7]),
+    aim: A('kesha_b', [0]), shoot: A('kesha_b', [1]), run: A('kesha_b', [2]), ko: A('kesha_b', [3]), sit: A('kesha_b', [4]), thumbs: A('kesha_b', [5]), talk: A('kesha_b', [6]),
+  },
+  spy: { peek: A('cmd_hide', [0]), bush: A('cmd_hide', [1]), prone: A('cmd_hide', [2]), dart: A('cmd_hide', [3]), rope: A('cmd_hide', [4]), run: A('cmd_hide', [5]) },
 };
 Spr.frameOf = function (anim, t) {
   const n = anim.fr.length;
@@ -118,9 +128,10 @@ Spr.slice3 = function (c, sheet, i, x, y, w, o = {}) {
 // фоновые картинки
 G.bg = {};
 Spr.loadBGs = async function () {
-  const names = { aerial: 'assets/bg_aerial.jpg', hall: 'assets/bg_hall.jpg', arena: 'assets/bg_arena.jpg', climbBottom: 'assets/bg_climb_bottom.jpg', climbTop: 'assets/bg_climb_top.jpg' };
+  const names = { aerial: 'assets/bg_aerial.jpg', hall: 'assets/bg_hall.jpg', arena: 'assets/bg_arena.jpg', climbBottom: 'assets/bg_climb_bottom.jpg', climbTop: 'assets/bg_climb_top.jpg', shop: 'assets/bg_shop.jpg', sky: 'assets/bg_sky.jpg', fgCars: 'assets/fg_cars.png' };
+  for (let i = 1; i <= 8; i++) if (window.BGS && window.BGS['l2_' + i]) names['l2_' + i] = 'assets/bg_l2_' + i + '.jpg';
   await Promise.all(Object.entries(names).map(async ([k, src]) => { G.bg[k] = await G.loadImage(src); }));
-  const ps = { natasha: 'assets/spr/p_natasha.png', commando: 'assets/spr/p_cmd.png', commando2: 'assets/spr/p_cmd2.png' };
+  const ps = { valera: 'assets/spr/p_valera.png', natasha: 'assets/spr/p_natasha.png', commando: 'assets/spr/p_cmd.png', commando2: 'assets/spr/p_cmd2.png', kesha: 'assets/spr/p_kesha.png', seller: 'assets/spr/p_seller.png' };
   G.portraits = {};
   await Promise.all(Object.entries(ps).map(async ([k, src]) => { G.portraits[k] = await G.loadImage(src); }));
 };
