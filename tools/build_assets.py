@@ -489,6 +489,14 @@ im.crop((925, 368, 1035, 478)).resize((128, 128), Image.LANCZOS).save(os.path.jo
 S['hostess'] = build_sheet('hostess', 'hostess.png', 8, 88, ref=0, keyer='clean', even=True)
 for n in ['club_back', 'club_floor', 'biker_bg']:
     B[n] = bg(n + '.png', n, (1280, 720))
+S['v5_gun'] = build_sheet('v5_gun', 'v5_gun.png', 8, 86, ref=0, keyer='clean', even=True, anchors=['body'] * 8)
+S['l4fx'] = build_sheet('l4fx', 'l4fx.png', 8, [-30, -30, -24, -22, -22, -40, -80, 40], keyer='clean', grid=(2, 4), anchors=['center'] * 7 + ['feet'])
+for key in ['club_vip']:
+    im = seamless(Image.open(os.path.join(SRC, key + '.png')))
+    im = im.resize((round(im.width * 720 / im.height), 720), Image.LANCZOS)
+    im.save(os.path.join(OUT, key + '.jpg'), quality=87, optimize=True)
+    B3[key] = {'img': 'assets/' + key + '.jpg', 'w': im.width, 'h': im.height, 'floor': 300 / 360}
+B['club_room'] = bg('club_room.png', 'club_room', (1280, 720))
 # портреты персонажей уровня 4 (лица из листов)
 def pcrop(sheet, fi, box, name, flip=False):
     f = S[sheet]['f'][fi]
