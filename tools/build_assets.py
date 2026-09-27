@@ -50,8 +50,31 @@ def key_green_strict(im):
 def key_magenta(im):
     a = np.array(im.convert('RGBA')).astype(np.int32)
     r, g, b = a[..., 0], a[..., 1], a[..., 2]
-    bg = (r > 170) & (b > 170) & (g < 110)
+    bg = ((r > 150) & (b > 150) & (g < 120)) | ((r - g > 90) & (b - g > 90))
     a[..., 3] = np.where(bg, 0, 255)
+    # розовая кайма: съедаем пурпурные пиксели у края и гасим остаточный оттенок
+    for _ in range(3):
+        tr = a[..., 3] == 0
+        near = ndimage.binary_dilation(tr, iterations=1) & ~tr
+        pink = near & (a[..., 0] - a[..., 1] > 35) & (a[..., 2] - a[..., 1] > 35)
+        a[..., 3] = np.where(pink, 0, a[..., 3])
+    tr = a[..., 3] == 0
+    near = ndimage.binary_dilation(tr, iterations=2) & ~tr
+    m = np.minimum(a[..., 0], a[..., 2]) - a[..., 1]
+    fix = near & (m > 0)
+    a[..., 0] = np.where(fix, a[..., 0] - m, a[..., 0]); a[..., 2] = np.where(fix, a[..., 2] - m, a[..., 2])
+    return a.astype(np.uint8)
+
+def key_pre(im):
+    # уже прозрачный фон: жёсткая альфа + убрать мелкий мусор
+    a = np.array(im.convert('RGBA')).astype(np.int32)
+    op = a[..., 3] > 110
+    lab, n = ndimage.label(op)
+    if n:
+        sizes = ndimage.sum(np.ones(lab.shape), lab, range(1, n + 1))
+        keep = np.isin(lab, [i + 1 for i, sz in enumerate(sizes) if sz >= 60])
+        op &= keep
+    a[..., 3] = np.where(op, 255, 0)
     return a.astype(np.uint8)
 
 def key_black(im):
@@ -145,10 +168,17 @@ def only_largest(f):
     ys = np.where(f[..., 3].any(axis=1))[0]; xs = np.where(f[..., 3].any(axis=0))[0]
     return f[ys[0]:ys[-1] + 1, xs[0]:xs[-1] + 1]
 
-def build_sheet(name, src, n, target, ref=0, keyer='green', grid=None, anchors=None, pad=2, strip=(), dil=4):
+def build_sheet(name, src, n, target, ref=0, keyer='green', grid=None, anchors=None, pad=2, strip=(), dil=4, even=False):
     im = Image.open(os.path.join(SRC, src))
-    a = key_green(im) if keyer == 'green' else key_green_strict(im) if keyer == 'strict' else key_black(im) if keyer == 'black' else key_magenta(im) if keyer == 'magenta' else np.array(im.convert('RGBA'))
-    fr = frames_grid(a, *grid) if grid else segment(a, n, dil=dil)
+    a = key_green(im) if keyer == 'green' else key_green_strict(im) if keyer == 'strict' else key_black(im) if keyer == 'black' else key_magenta(im) if keyer == 'magenta' else key_pre(im) if keyer == 'clean' else np.array(im.convert('RGBA'))
+    if even:
+        fr = []
+        for i in range(n):
+            sub = a[:, a.shape[1] * i // n: a.shape[1] * (i + 1) // n]
+            ys = np.where(a[..., 3].any(axis=1))[0]
+            fr.append(sub[ys[0]:ys[-1] + 1])
+    else:
+        fr = frames_grid(a, *grid) if grid else segment(a, n, dil=dil)
     fr = [only_largest(f) if i in strip else f for i, f in enumerate(fr)]
     if isinstance(target, (int, float)):
         k = target * SCALE / fr[ref].shape[0]
@@ -324,6 +354,8 @@ print('готово 2')
 S['v3_run'] = build_sheet('v3_run', 'v3_run.png', 8, 84, keyer='strict')
 S['v3_act'] = build_sheet('v3_act', 'v3_act.png', 8, 86, ref=0, anchors=['feet'] * 6 + ['center', 'feet'], keyer='strict')
 S['v3_melee'] = build_sheet('v3_melee', 'v3_melee.png', 6, 86, ref=1, dil=1, keyer='strict')
+S['v4_run'] = build_sheet('v4_run', 'v4_run.png', 8, 84, keyer='clean')
+S['v4_act'] = build_sheet('v4_act', 'v4_act.png', 8, 86, ref=0, keyer='clean', anchors=['feet'] * 5 + ['center', 'feet', 'feet'])
 S['v3_up'] = build_sheet('v3_up', 'v3_up.png', 6, 81, ref=1, keyer='pre', strip=range(6))
 S['moth'] = build_sheet('moth', 'moth.png', 6, [-66] * 5 + [-60], keyer='magenta', anchors=['center'] * 6)
 S['boss4'] = build_sheet('boss4', 'boss2_body.png', 4, 250, ref=0, keyer='magenta')
@@ -354,3 +386,24 @@ im.crop((int(w * 0.56), int(h * 0.12), int(w * 0.78), int(h * 0.12) + int(w * 0.
 with open(os.path.join(ROOT, 'js', 'sprites_data.js'), 'w', encoding='utf-8') as fp:
     fp.write('// автоматически создано tools/build_assets.py\nwindow.SPRITES = ' + json.dumps(S) + ';\nwindow.BGS = ' + json.dumps(B) + ';\nwindow.BUILDINGS = ' + json.dumps(B2) + ';\nwindow.WALLS3 = ' + json.dumps(B3) + ';\n')
 print('готово 3')
+
+# ================= уровень 3 v2: масштаб как в уровнях 1-2 =================
+def seamless(im, k=110):
+    a = np.array(im.convert('RGB')).astype(np.float32); h, w, _ = a.shape
+    t = a[:, k:w].copy()
+    for i in range(k):
+        wgt = i / k
+        t[:, w - 2 * k + i] = a[:, w - k + i] * (1 - wgt) + a[:, i] * wgt
+    return Image.fromarray(t[:, :w - k].clip(0, 255).astype(np.uint8))
+B3 = {}
+for key, src in [('wall_corridor', 'w3_corridor'), ('wall_kitchen', 'w2_kitchen'), ('wall_living', 'w2_living'), ('wall_bedroom', 'w2_bedroom'), ('wall_balcony', 'w2_balcony')]:
+    im = seamless(Image.open(os.path.join(SRC, src + '.png')))
+    im = im.resize((round(im.width * 720 / im.height), 720), Image.LANCZOS)
+    im.save(os.path.join(OUT, key + '.jpg'), quality=87, optimize=True)
+    B3[key] = {'img': 'assets/' + key + '.jpg', 'w': im.width, 'h': im.height, 'floor': 300 / 360}
+S['partition'] = build_sheet('partition', 'partition.png', 1, 282, keyer='clean')
+S['boss5'] = build_sheet('boss5', 'boss5_body.png', 6, 230, ref=0, keyer='magenta', even=True)
+S['parts5'] = build_sheet('parts5', 'boss5_parts.png', 9, [210, -70, 130, -120, -120, -120, -120, -60, -44], keyer='clean', grid=(3, 3), anchors=['feet', 'center', 'feet'] + ['center'] * 6)
+with open(os.path.join(ROOT, 'js', 'sprites_data.js'), 'w', encoding='utf-8') as fp:
+    fp.write('// автоматически создано tools/build_assets.py\nwindow.SPRITES = ' + json.dumps(S) + ';\nwindow.BGS = ' + json.dumps(B) + ';\nwindow.BUILDINGS = ' + json.dumps(B2) + ';\nwindow.WALLS3 = ' + json.dumps(B3) + ';\n')
+print('готово 4')
