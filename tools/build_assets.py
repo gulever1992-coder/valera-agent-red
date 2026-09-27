@@ -434,7 +434,7 @@ def seamless(im, k=110):
         t[:, w - 2 * k + i] = a[:, w - k + i] * (1 - wgt) + a[:, i] * wgt
     return Image.fromarray(t[:, :w - k].clip(0, 255).astype(np.uint8))
 B3 = {}
-for key, src in [('wall_corridor', 'w3_corridor'), ('wall_kitchen', 'w3_kitchen'), ('wall_living', 'w2_living'), ('wall_bedroom', 'w2_bedroom'), ('wall_balcony', 'w2_balcony')]:
+for key, src in [('wall_corridor', 'w3_corridor'), ('wall_kitchen', 'w4_kitchen'), ('wall_living', 'w2_living'), ('wall_bedroom', 'w2_bedroom'), ('wall_balcony', 'w2_balcony')]:
     im = seamless(Image.open(os.path.join(SRC, src + '.png')))
     im = im.resize((round(im.width * 720 / im.height), 720), Image.LANCZOS)
     im.save(os.path.join(OUT, key + '.jpg'), quality=87, optimize=True)
@@ -468,6 +468,7 @@ comp = comp.resize((round(comp.width * 720 / comp.height), 720), Image.LANCZOS)
 ca = np.array(comp); ca[..., 3] = np.where(ca[..., 3] > 100, 255, 0); comp = Image.fromarray(ca, 'RGBA')
 comp.save(os.path.join(SPR, 'doorwall.png')); wallx = sx
 S['doorwall'] = {'img': 'assets/spr/doorwall.png', 'f': [[0, 0, comp.width, comp.height, round((wallx + 0.0) * 720 / H0), comp.height, 0, 0]]}
+S['shin7'] = build_sheet('shin7', 'boss6_shin.png', 2, 104, ref=0, keyer='clean')
 with open(os.path.join(ROOT, 'js', 'sprites_data.js'), 'w', encoding='utf-8') as fp:
     fp.write('// автоматически создано tools/build_assets.py\nwindow.SPRITES = ' + json.dumps(S) + ';\nwindow.BGS = ' + json.dumps(B) + ';\nwindow.BUILDINGS = ' + json.dumps(B2) + ';\nwindow.WALLS3 = ' + json.dumps(B3) + ';\n')
 print('готово 4')

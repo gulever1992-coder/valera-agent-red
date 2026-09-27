@@ -39,6 +39,18 @@ G.drawBubble = function (c, x, y, text, o = {}) {
       c.lineTo(cx + Math.cos(a) * (bw / 2 + 4) * r, cy + Math.sin(a) * (bh / 2 + 4) * r);
     }
     c.fill();
+  } else if (o.tail) {
+    // хвостик к говорящему (рот/голова) — с любой стороны пузыря
+    const [px, py] = o.tail, cx0 = bx + bw / 2, cy0 = by + bh / 2;
+    let ex, ey;
+    if (py > by + bh) { ex = U.clamp(px, bx + 8, bx + bw - 8); ey = by + bh; } else if (px < bx) { ex = bx; ey = U.clamp(py, by + 6, by + bh - 6); } else { ex = bx + bw; ey = U.clamp(py, by + 6, by + bh - 6); }
+    const dx = px - ex, dy = py - ey, d = Math.hypot(dx, dy) || 1, L = Math.min(d - 4, 26), nx = -dy / d, ny = dx / d;
+    const tipx = ex + dx / d * L, tipy = ey + dy / d * L;
+    c.beginPath(); c.moveTo(ex + nx * 6, ey + ny * 6); c.lineTo(ex - nx * 6, ey - ny * 6); c.lineTo(tipx, tipy); c.fill();
+    c.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+    c.fillStyle = '#f4f0e4'; c.fillRect(bx, by, bw, bh);
+    c.beginPath(); c.moveTo(ex + nx * 4, ey + ny * 4); c.lineTo(ex - nx * 4, ey - ny * 4); c.lineTo(tipx - dx / d * 3, tipy - dy / d * 3); c.fill();
+    void cx0; void cy0;
   } else {
     c.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
     c.fillStyle = '#f4f0e4'; c.fillRect(bx, by, bw, bh);
@@ -56,7 +68,8 @@ G.drawBubbles = function (c, camX, camY) {
     const hy = (tg.by != null ? tg.by : tg.y - (tg.headH || 70)) - camY;
     const k = Math.min(1, b.t * 8);
     c.globalAlpha = k;
-    G.drawBubble(c, hx, hy, b.text, { shout: b.shout, color: b.color });
+    const tl = tg.tail ? [tg.tail[0] - camX, tg.tail[1] - camY] : null;
+    G.drawBubble(c, hx, hy, b.text, { shout: b.shout, color: b.color, tail: tl });
     c.globalAlpha = 1;
   }
 };
