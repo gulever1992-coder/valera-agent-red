@@ -672,7 +672,7 @@ L4.BUILD = {
     if (!esc) { P('tableA', 1060, { layer: 'bg', y: L4.GROUND - 18 }); P('djA', 1620, { layer: 'bg', y: L4.GROUND - 22 }); P('table2A', 2150, { layer: 'bg', y: L4.GROUND - 18 }); P('tableA', 2380, { layer: 'bg', y: L4.GROUND - 18, flip: true }); }
     P('pole', 1320, { layer: 'front' }); P('speakers', 1500); P('bar', 1880, { layer: 'front' }); P('speakers', 2260);
     if (esc) for (const x of [420, 700, 1100, 1450, 1700, 2100, 2500, 2800, 3050]) P('slime', x + U.rand(-40, 40), { layer: 'bg' });
-    this.fgItems = [{ sheet: 'fg2', fr: 1, x: 680, y: H + 20, par: 1.3, scale: 1.1 }, { sheet: 'fg2', fr: 3, x: 1250, y: H + 30, par: 1.3 }, { sheet: 'fg2', fr: 0, x: 1760, y: H + 34, par: 1.3 }, { sheet: 'fg2', fr: 4, x: 2250, y: H + 30, par: 1.3 }, { sheet: 'fg2', fr: 5, x: 2900, y: H + 30, par: 1.3 }];
+    this.fgItems = [{ sheet: 'fg2', fr: 1, x: 680, y: H + 20, par: 1.3, scale: 1.1 }, { sheet: 'fg2', fr: 3, x: 1250, y: H + 30, par: 1.3 }, { sheet: 'fg2', fr: 0, x: 2520, y: H + 34, par: 1.3 }, { sheet: 'fg2', fr: 4, x: 1150, y: H + 30, par: 1.3 }, { sheet: 'fg2', fr: 5, x: 2900, y: H + 30, par: 1.3 }];
     this.dancers = [
       { x: 1180, y: L4.GROUND - 40, par: 0.85, scale: 0.72, alpha: 0.8, layer: 'bg', ph: 0 },
       { x: 1760, y: L4.GROUND - 40, par: 0.85, scale: 0.72, alpha: 0.8, layer: 'bg', ph: 2 },
@@ -682,7 +682,7 @@ L4.BUILD = {
     for (let x = 1000; x < 2600; x += 160) if (esc) this.lights.push({ x, sp: 0.9 + Math.random(), ph: Math.random() * 6 });
     for (let x = 1000; x < 2600; x += 160) this.lights.push({ x, sp: 0.6 + Math.random() * 0.8, ph: Math.random() * 6, col: Math.random() < 0.5 });
     [[1000, 0], [1240, 1], [1600, 2], [2050, 3], [2200, 1], [620, 2]].forEach(([x, fr]) => this.patrons.push(new L4.Patron(x, { fr })));
-    this.npcs.push(new L4.Bouncer(1760, 'bouncerA', { guard: true, facing: -1 }), new L4.Bouncer(2010, 'bouncerB', { guard: true, facing: 1 }));
+    this.npcs.push(new L4.Bouncer(1702, 'bouncerA', { guard: true, facing: -1 }), new L4.Bouncer(2062, 'bouncerB', { guard: true, facing: -1 }));
     this.npcs.push(new L4.Bouncer(L4.STAIRS_X - 46, 'bouncerB', { idle: 'lean', facing: 1 }));
     if (!this.level.stairsOpen) this.props.push({ type: 'rope', x: L4.STAIRS_X, layer: 'mid' });
     this.doors.push(new L4.Door(L4.STAIRS_X, L4.GROUND, 'ЛЕСТНИЦА В ОТЕЛЬ', st => st.level.enterTower(), { icon: 1 }));
