@@ -791,7 +791,7 @@ L4.DRAW_BG = {
 // =====================================================================
 L4.Biker = class {
   constructor(st) {
-    Object.assign(this, { st, x: 520, y: L4.BOSS_G, vx: 0, vy: 0, facing: -1, hp: Math.round(240 * (G.BOSS_MULT || 1)), t: 0, s: 'idle', stT: 0, cool: 1.5, onGround: true, flash: 0, headH: 140, voice: 110, dieT: null, waves: [], rays: [], blackout: false, blackT: 0 });
+    Object.assign(this, { st, x: 520, y: L4.BOSS_G, vx: 0, vy: 0, facing: -1, hp: Math.round(320 * (G.BOSS_MULT || 1)), t: 0, s: 'idle', stT: 0, cool: 1.5, onGround: true, flash: 0, headH: 140, voice: 110, dieT: null, waves: [], rays: [], blackout: false, blackT: 0 });
     this.maxHp = this.hp;
   }
   get box() { return { x: this.x - 26, y: this.y - 126, w: 52, h: 126 }; }
@@ -818,15 +818,15 @@ L4.Biker = class {
     const py = this.y; this.vy = Math.min(800, this.vy + 1500 * dt); this.y += this.vy * dt; this.x += this.vx * dt;
     const g = wd.groundAt(this.x, py, this.y, 6); if (g && this.vy > 0) { if (!this.onGround && this.vy > 300) { G.shake(6, 0.25); Sound.play('stomp'); FX.dust(this.x, g.y, 10); } this.y = g.y; this.vy = 0; this.onGround = true; } else if (!g) this.onGround = false;
     this.x = U.clamp(this.x, 34, 606); if (this.y > L4.BOSS_G) { this.y = L4.BOSS_G; this.vy = 0; this.onGround = true; } if (this.y < 40) this.y = 40;
-    if (U.overlap(this.box, pl.box) && this.s === 'charge') pl.hurt(14, this.x, wd);
+    if (U.overlap(this.box, pl.box) && this.s === 'charge') pl.hurt(18, this.x, wd);
     this.cool -= dt;
-    const rage = this.hp < this.maxHp * 0.3, fast = this.hp < this.maxHp * 0.6 ? 0.7 : 1;
+    const rage = this.hp < this.maxHp * 0.4, fast = this.hp < this.maxHp * 0.6 ? 0.5 : 0.75;
     for (const w of this.waves) {
       w.t += dt;
       if (w.t < 10) { // преследуют Валеру
         const tx = pl.x, ty = pl.y - 40, a = Math.atan2(ty - w.y, tx - w.x), sp = 95;
         w.vx = U.lerp(w.vx, Math.cos(a) * sp, dt * 1.6); w.vy = U.lerp(w.vy, Math.sin(a) * sp, dt * 1.6);
-        if ((w.hitT = (w.hitT || 0) - dt) <= 0 && !pl.dead && Math.hypot(pl.x - w.x, pl.y - 40 - w.y) < 20) { w.hitT = 1; pl.hurt(8, w.x, wd); G.shake(3, 0.15); }
+        if ((w.hitT = (w.hitT || 0) - dt) <= 0 && !pl.dead && Math.hypot(pl.x - w.x, pl.y - 40 - w.y) < 20) { w.hitT = 1; pl.hurt(11, w.x, wd); G.shake(3, 0.15); }
       } else { w.vy -= 200 * dt; } // улетают
       w.x += w.vx * dt; w.y += w.vy * dt;
     }
@@ -853,7 +853,7 @@ L4.Biker = class {
         if (this.stT - dt <= 0) G.say(this, U.choice(['♪ Я — байкер, я — ветер! ♪', '♪ Мой гараж — мой дом! ♪', '♪ Мото-мото-любовь! ♪']), 2.2);
         if (Math.random() < dt * 6) G.shake(3, 0.15);
         if (this.stT > 0.4 && Math.floor(this.stT * 1.2) !== Math.floor((this.stT - dt) * 1.2) && this.waves.length < 6) { for (const p of st.props) this.waves.push({ x: p.x, y: L4.BOSS_G - 80, vx: p.x < 320 ? 120 : -120, vy: -30, t: 0 }); Sound.play('boom'); G.shake(5, 0.3); }
-        if (this.stT > 2.8) { this.set('idle'); this.cool = U.rand(1, 1.6); }
+        if (this.stT > 2.8) { this.set('idle'); this.cool = U.rand(0.5, 1) * fast; }
         break;
       case 'remote':
         this.vx = 0;
@@ -865,23 +865,24 @@ L4.Biker = class {
         const [mx, my] = this.mouth(), want = Math.atan2(pl.y - 50 - my, pl.x - mx);
         if (this.aim == null) this.aim = want;
         let dA = want - this.aim; while (dA > Math.PI) dA -= Math.PI * 2; while (dA < -Math.PI) dA += Math.PI * 2;
-        this.aim += U.clamp(dA, -dt * 1.3, dt * 1.3);
-        if (this.stT > 0.7 && this.stT < 2.2) { const ray = this.castRay(this.aim); this.rays.push(ray); if (!pl.dead && this.rayHits(ray, pl)) pl.hurt(13, this.x, wd); if (!this.snd) { this.snd = true; Sound.play('steam'); } }
+        this.aim += U.clamp(dA, -dt * 1.7, dt * 1.7);
+        if (this.stT > 0.7 && this.stT < 2.2) { const ray = this.castRay(this.aim); this.rays.push(ray); if (!pl.dead && this.rayHits(ray, pl)) pl.hurt(16, this.x, wd); if (!this.snd) { this.snd = true; Sound.play('steam'); } }
         if (this.stT > 2.4) { this.snd = false; this.aim = null; this.set('idle'); this.cool = U.rand(0.6, 1.1) * fast; }
         break;
       }
       case 'taunt':
         this.vx = 0; this.facing = pl.x > this.x ? -1 : 1;
         if (this.stT - dt <= 0) G.say(this, U.choice(['Ну давай, ударь!', 'Слабо сюда, рыжий?', 'Вот сюда, по мишени!']), 2.4);
-        if (this.stT > 2.8) { this.set('idle'); this.cool = U.rand(0.8, 1.2); }
+        if (this.stT > 1.8) { this.set('idle'); this.cool = U.rand(0.4, 0.8); }
         break;
       case 'rage':
         this.vx = 0;
         if (this.stT - dt <= 0) G.say(this, 'А-А-А! ВСЕХ РАСКРАШУ!', 1.6, { shout: true });
-        if (this.stT > 0.5 && this.stT < 3.4) { for (let k = 0; k < 7; k++) { const ray = this.castRay(Math.PI + k * (Math.PI / 6) + Math.sin(this.stT * 1.2) * 0.3); this.rays.push(ray); if (!pl.dead && this.rayHits(ray, pl)) pl.hurt(10, this.x, wd); } if (Math.random() < dt * 8) G.shake(2, 0.1); }
-        if (this.stT > 3.6) { this.set('idle'); this.cool = U.rand(1.2, 1.8); }
+        if (this.stT > 0.5 && this.stT < 3.4) { for (let k = 0; k < 7; k++) { const ray = this.castRay(Math.PI + k * (Math.PI / 6) + Math.sin(this.stT * 1.2) * 0.3); this.rays.push(ray); if (!pl.dead && this.rayHits(ray, pl)) pl.hurt(13, this.x, wd); } if (Math.random() < dt * 8) G.shake(2, 0.1); }
+        if (this.stT > 3.6) { this.set('idle'); this.cool = U.rand(0.6, 1); }
         break;
     }
+    if (this.blackT > 0 && this.s === 'idle' && this.cool > 0.4) this.cool = 0.4;
     if (this.blackT > 0) { this.blackT -= dt; this.blackout = Math.floor(G.t * 1.6) % 2 === 0; if (this.blackT <= 0) { this.blackT = 0; this.blackout = false; } }
   }
   draw(c, cx, cy) {
@@ -1010,7 +1011,7 @@ L4.Level = class {
   startBoss() {
     this.setStage('boss', { x: 80, y: L4.BOSS_G });
     const st = this.stage; st.boss = new L4.Biker(st);
-    st.onUpdate = dt => { st.boss.update(dt, st); st.dropT = (st.dropT == null ? 4 : st.dropT) - dt; if (st.dropT <= 0 && st.boss.dieT == null) { st.dropT = U.rand(5, 7); const pk = new Game.Pickup(Math.random() < 0.7 ? 'tank' : 'pelmeni3', U.rand(100, 540), 0); pk.falling = true; st.world.pickups.push(pk); } };
+    st.onUpdate = dt => { st.boss.update(dt, st); st.dropT = (st.dropT == null ? 4 : st.dropT) - dt; if (st.dropT <= 0 && st.boss.dieT == null) { st.dropT = U.rand(7, 10); const pk = new Game.Pickup(Math.random() < 0.8 ? 'tank' : 'bread', U.rand(100, 540), 0); pk.falling = true; st.world.pickups.push(pk); } };
     Music.play('epicBoss'); st.say('Прячься за колонки от радуги и волн. Когда он подставляет зад — бей, урон втрое!', 7);
   }
   bossDown() {
