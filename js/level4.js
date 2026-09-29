@@ -17,8 +17,8 @@ L4.img = {};
   // 9 видов клубных зомби: [ходьба, атака, падение] (null — падение поворотом)
   L4.ZV = [['zomba', 0, 'zombb', 0, 'zombb', 1], ['zomba', 1, 'zomba', 1, null], ['zomba', 2, 'zombb', 2, 'zombb', 3], ['zomba', 3, 'zombb', 4, 'zombb', 5], ['zomba', 4, 'zomba', 4, null], ['zomba', 5, 'zomba', 5, null], ['zomba', 6, 'zomba', 6, null], ['zomba', 7, 'zomba', 7, null], ['zombb', 6, 'zombb', 6, 'zombb', 7]];
   L4.ZV.forEach((z, i) => { Spr.ANIM['zomb' + i] = { stand: A(z[0], [z[1]], 1, F), walk: A(z[0], [z[1]], 1, F), attack: A(z[2], [z[3]], 1, F), ko: z[4] ? A(z[4], [z[5]], 1, F) : A(z[0], [z[1]], 1, F) }; });
-  Spr.ANIM.maid = { stand: A('hostess', [0], 1, F), walk: A('hostess', [1, 2], 5, F), beckon: A('hostess', [3], 1, F) };
-  Spr.ANIM.nurse = { stand: A('hostess', [4], 1, F), walk: A('hostess', [5, 6], 5, F), shrug: A('hostess', [7], 1, F) };
+  Spr.ANIM.maid = { stand: A('hostess', [0], 1, F), walk: A('walk4', [0, 1, 2, 3], 6, F), beckon: A('hostess', [3], 1, F) };
+  Spr.ANIM.nurse = { stand: A('hostess', [4], 1, F), walk: A('walk4', [4, 5, 6, 7], 6, F), shrug: A('hostess', [7], 1, F) };
   Spr.ANIM.vova = { stand: A('vova', [0]), walk: A('vova', [1, 2, 3, 4], 8), hurt: A('vova', [5]), ko: A('vova', [6]), chained: A('vova', [7]) };
   Spr.ANIM.bouncerA = { stand: A('bouncers', [0], 1, F), shove: A('bouncers', [1], 1, F), aside: A('bouncers', [2], 1, F), flex: A('bouncers', [3], 1, F) };
   Spr.ANIM.bouncerB = { stand: A('bouncers', [4], 1, F), shove: A('bouncers', [5], 1, F), lean: A('bouncers', [6], 1, F), laugh: A('bouncers', [7], 1, F) };
@@ -34,10 +34,17 @@ L4.img = {};
   const V = { crawl: A('v7_mv', [0, 1], 6), climb: A('v7_mv', [2, 3], 6), punchA: A('v7_mv', [4]), punchB: A('v7_mv', [5]), held: A('v7_mv', [6]), dance: A('v7_mv', [7, 6], 3) };
   Spr.ANIM.valera4 = Object.assign({}, V, {
     stand: A('v7_act', [0]), angry: A('v7_idle', [7]), hips: A('v7_idle', [0, 1], 4.5), stomp: A('v7_idle', [0, 1], 4.5), scratch: A('v7_idle', [5]), yawn: A('v7_idle', [6]), belly: A('v7_idle', [2, 3, 2, 3, 4], 3),
-    run: A('v8_run', [0, 1, 2, 3, 4, 5, 6, 7], 14), walk: A('v8_run', [0, 1, 2, 3, 4, 5, 6, 7], 9),
+    run: A('v12_runs', [0, 1, 2, 3, 4, 5, 6, 7], 14), walk: A('v12_runs', [0, 1, 2, 3, 4, 5, 6, 7], 9),
     crouch: A('v7_act', [1]), land: A('v7_act', [1]), jump: A('v7_act', [2]), fall: A('v7_act', [3]), hurt: A('v7_act', [4]), ko: A('v7_act', [5]),
     swatWind: A('v7_cap', [6]), swat: A('v7_act', [7]), fart: A('v7_cap', [7]), shoot: A('v7_act', [7]),
     capGrab: A('v7_cap', [0]), capOff: A('v7_cap', [1]), capThrow: A('v7_cap', [2]), capHold: A('v7_cap', [3]), capOn: A('v7_cap', [4]), capFix: A('v7_cap', [5]),
+  });
+  // кулаки: без ракетки в руках
+  Spr.ANIM.valera4fist = Object.assign({}, Spr.ANIM.valera4, {
+    stand: A('v12_fist', [0]), angry: A('v12_fist', [0]), hips: A('v12_fist', [7]), stomp: A('v12_fist', [0, 7], 3), belly: A('v12_fist', [7]), scratch: A('v12_fist', [7]), yawn: A('v12_fist', [7]),
+    run: A('v12_run', [0, 1, 2, 3, 4, 5, 6, 7], 14), walk: A('v12_run', [0, 1, 2, 3, 4, 5, 6, 7], 9),
+    crouch: A('v12_fist', [1]), land: A('v12_fist', [1]), jump: A('v12_fist', [2]), fall: A('v12_fist', [3]), hurt: A('v12_fist', [4]), ko: A('v12_fist', [5]),
+    punchA: A('v12_fist', [6]), punchB: A('v12_fist', [6]), swat: A('v12_fist', [6]), swatWind: A('v12_fist', [0]), shoot: A('v12_fist', [6]),
   });
   const GUN = g => ({ stand: A(g, [0]), angry: A(g, [0]), hips: A(g, [0]), scratch: A(g, [0]), yawn: A(g, [0]), belly: A(g, [0]), run: A(g, [1, 2, 3, 4], 10), walk: A(g, [1, 2, 3, 4], 7), shoot: A(g, [5]), jump: A(g, [6]), fall: A(g, [6]), crouch: A(g, [7]), land: A(g, [7]) });
   Spr.ANIM.valera4green = Object.assign({}, Spr.ANIM.valera4, V, GUN('v11_gun'));
@@ -89,7 +96,7 @@ L4.Player = class extends L3.Player {
     for (let k = 1; k <= 3; k++) { const n = order[(i + k) % 3]; if (n !== 'seed' || (this.hasSeed && this.ammo3.seed > 0)) { this.weapon = n; Sound.play('select'); FX.popText(this.x, this.y - 96, L4.WNAME[n], '#ffd84a'); return; } }
   }
   attackUpdate(dt, world, ctl, I) {
-    this.animSet = this.weapon === 'seed' ? (this.green ? 'valera4green' : 'valera3gun') : 'valera4'; this.portraitKey = 'valera4';
+    this.animSet = this.weapon === 'seed' ? (this.green ? 'valera4green' : 'valera3gun') : this.weapon === 'fists' ? 'valera4fist' : 'valera4'; this.portraitKey = 'valera4';
     const dir = ctl ? (I.held('right') ? 1 : 0) - (I.held('left') ? 1 : 0) : 0;
     this.crawling = this.crouch && this.onGround && dir !== 0 && !this.atk;
     if (this.crawling) { this.x += dir * 80 * dt; this.facing = dir; }

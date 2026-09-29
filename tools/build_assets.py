@@ -84,6 +84,16 @@ def key_pre(im):
     a[..., 3] = np.where(op, 255, 0)
     return a.astype(np.uint8)
 
+def key_pre_red(im):
+    # прозрачный фон с красной каймой от кодекса
+    a = key_pre(im).astype(np.int32)
+    for _ in range(3):
+        tr = a[..., 3] == 0
+        near = ndimage.binary_dilation(tr, iterations=1) & ~tr
+        red = near & (a[..., 0] > 120) & (a[..., 0] - a[..., 1] > 90) & (a[..., 0] - a[..., 2] > 80)
+        a[..., 3] = np.where(red, 0, a[..., 3])
+    return a.astype(np.uint8)
+
 def key_black(im):
     a = np.array(im.convert('RGBA')).astype(np.int32)
     dark = a[..., :3].max(axis=2) < 22
@@ -184,7 +194,7 @@ def only_largest(f):
 
 def build_sheet(name, src, n, target, ref=0, keyer='green', grid=None, anchors=None, pad=2, strip=(), dil=4, even=False):
     im = Image.open(os.path.join(SRC, src))
-    a = key_green(im) if keyer == 'green' else key_green_strict(im) if keyer == 'strict' else key_black(im) if keyer == 'black' else key_magenta(im) if keyer == 'magenta' else key_pre(im) if keyer == 'clean' else np.array(im.convert('RGBA'))
+    a = key_green(im) if keyer == 'green' else key_green_strict(im) if keyer == 'strict' else key_black(im) if keyer == 'black' else key_magenta(im) if keyer == 'magenta' else key_pre(im) if keyer == 'clean' else key_pre_red(im) if keyer == 'cleanr' else np.array(im.convert('RGBA'))
     if even:
         # кадры стоят в ряд: крупные куски — тела (слипшиеся делим по «перешейку»), мелочь — к ближайшему телу
         op = a[..., 3] > 0
@@ -631,6 +641,10 @@ for key in ['club_hall_z', 'club_leather_z', 'club_lobby_z']:
     im.save(os.path.join(OUT, key + '.jpg'), quality=87, optimize=True)
     B3[key] = {'img': 'assets/' + key + '.jpg', 'w': im.width, 'h': im.height, 'floor': 300 / 360}
 cone('cone_g', (90, 255, 70))
+S['v12_run'] = build_sheet('v12_run', 'v12_run.png', 8, 84, keyer='cleanr', anchors=['body'] * 8, even=True)
+S['v12_runs'] = build_sheet('v12_runs', 'v12_runs.png', 8, 84, keyer='cleanr', anchors=['body'] * 8, even=True)
+S['v12_fist'] = build_sheet('v12_fist', 'v12_fist.png', 8, 88, ref=0, keyer='strict', even=True, anchors=['body'] * 5 + ['center', 'body', 'body'])
+S['walk4'] = build_sheet('walk4', 'walk4.png', 8, 88, ref=0, keyer='cleanr', even=True)
 # портреты персонажей уровня 4 (лица из листов)
 def pcrop(sheet, fi, box, name, flip=False):
     f = S[sheet]['f'][fi]
