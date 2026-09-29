@@ -635,7 +635,7 @@ S['v11_gun'] = build_sheet('v11_gun', 'v11_gun.png', 8, 86, ref=0, keyer='clean'
 S['cabstage'] = build_sheet('cabstage', 'cabstage.png', 4, [-260] * 4, keyer='magenta', even=True)
 S['vovagun2'] = build_sheet('vovagun2', 'vova_gun2.png', 6, 86, ref=0, keyer='magenta', even=True)
 S['uiicons'] = build_sheet('uiicons', 'uiicons.png', 6, [-18] * 6, keyer='clean', anchors=['center'] * 6)
-B['club_back3'] = bg('club_back3.png', 'club_back3', (1280, 720))
+B['club_back3'] = bg('club_dress2.png', 'club_back3', (1280, 720))
 for key in ['club_hall_z', 'club_leather_z', 'club_lobby_z']:
     im = seamless(Image.open(os.path.join(SRC, key + '.png'))); im = im.resize((round(im.width * 720 / im.height), 720), Image.LANCZOS)
     im.save(os.path.join(OUT, key + '.jpg'), quality=87, optimize=True)
@@ -645,6 +645,8 @@ S['v12_run'] = build_sheet('v12_run', 'v12_run.png', 8, 84, keyer='cleanr', anch
 S['v12_runs'] = build_sheet('v12_runs', 'v12_runs.png', 8, 84, keyer='cleanr', anchors=['body'] * 8, even=True)
 S['v12_fist'] = build_sheet('v12_fist', 'v12_fist.png', 8, 88, ref=0, keyer='strict', even=True, anchors=['body'] * 5 + ['center', 'body', 'body'])
 S['walk4'] = build_sheet('walk4', 'walk4.png', 8, 88, ref=0, keyer='cleanr', even=True)
+doorwall('exitwall_street.png', 'swall', 1.0, key_pre_red)
+doorwall('exitwall_iron.png', 'iwall', 1.0, key_pre_red)
 # портреты персонажей уровня 4 (лица из листов)
 def pcrop(sheet, fi, box, name, flip=False):
     f = S[sheet]['f'][fi]

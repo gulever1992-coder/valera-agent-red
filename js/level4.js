@@ -455,8 +455,8 @@ L4.Vova = class {
 // =====================================================================
 // ЛОКАЦИИ
 // =====================================================================
-L4.WALL1 = 900; L4.BACK_X = 2660; L4.CLUB_W = 3300; L4.STAIRS_X = 2660 + 512; L4.DOOR_X = 2660 + 580; L4.HATCH_Y = 150;
-L4.WC_X = 2660 + 434; L4.INNER_W = 3600; L4.DARK_X0 = 1800; L4.LEVER_X = 3480;
+L4.WALL1 = 900; L4.BACK_X = 2660; L4.CLUB_W = 3300; L4.STAIRS_X = 2660 + 531; L4.DOOR_X = 2660 + 600; L4.HATCH_Y = 150;
+L4.WC_X = 2660 + 464; L4.INNER_W = 3600; L4.DARK_X0 = 1800; L4.LEVER_X = 3480;
 L4.ZONES = {
   club: [{ name: 'РЕСЕПШЕН', x0: 0, x1: L4.WALL1, wall: 'club_lobby' }, { name: 'ТАНЦПОЛ', x0: L4.WALL1, x1: L4.BACK_X, wall: 'club_hall' }, { name: 'ЗА КУЛИСАМИ', x0: L4.BACK_X, x1: L4.CLUB_W, wall: 'club_back' }],
   inner: [{ name: 'ЗАКРЫТЫЙ ЗАЛ', x0: 0, x1: L4.DARK_X0, wall: 'club_leather' }, { name: 'ЧЁРНАЯ КОМНАТА', x0: L4.DARK_X0, x1: L4.INNER_W, wall: 'club_dark' }],
@@ -674,7 +674,7 @@ L4.floorY = i => L4.TOWER_H - 40 - i * L4.TOWER_FH;
 L4.BUILD = {
   club(wd, o) {
     wd.addPlat({ x: 0, y: L4.GROUND, w: L4.CLUB_W, h: 60, oneway: false, look: 'none' });
-    this.walls = [30, L4.WALL1, L4.BACK_X];
+    this.walls = [[30, 'swall'], L4.WALL1, L4.BACK_X];
     const P = (type, x, o2 = {}) => this.props.push(Object.assign({ type, x }, o2));
     const esc = !!o.escort;
     // ресепшен: диван с гостем и хостес (задний план); колонки; канат
@@ -694,7 +694,7 @@ L4.BUILD = {
     for (let x = 1000; x < 2600; x += 160) this.lights.push({ x, sp: 0.6 + Math.random() * 0.8, ph: Math.random() * 6, col: Math.random() < 0.5 });
     [[1000, 0], [1240, 1], [1600, 2], [2050, 3], [2200, 1], [620, 2]].forEach(([x, fr]) => this.patrons.push(new L4.Patron(x, { fr })));
     this.npcs.push(new L4.Bouncer(1702, 'bouncerA', { guard: true, facing: -1 }), new L4.Bouncer(2062, 'bouncerB', { guard: true, facing: -1 }));
-    this.npcs.push(new L4.Bouncer(L4.STAIRS_X - 46, 'bouncerB', { idle: 'lean', facing: 1 }));
+    this.npcs.push(new L4.Bouncer(L4.STAIRS_X - 46, 'bouncerB', { idle: 'lean', facing: -1 }));
     if (!this.level.stairsOpen) this.props.push({ type: 'rope', x: L4.STAIRS_X, layer: 'mid' });
     this.doors.push(new L4.Door(L4.STAIRS_X, L4.GROUND, 'ЛЕСТНИЦА В ОТЕЛЬ', st => st.level.enterTower(), { icon: 1 }));
     this.doors.push(new L4.Door(L4.DOOR_X, L4.GROUND, 'ЖЕЛЕЗНАЯ ДВЕРЬ', st => st.level.metalDoor()));
@@ -726,7 +726,7 @@ L4.BUILD = {
   },
   inner(wd, o) {
     wd.addPlat({ x: 0, y: L4.GROUND, w: L4.INNER_W, h: 60, oneway: false, look: 'none' });
-    this.walls = [[30, 'ddoorwall'], [L4.DARK_X0, 'ddoorwall']];
+    this.walls = [[30, 'iwall'], [L4.DARK_X0, 'ddoorwall']];
     this.dark = !o.lightsOn;
     if (!o.escort) {
       for (const x of [460, 1000, 1480]) this.npcs.push(new L4.Flirt(x, 'dancer'));
