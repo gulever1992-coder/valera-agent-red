@@ -647,6 +647,8 @@ S['v12_fist'] = build_sheet('v12_fist', 'v12_fist.png', 8, 88, ref=0, keyer='str
 S['walk4'] = build_sheet('walk4', 'walk4.png', 8, 88, ref=0, keyer='cleanr', even=True)
 doorwall('exitwall_street.png', 'swall', 1.0, key_pre_red)
 doorwall('exitwall_iron.png', 'iwall', 1.0, key_pre_red)
+S['carry'] = build_sheet('carry', 'carry.png', 4, 96, keyer='magenta', even=True)
+S['lprops'] = build_sheet('lprops', 'lprops.png', 8, [40, 48, 120, 100, 42, 94, 44, 80], keyer='magenta', even=True)
 # портреты персонажей уровня 4 (лица из листов)
 def pcrop(sheet, fi, box, name, flip=False):
     f = S[sheet]['f'][fi]

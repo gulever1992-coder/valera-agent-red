@@ -413,8 +413,8 @@ L4.Flirt = class {
       if (this.st === 'idle') { const b = -Math.abs(Math.sin(this.t * 3)) * 2; Spr.draw(c, 'men', 0, x - 22, y + b, f); Spr.draw(c, 'men', 6, x + 22, y + b, f); return; }
       if (this.st === 'carry' || this.st === 'drop') {
         const b = -Math.abs(Math.sin(this.t * 10)) * 3;
+        if (this.st === 'carry' || this.stT < 0.25) { Spr.draw(c, 'carry', Math.floor(this.t * 7) % 4, x, y, this.facing); return; }
         Spr.draw(c, 'men', 0, x - 30, y + b, 1); Spr.draw(c, 'men', 6, x + 30, y - b, -1);
-        if (this.st === 'carry' || this.stT < 0.25) Spr.drawAnim(c, 'valera4', 'ko', G.t, x, y - 64 + b, 1);
         return;
       }
       Spr.draw(c, 'menact', this.st === 'drop' ? 6 : 4, x, y - (this.st === 'run' || this.st === 'back' ? Math.abs(Math.sin(this.t * 14)) * 3 : 0), this.st === 'back' ? -f : f);
@@ -466,6 +466,7 @@ L4.PROP = {
   bar: { sheet: 'cprops', fr: 4, crawl: true, scale: 1.2 }, rope: { sheet: 'cprops', fr: 6, scale: 1.3 },
   sofaA: { sheet: 'panim', fr: 0, anim: 4, scale: 0.62 }, tableA: { sheet: 'panim', fr: 1, anim: 4, scale: 0.62 }, table2A: { sheet: 'panim', fr: 2, anim: 4, scale: 0.62 }, djA: { sheet: 'panim', fr: 3, anim: 4, scale: 0.7 },
   slime: { sheet: 'acid', fr: 0, scale: 1.2 },
+  lchair: { sheet: 'lprops', fr: 0 }, ltable: { sheet: 'lprops', fr: 1 }, lcage: { sheet: 'lprops', fr: 2 }, lbag: { sheet: 'lprops', fr: 3 }, lsofa: { sheet: 'lprops', fr: 4 }, lrack: { sheet: 'lprops', fr: 5 }, lsmall: { sheet: 'lprops', fr: 6 }, lplant: { sheet: 'lprops', fr: 7 },
   wcdoor: { sheet: 'stalls', fr: 7 }, stall: { sheet: 'stalls', fr: 0 },
 };
 L4.Stage = class {
@@ -742,6 +743,10 @@ L4.BUILD = {
     this.fgItems = [{ sheet: 'fg2', fr: 2, x: 500, y: H + 30, par: 1.3 }, { sheet: 'fg2', fr: 0, x: 900, y: H + 34, par: 1.3 }, { sheet: 'fg2', fr: 4, x: 1200, y: H + 30, par: 1.3 }, { sheet: 'fg2', fr: 3, x: 1600, y: H + 30, par: 1.3 }];
     for (const x of [560, 1180]) this.props.push({ type: 'speakers', x });
     this.props.push({ type: 'rope', x: 330, layer: 'bg' }, { type: 'rope', x: 1390, layer: 'bg' });
+    // закрытый зал: мебель кожа/хром — задний, средний и передний планы
+    if (!o.escort) this.props.push({ type: 'lsofa', x: 250, layer: 'bg', y: L4.GROUND - 14, scale: 0.85 }, { type: 'lchair', x: 690, layer: 'bg', y: L4.GROUND - 14, scale: 0.85 }, { type: 'lsmall', x: 1060, layer: 'bg', y: L4.GROUND - 14, scale: 0.85 }, { type: 'lsofa', x: 1560, layer: 'bg', y: L4.GROUND - 14, scale: 0.85, flip: true });
+    this.props.push({ type: 'lcage', x: 830, layer: 'bg', y: L4.GROUND - 10, scale: 0.9 }, { type: 'lrack', x: 140, layer: 'bg', y: L4.GROUND - 12, scale: 0.9 }, { type: 'lbag', x: 1320, layer: 'mid' }, { type: 'ltable', x: 1720, layer: 'mid' });
+    this.fgItems.push({ sheet: 'lprops', fr: 7, x: 360, y: H + 34, par: 1.3, scale: 1.5 }, { sheet: 'lprops', fr: 1, x: 1450, y: H + 40, par: 1.3, scale: 1.5 }, { sheet: 'lprops', fr: 0, x: 760, y: H + 40, par: 1.3, scale: 1.5 });
     if (o.escort) { this.zombieSpawner = true; for (const x of [400, 900, 1500, 2300, 3000]) this.props.push({ type: 'slime', x, layer: 'bg' }); }
   },
   wc(wd, o) {
