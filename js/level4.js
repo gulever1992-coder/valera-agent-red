@@ -77,7 +77,7 @@ Object.assign(WHO, {
 L4.load = async function () {
   const W3 = window.WALLS3 || {};
   await Promise.all(['club_lobby', 'club_hall', 'club_vip', 'club_leather', 'club_dark', 'club_lobby_z', 'club_hall_z', 'club_leather_z'].map(async k => { if (W3[k]) L3.img[k] = await G.loadImage(W3[k].img); }));
-  await Promise.all(['club_back', 'club_back2', 'club_back3', 'club_floor', 'hotel_floor2', 'biker_bg', 'club_room', 'club_wc', 'club_wc2', 'comic4_darts', 'comic4_raid', 'comic4_end', 'room0', 'room1', 'room2', 'room3'].map(async k => { L4.img[k] = await G.loadImage('assets/' + k + '.jpg'); }));
+  await Promise.all(['club_back', 'club_back2', 'club_back3', 'club_floor', 'hotel_floor2', 'biker_bg', 'club_room', 'club_wc', 'club_wc2', 'comic4_darts', 'comic4_raid', 'comic4_end', 'room0', 'room1', 'room2', 'room3', 'room4', 'room5', 'room6', 'room7', 'room8', 'room9', 'room10', 'room11'].map(async k => { L4.img[k] = await G.loadImage('assets/' + k + '.jpg'); }));
   await Promise.all(['cone_m', 'cone_c', 'cone_g'].map(async k => { L4.img[k] = await G.loadImage('assets/spr/' + k + '.png'); }));
   G.portraits = G.portraits || {};
   await Promise.all(['maid', 'nurse', 'vova', 'biker', 'hatch', 'valera4'].map(async k => { G.portraits[k] = await G.loadImage('assets/spr/p_' + k + '.png'); }));
@@ -674,6 +674,8 @@ L4.Door = class {
   }
 };
 
+// 9 номеров — 9 разных фонов (золото, амстердам, сафари, неон, совок, подводный, космос, диско, старый)
+L4.ROOM_IMG = [4, 5, 6, 7, 8, 9, 10, 11, 0];
 L4.HOTEL_G = 242; L4.BOSS_G = 296; L4.TOWER_FH = 300; L4.FLOORS = 3; L4.TOWER_H = L4.FLOORS * L4.TOWER_FH + 60;
 L4.floorY = i => L4.TOWER_H - 40 - i * L4.TOWER_FH;
 L4.BUILD = {
@@ -723,10 +725,10 @@ L4.BUILD = {
   room(wd, o) {
     const r = o.room;
     wd.addPlat({ x: 0, y: L4.GROUND, w: 640, h: 60, oneway: false, look: 'none' });
-    this.doors.push(new L4.Door(100, L4.GROUND, 'ВЫЙТИ', st => st.level.leaveRoom()));
+    this.doors.push(new L4.Door(L4.ROOM_IMG[r.id % 9] >= 4 ? 84 : 100, L4.GROUND, 'ВЫЙТИ', st => st.level.leaveRoom()));
     this.fgItems = [{ sheet: 'fg2', fr: [7, 1, 5, 4][o.room.id % 4], x: 600, y: H + 30, scale: 1 }];
     if (!r.cleared) r.foes.forEach((t, k) => wd.enemies.push(new L4.Foe(t, k ? 560 : 300, L4.GROUND)));
-    this.nerd = r.id % 4;
+    { const i = L4.ROOM_IMG[r.id % 9]; this.nerd = i >= 4 && i <= 8 ? i : [9, 10, 11, 0].indexOf(i); } // ботаник под тему комнаты
     this.roomData = r;
   },
   inner(wd, o) {
@@ -795,7 +797,7 @@ L4.DRAW_BG = {
     const kx = 2470 - cx; if (kx > -200 && kx < W + 200) Spr.draw(c, 'cabstage', this.o.escort ? 3 : [0, 1, 0, 2, 0, 3][Math.floor(G.t * 2.4) % 6], kx, L4.GROUND - 10, 1, { scale: 0.7 });
   },
   tower(c) { if (L4.img.hotel_floor2) c.drawImage(L4.img.hotel_floor2, 0, 0, W, H); G.text('ЭТАЖ ' + (this.floor + 1), 20, 44, { size: 8, color: '#ff8ad8', outline: true }); },
-  room(c) { const r = this.roomData; const img = L4.img['room' + (r.id % 4)]; if (img) c.drawImage(img, 0, 0, W, H); Spr.draw(c, 'nerds', this.nerd + (Math.floor(G.t * 1.2 + this.nerd) % 2) * 4, 430, L4.GROUND + 6, 1); },
+  room(c) { const r = this.roomData; const img = L4.img['room' + L4.ROOM_IMG[r.id % 9]]; if (img) c.drawImage(img, 0, 0, W, H); const n = this.nerd, ph = Math.floor(G.t * 1.2 + n) % 2; if (n < 4) Spr.draw(c, 'nerds', n + ph * 4, 430, L4.GROUND + 6, 1); else Spr.draw(c, 'nerds2', n - 4 + ph * 5, 430, L4.GROUND + 6, 1); },
   inner(c, cx) {
     for (const z of L4.ZONES.inner) L4.drawWallStrip(c, this.o.escort && L3.img[z.wall + '_z'] ? z.wall + '_z' : z.wall, z.x0, z.x1, cx, 0, z.x0 > 0 && !this.o.escort ? 'rgba(0,0,0,0.5)' : null);
     if (this.dark) { const dx0 = L4.DARK_X0 - cx; if (dx0 < W) { c.fillStyle = '#000'; c.fillRect(Math.max(0, dx0), 0, W, H); } }

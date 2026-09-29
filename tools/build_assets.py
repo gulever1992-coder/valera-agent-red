@@ -651,6 +651,20 @@ S['carry'] = build_sheet('carry', 'carry.png', 4, 96, keyer='magenta', even=True
 S['lprops'] = build_sheet('lprops', 'lprops.png', 8, [40, 48, 120, 100, 42, 94, 44, 80], keyer='magenta', even=True)
 S['zombc'] = build_sheet('zombc', 'zomb_c.png', 8, 94, ref=7, keyer='cleanr', even=True)
 S['zombd'] = build_sheet('zombd', 'zomb_d.png', 8, 92, ref=7, keyer='cleanr', even=True)
+# номера отеля: сетки 2x2 с тёмными промежутками -> отдельные фоны 16:9
+def room_grid(src, first):
+    im = Image.open(os.path.join(SRC, src)).convert('RGB'); a = np.array(im).astype(np.float32).mean(axis=2); h, w = a.shape
+    cx = int(w * 0.4) + int(np.argmin(a[:, int(w * 0.4):int(w * 0.6)].mean(axis=0))); cy = int(h * 0.4) + int(np.argmin(a[int(h * 0.4):int(h * 0.6)].mean(axis=1)))
+    for k, (x0, y0, x1, y1) in enumerate([(0, 0, cx, cy), (cx, 0, w, cy), (0, cy, cx, h), (cx, cy, w, h)]):
+        sub = a[y0:y1, x0:x1]; cols = np.where(sub.mean(axis=0) > 28)[0]; rows = np.where(sub.mean(axis=1) > 28)[0]
+        X0, X1, Y0, Y1 = x0 + cols[0], x0 + cols[-1], y0 + rows[0], y0 + rows[-1]
+        pw, ph = X1 - X0, Y1 - Y0; X0 += int(pw * 0.012); X1 -= int(pw * 0.012); Y0 += int(ph * 0.015); Y1 -= int(ph * 0.015)
+        ww, hh = X1 - X0, Y1 - Y0
+        if ww / hh > 16 / 9: nw = int(hh * 16 / 9); X0 += (ww - nw) // 2; X1 = X0 + nw
+        else: nh = int(ww * 9 / 16); Y0 += (hh - nh); Y1 = Y0 + nh
+        im.crop((X0, Y0, X1, Y1)).resize((1280, 720), Image.LANCZOS).save(os.path.join(OUT, 'room%d.jpg' % (first + k)), quality=88)
+room_grid('rooms4b.png', 4); room_grid('rooms4c.png', 8)
+S['nerds2'] = build_sheet('nerds2', 'nerds2.png', 10, [-120] * 10, keyer='magenta', grid=(2, 5))
 # портреты персонажей уровня 4 (лица из листов)
 def pcrop(sheet, fi, box, name, flip=False):
     f = S[sheet]['f'][fi]
