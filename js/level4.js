@@ -763,7 +763,7 @@ L4.DRAW_BG = {
     for (const s of this.stalls) {
       if (!s.open) continue;
       const fr = s.what === 'hookah' ? 1 : s.what === 'gun' ? (this.level.gunTaken ? 0 : 2) : s.what === 'bum' ? 3 + Math.floor(G.t * 1.2) % 2 : 0;
-      Spr.draw(c, 'stalls2', fr, s.x, 250, 1, { scale: 0.86 });
+      { const f = Spr.frame('stalls2', fr), w = f[2] * 0.43; c.save(); c.beginPath(); c.rect(s.x - w / 2 + w * 0.13, 0, w, H); c.clip(); Spr.draw(c, 'stalls2', fr, s.x, 250, 1, { scale: 0.86 }); c.restore(); }
       if (s.what === 'kesha') Spr.drawAnim(c, 'kesha4', Math.floor(G.t * 0.7) % 2 ? 'thumbs' : 'sniff', G.t, s.x, 248, 1, { scale: 0.9 });
     }
   },
