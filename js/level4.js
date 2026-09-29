@@ -1181,7 +1181,7 @@ L4.raidScene = function* (level) {
     ['hostess', 0, 1250, 'zomba', 0], ['hostess', 4, 1330, 'zomba', 1], ['bouncers', 0, 1410, 'zomba', 2], ['l4a', 4, 1490, 'zomba', 3], ['l4c', 0, 1570, 'zomba', 4],
     ['l4b', 0, 1650, 'zomba', 5], ['men', 3, 1730, 'zomba', 6], ['men', 1, 1810, 'zomba', 7], ['dancers', 0, 1370, 'zombb', 6], ['dancers', 1, 1700, 'zomba', 1],
   ].map(([sh, fr, x, zs, zf], i) => ({ sh, fr, x, zs, zf, t: Math.random() * 6, hit: -1, flip: sh === 'dancers' || sh === 'patrons' ? 1 : -1 }));
-  const cmd = [{ x: 1290, y: -90, tx: 1290, ty: 120 }, { x: 1560, y: -120, tx: 1560, ty: 100 }, { x: 1780, y: -80, tx: 1780, ty: 130 }];
+  const cmd = [{ x: 1300, y: -200, tx: 1300, ty: 42 }, { x: 1535, y: -240, tx: 1535, ty: 14 }, { x: 1770, y: -210, tx: 1770, ty: 52 }, { x: 1655, y: -260, tx: 1655, ty: 26 }];
   const darts = [];
   level.drawScene = c => {
     st.draw(c); const cx = st.world.cam.x;
@@ -1191,7 +1191,7 @@ L4.raidScene = function* (level) {
       else if (p.hit >= 0.35) Spr.draw(c, p.zs, p.zf, x + beat, L4.GROUND, -1);
       else Spr.draw(c, p.sh, p.sh === 'dancers' ? p.fr + (Math.floor(p.t * 2.6) % 2) * 4 : p.fr, x, L4.GROUND + beat, p.flip);
     }
-    for (const m of cmd) { Art.R(c, m.x - cx - 1, -10, 2, m.y + 10 - 170, '#1a1a1a'); Spr.drawAnim(c, 'commando', m.y >= m.ty - 2 ? 'rifle' : 'rappel', G.t, m.x - cx, m.y + 160, 1, { scale: 0.9 }); }
+    for (const m of cmd) { Art.R(c, m.x - cx - 2, 0, 4, Math.max(0, m.y + 96), '#2a2018'); Art.R(c, m.x - cx - 1, 0, 2, Math.max(0, m.y + 96), '#d8c8a0'); Spr.drawAnim(c, 'commando', m.y >= m.ty - 2 ? 'rifle' : 'rappel', G.t, m.x - cx, m.y + 160, 1, { scale: 0.9 }); }
     for (const d of darts) { c.save(); c.translate(d.x - cx, d.y); c.rotate(Math.atan2(d.vy, d.vx)); Spr.drawC(c, 'moth2', 4, 0, 0, 0, 0.35); c.restore(); }
   };
   level.updateScene = dt => {
