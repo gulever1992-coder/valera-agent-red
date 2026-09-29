@@ -141,18 +141,21 @@ G.onLevelComplete = function (level) {
 };
 
 function startLevel4(opts = {}) {
+  if (G.portraits && G.portraits.valera4) G.portraits.valera = G.portraits.valera4;
   App.level = new L4.Level();
   setState('play');
   App.paused = false;
   App.level.start(opts);
 }
 function startLevel3(opts = {}) {
+  if (G.portraits && G.portraits.valeraOrig) G.portraits.valera = G.portraits.valeraOrig;
   App.level = new L3.Level();
   setState('play');
   App.paused = false;
   App.level.start(opts);
 }
 function startLevel2(opts = {}) {
+  if (G.portraits && G.portraits.valeraOrig) G.portraits.valera = G.portraits.valeraOrig;
   App.level = new L2.Level();
   setState('play');
   App.paused = false;
@@ -187,6 +190,7 @@ function menuItems() {
   return it;
 }
 function startLevel1(opts = {}) {
+  if (G.portraits && G.portraits.valeraOrig) G.portraits.valera = G.portraits.valeraOrig;
   App.level = new L1.Level();
   setState('play');
   App.paused = false;

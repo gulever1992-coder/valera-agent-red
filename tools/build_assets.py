@@ -499,6 +499,72 @@ for key in ['club_vip']:
 B['club_room'] = bg('club_room.png', 'club_room', (1280, 720))
 for n in ['comic4_darts', 'comic4_end']:
     B[n] = bg(n + '.png', n, (1280, 720))
+# ---- уровень 4, переделка: мебель, охрана, движения Валеры, кабаре, люк, пилон ----
+S['cprops'] = build_sheet('cprops', 'club_props.png', 8, [150, 70, 80, 70, -250, 58, 52, 78], keyer='clean', grid=(2, 4))
+S['bouncers'] = build_sheet('bouncers', 'bouncers.png', 8, 104, ref=0, keyer='clean', even=True)
+S['v6'] = build_sheet('v6', 'v6_moves.png', 8, 86, ref=4, keyer='clean', even=True, anchors=['feet'] * 4 + ['body'] * 4)
+S['cabaret'] = build_sheet('cabaret', 'cabaret.png', 4, 160, ref=0, keyer='clean', even=True)
+S['hatch'] = build_sheet('hatch', 'hatch.png', 6, [-26, -26, -26, -26, -64, -64], keyer='magenta', grid=(2, 3), anchors=['center'] * 6)
+_fc = Image.open(os.path.join(SRC, 'foes4c.png')); _fc.crop((0, 0, 2085, _fc.height)).save(os.path.join(SRC, 'foes4c_crop.png'))
+S['l4c'] = build_sheet('l4c', 'foes4c_crop.png', 8, 84, ref=0, keyer='clean', even=True)
+_fc.crop((2090, 475, 2156, 540)).save(os.path.join(SRC, 'gumball_src.png'))
+S['gumball'] = build_sheet('gumball', 'gumball_src.png', 1, [-12], keyer='clean', anchors=['center'])
+S['pole'] = build_sheet('pole', 'poledance.png', 9, [150, 150, 150, 150, 150, 150, 190, 190, 34], keyer='clean', grid=(2, [6, 3]), anchors=['feet'] * 6 + ['center'] * 3)
+# стена-переход клуба: кожаная дверь + торец; уменьшаем целиком, верх достраиваем торцом
+dw = Image.open(os.path.join(SRC, 'club_doorwall.png'))
+da = key_pre(dw); op = da[..., 3] > 0
+cov = op.mean(axis=0); wallx = int(np.where(cov > 0.85)[0].min())
+ys = np.where(op.any(axis=1))[0]; da = da[ys[0]:ys[-1] + 1]
+H0, W0 = da.shape[:2]; k = 0.8
+full = Image.fromarray(da.astype(np.uint8), 'RGBA'); fk = full.resize((round(W0 * k), round(H0 * k)), Image.LANCZOS)
+comp = Image.new('RGBA', (fk.width, H0), (0, 0, 0, 0)); top = H0 - fk.height; sx = round(wallx * k)
+strip = fk.crop((sx, 0, fk.width, fk.height // 3)); y = top
+while y > 0:
+    y -= strip.height
+    if y >= 0: comp.alpha_composite(strip, (sx, y))
+    else: comp.alpha_composite(strip.crop((0, -y, strip.width, strip.height)), (sx, 0))
+comp.alpha_composite(fk, (0, top))
+comp = comp.resize((round(comp.width * 720 / comp.height), 720), Image.LANCZOS)
+ca = np.array(comp); ca[..., 3] = np.where(ca[..., 3] > 100, 255, 0); Image.fromarray(ca, 'RGBA').save(os.path.join(SPR, 'cdoorwall.png'))
+S['cdoorwall'] = {'img': 'assets/spr/cdoorwall.png', 'f': [[0, 0, comp.width, comp.height, round(sx * 720 / H0), comp.height, 0, 0]]}
+# портрет «глаза из люка»
+_h = S['hatch']['f'][4]; _hi = Image.open(os.path.join(SPR, 'hatch.png')).convert('RGBA').crop((_h[0], _h[1], _h[0] + _h[2], _h[1] + _h[3]))
+_hi.resize((128, 128), Image.LANCZOS).save(os.path.join(SPR, 'p_hatch.png'))
+# ---- Валера в полицейской фуражке (уровень 4) ----
+S['v7_run'] = build_sheet('v7_run', 'v7_run.png', 8, 86, ref=0, keyer='strict', even=True, anchors=['body'] * 8)
+S['v7_act'] = build_sheet('v7_act', 'v7_act.png', 8, 88, ref=0, keyer='strict', even=True, anchors=['body'] * 5 + ['center', 'body', 'body'])
+S['v7_mv'] = build_sheet('v7_mv', 'v7_moves.png', 8, 88, ref=4, keyer='clean', even=True, anchors=['feet'] * 4 + ['body'] * 4)
+S['v7_cap'] = build_sheet('v7_cap', 'v7_cap.png', 8, 88, ref=5, keyer='strict', even=True, anchors=['body'] * 8)
+# ---- уровень 4: туалет, закрытый зал, мужчины, ботаники, стена чёрной комнаты, эффекты босса ----
+def doorwall(src, name, k=0.8, keyer=key_pre):
+    da = keyer(Image.open(os.path.join(SRC, src))); op = da[..., 3] > 0
+    cov = op.mean(axis=0); wallx = int(np.where(cov > 0.85)[0].min())
+    ys = np.where(op.any(axis=1))[0]; da = da[ys[0]:ys[-1] + 1]
+    H0, W0 = da.shape[:2]
+    full = Image.fromarray(da.astype(np.uint8), 'RGBA'); fk = full.resize((round(W0 * k), round(H0 * k)), Image.LANCZOS)
+    comp = Image.new('RGBA', (fk.width, H0), (0, 0, 0, 0)); top = H0 - fk.height; sx = round(wallx * k)
+    strip = fk.crop((sx, 0, fk.width, fk.height // 3)); y = top
+    while y > 0:
+        y -= strip.height
+        if y >= 0: comp.alpha_composite(strip, (sx, y))
+        else: comp.alpha_composite(strip.crop((0, -y, strip.width, strip.height)), (sx, 0))
+    comp.alpha_composite(fk, (0, top))
+    comp = comp.resize((round(comp.width * 720 / comp.height), 720), Image.LANCZOS)
+    ca = np.array(comp); ca[..., 3] = np.where(ca[..., 3] > 100, 255, 0); Image.fromarray(ca, 'RGBA').save(os.path.join(SPR, name + '.png'))
+    S[name] = {'img': 'assets/spr/' + name + '.png', 'f': [[0, 0, comp.width, comp.height, round(sx * 720 / H0), comp.height, 0, 0]]}
+doorwall('dark_doorwall.png', 'ddoorwall', 0.8, key_magenta)
+B['club_wc'] = bg('club_wc.png', 'club_wc', (1280, 720))
+S['stalls'] = build_sheet('stalls', 'stalls.png', 8, [110, 110, 110, 110, 110, 110, 110, 104], keyer='magenta', grid=(2, 4))
+S['men'] = build_sheet('men', 'men.png', 8, 90, ref=0, keyer='clean', even=True)
+S['menact'] = build_sheet('menact', 'men_act.png', 8, 90, ref=0, keyer='clean', grid=(2, 4))
+S['nerds'] = build_sheet('nerds', 'nerds.png', 8, [-120] * 8, keyer='clean', grid=(2, 4))
+S['l4fx2'] = build_sheet('l4fx2', 'l4fx2.png', 6, [-56, -56, -56, -40, 132, 124], keyer='magenta', grid=(2, 3), anchors=['center'] * 4 + ['feet'] * 2)
+im = seamless(Image.open(os.path.join(SRC, 'club_leather.png'))); im = im.resize((round(im.width * 720 / im.height), 720), Image.LANCZOS)
+im.save(os.path.join(OUT, 'club_leather.jpg'), quality=87, optimize=True)
+B3['club_leather'] = {'img': 'assets/club_leather.jpg', 'w': im.width, 'h': im.height, 'floor': 300 / 360}
+S['zomba'] = build_sheet('zomba', 'zomb_a.png', 8, 92, ref=0, keyer='magenta', even=True)
+S['zombb'] = build_sheet('zombb', 'zomb_b.png', 8, [92, -120, 92, -140, 92, 70, 92, -140], keyer='magenta', grid=(2, 4))
+S['v8_gun'] = build_sheet('v8_gun', 'v8_gun.png', 8, 86, ref=0, keyer='clean', even=True, anchors=['body'] * 8)
 # портреты персонажей уровня 4 (лица из листов)
 def pcrop(sheet, fi, box, name, flip=False):
     f = S[sheet]['f'][fi]
@@ -507,6 +573,7 @@ def pcrop(sheet, fi, box, name, flip=False):
     p = im.crop((int(box[0] * w), int(box[1] * h), int(box[2] * w), int(box[3] * h)))
     if flip: p = p.transpose(Image.FLIP_LEFT_RIGHT)
     p.resize((128, 128), Image.LANCZOS).save(os.path.join(SPR, name + '.png'))
+pcrop('v7_act', 0, (0.16, 0.0, 0.84, 0.4), 'p_valera4')
 pcrop('hostess', 0, (0.12, 0.0, 0.88, 0.38), 'p_maid', True)
 pcrop('hostess', 4, (0.12, 0.0, 0.88, 0.36), 'p_nurse', True)
 pcrop('vova', 0, (0.14, 0.0, 0.86, 0.36), 'p_vova')
