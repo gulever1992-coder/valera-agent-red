@@ -8,10 +8,10 @@ L4.img = {};
 {
   const A = (sheet, fr, fps = 1, o = {}) => Object.assign({ fr: fr.map(i => [sheet, i]), fps }, o);
   const F = { flip: true };
-  Spr.ANIM.whip = { stand: A('l4a', [0], 1, F), walk: A('l4a', [1, 0], 5, F), wind: A('l4a', [2], 1, F), attack: A('l4a', [3], 1, F) };
+  Spr.ANIM.whip = { stand: A('l4a', [0], 1, F), walk: A('girls2', [0, 1], 5, F), wind: A('l4a', [2], 1, F), attack: A('l4a', [3], 1, F) };
   Spr.ANIM.sailor = { stand: A('l4a', [4], 1, F), walk: A('l4c', [4, 5], 5, F), attack: A('l4c', [6], 1, F), throw: A('l4a', [6], 1, F), salute: A('l4c', [7], 1, F), ko: A('l4a', [7], 1, F) };
   Spr.ANIM.sumo = { stand: A('l4b', [0], 1, F), walk: A('l4b', [1], 1, F), air: A('l4b', [2], 1, F), ko: A('l4b', [3], 1, F) };
-  Spr.ANIM.gum = { stand: A('l4c', [0, 3], 1.5, F), walk: A('l4b', [5, 4], 4, F), air: A('l4b', [6], 1, F), wind: A('l4c', [1], 1, F), attack: A('l4c', [2], 1, F), ko: A('l4b', [7], 1, F) };
+  Spr.ANIM.gum = { stand: A('l4c', [0, 3], 1.5, F), walk: A('girls2', [2, 3], 5, F), air: A('l4b', [6], 1, F), wind: A('girls2', [4, 5, 6], 4.3, F), attack: A('girls2', [7], 1, F), ko: A('l4b', [7], 1, F) };
   Spr.ANIM.biker = { stand: A('biker', [0], 1, F), run: A('biker', [1, 0], 8, F), jump: A('biker', [2], 1, F), throw: A('biker', [3], 1, F), roar: A('biker', [4], 1, F), hurt: A('biker', [5], 1, F), land: A('biker', [6], 1, F), ko: A('biker', [7], 1, F) };
   Spr.ANIM.zombie = { stand: A('patrons', [4], 1, F), walk: A('patrons', [5, 6], 4, F), attack: A('patrons', [4], 1, F), ko: A('patrons', [7], 1, F) };
   // 9 видов клубных зомби: [ходьба, атака, падение] (null — падение поворотом)
@@ -23,19 +23,26 @@ L4.img = {};
   Spr.ANIM.bouncerA = { stand: A('bouncers', [0], 1, F), shove: A('bouncers', [1], 1, F), aside: A('bouncers', [2], 1, F), flex: A('bouncers', [3], 1, F) };
   Spr.ANIM.bouncerB = { stand: A('bouncers', [4], 1, F), shove: A('bouncers', [5], 1, F), lean: A('bouncers', [6], 1, F), laugh: A('bouncers', [7], 1, F) };
   Spr.ANIM.biker.sing = A('l4fx2', [4], 1, F); Spr.ANIM.biker.taunt = A('l4fx2', [5], 1, F);
+  Spr.ANIM.couple = { walk: A('couple', [0, 1, 2, 3], 7), climb: A('couple', [4, 5], 4), wink: A('couple', [6]), kiss: A('couple', [7]) };
+  Spr.ANIM.vovagun = { hold: A('vovagun2', [0]), open: A('vovagun2', [1]), flip: A('vovagun2', [2]), green: A('vovagun2', [3]), proud: A('vovagun2', [4]), give: A('vovagun2', [5]) };
+  Spr.ANIM.zharness = { crawl: A('zharness', [0, 1], 5), drop: A('zharness', [2]), pounce: A('zharness', [3], 1, F), land: A('zharness', [4], 1, F), bite: A('zharness', [5], 1, F), leap: A('zharness', [6]), ko: A('zharness', [7]) };
+  Spr.ANIM.kesha4 = { sniff: A('kesha_a', [5]), thumbs: A('kesha_b', [5]) };
   Spr.ANIM.guy = { stand: A('patrons', [0]), walk: A('patrons', [0]) };
   Spr.ANIM.girl = { stand: A('patrons', [1]), walk: A('patrons', [1]) };
   // Валера: ползком, по лестнице, кулаками, в чужих руках, неловкий танец
   // Валера в полицейской фуражке — основной набор уровня 4
   const V = { crawl: A('v7_mv', [0, 1], 6), climb: A('v7_mv', [2, 3], 6), punchA: A('v7_mv', [4]), punchB: A('v7_mv', [5]), held: A('v7_mv', [6]), dance: A('v7_mv', [7, 6], 3) };
   Spr.ANIM.valera4 = Object.assign({}, V, {
-    stand: A('v7_act', [0]), angry: A('v7_act', [6]), hips: A('v7_act', [6]), stomp: A('v7_act', [6]), scratch: A('v7_cap', [5]), yawn: A('v7_act', [6]), belly: A('v7_cap', [7]),
-    run: A('v7_run', [0, 1, 2, 3, 4, 5, 6, 7], 14), walk: A('v7_run', [0, 1, 2, 3, 4, 5, 6, 7], 9),
+    stand: A('v7_act', [0]), angry: A('v7_idle', [7]), hips: A('v7_idle', [0, 1], 4.5), stomp: A('v7_idle', [0, 1], 4.5), scratch: A('v7_idle', [5]), yawn: A('v7_idle', [6]), belly: A('v7_idle', [2, 3, 2, 3, 4], 3),
+    run: A('v8_run', [0, 1, 2, 3, 4, 5, 6, 7], 14), walk: A('v8_run', [0, 1, 2, 3, 4, 5, 6, 7], 9),
     crouch: A('v7_act', [1]), land: A('v7_act', [1]), jump: A('v7_act', [2]), fall: A('v7_act', [3]), hurt: A('v7_act', [4]), ko: A('v7_act', [5]),
     swatWind: A('v7_cap', [6]), swat: A('v7_act', [7]), fart: A('v7_cap', [7]), shoot: A('v7_act', [7]),
     capGrab: A('v7_cap', [0]), capOff: A('v7_cap', [1]), capThrow: A('v7_cap', [2]), capHold: A('v7_cap', [3]), capOn: A('v7_cap', [4]), capFix: A('v7_cap', [5]),
   });
-  Spr.ANIM.valera3gun = Object.assign({}, Spr.ANIM.valera4, V, {
+  const GUN = g => ({ stand: A(g, [0]), angry: A(g, [0]), hips: A(g, [0]), scratch: A(g, [0]), yawn: A(g, [0]), belly: A(g, [0]), run: A(g, [1, 2, 3, 4], 10), walk: A(g, [1, 2, 3, 4], 7), shoot: A(g, [5]), jump: A(g, [6]), fall: A(g, [6]), crouch: A(g, [7]), land: A(g, [7]) });
+  Spr.ANIM.valera4green = Object.assign({}, Spr.ANIM.valera4, V, GUN('v11_gun'));
+  Spr.ANIM.valera3gun = Object.assign({}, Spr.ANIM.valera4, V, GUN('v10_gun'));
+  Spr.ANIM.valera3gunOld = Object.assign({}, Spr.ANIM.valera4, V, {
     stand: A('v8_gun', [0]), angry: A('v8_gun', [0]), run: A('v8_gun', [1, 2, 3, 4], 10), walk: A('v8_gun', [1, 2, 3, 4], 7),
     shoot: A('v8_gun', [5]), jump: A('v8_gun', [6]), fall: A('v8_gun', [6]), crouch: A('v8_gun', [7]), land: A('v8_gun', [7]),
   });
@@ -58,8 +65,9 @@ Object.assign(WHO, {
 });
 L4.load = async function () {
   const W3 = window.WALLS3 || {};
-  await Promise.all(['club_lobby', 'club_hall', 'club_vip', 'club_leather'].map(async k => { if (W3[k]) L3.img[k] = await G.loadImage(W3[k].img); }));
-  await Promise.all(['club_back', 'club_floor', 'biker_bg', 'club_room', 'club_wc', 'comic4_darts', 'comic4_end'].map(async k => { L4.img[k] = await G.loadImage('assets/' + k + '.jpg'); }));
+  await Promise.all(['club_lobby', 'club_hall', 'club_vip', 'club_leather', 'club_dark', 'club_lobby_z', 'club_hall_z', 'club_leather_z'].map(async k => { if (W3[k]) L3.img[k] = await G.loadImage(W3[k].img); }));
+  await Promise.all(['club_back', 'club_back2', 'club_back3', 'club_floor', 'hotel_floor2', 'biker_bg', 'club_room', 'club_wc', 'club_wc2', 'comic4_darts', 'comic4_raid', 'comic4_end', 'room0', 'room1', 'room2', 'room3'].map(async k => { L4.img[k] = await G.loadImage('assets/' + k + '.jpg'); }));
+  await Promise.all(['cone_m', 'cone_c', 'cone_g'].map(async k => { L4.img[k] = await G.loadImage('assets/spr/' + k + '.png'); }));
   G.portraits = G.portraits || {};
   await Promise.all(['maid', 'nurse', 'vova', 'biker', 'hatch', 'valera4'].map(async k => { G.portraits[k] = await G.loadImage('assets/spr/p_' + k + '.png'); }));
   G.portraits.valeraOrig = G.portraits.valeraOrig || G.portraits.valera;
@@ -80,7 +88,7 @@ L4.Player = class extends L3.Player {
     for (let k = 1; k <= 3; k++) { const n = order[(i + k) % 3]; if (n !== 'seed' || (this.hasSeed && this.ammo3.seed > 0)) { this.weapon = n; Sound.play('select'); FX.popText(this.x, this.y - 96, L4.WNAME[n], '#ffd84a'); return; } }
   }
   attackUpdate(dt, world, ctl, I) {
-    this.animSet = this.weapon === 'seed' ? 'valera3gun' : 'valera4'; this.portraitKey = 'valera4';
+    this.animSet = this.weapon === 'seed' ? (this.green ? 'valera4green' : 'valera3gun') : 'valera4'; this.portraitKey = 'valera4';
     const dir = ctl ? (I.held('right') ? 1 : 0) - (I.held('left') ? 1 : 0) : 0;
     this.crawling = this.crouch && this.onGround && dir !== 0 && !this.atk;
     if (this.crawling) { this.x += dir * 80 * dt; this.facing = dir; }
@@ -102,13 +110,13 @@ L4.Player = class extends L3.Player {
       if (ctl && I.pressed('switch')) { this.switchWeapon(); return; }
       if (this.ammo3.seed <= 0) { this.weapon = 'swatter'; return; }
       if (ctl && I.held('punch') && this.fireT <= 0) {
-        this.fireT = this.green ? 0.2 : 0.26; this.ammo3.seed--; this.shootT = 0.2;
+        this.fireT = this.green ? 0.22 : 0.2; this.ammo3.seed--; this.shootT = 0.2;
         const up = I.held('up'), base = up ? (I.held('left') || I.held('right') ? -0.8 : -1.45) : 0;
-        for (const a of [-0.34, -0.17, 0, 0.17, 0.34]) {
+        for (const a of this.green ? [-0.15, 0, 0.15] : [0]) {
           const ang = base + a, sp = 480;
           const s = new L3.Shot('juice', this.x + this.facing * 30, this.y - (this.crouch ? 28 : 48), this.facing);
           s.vx = Math.cos(ang) * sp * this.facing; s.vy = Math.sin(ang) * sp; if (up && base < -1.2) s.vx = Math.sin(a) * sp * 0.6 + this.facing * 20;
-          s.grav = 120; s.dmg = this.green ? 2 : 1; s.green = this.green; s.seed = true; s.pierce = this.green ? 1 : 0;
+          s.grav = 60; s.dmg = this.green ? 2 : 2; s.green = this.green; s.seed = true; s.pierce = this.green ? 1 : 0;
           world.projs.push(s);
         }
         Sound.play('squeak');
@@ -129,23 +137,26 @@ L4.Player = class extends L3.Player {
 {
   const drawOld = L3.Shot.prototype.draw;
   L3.Shot.prototype.draw = function (c, cx) {
-    if (this.kind === 'juice' && this.seed) { c.save(); c.translate(this.x - cx, this.y); c.rotate(Math.atan2(this.vy, this.vx) + Math.PI); if (this.green) Spr.drawC(c, 'moth2', 4, 0, 0, 0, 0.55); else Spr.draw(c, 'moth2', 4, 0, 3, 1, { scale: 0.55, flash: '#f6f6ee' }); c.restore(); return; }
+    if (this.kind === 'juice' && this.seed) { c.save(); c.translate(this.x - cx, this.y); c.rotate(Math.atan2(this.vy, this.vx) + Math.PI); if (this.green) Spr.drawC(c, 'moth2', 4, 0, 0, 0, 0.7); else Spr.draw(c, 'moth2', 4, 0, 3, 1, { scale: 0.7, flash: '#f6f6ee' }); c.restore(); return; }
     drawOld.call(this, c, cx);
   };
 }
 L4.drawHUD = function (c, pl, wd) {
-  Game.drawHUD(c, pl, wd);
   const R = Art.R;
-  const ws = [['swatter', 'МУХОБ.', pl.ammo3.swatter + '%'], ['fists', 'КУЛАКИ', ''], ['seed', 'О-3000', pl.hasSeed ? String(pl.ammo3.seed) : '—']];
-  ws.forEach(([wn, name, n], i) => {
-    const x = 174 + i * 62, sel = pl.weapon === wn, has = wn !== 'seed' || pl.hasSeed;
-    R(c, x - 1, 5, 60, 24, sel ? '#ffd84a' : '#111'); R(c, x, 6, 58, 22, sel ? '#3a3020' : '#1c1f24');
-    G.text(name, x + 29, 9, { size: 8, align: 'center', color: has ? (wn === 'seed' && pl.green ? '#9cff60' : '#f4f0e4') : '#555' });
-    G.text(n, x + 29, 18, { size: 8, align: 'center', color: has ? '#fff' : '#555' });
+  Game.drawHUD(c, pl, wd);
+  const ws = [['swatter', pl.ammo3.swatter + '%'], ['fists', ''], ['seed', pl.hasSeed ? String(pl.ammo3.seed) : '']];
+  ws.forEach(([wn, n], i) => {
+    const x = 174 + i * 56, sel = pl.weapon === wn, has = wn !== 'seed' || pl.hasSeed;
+    R(c, x - 1, 5, 54, 24, sel ? '#ffd84a' : '#111'); R(c, x, 6, 52, 22, sel ? '#3a3020' : '#1c1f24');
+    c.save(); if (!has) c.globalAlpha = 0.35;
+    if (wn === 'swatter') Art.item(c, 'swatter', x + 12, 17, -0.5, 0.8); else Spr.drawC(c, 'icons4', wn === 'fists' ? 0 : pl.green ? 2 : 1, x + 12, 17, 0, 0.9);
+    c.restore();
+    G.text(n, x + 24, 13, { size: 8, color: has ? '#fff' : '#666' });
   });
   const fc = pl.fartCool > 0 ? pl.fartCool / 9 : 0;
-  R(c, 362, 6, 40, 22, '#111'); R(c, 363, 7, 38, 20, fc > 0 ? '#1c2418' : '#2a4a1a');
-  G.text('ГАЗ', 382, 13, { size: 8, align: 'center', color: fc > 0 ? '#5a6a50' : '#b8ff70' });
+  R(c, 346, 6, 40, 22, '#111'); R(c, 347, 7, 38, 20, fc > 0 ? '#1c2418' : '#2a4a1a');
+  G.text('ГАЗ', 366, 13, { size: 8, align: 'center', color: fc > 0 ? '#5a6a50' : '#b8ff70' });
+  if (fc > 0) R(c, 347, 25, Math.round(38 * (1 - fc)), 2, '#8cd040');
 };
 
 // =====================================================================
@@ -156,7 +167,7 @@ L4.FOE = {
   sailor: { hp: 5, w: 26, h: 80, speed: 75, reach: 46, dmg: 9, score: 250, march: true, lines: ['Полундра!', 'Раз-два, левой!', 'Свистать всех наверх!', 'Пшёл вон с палубы!'] },
   sumo: { hp: 10, w: 50, h: 96, speed: 55, bounce: true, dmg: 14, score: 450, lines: ['Хаккейо-о-о!', 'Раздавлю, как пельмень!'] },
   gum: { hp: 6, w: 40, h: 84, speed: 60, gum: true, dmg: 9, score: 300, lines: ['Хочешь жвачку, пупсик?', 'Бабл-гам атака!', 'Чпок!'] },
-  zombie: { hp: 3, w: 26, h: 80, speed: 52, reach: 34, dmg: 7, score: 150, lines: ['Ы-ы-ы... танцуем...', 'Мозги-и... и коктейль...'] },
+  zombie: { hp: 3, w: 26, h: 80, speed: 120, reach: 38, dmg: 7, score: 150, lines: ['Ы-ы-ы... танцуем...', 'Мозги-и... и коктейль...', 'Ам-ам-ам!', 'Вовочка-а-а...', 'Скушаю!'] },
   eyes: { hp: 2, w: 30, h: 22, speed: 55, dark: true, dmg: 5, score: 200, lines: ['Ты мне так нравишься...', 'Какой брутальный!', 'Третьим будешь?', 'Давай дружить!', 'Я тебя давно заметил...', 'Не уходи-и-и...'] },
 };
 L4.Foe = class {
@@ -165,7 +176,7 @@ L4.Foe = class {
     Object.assign(this, { type, d, x, y, facing: -1, hp: Math.round(d.hp * (o.hpMul || 1)), st: 0, t: Math.random() * 5, state: 'idle', vx: 0, vy: 0, flash: 0, dieT: null, dead: false, cool: 0.8 + Math.random(), score: d.score, headH: d.h + 14, voice: 250 + Math.random() * 150, said: false, onGround: true, home: x, pair: 0 }, o);
     if (d.dark) this.baseY = y;
   }
-  get box() { const d = this.d; return d.dark ? { x: this.x - d.w / 2, y: this.y - d.h / 2, w: d.w, h: d.h } : { x: this.x - d.w / 2, y: this.y - d.h, w: d.w, h: d.h }; }
+  get box() { const d = this.d; if (this.zv === 9 && (this.state === 'crawl' || this.state === 'drop')) return { x: this.x - 16, y: this.y, w: 32, h: 70 }; return d.dark ? { x: this.x - d.w / 2, y: this.y - d.h / 2, w: d.w, h: d.h } : { x: this.x - d.w / 2, y: this.y - d.h, w: d.w, h: d.h }; }
   set(s) { this.state = s; this.st = 0; }
   hit(dmg, dir) {
     if (this.dieT != null) return false;
@@ -188,19 +199,22 @@ L4.Foe = class {
   update(dt, r) {
     const wd = r.world, d = this.d;
     this.t += dt; this.st += dt; if (this.flash > 0) this.flash -= dt; this.cool -= dt;
-    if (this.dieT != null) { this.dieT += dt; this.x += this.vx * dt; this.vx *= 0.95; if (!d.dark) this.fall(dt, wd); else this.y += 60 * dt; if (this.dieT > 1.6) this.dead = true; return; }
+    if (this.dieT != null) { this.dieT += dt; this.x += this.vx * dt; this.vx *= 0.95; if (!d.dark && (this.zv !== 9 || this.y < L4.GROUND)) this.fall(dt, wd); else this.y += 60 * dt; if (this.dieT > 1.6) this.dead = true; return; }
     const tg = this.target(r), dx = tg.x - this.x, adx = Math.abs(dx);
     const aware = adx < 380 && Math.abs(tg.y - this.y) < 160 && !tg.dead;
     const face = () => { this.facing = dx > 0 ? 1 : -1; };
     const talk = () => { if (!this.said && d.lines.length && Math.random() < 0.7) { this.said = true; G.say(this, U.choice(d.lines), 1.8); } };
     const hurtT = (dmg, from) => { if (tg.hurt) tg.hurt(dmg, from, wd); };
     if (this.state === 'hurt') { this.x += this.vx * dt; this.vx *= 0.85; this.fall(dt, wd); if (this.st > 0.3) this.set('chase'); return; }
+    if (this.type === 'zombie') { this.zombieAI(dt, r, tg, dx, adx, face, hurtT); return; }
     if (d.dark) { // влюблённые глаза гуляют парами, признаются в любви и лезут обниматься
-      if (!aware) { this.x = this.home + Math.sin(this.t * 0.6 + this.pair) * 60; this.y = this.baseY + Math.sin(this.t * 2) * 8; return; }
+      const inDark = tg.x > L4.DARK_X0 + 10;
+      if (!aware || !inDark) { this.x = this.home + Math.sin(this.t * 0.6 + this.pair) * 60; this.y = this.baseY + Math.sin(this.t * 2) * 8; return; }
       face();
       if (!this.said && adx < 200) { this.said = true; G.say(this, U.choice(d.lines), 2); }
-      if (this.state === 'hug') { this.x += this.vx * dt; this.y += this.vy * dt; if (U.overlap(this.box, tg.box)) hurtT(d.dmg, this.x); if (this.st > 0.6) { this.set('idle'); this.cool = U.rand(1.6, 2.6); this.said = false; } return; }
+      if (this.state === 'hug') { this.x = Math.max(L4.DARK_X0 + 40, this.x + this.vx * dt); this.y += this.vy * dt; if (U.overlap(this.box, tg.box)) hurtT(d.dmg, this.x); if (this.st > 0.6) { this.set('idle'); this.cool = U.rand(1.6, 2.6); this.said = false; } return; }
       this.x += U.clamp(dx, -d.speed, d.speed) * dt * 0.6; this.y = U.lerp(this.y, tg.y - 64 + Math.sin(this.t * 3 + this.pair) * 16, dt);
+      this.x = Math.max(this.x, L4.DARK_X0 + 40);
       if (this.cool <= 0 && adx < 150) { this.set('hug'); const a = Math.atan2(tg.y - 50 - this.y, dx); this.vx = Math.cos(a) * 220; this.vy = Math.sin(a) * 220; G.say(this, U.choice(['Обнимашки!', 'Иди ко мне!']), 1); }
       return;
     }
@@ -233,8 +247,47 @@ L4.Foe = class {
     if (adx > d.reach * 0.7) { this.x += this.facing * d.speed * dt; this.moving = true; } else this.moving = false;
     if (adx < d.reach && this.cool <= 0 && Math.abs(tg.y - this.y) < 40) this.set('wind');
   }
+  // зомби: 0 горничная, 1 медсестра, 2 охранник, 3 морячка, 4 толстушка, 5 сумоист, 6 бандана, 7 усач, 8 диско
+  zombieAI(dt, r, tg, dx, adx, face, hurtT) {
+    const wd = r.world, z = this.zv || 0;
+    if (z === 9) { this.ceilingAI(dt, r, tg, dx, adx, hurtT); return; }
+    const speed = [135, 130, 95, 110, 85, 70, 140, 125, 150][z], reach = z === 2 ? 50 : z === 5 ? 56 : 38, dmg = z === 2 ? 12 : z === 5 ? 14 : 7;
+    if (this.drop) { if (this.fall(dt, r.world)) { this.drop = false; G.shake(10, 0.4); Sound.play('boom'); FX.dust(this.x, this.y, 14); if (Math.abs(tg.x - this.x) < 60) hurtT(14, this.x); } else return; }
+    this.fall(dt, wd); face();
+    if (!this.said && adx < 260 && Math.random() < 0.02) { this.said = true; G.say(this, U.choice(this.d.lines), 1.4); }
+    if (this.state === 'wind') { this.moving = false; if (this.st > (z === 4 ? 0.8 : 0.25)) { this.set('attack');
+        if (z === 3) { wd.globs.push(new L4.Missile('brain', this.x + this.facing * 14, this.y - 60, dx / 0.7, -280)); Sound.play('throw'); }
+        else if (z === 4) { wd.globs.push(new L4.Missile('snot', this.x + this.facing * 20, this.y - 62, this.facing * 220, 0)); Sound.play('squeak'); }
+        else Sound.play(z === 2 ? 'punch' : 'squeak'); }
+      return; }
+    if (this.state === 'attack') {
+      if (z !== 3 && z !== 4 && this.st < 0.15) { const hb = { x: this.x + (this.facing > 0 ? 4 : -reach), y: this.y - 64, w: reach, h: 48 }; if (U.overlap(hb, tg.box) && hurtT(dmg, this.x) && z === 2 && tg.vx != null) tg.vx = this.facing * 260; }
+      if (this.st > 0.35) { this.set('chase'); this.cool = z === 3 || z === 4 ? U.rand(1.4, 2.2) : U.rand(0.5, 0.9); }
+      return;
+    }
+    const ranged = z === 3 || z === 4;
+    if (ranged && adx > 90 && adx < 330 && this.cool <= 0) { this.set('wind'); return; }
+    if (adx > reach * 0.7) { this.x += this.facing * speed * dt; this.moving = true; } else this.moving = false;
+    if (adx < reach && this.cool <= 0 && Math.abs(tg.y - this.y) < 40) this.set('wind');
+  }
+  ceilingAI(dt, r, tg, dx, adx, hurtT) {
+    const wd = r.world, CEIL = 62;
+    if (this.state === 'idle' || this.state === 'crawl') { this.state = 'crawl'; this.y = CEIL; this.facing = dx > 0 ? 1 : -1; this.x += this.facing * 90 * dt; if (adx < 40 && this.cool <= 0) { this.set('drop'); this.vy = 0; G.say(this, U.choice(['Сверху!', 'Ам!']), 0.8); } return; }
+    if (this.state === 'drop') { this.vy += 1500 * dt; this.y += this.vy * dt; if (this.y >= L4.GROUND) { this.y = L4.GROUND; this.set('bite'); G.shake(3, 0.15); } return; }
+    if (this.state === 'bite') { this.facing = dx > 0 ? 1 : -1; if (this.st > 0.1 && this.st < 0.3 && adx < 44) hurtT(9, this.x); if (this.st > 0.7) { this.set('leap'); this.vy = -700; } return; }
+    if (this.state === 'leap') { this.y += this.vy * dt; this.vy += 400 * dt; if (this.y <= CEIL) { this.y = CEIL; this.set('crawl'); this.cool = U.rand(1.5, 2.5); } return; }
+  }
   draw(c, cx, cy) {
     const x = this.x - cx, y = this.y - cy;
+    if (this.type === 'zombie' && this.zv === 9) {
+      const s = this.state, fl = this.flash > 0 ? '#ffffff' : null, a = this.dieT != null ? Math.max(0, 1 - this.dieT / 1.6) : 1;
+      if (this.dieT != null) Spr.draw(c, 'zharness', 7, x, y, this.facing, { alpha: a });
+      else if (s === 'crawl') Spr.drawC(c, 'zharness', Math.floor(this.t * 6) % 2, x, y + 44, 0, 1);
+      else if (s === 'drop') Spr.drawC(c, 'zharness', 2, x, y - 40, 0, 1);
+      else if (s === 'leap') Spr.draw(c, 'zharness', 6, x, y, 1, { flash: fl });
+      else Spr.draw(c, 'zharness', this.st < 0.15 ? 4 : 5, x, y, -this.facing, { flash: fl });
+      return;
+    }
     if (this.d.dark) { L4.drawEyes(c, x, y, this.facing, this.dieT != null ? 1 - this.dieT / 1.6 : 1, 'love'); return; }
     const sk = L4.SKIN[this.type === 'zombie' ? 'zomb' + (this.zv || 0) : this.type] || L4.SKIN.whip, s = this.state;
     const bounceAir = this.d.bounce && !this.onGround, crouch = this.d.bounce && this.onGround && this.cool < 0.25;
@@ -242,7 +295,7 @@ L4.Foe = class {
     const alpha = this.dieT != null && this.dieT > 1.1 ? (1.6 - this.dieT) / 0.5 : 1;
     const rot = this.dieT != null && sk.koRot ? -this.facing * Math.min(1.4, this.dieT * 5) : 0;
     const breathe = this.moving || this.dieT != null ? 1 : 1 + Math.sin(this.t * 3) * 0.015;
-    const sh = sk.shamble && this.dieT == null ? Math.sin(this.t * (this.moving ? 6 : 2.5) + (this.zv || 0)) : 0;
+    const sh = sk.shamble && this.dieT == null ? Math.sin(this.t * (this.moving ? 11 : 3) + (this.zv || 0)) : 0;
     c.save(); c.translate(x, y - (sk.shamble && this.moving ? Math.abs(sh) * 3 : 0)); c.rotate(sh * 0.07); c.scale(1, breathe);
     Spr.drawAnim(c, sk.set, anim, this.t, 0, 0, this.facing, { flash: this.flash > 0 ? '#ffffff' : null, alpha, rot });
     c.restore();
@@ -255,16 +308,18 @@ L4.drawEyes = function (c, x, y, facing, a = 1, kind) {
   c.restore();
 };
 L4.Missile = class {
-  constructor(kind, x, y, vx, vy) { Object.assign(this, { kind, x, y, vx, vy, dead: false, t: 0, rot: 0, grav: kind === 'gum' ? 0 : 800 }); }
+  constructor(kind, x, y, vx, vy) { Object.assign(this, { kind, x, y, vx, vy, dead: false, t: 0, rot: 0, grav: kind === 'gum' || kind === 'snot' ? 0 : 800 }); }
   update(dt, wd, pl, floorY = L4.GROUND, r) {
     this.t += dt; this.vy += this.grav * dt; this.x += this.vx * dt; this.y += this.vy * dt; this.rot += dt * 10;
-    if (this.kind === 'gum') this.y += Math.sin(this.t * 8) * 0.6;
+    if (this.kind === 'gum' || this.kind === 'snot') this.y += Math.sin(this.t * 8) * 0.6;
     const tgs = [pl, r && r.vova].filter(v => v && !v.dead);
-    for (const tg of tgs) if (U.overlap({ x: this.x - 8, y: this.y - 8, w: 16, h: 16 }, tg.box)) { this.dead = true; tg.hurt(this.kind === 'toy' ? 10 : 8, this.x, wd); if (this.kind === 'gum') G.say(tg, 'Фу! Липкая!', 1); return; }
+    for (const tg of tgs) if (U.overlap({ x: this.x - 8, y: this.y - 8, w: 16, h: 16 }, tg.box)) { this.dead = true; tg.hurt(this.kind === 'toy' ? 10 : 8, this.x, wd); if (this.kind === 'gum' || this.kind === 'snot') G.say(tg, this.kind === 'snot' ? 'Фу-у! Сопли!' : 'Фу! Липкая!', 1); return; }
     if (this.y > floorY || this.t > 3) { this.dead = true; FX.dust(this.x, floorY, 4); }
   }
   draw(c, cx, cy = 0) {
     if (this.kind === 'gum') { Spr.drawC(c, 'gumball', 0, this.x - cx, this.y - cy, 0, 1 + Math.sin(this.t * 12) * 0.08); return; }
+    if (this.kind === 'snot') { Art.item(c, 'acid3', this.x - cx, this.y - cy, Math.sin(this.t * 10) * 0.3, 1.6); return; }
+    if (this.kind === 'brain') { Spr.drawC(c, 'brain', Math.floor(this.t * 10) % 4, this.x - cx, this.y - cy, 0, 1); return; }
     Spr.drawC(c, 'l4fx', this.kind === 'cap' ? 3 : 4, this.x - cx, this.y - cy, this.kind === 'cap' ? this.rot * 0.3 : Math.sin(this.rot) * 0.4, 1);
   }
 };
@@ -282,9 +337,9 @@ L4.Patron = class {
   }
   draw(c, cx, cy = 0) {
     const x = this.x - cx; if (x < -80 || x > W + 80) return;
-    const beat = Math.abs(Math.sin(this.t * 4.2)), bob = this.dance ? -beat * 4 : -Math.abs(Math.sin(this.t * 6)) * 2;
-    c.save(); c.translate(x, this.y - cy + bob); c.rotate(this.dance ? Math.sin(this.t * 2.1) * 0.08 : 0); c.scale(1, this.dance ? 1 - beat * 0.03 : 1);
-    Spr.draw(c, this.sheet, this.fr, 0, 0, this.sheet === 'men' ? -this.facing : this.facing);
+    c.save(); c.translate(x, this.y - cy);
+    if (this.sheet === 'patrons') Spr.draw(c, 'dancers', this.fr + (Math.floor(this.t * 2.6) % 2) * 4, 0, 0, this.facing);
+    else Spr.draw(c, this.sheet, this.fr, 0, 0, this.sheet === 'men' ? -this.facing : this.facing);
     c.restore();
   }
 };
@@ -332,7 +387,7 @@ L4.Flirt = class {
       if (this.stT > 2 || this.freed(pl)) { pl.held = null; this.st = 'idle'; this.coolT = G.t + 3; G.say(this, 'Эх, до встречи на танцполе!', 1.2); }
     } else if (this.st === 'carry') {
       // несут над головой к выходу; можно вырваться
-      this.facing = -1; this.x -= 110 * dt; pl.x = this.x; pl.y = this.y - 96; pl.vy = 0;
+      this.facing = -1; this.x -= 110 * dt; pl.x = this.x; pl.y = this.y; pl.vy = 0;
       if (this.freed(pl)) { pl.held = null; pl.y = L4.GROUND; this.st = 'back'; this.stT = 0; pl.vy = -300; G.say(pl, 'Отстаньте, я по делу!', 1.2); }
       else if (this.stT > 2.4 || this.x < 90) { this.st = 'drop'; this.stT = 0; }
     } else if (this.st === 'drop') { // скидывают и уходят обратно
@@ -348,11 +403,13 @@ L4.Flirt = class {
     const y = this.y - cy, f = -this.facing; // листы мужчин смотрят влево
     if (this.kind === 'carrier') {
       if (this.st === 'idle') { const b = -Math.abs(Math.sin(this.t * 3)) * 2; Spr.draw(c, 'men', 0, x - 22, y + b, f); Spr.draw(c, 'men', 6, x + 22, y + b, f); return; }
-      const fr = this.st === 'carry' ? 5 : this.st === 'drop' ? 6 : 4;
-      Spr.draw(c, 'menact', fr, x, y - (this.st === 'run' || this.st === 'back' ? Math.abs(Math.sin(this.t * 14)) * 3 : 0), this.st === 'back' ? -f : f);
+      const fr = this.st === 'carry' ? 4 : this.st === 'drop' ? 6 : 4;
+      Spr.draw(c, 'menact', fr, x, y - (this.st === 'run' || this.st === 'back' || this.st === 'carry' ? Math.abs(Math.sin(this.t * 14)) * 3 : 0), this.st === 'back' ? -f : f);
+      if (this.st === 'carry') Spr.drawAnim(c, 'valera4', 'ko', G.t, x, y - 88, 1);
       return;
     }
-    const fr = this.st === 'grab' ? (Math.floor(this.t * 4) % 2 ? 3 : 2) : this.st === 'idle' ? (Math.floor(this.t * 2) % 2 ? 1 : 0) : 7;
+    if (this.st === 'grab') { Spr.draw(c, 'spin', Math.floor(this.stT * 8) % 6, x, y, 1); return; }
+    const fr = this.st === 'idle' ? (Math.floor(this.t * 2) % 2 ? 1 : 0) : 7;
     const beat = this.st === 'idle' ? -Math.abs(Math.sin(this.t * 4)) * 3 : 0;
     c.save(); c.translate(x, y + beat); c.rotate(this.st === 'idle' ? Math.sin(this.t * 2.2) * 0.05 : 0);
     Spr.draw(c, 'menact', fr, 0, 0, f); c.restore();
@@ -386,24 +443,24 @@ L4.Vova = class {
 // =====================================================================
 // ЛОКАЦИИ
 // =====================================================================
-L4.WALL1 = 900; L4.BACK_X = 2660; L4.CLUB_W = 3300; L4.STAIRS_X = 3080; L4.DOOR_X = 3220; L4.HATCH_Y = 147;
-L4.WC_X = 2860; L4.INNER_W = 3600; L4.DARK_X0 = 1800; L4.LEVER_X = 3480;
+L4.WALL1 = 900; L4.BACK_X = 2660; L4.CLUB_W = 3300; L4.STAIRS_X = 2660 + 512; L4.DOOR_X = 2660 + 580; L4.HATCH_Y = 150;
+L4.WC_X = 2660 + 434; L4.INNER_W = 3600; L4.DARK_X0 = 1800; L4.LEVER_X = 3480;
 L4.ZONES = {
   club: [{ name: 'РЕСЕПШЕН', x0: 0, x1: L4.WALL1, wall: 'club_lobby' }, { name: 'ТАНЦПОЛ', x0: L4.WALL1, x1: L4.BACK_X, wall: 'club_hall' }, { name: 'ЗА КУЛИСАМИ', x0: L4.BACK_X, x1: L4.CLUB_W, wall: 'club_back' }],
-  inner: [{ name: 'ЗАКРЫТЫЙ ЗАЛ', x0: 0, x1: L4.DARK_X0, wall: 'club_leather' }, { name: 'ЧЁРНАЯ КОМНАТА', x0: L4.DARK_X0, x1: L4.INNER_W, wall: 'club_hall' }],
+  inner: [{ name: 'ЗАКРЫТЫЙ ЗАЛ', x0: 0, x1: L4.DARK_X0, wall: 'club_leather' }, { name: 'ЧЁРНАЯ КОМНАТА', x0: L4.DARK_X0, x1: L4.INNER_W, wall: 'club_dark' }],
 };
 L4.PROP = {
-  pole: { sheet: 'cprops', fr: 0, crawl: true }, speakers: { sheet: 'cprops', fr: 1, solid: [30, 66] },
-  table: { sheet: 'cprops', fr: 2, solid: [60, 46] }, sofa: { sheet: 'cprops', fr: 3, solid: [104, 34] },
-  bar: { sheet: 'cprops', fr: 4, crawl: true }, dj: { sheet: 'cprops', fr: 5 }, rope: { sheet: 'cprops', fr: 6 },
-  table2: { sheet: 'cprops', fr: 7, solid: [50, 44] },
+  pole: { sheet: 'cprops', fr: 0, crawl: true, scale: 1.3 }, speakers: { sheet: 'cprops', fr: 1, solid: [40, 88], scale: 1.35 }, bigspk: { sheet: 'cprops', fr: 1, solid: [52, 118], scale: 1.8 },
+  bar: { sheet: 'cprops', fr: 4, crawl: true, scale: 1.2 }, rope: { sheet: 'cprops', fr: 6, scale: 1.3 },
+  sofaA: { sheet: 'panim', fr: 0, anim: 4, scale: 0.62 }, tableA: { sheet: 'panim', fr: 1, anim: 4, scale: 0.62 }, table2A: { sheet: 'panim', fr: 2, anim: 4, scale: 0.62 }, djA: { sheet: 'panim', fr: 3, anim: 4, scale: 0.7 },
+  slime: { sheet: 'acid', fr: 0, scale: 1.2 },
   wcdoor: { sheet: 'stalls', fr: 7 }, stall: { sheet: 'stalls', fr: 0 },
 };
 L4.Stage = class {
   constructor(level, kind, o = {}) {
     this.level = level; this.kind = kind; this.o = o;
     const W0 = kind === 'club' ? L4.CLUB_W : kind === 'inner' ? L4.INNER_W : 640; // tower/room/wc/boss — один экран
-    const wd = this.world = new Game.World(W0, kind === 'tower' ? L4.TOWER_H : H);
+    const wd = this.world = new Game.World(W0, H);
     this.W = W0;
     wd.stats = level.stats; wd.score = level.score; wd.addScore = n => { wd.score += n; level.score = wd.score; };
     wd.globs = []; wd.clouds = []; wd.pickups = []; wd.enemies = [];
@@ -411,7 +468,7 @@ L4.Stage = class {
     this.patrons = []; this.npcs = []; this.doors = []; this.props = []; this.walls = []; this.lights = []; this.dancers = [];
     this.fade = 1; this.hint = null; this.hintA = 0; this.hintT = 0; this.zoneIdx = -1; this.zoneT = 0; this.vova = null; this.dark = false;
     L4.BUILD[kind].call(this, wd, o);
-    for (const p of this.props) { const d = L4.PROP[p.type]; p.d = d; if (d.solid) { const [w, h] = d.solid; p.box = { x0: p.x - w / 2, x1: p.x + w / 2, top: (p.y || L4.GROUND) - h }; wd.addPlat({ x: p.box.x0, y: p.box.top, w, h: 8, oneway: true, look: 'none' }); } if (d.crawl) { const [w] = Spr.size(d.sheet, d.fr); p.cr = { x0: p.x - w / 2 + 8, x1: p.x + w / 2 - 8 }; } }
+    for (const p of this.props) { const d = L4.PROP[p.type]; p.d = d; if (p.scale == null && d.scale) p.scale = d.scale; if (d.solid) { const [w, h] = d.solid; p.box = { x0: p.x - w / 2, x1: p.x + w / 2, top: (p.y || L4.GROUND) - h }; wd.addPlat({ x: p.box.x0, y: p.box.top, w, h: 8, oneway: true, look: 'none' }); } if (d.crawl) { const [w] = Spr.size(d.sheet, d.fr); const ww = w * (p.scale || 1); p.cr = { x0: p.x - ww / 2 + 8, x1: p.x + ww / 2 - 8 }; } }
     const pl = this.player = new L4.Player(o.x != null ? o.x : 80, o.y != null ? o.y : L4.GROUND);
     if (level.carry) { Object.assign(pl.ammo3, level.carry.ammo3); pl.hasSeed = level.carry.hasSeed; pl.green = level.carry.green; pl.weapon = level.carry.weapon === 'chalk' ? 'swatter' : level.carry.weapon; pl.hp = Math.max(level.carry.hp || pl.hp, 40); }
     if (o.facing) pl.facing = o.facing;
@@ -435,7 +492,7 @@ L4.Stage = class {
   camTo(snap) {
     const wd = this.world, pl = this.player;
     const tx = U.clamp(pl.x - W * 0.42 + pl.facing * 24, 0, Math.max(0, this.W - W));
-    const ty = this.kind === 'tower' ? U.clamp(pl.y - 230, 0, L4.TOWER_H - H) : 0;
+    const ty = 0;
     wd.cam.x = snap ? tx : U.lerp(wd.cam.x, tx, 0.12); wd.cam.y = snap ? ty : U.lerp(wd.cam.y, ty, 0.12);
   }
   blockers(pl, prevX) {
@@ -480,7 +537,10 @@ L4.Stage = class {
     for (const cl of wd.clouds) { cl.t += dt; cl.dmgT = (cl.dmgT || 0) - dt; if (cl.dmgT <= 0) { cl.dmgT = 0.4; for (const e of wd.enemies) if (e.dieT == null && Math.abs(e.x - cl.x) < cl.r && e.hit(1, e.x > cl.x ? 1 : -1)) { wd.addScore(e.score); wd.stats.kills++; } } }
     wd.clouds = wd.clouds.filter(cl => cl.t < cl.life);
     if (this.onUpdate) this.onUpdate(dt);
+    if (this.onTick) this.onTick(dt);
+    if (this.zombieSpawner) this.spawnZombies(dt);
     this.nearDoor = null;
+    if (this.kind === 'tower' && pl.onGround && I.pressed('down') && Math.abs(pl.x - 540) < 50 && pl.controls) this.level.stairs(-1);
     for (const d of this.doors) if (Math.abs(pl.x - d.x) < 28 && Math.abs(pl.y - d.y) < 10 && pl.onGround) this.nearDoor = d;
     if (this.nearDoor && I.pressed('up') && pl.controls && !pl.dead && !pl.climb) this.nearDoor.use(this);
     const zs = L4.ZONES[this.kind];
@@ -494,7 +554,9 @@ L4.Stage = class {
     for (const p of this.props) {
       if ((p.layer || 'mid') !== layer) continue;
       const sx = p.x - cx; if (sx < -300 || sx > W + 300) continue;
-      Spr.draw(c, p.d.sheet, p.d.fr, sx, (p.y || L4.GROUND) - cy + 2, p.flip ? -1 : 1, { alpha: p.alpha, scale: p.scale });
+      const fr = p.d.anim ? p.d.fr + (Math.floor(G.t * 1.4 + p.x * 0.01) % 2) * p.d.anim : p.d.fr;
+      if (p.type === 'slime') { c.save(); c.translate(sx, (p.y || L4.GROUND) - cy + 6); c.scale(1, 0.45); Spr.draw(c, 'acid', Math.floor(G.t * 4 + p.x) % 4, 0, 0, 1, { scale: 1.2 }); c.restore(); continue; }
+      Spr.draw(c, p.d.sheet, fr, sx, (p.y || L4.GROUND) - cy + 2, p.flip ? -1 : 1, { alpha: p.alpha, scale: p.scale });
     }
   }
   drawDancers(c, cx, cy, layer) {
@@ -510,11 +572,12 @@ L4.Stage = class {
     for (const L of this.lights) {
       const sx = L.x - cx; if (sx < -200 || sx > W + 200) continue;
       const a = Math.sin(G.t * L.sp + L.ph) * 0.55, on = (Math.sin(G.t * 3.1 + L.ph * 2) + 1) / 2;
-      c.save(); c.translate(sx, 30); c.rotate(a); c.globalAlpha = 0.3 + on * 0.4;
-      Spr.drawC(c, 'pole', L.col ? 7 : 6, 0, 95, 0, 1); c.restore();
+      const img = L4.img[this.o.escort ? 'cone_g' : L.col ? 'cone_c' : 'cone_m']; if (!img) continue;
+      c.save(); c.translate(sx, 22); c.rotate(a); c.globalAlpha = 0.45 + on * 0.4;
+      c.drawImage(img, -img.width / 4, 8, img.width / 2, img.height / 2 * 1.4); c.restore();
     }
     c.restore();
-    for (const L of this.lights) { const sx = L.x - cx; if (sx > -40 && sx < W + 40) Spr.drawC(c, 'pole', 8, sx, 26, Math.sin(G.t * L.sp + L.ph) * 0.55, 1); }
+    for (const L of this.lights) { const sx = L.x - cx; if (sx > -40 && sx < W + 40) Spr.drawC(c, 'pole', 8, sx, 14, Math.sin(G.t * L.sp + L.ph) * 0.55, 0.8); }
   }
   draw(c) {
     const wd = this.world, cx = Math.round(wd.cam.x), cy = Math.round(wd.cam.y);
@@ -525,6 +588,7 @@ L4.Stage = class {
     this.drawProps(c, cx, cy, 'bg');
     for (const d of this.doors) d.draw(c, cx, cy, this.nearDoor === d);
     for (const p of this.patrons) p.draw(c, cx, cy);
+    for (const w of this.walls) { const [wx, sp] = Array.isArray(w) ? w : [w, 'cdoorwall'], sx = wx - cx; if (sx > -200 && sx < W + 200) Spr.draw(c, sp, 0, sx, H - cy, 1); }
     this.drawProps(c, cx, cy, 'mid');
     for (const p of wd.pickups) p.draw(c, cx, cy);
     for (const n of this.npcs) n.draw(c, cx, cy);
@@ -533,12 +597,11 @@ L4.Stage = class {
     for (const e of wd.enemies) if (!dark || !e.d || e.d.dark) e.draw(c, cx, cy);
     if (this.boss) this.boss.draw(c, cx, cy);
     if (this.vova) this.vova.draw(c, cx, cy);
-    this.player.draw(c, cx, cy);
+    if (!this.player.held && this.player.visible !== false) this.player.draw(c, cx, cy);
     this.drawProps(c, cx, cy, 'front');
     for (const g of wd.globs) g.draw(c, cx, cy);
     for (const cl of wd.clouds) L3.drawCloud(c, cl, cx, cy);
     c.save(); c.translate(0, -cy); for (const p of wd.projs) p.draw(c, cx); c.restore();
-    for (const w of this.walls) { const [wx, sp] = Array.isArray(w) ? w : [w, 'cdoorwall'], sx = wx - cx; if (sx > -200 && sx < W + 200) Spr.draw(c, sp, 0, sx, H - cy, 1); }
     if (this.drawOverlay) this.drawOverlay(c, cx, cy);
     c.save(); c.translate(-cx, -cy); FX.draw(c); c.restore();
     this.drawLights(c, cx);
@@ -549,6 +612,12 @@ L4.Stage = class {
     G.drawBubbles(c, cx, cy);
     c.restore();
     L4.drawHUD(c, this.player, wd);
+    if (this.boss && this.boss.dieT == null && !this.lairDark) {
+      const b = this.boss;
+      Art.R(c, 160, H - 26, 320, 16, '#111'); Art.R(c, 162, H - 24, 316, 12, '#3a1010');
+      Art.R(c, 162, H - 24, Math.round(316 * b.hp / b.maxHp), 12, b.hp < b.maxHp * 0.25 ? '#ff4020' : '#c85020');
+      G.text('БАЙКЕР', W / 2, H - 40, { align: 'center', color: '#ffb080', outline: true });
+    }
     if (this.vova) { Art.R(c, 440, 34, 190, 12, '#111'); Art.R(c, 442, 36, Math.round(186 * this.vova.hp / this.vova.maxHp), 8, '#5ab8ff'); G.text('ВОВА', 436, 35, { align: 'right', size: 8, color: '#8cd0ff' }); }
     const zs = L4.ZONES[this.kind];
     if (zs && this.zoneT > 0 && this.zoneIdx >= 0) G.bigTitle(c, zs[this.zoneIdx].name, Math.min(1, this.zoneT), { size: 24, y: 110, color: '#ff8ad8' });
@@ -557,10 +626,21 @@ L4.Stage = class {
     if (this.hint) Game.drawHint(c, this.hint, this.hintA);
     if (this.fade > 0) { c.fillStyle = `rgba(0,0,0,${this.fade})`; c.fillRect(0, 0, W, H); }
   }
-  isDark() { return (this.dark && this.player.x > L4.DARK_X0 + 20) || (this.boss && this.boss.blackout); }
+  spawnZombies(dt) {
+    const wd = this.world, pl = this.player, alive = wd.enemies.filter(e => e.dieT == null).length;
+    this.spawnT = (this.spawnT == null ? 1 : this.spawnT) - dt;
+    if (this.spawnT > 0 || alive >= 11) return;
+    this.spawnT = U.rand(0.7, 1.5);
+    const zv = Math.random() < 0.15 ? 9 : U.randi(0, 8), cx = wd.cam.x;
+    if (zv === 9) { wd.enemies.push(new L4.Foe('zombie', U.clamp(pl.x + (Math.random() < 0.5 ? -1 : 1) * U.rand(200, 320), 20, this.W - 20), 62, { zv, state: 'crawl' })); return; }
+    if (zv === 5) { const z = new L4.Foe('zombie', U.clamp(pl.x + U.rand(-120, 120), 20, this.W - 20), -40, { zv, drop: true }); z.onGround = false; wd.enemies.push(z); G.say(z, 'У-у-у!', 0.8); return; }
+    const side = Math.random() < 0.5 ? -1 : 1, x = U.clamp(side < 0 ? cx - 30 : cx + W + 30, 10, this.W - 10);
+    wd.enemies.push(new L4.Foe('zombie', x, L4.GROUND, { zv }));
+  }
+  isDark() { return (this.dark && this.player.x > L4.DARK_X0 + 20) || (this.boss && this.boss.blackout) || this.lairDark; }
   drawDark(c, cx, cy) {
     const wd = this.world, pl = this.player;
-    c.fillStyle = 'rgba(0,0,0,0.96)'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
     c.save(); c.translate(0, -cy); for (const p of wd.projs) p.draw(c, cx); c.restore();
     for (const e of wd.enemies) if (e.d && e.d.dark) e.draw(c, cx, cy);
     if (this.boss) L4.drawEyes(c, this.boss.x - cx + this.boss.facing * 6, this.boss.y - cy - 112, this.boss.facing, 1, 'angry');
@@ -573,66 +653,68 @@ L4.Door = class {
     const x = this.x - cx, y = this.y - cy;
     if (x < -80 || x > W + 80) return;
     if (this.tag) G.text(this.tag, x, y - 112, { align: 'center', size: 8, color: this.done ? '#6a6e74' : '#ffd84a', outline: true });
-    if (near) G.text('▲', x, y - 124, { align: 'center', size: 8, color: '#fff' });
+    if (near) Spr.drawC(c, 'uiicons', this.icon != null ? this.icon : 0, x, y - 118 - Math.abs(Math.sin(G.t * 5)) * 5, 0, 1);
   }
 };
 
-L4.BOSS_G = 296; L4.TOWER_FH = 300; L4.FLOORS = 3; L4.TOWER_H = L4.FLOORS * L4.TOWER_FH + 60;
+L4.HOTEL_G = 242; L4.BOSS_G = 296; L4.TOWER_FH = 300; L4.FLOORS = 3; L4.TOWER_H = L4.FLOORS * L4.TOWER_FH + 60;
 L4.floorY = i => L4.TOWER_H - 40 - i * L4.TOWER_FH;
 L4.BUILD = {
   club(wd, o) {
     wd.addPlat({ x: 0, y: L4.GROUND, w: L4.CLUB_W, h: 60, oneway: false, look: 'none' });
-    this.walls = [L4.WALL1, L4.BACK_X];
+    this.walls = [30, L4.WALL1, L4.BACK_X];
     const P = (type, x, o2 = {}) => this.props.push(Object.assign({ type, x }, o2));
-    P('rope', 360, { layer: 'bg' }); P('sofa', 560); P('speakers', 790);
-    P('table', 1090); P('pole', 1330, { layer: 'front' }); P('speakers', 1520); P('dj', 1640, { layer: 'bg' });
-    P('bar', 1880, { layer: 'front' }); P('table2', 2120); P('table', 2280, { flip: true });
+    const esc = !!o.escort;
+    // ресепшен: диван с гостем и хостес (задний план); колонки; канат
+    P('rope', 330, { layer: 'bg' }); if (!esc) P('sofaA', 560, { layer: 'bg', y: L4.GROUND - 16 }); P('speakers', 800);
+    // танцпол: столики с гостями — задний план; перепрыгнуть колонки; проползти под сценой шеста и стойкой
+    if (!esc) { P('tableA', 1060, { layer: 'bg', y: L4.GROUND - 18 }); P('djA', 1620, { layer: 'bg', y: L4.GROUND - 22 }); P('table2A', 2150, { layer: 'bg', y: L4.GROUND - 18 }); P('tableA', 2380, { layer: 'bg', y: L4.GROUND - 18, flip: true }); }
+    P('pole', 1320, { layer: 'front' }); P('speakers', 1500); P('bar', 1880, { layer: 'front' }); P('speakers', 2260);
+    if (esc) for (const x of [420, 700, 1100, 1450, 1700, 2100, 2500, 2800, 3050]) P('slime', x + U.rand(-40, 40), { layer: 'bg' });
+    this.fgItems = [{ sheet: 'fg2', fr: 1, x: 680, y: H + 20, par: 1.3, scale: 1.1 }, { sheet: 'fg2', fr: 3, x: 1250, y: H + 30, par: 1.3 }, { sheet: 'fg2', fr: 0, x: 1760, y: H + 34, par: 1.3 }, { sheet: 'fg2', fr: 4, x: 2250, y: H + 30, par: 1.3 }, { sheet: 'fg2', fr: 5, x: 2900, y: H + 30, par: 1.3 }];
     this.dancers = [
       { x: 1180, y: L4.GROUND - 40, par: 0.85, scale: 0.72, alpha: 0.8, layer: 'bg', ph: 0 },
       { x: 1760, y: L4.GROUND - 40, par: 0.85, scale: 0.72, alpha: 0.8, layer: 'bg', ph: 2 },
       { x: 1450, y: H + 70, par: 1.3, scale: 1.25, alpha: 1, layer: 'fg', ph: 4 },
-      { x: 2350, y: H + 70, par: 1.3, scale: 1.25, alpha: 1, layer: 'fg', ph: 1 },
     ];
-    this.cabaretX = 2480;
+    if (esc) this.dancers = [];
+    for (let x = 1000; x < 2600; x += 160) if (esc) this.lights.push({ x, sp: 0.9 + Math.random(), ph: Math.random() * 6 });
     for (let x = 1000; x < 2600; x += 160) this.lights.push({ x, sp: 0.6 + Math.random() * 0.8, ph: Math.random() * 6, col: Math.random() < 0.5 });
-    for (const x of [1000, 1240, 1600, 2050, 2200]) this.patrons.push(new L4.Patron(x));
+    [[1000, 0], [1240, 1], [1600, 2], [2050, 3], [2200, 1], [620, 2]].forEach(([x, fr]) => this.patrons.push(new L4.Patron(x, { fr })));
     this.npcs.push(new L4.Bouncer(1760, 'bouncerA', { guard: true, facing: -1 }), new L4.Bouncer(2010, 'bouncerB', { guard: true, facing: 1 }));
     this.npcs.push(new L4.Bouncer(L4.STAIRS_X - 46, 'bouncerB', { idle: 'lean', facing: 1 }));
     if (!this.level.stairsOpen) this.props.push({ type: 'rope', x: L4.STAIRS_X, layer: 'mid' });
-    this.doors.push(new L4.Door(L4.STAIRS_X, L4.GROUND, 'ЛЕСТНИЦА В ОТЕЛЬ', st => st.level.enterTower()));
+    this.doors.push(new L4.Door(L4.STAIRS_X, L4.GROUND, 'ЛЕСТНИЦА В ОТЕЛЬ', st => st.level.enterTower(), { icon: 1 }));
     this.doors.push(new L4.Door(L4.DOOR_X, L4.GROUND, 'ЖЕЛЕЗНАЯ ДВЕРЬ', st => st.level.metalDoor()));
-    this.doors.push(new L4.Door(L4.WC_X, L4.GROUND, 'ТУАЛЕТ', st => st.level.enterWC(), { tag: 'WC' }));
-    this.props.push({ type: 'wcdoor', x: L4.WC_X, layer: 'bg', scale: 1.25 });
+    this.doors.push(new L4.Door(L4.WC_X, L4.GROUND, 'ТУАЛЕТ', st => st.level.enterWC(), { icon: 4 }));
     if (!o.escort && !o.scene && !this.level.guided) this.guide = new L4.Guide(this);
-    if (o.escort) { for (let x = 500; x < 3100; x += U.randi(220, 320)) wd.enemies.push(new L4.Foe('zombie', x, L4.GROUND, { zv: U.randi(0, 8) })); this.patrons = []; this.npcs = []; }
+    if (o.escort) { this.patrons = []; this.npcs = []; this.zombieSpawner = true; }
     this.patronLines = ['Приве-е-ет, рыжий!', 'Классная фуражка!', 'Потанцуем?', 'Бар — налево!', 'Ты к кому, красавчик?'];
     this.drawOverlay = (c, cx, cy) => { const hx = L4.DOOR_X - cx; if (hx > -40 && hx < W + 40) Spr.drawC(c, 'hatch', this.hatchFr || 0, hx, L4.HATCH_Y - cy, 0, 1); };
   },
-  tower(wd) {
-    const lv = this.level;
-    for (let i = 0; i < L4.FLOORS; i++) {
-      const y = L4.floorY(i), lx = i % 2 ? 604 : 36;
-      if (i === 0) wd.addPlat({ x: 0, y, w: 640, h: 60, oneway: false, look: 'none' });
-      else wd.addPlat({ x: 0, y, w: 640, h: 10, oneway: true, look: 'none' });
-      if (i < L4.FLOORS - 1) wd.ladders.push({ x: lx - 18, y: L4.floorY(i + 1), w: 36, h: L4.TOWER_FH });
-      [165, 320, 475].forEach((x, k) => {
-        const id = i * 3 + k, room = lv.rooms[id];
-        this.doors.push(new L4.Door(x, y, 'НОМЕР ' + (i + 1) + '0' + (k + 1), st => st.level.enterRoom(id), { tag: room.cleared ? 'ПУСТО' : (i + 1) + '0' + (k + 1), done: room.cleared }));
-      });
-    }
-    this.doors.push(new L4.Door(560, L4.floorY(0), 'ВЫХОД В КЛУБ', st => st.level.leaveTower(), { tag: 'ВЫХОД' }));
+  tower(wd, o) {
+    const lv = this.level, fl = this.floor = o.floor || 0;
+    wd.addPlat({ x: 0, y: L4.HOTEL_G, w: 640, h: 60, oneway: false, look: 'none' });
+    [91, 224, 357].forEach((x, k) => {
+      const id = fl * 3 + k, room = lv.rooms[id];
+      this.doors.push(new L4.Door(x, L4.HOTEL_G, 'НОМЕР ' + (fl + 1) + '0' + (k + 1) + (room.cleared ? ' (ПУСТО)' : ''), st => st.level.enterRoom(id), { icon: 4 }));
+    });
+    // лестница справа: {up} — выше, {down} — ниже (на 1 этаже вниз — выход в клуб)
+    this.doors.push(new L4.Door(540, L4.HOTEL_G, fl < L4.FLOORS - 1 ? 'ЛЕСТНИЦА: ВВЕРХ / ВНИЗ' : 'ЛЕСТНИЦА: ВНИЗ', st => st.level.stairs(1), { icon: fl < L4.FLOORS - 1 ? 1 : 2 }));
+    this.fgItems = [{ sheet: 'fg2', fr: 6, x: 30, y: H + 30, scale: 1 }];
   },
   room(wd, o) {
     const r = o.room;
     wd.addPlat({ x: 0, y: L4.GROUND, w: 640, h: 60, oneway: false, look: 'none' });
-    this.doors.push(new L4.Door(60, L4.GROUND, 'ВЫЙТИ', st => st.level.leaveRoom(), { tag: 'ВЫХОД' }));
+    this.doors.push(new L4.Door(100, L4.GROUND, 'ВЫЙТИ', st => st.level.leaveRoom()));
+    this.fgItems = [{ sheet: 'fg2', fr: [7, 1, 5, 4][o.room.id % 4], x: 600, y: H + 30, scale: 1 }];
     if (!r.cleared) r.foes.forEach((t, k) => wd.enemies.push(new L4.Foe(t, k ? 560 : 300, L4.GROUND)));
     this.nerd = r.id % 4;
     this.roomData = r;
   },
   inner(wd, o) {
     wd.addPlat({ x: 0, y: L4.GROUND, w: L4.INNER_W, h: 60, oneway: false, look: 'none' });
-    this.walls = [[L4.DARK_X0, 'ddoorwall']];
+    this.walls = [[30, 'ddoorwall'], [L4.DARK_X0, 'ddoorwall']];
     this.dark = !o.lightsOn;
     if (!o.escort) {
       for (const x of [460, 1000, 1480]) this.npcs.push(new L4.Flirt(x, 'dancer'));
@@ -642,22 +724,25 @@ L4.BUILD = {
       this.patronLines = ['Какой мужчина!', 'Коктейль «Северное сияние» — за мой счёт!', 'Приходи ко мне на омлет!', 'Подмигну-ка я тебе...', 'Капитан, вы к нам надолго?', 'Какие плечи!'];
       let pair = 0;
       for (let x = 2000; x < 3300; x += U.randi(240, 320)) { const y = L4.GROUND - U.rand(60, 120); wd.enemies.push(new L4.Foe('eyes', x, y, { pair })); wd.enemies.push(new L4.Foe('eyes', x + 36, y + 6, { pair })); pair++; }
-      this.doors.push(new L4.Door(L4.LEVER_X, L4.GROUND, 'РУБИЛЬНИК', st => st.level.pullLever(), { tag: 'РУБИЛЬНИК' }));
-    } else for (let x = 300; x < 3400; x += U.randi(220, 320)) wd.enemies.push(new L4.Foe('zombie', x, L4.GROUND, { zv: U.randi(0, 8) }));
+      this.doors.push(new L4.Door(L4.LEVER_X, L4.GROUND, 'ДВЕРЬ', st => st.level.enterLair()));
+    }
     for (let x = 200; x < L4.DARK_X0; x += 200) this.lights.push({ x, sp: 0.5 + Math.random(), ph: Math.random() * 6, col: Math.random() < 0.5 });
+    this.fgItems = [{ sheet: 'fg2', fr: 2, x: 500, y: H + 30, par: 1.3 }, { sheet: 'fg2', fr: 5, x: 1300, y: H + 30, par: 1.3 }];
+    if (o.escort) { this.zombieSpawner = true; for (const x of [400, 900, 1500, 2300, 3000]) this.props.push({ type: 'slime', x, layer: 'bg' }); }
   },
-  wc(wd) {
+  wc(wd, o) {
     wd.addPlat({ x: 0, y: L4.GROUND, w: 640, h: 60, oneway: false, look: 'none' });
-    this.doors.push(new L4.Door(50, L4.GROUND, 'ВЫЙТИ', st => st.level.leaveWC(), { tag: 'ВЫХОД' }));
-    // кабинки: с дыркой, с Кешей, с бульбулятором, с «Осеменителем»
-    this.stalls = [{ x: 190, fr: 1 }, { x: 305, fr: 2, kesha: true }, { x: 420, fr: 4, hookah: true }, { x: 535, fr: this.level.gunTaken ? 6 : 5, gun: !this.level.gunTaken }];
-    this.fgItems = [{ sheet: 'stalls', fr: 7, x: 628, y: H + 30, scale: 1.5 }];
+    this.doors.push(new L4.Door(82, L4.GROUND, 'ВЫЙТИ', st => st.level.leaveWC()));
+    const esc = !!o.escort;
+    this.stalls = [{ x: 231, what: 'kesha', locked: esc }, { x: 336, what: 'hookah' }, { x: 443, what: 'bum' }, { x: 553, what: 'gun' }];
+    for (const s of this.stalls) { s.open = this.level.stallsOpen && this.level.stallsOpen[s.what] && !s.locked; this.doors.push(new L4.Door(s.x, L4.GROUND, s.locked ? 'ЗАПЕРТО' : 'ОТКРЫТЬ КАБИНКУ', st => st.level.openStall(s), { icon: s.locked ? 5 : 3 })); }
+    this.fgItems = [{ sheet: 'fg2', fr: 5, x: 20, y: H + 30, scale: 1.1 }];
   },
   boss(wd) {
     wd.addPlat({ x: -40, y: L4.BOSS_G, w: 720, h: 60, oneway: false, look: 'none' });
     this.platsB = [[22, 212, 160], [456, 212, 164], [222, 116, 196]];
     for (const [x, y, w] of this.platsB) wd.addPlat({ x, y, w, h: 10, oneway: true, look: 'none' });
-    for (const x of [130, 320, 510]) this.props.push({ type: 'speakers', x, y: L4.BOSS_G });
+    for (const x of [52, 588]) this.props.push({ type: 'bigspk', x, y: L4.BOSS_G });
     this.floorY = L4.BOSS_G;
   },
 };
@@ -673,29 +758,28 @@ L4.drawWallStrip = function (c, key, x0, x1, cx, cy, tint) {
 };
 L4.DRAW_BG = {
   wc(c) {
-    if (L4.img.club_wc) c.drawImage(L4.img.club_wc, 0, 0, W, H);
-    for (const s of this.stalls) Spr.draw(c, 'stalls', s.kesha ? (Math.floor(G.t * 0.8) % 2 ? 3 : 2) : s.fr, s.x, L4.GROUND + 4, 1);
-  },
-  club(c, cx) {
-    for (const z of L4.ZONES.club) if (z.wall !== 'club_back') L4.drawWallStrip(c, z.wall, z.x0, z.x1, cx, 0, null);
-    const bx = L4.BACK_X - cx; if (bx < W && L4.img.club_back) c.drawImage(L4.img.club_back, bx, 0, W, H);
-    const kx = this.cabaretX - cx; if (kx > -200 && kx < W + 200) Spr.draw(c, 'cabaret', Math.floor(G.t * 3) % 4, kx, L4.GROUND - 18, 1, { scale: 1.05 });
-  },
-  tower(c, cx, cy) {
-    for (let i = 0; i < L4.FLOORS; i++) {
-      const y = L4.floorY(i);
-      if (L4.img.club_floor) c.drawImage(L4.img.club_floor, -cx, y - L4.GROUND - cy, W, H);
-      G.text('ЭТАЖ ' + (i + 1), 320, y - cy - 250, { align: 'center', size: 8, color: '#ff8ad8', outline: true });
+    if (L4.img.club_wc2) c.drawImage(L4.img.club_wc2, 0, 0, W, H);
+    for (const s of this.stalls) {
+      if (!s.open) continue;
+      const fr = s.what === 'hookah' ? 1 : s.what === 'gun' ? (this.level.gunTaken ? 0 : 2) : s.what === 'bum' ? 3 + Math.floor(G.t * 1.2) % 2 : 0;
+      Spr.draw(c, 'stalls2', fr, s.x, 250, 1, { scale: 0.86 });
+      if (s.what === 'kesha') Spr.drawAnim(c, 'kesha4', Math.floor(G.t * 0.7) % 2 ? 'thumbs' : 'sniff', G.t, s.x, 248, 1, { scale: 0.9 });
     }
   },
-  room(c) { const r = this.roomData; c.save(); c.filter = `hue-rotate(${r.hue}deg) saturate(${r.sat})`; if (L4.img.club_room) c.drawImage(L4.img.club_room, 0, 0, W, H); c.restore(); Spr.draw(c, 'nerds', this.nerd + (Math.floor(G.t * 1.2 + this.nerd) % 2) * 4, 430, L4.GROUND + 6, 1); },
+  club(c, cx) {
+    for (const z of L4.ZONES.club) if (z.wall !== 'club_back') L4.drawWallStrip(c, this.o.escort && L3.img[z.wall + '_z'] ? z.wall + '_z' : z.wall, z.x0, z.x1, cx, 0, null);
+    const bx = L4.BACK_X - cx; if (bx < W && L4.img.club_back3) c.drawImage(L4.img.club_back3, bx, 0, W, H);
+    if (bx < W && bx > -320) Spr.draw(c, 'cabstage', this.o.escort ? 3 : [0, 1, 0, 2, 0, 3][Math.floor(G.t * 2.4) % 6], bx + 150, L4.GROUND - 14, 1, { scale: 0.62 });
+  },
+  tower(c) { if (L4.img.hotel_floor2) c.drawImage(L4.img.hotel_floor2, 0, 0, W, H); G.text('ЭТАЖ ' + (this.floor + 1), 20, 44, { size: 8, color: '#ff8ad8', outline: true }); },
+  room(c) { const r = this.roomData; const img = L4.img['room' + (r.id % 4)]; if (img) c.drawImage(img, 0, 0, W, H); Spr.draw(c, 'nerds', this.nerd + (Math.floor(G.t * 1.2 + this.nerd) % 2) * 4, 430, L4.GROUND + 6, 1); },
   inner(c, cx) {
-    for (const z of L4.ZONES.inner) L4.drawWallStrip(c, z.wall, z.x0, z.x1, cx, 0, z.x0 > 0 ? 'rgba(0,0,0,0.5)' : null);
+    for (const z of L4.ZONES.inner) L4.drawWallStrip(c, this.o.escort && L3.img[z.wall + '_z'] ? z.wall + '_z' : z.wall, z.x0, z.x1, cx, 0, z.x0 > 0 && !this.o.escort ? 'rgba(0,0,0,0.5)' : null);
     if (this.dark) { const dx0 = L4.DARK_X0 - cx; if (dx0 < W) { c.fillStyle = '#000'; c.fillRect(Math.max(0, dx0), 0, W, H); } }
-    const lx = L4.LEVER_X - cx; if (lx > -40 && lx < W + 40) { c.save(); c.translate(lx, L4.GROUND - 40); if (this.lever) c.scale(1, -1); Spr.draw(c, 'l4fx', 7, 0, this.lever ? 40 : 0, 1); c.restore(); }
   },
   boss(c) {
     if (L4.img.biker_bg) c.drawImage(L4.img.biker_bg, 0, 0, W, H);
+    c.save(); c.translate(70, 170); if (this.level.leverOn) c.scale(1, -1); Spr.draw(c, 'l4fx', 7, 0, this.level.leverOn ? 40 : 0, 1); c.restore();
     if (!this.level.vovaFree) Spr.drawAnim(c, 'vova', 'chained', G.t, 320, L4.BOSS_G - 150, 1, { alpha: 0.95 });
     else if (this.level.bikerDown) Spr.drawAnim(c, 'biker', 'ko', G.t, this.level.bikerDown, L4.BOSS_G, -1);
   },
@@ -706,7 +790,7 @@ L4.DRAW_BG = {
 // =====================================================================
 L4.Biker = class {
   constructor(st) {
-    Object.assign(this, { st, x: 520, y: L4.BOSS_G, vx: 0, vy: 0, facing: -1, hp: Math.round(160 * (G.BOSS_MULT || 1)), t: 0, s: 'idle', stT: 0, cool: 1.5, onGround: true, flash: 0, headH: 140, voice: 110, dieT: null, waves: [], rays: [], blackout: false, blackT: 0 });
+    Object.assign(this, { st, x: 520, y: L4.BOSS_G, vx: 0, vy: 0, facing: -1, hp: Math.round(280 * (G.BOSS_MULT || 1)), t: 0, s: 'idle', stT: 0, cool: 1.5, onGround: true, flash: 0, headH: 140, voice: 110, dieT: null, waves: [], rays: [], blackout: false, blackT: 0 });
     this.maxHp = this.hp;
   }
   get box() { return { x: this.x - 26, y: this.y - 126, w: 52, h: 126 }; }
@@ -735,9 +819,17 @@ L4.Biker = class {
     this.x = U.clamp(this.x, 34, 606); if (this.y > L4.BOSS_G) { this.y = L4.BOSS_G; this.vy = 0; this.onGround = true; } if (this.y < 40) this.y = 40;
     if (U.overlap(this.box, pl.box) && this.s === 'charge') pl.hurt(14, this.x, wd);
     this.cool -= dt;
-    const rage = this.hp < this.maxHp * 0.25;
-    for (const w of this.waves) { w.x += w.dir * 190 * dt; w.t += dt; if (!pl.dead && Math.abs(pl.x - w.x) < 14 && pl.y > L4.BOSS_G - 40) pl.hurt(9, w.x - w.dir * 20, wd); }
-    this.waves = this.waves.filter(w => w.x > -20 && w.x < 660);
+    const rage = this.hp < this.maxHp * 0.3, fast = this.hp < this.maxHp * 0.6 ? 0.7 : 1;
+    for (const w of this.waves) {
+      w.t += dt;
+      if (w.t < 10) { // преследуют Валеру
+        const tx = pl.x, ty = pl.y - 40, a = Math.atan2(ty - w.y, tx - w.x), sp = 95;
+        w.vx = U.lerp(w.vx, Math.cos(a) * sp, dt * 1.6); w.vy = U.lerp(w.vy, Math.sin(a) * sp, dt * 1.6);
+        if ((w.hitT = (w.hitT || 0) - dt) <= 0 && !pl.dead && Math.hypot(pl.x - w.x, pl.y - 40 - w.y) < 20) { w.hitT = 1; pl.hurt(8, w.x, wd); G.shake(3, 0.15); }
+      } else { w.vy -= 200 * dt; } // улетают
+      w.x += w.vx * dt; w.y += w.vy * dt;
+    }
+    this.waves = this.waves.filter(w => w.y > -60 && w.t < 14);
     this.rays = [];
     switch (this.s) {
       case 'idle':
@@ -753,13 +845,13 @@ L4.Biker = class {
           else this.set('taunt');
         }
         break;
-      case 'charge': if (this.stT > 1.1 || this.x <= 36 || this.x >= 604) { this.vx = 0; this.set('idle'); this.cool = U.rand(0.8, 1.4); } break;
+      case 'charge': if (this.stT > 1.1 || this.x <= 36 || this.x >= 604) { this.vx = 0; this.set('idle'); this.cool = U.rand(0.5, 1) * fast; } break;
       case 'jump': if (this.onGround && this.stT > 0.3) { this.vx = 0; this.set('idle'); this.cool = U.rand(0.5, 1); } break;
       case 'sing':
         this.vx = 0;
         if (this.stT - dt <= 0) G.say(this, U.choice(['♪ Я — байкер, я — ветер! ♪', '♪ Мой гараж — мой дом! ♪', '♪ Мото-мото-любовь! ♪']), 2.2);
         if (Math.random() < dt * 6) G.shake(3, 0.15);
-        if (this.stT > 0.4 && Math.floor(this.stT * 1.2) !== Math.floor((this.stT - dt) * 1.2)) { for (const p of st.props) this.waves.push({ x: p.x - 20, dir: -1, t: 0 }, { x: p.x + 20, dir: 1, t: 0 }); Sound.play('boom'); }
+        if (this.stT > 0.4 && Math.floor(this.stT * 1.2) !== Math.floor((this.stT - dt) * 1.2) && this.waves.length < 6) { for (const p of st.props) this.waves.push({ x: p.x, y: L4.BOSS_G - 80, vx: p.x < 320 ? 120 : -120, vy: -30, t: 0 }); Sound.play('boom'); G.shake(5, 0.3); }
         if (this.stT > 2.8) { this.set('idle'); this.cool = U.rand(1, 1.6); }
         break;
       case 'remote':
@@ -772,9 +864,9 @@ L4.Biker = class {
         const [mx, my] = this.mouth(), want = Math.atan2(pl.y - 50 - my, pl.x - mx);
         if (this.aim == null) this.aim = want;
         let dA = want - this.aim; while (dA > Math.PI) dA -= Math.PI * 2; while (dA < -Math.PI) dA += Math.PI * 2;
-        this.aim += U.clamp(dA, -dt * 0.9, dt * 0.9);
-        if (this.stT > 0.7 && this.stT < 2.2) { const ray = this.castRay(this.aim); this.rays.push(ray); if (!pl.dead && this.rayHits(ray, pl)) pl.hurt(11, this.x, wd); if (!this.snd) { this.snd = true; Sound.play('steam'); } }
-        if (this.stT > 2.4) { this.snd = false; this.aim = null; this.set('idle'); this.cool = U.rand(1, 1.6); }
+        this.aim += U.clamp(dA, -dt * 1.3, dt * 1.3);
+        if (this.stT > 0.7 && this.stT < 2.2) { const ray = this.castRay(this.aim); this.rays.push(ray); if (!pl.dead && this.rayHits(ray, pl)) pl.hurt(13, this.x, wd); if (!this.snd) { this.snd = true; Sound.play('steam'); } }
+        if (this.stT > 2.4) { this.snd = false; this.aim = null; this.set('idle'); this.cool = U.rand(0.6, 1.1) * fast; }
         break;
       }
       case 'taunt':
@@ -801,7 +893,7 @@ L4.Biker = class {
     if (s === 'taunt' && (G.t * 6 | 0) % 2) G.text('x3', this.x - this.facing * 26 - cx, this.y - 80 - cy, { align: 'center', size: 16, color: '#ffd84a', outline: true });
     if (s === 'rainbow' && this.stT < 0.7 && this.aim != null) { const r = this.castRay(this.aim); c.save(); c.globalAlpha = 0.3 + Math.sin(G.t * 30) * 0.2; L4.drawRay(c, r, cx, cy, 0.25); c.restore(); }
     for (const r of this.rays) L4.drawRay(c, r, cx, cy, 1);
-    for (const w of this.waves) Spr.draw(c, 'l4fx2', 3, w.x - cx, L4.BOSS_G - 4 - cy, w.dir, { alpha: Math.max(0, 1 - w.t / 3) });
+    for (const w of this.waves) { c.save(); c.translate(w.x - cx, w.y - cy); c.rotate(Math.atan2(w.vy, w.vx)); c.globalAlpha = w.t > 10 ? Math.max(0, 1 - (w.t - 10) / 3) : 1; Spr.drawC(c, 'l4fx2', 3, 0, 0, 0, 1 + Math.sin(w.t * 8) * 0.1); c.restore(); }
   }
 };
 L4.drawRay = function (c, r, cx, cy, sc) {
@@ -831,7 +923,7 @@ L4.Level = class {
   start(opts = {}) {
     if (opts.boss) { this.carry = { ammo3: { swatter: 100, chalk: 0, seed: 150 }, hasSeed: true, green: false, weapon: 'seed' }; this.startBoss(); return; }
     if (opts.escort) { this.carry = { ammo3: { swatter: 100, chalk: 0, seed: 200 }, hasSeed: true, green: true, weapon: 'seed' }; this.startEscort(); return; }
-    if (opts.tower) { this.stairsOpen = true; this.setStage('tower', { x: 520, y: L4.floorY(0) }); return; }
+    if (opts.tower) { this.stairsOpen = true; this.setStage('tower', { x: 480, y: L4.HOTEL_G, floor: 0 }); return; }
     if (opts.inner) { this.carry = { ammo3: { swatter: 100, chalk: 0, seed: 150 }, hasSeed: true, weapon: 'seed' }; this.setStage('inner', { x: 80 }); return; }
     this.playScene(L4.sceneIntro(this), () => { this.setStage('club', { x: 120 }); this.stage.say('Иди за горничной. {jump} — прыжок, {down} — присесть и ползти, {punch} — удар, {switch} — оружие.', 7); Music.play('epic'); });
   }
@@ -844,11 +936,16 @@ L4.Level = class {
   restartStage() { const [k, o] = this.stageArgs; if (this.carry) this.carry.hp = 100; const r = this.stage.roomData; if (k === 'boss') { this.startBoss(); return; } this.stage = null; this.setStage(k, Object.assign({}, o)); if (r && k === 'room') { this.stage.roomData = r; this.stage.onUpdate = dt => this.roomTick(dt); } }
   enterTower() {
     if (!this.stairsOpen) { const b = this.stage.npcs.find(n => n.idle === 'lean'); if (b) { b.pose = 'shove'; b.poseT = 0.6; G.say(b, 'Только для гостей отеля. Номер снимал? Нет? Гуляй.', 2.2); } return; }
-    this.setStage('tower', { x: 520, y: L4.floorY(0) }); if (!this.hasPassword) this.stage.say('Три этажа, девять номеров. Где-то тут записан пароль. Лестницы — {up}/{down}.', 6);
+    this.setStage('tower', { x: 500, y: L4.HOTEL_G, floor: 0 }); if (!this.hasPassword) this.stage.say('Три этажа, девять номеров. Где-то тут записан пароль. Лестница справа: {up} — выше, {down} — ниже.', 6);
+  }
+  stairs(dir) {
+    const fl = this.stage.floor || 0;
+    if (G.Input.held('down') || dir < 0) { if (fl === 0) { this.leaveTower(); return; } this.setStage('tower', { x: 520, y: L4.HOTEL_G, floor: fl - 1, facing: -1 }); Sound.play('jump'); return; }
+    if (fl < L4.FLOORS - 1) { this.setStage('tower', { x: 520, y: L4.HOTEL_G, floor: fl + 1, facing: -1 }); Sound.play('jump'); }
   }
   leaveTower() { this.setStage('club', { x: L4.STAIRS_X, facing: -1 }); if (this.hasPassword) this.stage.say('Пароль есть! Теперь — к железной двери.', 4); }
   enterRoom(id) {
-    const r = this.rooms[id], st = this.stage; this.towerPos = { x: st.player.x, y: st.player.y };
+    const r = this.rooms[id], st = this.stage; this.towerPos = { x: st.player.x, y: st.player.y, floor: st.floor };
     this.setStage('room', { x: 90, room: r, facing: 1 });
     if (!r.cleared) G.say(this.stage.player, U.choice(['Опа... У вас тут весело.', 'Здрасьте! Я от Вовы.', 'Кажется, я не вовремя.']), 1.8);
     this.stage.onUpdate = dt => this.roomTick(dt);
@@ -866,7 +963,7 @@ L4.Level = class {
   leaveRoom() {
     const st = this.stage;
     if (!st.roomData.cleared) { G.say(st.player, 'Не выпускают! Сначала разберусь с ними.', 1.6); st.say('Из номера не уйти, пока не победишь обоих.', 3); return; }
-    const p = this.towerPos || { x: 320, y: L4.floorY(0) }; this.setStage('tower', { x: p.x, y: p.y });
+    const p = this.towerPos || { x: 320, y: L4.HOTEL_G, floor: 0 }; this.setStage('tower', { x: p.x, y: L4.HOTEL_G, floor: p.floor || 0 });
   }
   metalDoor() {
     const st = this.stage; st.carry();
@@ -877,26 +974,38 @@ L4.Level = class {
     });
   }
   enterWC() {
-    this.setStage('wc', { x: 90, facing: 1 });
+    const esc = !!this.stage.vova, hp = esc ? this.stage.vova.hp : 0;
+    this.setStage('wc', { x: 110, facing: 1, escort: esc });
     const st = this.stage;
-    st.onUpdate = () => {
-      const pl = st.player;
-      for (const s of st.stalls) {
-        if (Math.abs(pl.x - s.x) > 40) continue;
-        if (s.kesha && !s.said) { s.said = true; G.say({ x: s.x, y: L4.GROUND, headH: 110, voice: 210 }, 'О! Валера! Ну Валера — настоящий мужчина! *шмыг*', 2.6); }
-        if (s.hookah && !s.said) { s.said = true; G.say(pl, 'Вовин бульбулятор! Значит, он тут был...', 2.2); }
-        if (s.gun && !this.gunTaken) {
-          this.gunTaken = true; s.gun = false; s.fr = 6;
-          pl.hasSeed = true; pl.ammo3.seed = (pl.ammo3.seed || 0) + 150; pl.weapon = 'seed';
-          Sound.play('checkpoint'); G.flash(0.2, '#ffffff'); FX.popText(s.x, L4.GROUND - 120, '«ОСЕМЕНИТЕЛЬ 3000»', '#ffffff');
-          G.say(pl, 'Селёдкой пахнет... «Осеменитель 3000» — Вовина наработка!', 3);
-        }
-      }
+    if (esc) { this.addVova(true); st.vova.hp = hp; st.zombieSpawner = true; }
+    st.onTick = () => {
+      if (esc && Math.random() < 1 / 240) G.say({ x: 231, y: 250, headH: 110, voice: 210 }, U.choice(['А-а-а! Они лезут!', 'Наташка! Забери меня отсюда скорее!', 'Наташ, я больше не буду нюхать! Спаси!', 'Не открывайте, тут занято-о-о!']), 2.2, { shout: true });
+      const bum = st.stalls.find(s => s.what === 'bum' && s.open); if (bum && Math.random() < 1 / 200) { Sound.play('fart'); G.say({ x: bum.x, y: 250, headH: 100, voice: 120 }, U.choice(['*храп*', 'Хр-р-р... *пук*']), 1.2); }
     };
-    if (!this.gunTaken) G.say(st.player, 'Фу-у... Ну и где тут Вова «химичил»?', 2);
+    if (!this.gunTaken && !esc) G.say(st.player, 'Фу-у... Ну и где тут Вова «химичил»? Проверю кабинки.', 2.2);
   }
-  leaveWC() { this.setStage('club', { x: L4.WC_X, facing: 1 }); }
-  pullLever() { this.stage.carry(); this.playScene(L4.sceneLever(this), () => this.startBoss()); }
+  openStall(s) {
+    const st = this.stage, pl = st.player;
+    if (s.locked) { Sound.play('clank'); G.say(pl, 'Заперто. Кеша, держись там!', 1.4); return; }
+    if (s.open) return;
+    s.open = true; Sound.play('door'); (this.stallsOpen || (this.stallsOpen = {}))[s.what] = true;
+    if (s.what === 'kesha') G.say({ x: s.x, y: 250, headH: 110, voice: 210 }, 'О! Валера! Ну Валера — настоящий мужчина! *шмыг*', 2.6);
+    if (s.what === 'hookah') G.say(pl, 'Вовин самодельный бульбулятор! Значит, он тут был...', 2.4);
+    if (s.what === 'bum') { Sound.play('fart'); st.world.clouds.push({ x: s.x, y: 230, t: 0, life: 2.5, r: 50, row: 0 }); G.say(pl, 'Фу-у-у! Бомж! Закрою обратно...', 2); }
+    if (s.what === 'gun' && !this.gunTaken) {
+      this.gunTaken = true; pl.hasSeed = true; pl.ammo3.seed = (pl.ammo3.seed || 0) + 150; pl.weapon = 'seed';
+      Sound.play('checkpoint'); FX.popText(s.x, L4.GROUND - 130, '«ОСЕМЕНИТЕЛЬ 3000»', '#ffffff');
+      G.say(pl, 'Селёдкой пахнет... «Осеменитель 3000» — Вовина наработка!', 3);
+    }
+  }
+  leaveWC() { const esc = !!this.stage.vova, hp = esc && this.stage.vova.hp; this.setStage('club', { x: L4.WC_X, facing: -1, escort: esc }); if (esc) { this.addVova(); this.stage.vova.hp = hp; } }
+  enterLair() {
+    this.setStage('boss', { x: 150, y: L4.BOSS_G, facing: -1 });
+    const st = this.stage; st.lairDark = true;
+    st.doors.push(new L4.Door(70, L4.BOSS_G, 'РУБИЛЬНИК', s2 => s2.level.pullLever(), { icon: 3 }));
+    st.say('Темно, хоть глаз выколи... На стене слева что-то нащупывается — рубильник?', 5);
+  }
+  pullLever() { this.stage.carry(); this.leverOn = true; this.playScene(L4.sceneLever(this), () => this.startBoss()); }
   startBoss() {
     this.setStage('boss', { x: 80, y: L4.BOSS_G });
     const st = this.stage; st.boss = new L4.Biker(st);
@@ -954,10 +1063,11 @@ L4.Level = class {
 // =====================================================================
 L4.sceneStage = (level, kind, o) => { const st = new L4.Stage(level, kind, Object.assign({ scene: true }, o)); st.fade = 0; level.drawScene = c => st.draw(c); level.updateScene = dt => { for (const p of st.patrons) p.update(dt, st); for (const n of st.npcs) if (n.t != null) n.t += dt; st.world.t += dt; }; return st; };
 L4.sceneIntro = level => function* () {
-  const st = L4.sceneStage(level, 'club', { x: 60 }); st.player.controls = false;
+  const st = L4.sceneStage(level, 'club', { x: 60 }); st.player.controls = false; st.player.animSet = 'valera3';
+  if (G.portraits.valera3) G.portraits.valera = G.portraits.valera3;
   const v = st.player, maid = new G.Actor('maid', 300, L4.GROUND, -1), nurse = new G.Actor('nurse', 350, L4.GROUND, -1);
   st.patrons.push({ update() {}, draw: (c, cx) => { maid.draw(c, cx, 0); nurse.draw(c, cx, 0); } });
-  yield* Scene.moveTo(v, 230, 90, 'walk'); v.setAnim('capGrab');
+  yield* Scene.moveTo(v, 230, 90, 'walk'); v.animSet = 'valera4'; v.setAnim('capGrab');
   yield 0.5;
   yield* Scene.say('valera', 'Так... В приличное заведение в арбузе не ходят.', v);
   v.setAnim('capOff'); yield 0.5;
@@ -966,9 +1076,9 @@ L4.sceneIntro = level => function* () {
   st.patrons.push({ update() {}, draw: (c, cx) => { if (melon.y < L4.GROUND - 6) { Art.item(c, 'melon', melon.x - cx, melon.y, melon.rot, 1.1); } } });
   yield* Scene.tween(0.8, k => { melon.vy += 900 * G.dt; melon.x += melon.vx * G.dt; melon.y += melon.vy * G.dt; melon.rot += G.dt * 9; });
   Sound.play('splash');
-  v.setAnim('capHold'); yield 0.6;
+  v.animSet = 'valera4'; v.setAnim('capHold'); yield 0.6;
   v.setAnim('capOn'); Sound.play('pickup'); yield 0.5;
-  v.setAnim('capFix');
+  v.setAnim('capFix'); if (G.portraits.valera4) G.portraits.valera = G.portraits.valera4;
   yield* Scene.say('valera', 'Вот. Совсем другое дело. Капитан Валера на службе.', v);
   v.setAnim('stand');
   yield* Scene.say('maid', 'Добро пожаловать в «Дикие кошки»! Вы к кому, товарищ капитан?', maid);
@@ -997,21 +1107,24 @@ L4.sceneHatch = (level, hasPass, showCouple) => function* () {
   yield* Scene.say('hatch', 'Без пароля — никак. Иди отсюда, рыжий.', null);
   Sound.play('clank'); st.hatchFr = 0;
   if (!showCouple) { yield* Scene.say('valera', 'Ладно... Пароль где-то в отеле наверху.', st.player); return; }
-  const guy = new G.Actor('guy', L4.STAIRS_X - 240, L4.GROUND, 1), girl = new G.Actor('girl', L4.STAIRS_X - 270, L4.GROUND, 1);
-  st.patrons.push({ update() {}, draw: (c, cx) => { guy.draw(c, cx, 0); girl.draw(c, cx, 0); } });
+  const cp = new G.Actor('couple', L4.STAIRS_X - 260, L4.GROUND, 1); cp.setAnim('walk');
+  st.patrons.push({ update(dt) { cp.update(dt); }, draw: (c, cx) => cp.draw(c, cx, 0) });
   yield* Scene.say('valera', 'Хм... А кто это там?', st.player);
   const guard = st.npcs.find(n => n.idle === 'lean'); if (guard) { guard.idle = 'stand'; guard.pose = 'stand'; }
   st.props = st.props.filter(p => !(p.type === 'rope' && p.x === L4.STAIRS_X));
-  yield* Scene.tween(1.6, k => { guy.x = U.lerp(L4.STAIRS_X - 240, L4.STAIRS_X, k); girl.x = U.lerp(L4.STAIRS_X - 270, L4.STAIRS_X - 30, k); guy.y = girl.y = L4.GROUND - Math.abs(Math.sin(k * 20)) * 2; });
-  guy.visible = girl.visible = false; Sound.play('door');
+  yield* Scene.tween(2.2, k => { cp.x = U.lerp(L4.STAIRS_X - 260, L4.STAIRS_X - 10, k); });
+  cp.setAnim('wink'); G.say(cp, 'Мы в номер, не скучай, капитан!', 1.6); yield 1;
+  cp.setAnim('kiss'); yield 0.6;
+  Sound.play('door'); cp.setAnim('climb');
+  yield* Scene.tween(1.2, k => { cp.x = L4.STAIRS_X - 10 + k * 12; cp.alpha = 1 - k; cp.y = L4.GROUND - k * 30; });
+  cp.visible = false;
   yield* Scene.say('valera', 'Отель наверху! Пароль наверняка кто-то из постояльцев записал. Проскочу, пока открыто.', st.player);
 };
 L4.sceneLever = level => function* () {
-  const st = L4.sceneStage(level, 'inner', { x: L4.LEVER_X - 20 }); st.player.controls = false; st.lever = false;
-  yield* Scene.say('valera', 'Тут рубильник... Ну-ка...', st.player);
-  Sound.play('lever'); st.lever = true; st.dark = false; G.flash(0.5, '#ffffff'); G.shake(4, 0.3);
-  yield 0.3;
   const st2 = L4.sceneStage(level, 'boss', { x: 90, y: L4.BOSS_G }); st2.player.controls = false;
+  yield* Scene.say('valera', 'Тут рубильник... Ну-ка...', st2.player);
+  Sound.play('lever'); G.flash(0.5, '#ffffff'); G.shake(4, 0.3);
+  yield 0.3;
   const biker = new G.Actor('biker', 540, L4.BOSS_G, -1); biker.headH = 140; biker.voice = 110;
   level.drawScene = c => { st2.draw(c); biker.draw(c, 0, 0); };
   yield 0.5;
@@ -1027,13 +1140,61 @@ L4.sceneAfterBoss = level => function* () {
   Sound.play('rope'); level.vovaFree = true; const vv = new G.Actor('vova', 340, L4.BOSS_G, -1); st.patrons.push({ update() {}, draw: (c, cx) => vv.draw(c, cx, 0) });
   yield* Scene.say('vova', 'Свобода! Валера, ты лучший!', null);
   Sound.play('glassHit'); G.shake(4, 0.4);
-  level.drawScene = c => { if (L4.img.comic4_darts) c.drawImage(L4.img.comic4_darts, 0, 0, W, H); };
+  yield* L4.raidScene(level);
+  level.drawScene = c => { st.draw(c); }; level.updateScene = dt => { for (const p of st.patrons) p.update(dt, st); st.world.t += dt; };
+  yield* Scene.say('vova', 'Ты видел?! От их яда все в клубе превратились в зомби! И охрана, и танцовщицы — все!', null);
+  st.patrons = st.patrons.filter(p => !p.vv); const vg = new G.Actor('vovagun', 340, L4.BOSS_G, -1); vg.setAnim('hold');
+  st.patrons.push({ vv: true, update(dt) { vg.update(dt); }, draw: (c, cx) => vg.draw(c, cx, 0) });
+  vv.visible = false;
+  yield* Scene.say('vova', 'Дай-ка «Осеменитель 3000». У зомби совсем другой обмен веществ...', vg);
+  vg.setAnim('open'); yield 0.7;
+  vg.setAnim('flip'); Sound.play('lever'); G.shake(2, 0.2); yield 0.7;
+  vg.setAnim('green'); G.flash(0.3, '#8cff60'); Sound.play('steam'); yield 0.8;
+  vg.setAnim('proud');
+  yield* Scene.say('vova', 'Щёлк — зелёный режим! Теперь бьёт в два раза злее.', vg);
+  vg.setAnim('give'); yield 0.5;
+  yield* Scene.say('vova', 'Держи и выводи меня отсюда!', vg);
+};
+// рейд: танцпол, все персонажи уровня отдыхают; спецназ спускается на тросах и стреляет дротиками; каждый поражённый превращается в зомби
+L4.raidScene = function* (level) {
+  const st = new L4.Stage(level, 'club', { x: 1500, scene: true }); st.fade = 0; st.player.visible = false; st.guide = null; st.npcs = []; st.patrons = [];
+  st.world.cam.x = 1180;
+  const crowd = [
+    ['hostess', 0, 1250, 'zomba', 0], ['hostess', 4, 1330, 'zomba', 1], ['bouncers', 0, 1410, 'zomba', 2], ['l4a', 4, 1490, 'zomba', 3], ['l4c', 0, 1570, 'zomba', 4],
+    ['l4b', 0, 1650, 'zomba', 5], ['men', 3, 1730, 'zomba', 6], ['men', 1, 1810, 'zomba', 7], ['dancers', 0, 1370, 'zombb', 6], ['dancers', 1, 1700, 'zomba', 1],
+  ].map(([sh, fr, x, zs, zf], i) => ({ sh, fr, x, zs, zf, t: Math.random() * 6, hit: -1, flip: sh === 'dancers' || sh === 'patrons' ? 1 : -1 }));
+  const cmd = [{ x: 1290, y: -90, tx: 1290, ty: 120 }, { x: 1560, y: -120, tx: 1560, ty: 100 }, { x: 1780, y: -80, tx: 1780, ty: 130 }];
+  const darts = [];
+  level.drawScene = c => {
+    st.draw(c); const cx = st.world.cam.x;
+    for (const p of crowd) {
+      const x = p.x - cx, beat = p.hit < 0 ? -Math.abs(Math.sin(p.t * 4)) * 3 : Math.sin(p.t * 9) * 2;
+      if (p.hit >= 0 && p.hit < 0.35) Spr.draw(c, p.sh, p.fr, x, L4.GROUND, p.flip, { flash: (G.t * 20 | 0) % 2 ? '#8cff60' : null });
+      else if (p.hit >= 0.35) Spr.draw(c, p.zs, p.zf, x + beat, L4.GROUND, -1);
+      else Spr.draw(c, p.sh, p.sh === 'dancers' ? p.fr + (Math.floor(p.t * 2.6) % 2) * 4 : p.fr, x, L4.GROUND + beat, p.flip);
+    }
+    for (const m of cmd) { Art.R(c, m.x - cx - 1, -10, 2, m.y + 10 - 170, '#1a1a1a'); Spr.drawAnim(c, 'commando', m.y >= m.ty - 2 ? 'rifle' : 'rappel', G.t, m.x - cx, m.y + 160, 1, { scale: 0.9 }); }
+    for (const d of darts) { c.save(); c.translate(d.x - cx, d.y); c.rotate(Math.atan2(d.vy, d.vx)); Spr.drawC(c, 'moth2', 4, 0, 0, 0, 0.35); c.restore(); }
+  };
+  level.updateScene = dt => {
+    st.world.t += dt;
+    for (const p of crowd) { p.t += dt; if (p.hit >= 0) p.hit += dt; }
+    for (const m of cmd) m.y = U.lerp(m.y, m.ty, Math.min(1, dt * 2));
+    for (const d of darts) { d.x += d.vx * dt; d.y += d.vy * dt; if (!d.done && Math.abs(d.x - d.tg.x) < 10) { d.done = true; d.tg.hit = 0; Sound.play('squeak'); FX.burst(d.tg.x, L4.GROUND - 60, 6, { colors: ['#8cff60', '#c8ff90'], speed: 90, life: 0.4 }); } }
+    for (let i = darts.length - 1; i >= 0; i--) if (darts[i].done) darts.splice(i, 1);
+  };
+  Sound.play('rope');
+  yield 1.2;
   yield* Scene.say('commando2', 'Отряд, огонь дротиками по всему клубу! Операция «Кошки»!', null);
-  yield* Scene.say('vova', 'Смотри — от их яда все в клубе превратились в зомби! И охрана, и танцовщицы — все!', null);
-  level.drawScene = c => { st.draw(c); };
-  yield* Scene.say('vova', 'Дай-ка «Осеменитель 3000». У зомби совсем другой обмен веществ...', null);
-  Sound.play('lever'); G.flash(0.3, '#8cff60');
-  yield* Scene.say('vova', 'Щёлк — переключил бак на зелёный режим! Теперь бьёт в два раза злее. Выводи меня отсюда!', null);
+  const order = crowd.slice().sort(() => Math.random() - 0.5);
+  for (const tg of order) {
+    const m = cmd.reduce((a, b) => Math.abs(b.x - tg.x) < Math.abs(a.x - tg.x) ? b : a), sx = m.x + 14, sy = m.y + 110;
+    const T = 0.35; darts.push({ x: sx, y: sy, vx: (tg.x - sx) / T, vy: (L4.GROUND - 60 - sy) / T, tg }); Sound.play('throw');
+    yield 0.3;
+  }
+  yield 0.9;
+  G.say({ x: 1500, y: L4.GROUND, headH: 110, voice: 140 }, 'Ы-ы-ы... МОЗГИ-И-И...', 1.8);
+  yield 1.8;
 };
 L4.sceneEnd = level => function* () {
   level.drawScene = c => { if (L4.img.comic4_end) c.drawImage(L4.img.comic4_end, 0, 0, W, H); };

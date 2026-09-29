@@ -35,7 +35,14 @@ def key_green_strict(im):
     lab, n = ndimage.label(cand)
     edge_ids = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
     sizes = ndimage.sum(np.ones(lab.shape), lab, range(1, n + 1))
-    big = {i + 1 for i, sz in enumerate(sizes) if sz > 400}
+    # закрытые области (дырки между рукой и головой) — только если точно цвета фона
+    edge = np.isin(lab, list(edge_ids))
+    ref = np.median(a[edge][:, :3], axis=0) if edge.any() else np.array([0, 255, 0])
+    big = set()
+    for i, sz in enumerate(sizes):
+        if sz > 6 and (i + 1) not in edge_ids:
+            m = lab == i + 1
+            if np.abs(a[m][:, :3].mean(axis=0) - ref).max() < 18 and a[m][:, :3].std(axis=0).max() < 12: big.add(i + 1)
     bg = np.isin(lab, list(edge_ids | big))
     a[..., 3] = np.where(bg, 0, 255)
     # кайма: пиксели рядом с фоном с сильным зелёным перекосом тоже убираем/гасим
@@ -402,7 +409,7 @@ S['roach'] = build_sheet('roach', 'roach.png', 7, 84, ref=0, anchors=['feet'] * 
 S['bedbug'] = build_sheet('bedbug', 'bedbug.png', 7, 70, ref=0, anchors=['feet'] * 6 + ['center'])
 S['fly'] = build_sheet('fly', 'fly.png', 6, [-64, -64, -64, -64, -60, -64], anchors=['center'] * 6)
 S['spider'] = build_sheet('spider', 'spider_misc.png', 7, [-72, -72, -72, -72, -30, -30, -44], anchors=['center'] * 7)
-S['items3'] = build_sheet('items3', 'items3.png', 12, [-27, 30, 38, 27, -40, -38, 27, -38, 34, -23, 21, -27], grid=(3, 4), anchors=['center'] * 12)
+S['items3'] = build_sheet('items3', 'items3.png', 12, [-27, 30, 38, 27, -40, -38, 27, -38, 34, -23, 21, -27], grid=(3, 4), anchors=['center'] * 12, keyer='strict')
 S['f_corr'] = build_sheet('f_corr', 'furn_corridor.png', 6, [118, 70, 169, 85, -58, 125], grid=(2, 3))
 S['f_kit'] = build_sheet('f_kit', 'furn_kitchen.png', 6, [134, 77, 70, 77, 70, -126], grid=(2, 3))
 S['f_liv'] = build_sheet('f_liv', 'furn_living.png', 6, [77, 105, 179, 81, 42, 136], grid=(2, 3))
@@ -565,6 +572,60 @@ B3['club_leather'] = {'img': 'assets/club_leather.jpg', 'w': im.width, 'h': im.h
 S['zomba'] = build_sheet('zomba', 'zomb_a.png', 8, 92, ref=0, keyer='magenta', even=True)
 S['zombb'] = build_sheet('zombb', 'zomb_b.png', 8, [92, -120, 92, -140, 92, 70, 92, -140], keyer='magenta', grid=(2, 4))
 S['v8_gun'] = build_sheet('v8_gun', 'v8_gun.png', 8, 86, ref=0, keyer='clean', even=True, anchors=['body'] * 8)
+# ---- уровень 4, партия 4 ----
+S['v8_run'] = build_sheet('v8_run', 'v8_run.png', 8, 84, keyer='clean', anchors=['body'] * 8, even=True)
+S['v7_idle'] = build_sheet('v7_idle', 'v7_idle.png', 8, 88, ref=7, keyer='clean', even=True, anchors=['body'] * 8)
+S['icons4'] = build_sheet('icons4', 'icons4.png', 4, [-22] * 4, keyer='magenta', anchors=['center'] * 4)
+S['dancers'] = build_sheet('dancers', 'dancers.png', 8, 90, ref=0, keyer='clean', grid=(2, 4))
+S['panim'] = build_sheet('panim', 'propsanim.png', 8, [-230, -170, -170, -150] * 2, keyer='clean', grid=(2, 4))
+S['girls2'] = build_sheet('girls2', 'girls2.png', 8, 88, ref=0, keyer='clean', even=True)
+S['cab2'] = build_sheet('cab2', 'cabaret2.png', 6, 96, ref=0, keyer='clean', even=True)
+S['stalls2'] = build_sheet('stalls2', 'stalls2.png', 6, [196, 196, 196, 196, 196, 180], keyer='magenta', even=True)
+S['couple'] = build_sheet('couple', 'couple.png', 8, 90, ref=0, keyer='magenta', even=True)
+S['fg2'] = build_sheet('fg2', 'fg2.png', 8, [70, 150, 150, 120, 150, 170, 150, 110], keyer='magenta', grid=(2, 4))
+for n in ['club_back2', 'club_wc2', 'hotel_floor2']:
+    B[n] = bg(n + '.png', n, (1280, 720))
+_r = Image.open(os.path.join(SRC, 'rooms4.png')).convert('RGBA'); _a = np.array(_r)[..., 3] > 0
+from scipy import ndimage as _nd
+_lab, _n = _nd.label(_a); _objs = sorted(_nd.find_objects(_lab), key=lambda o: (o[0].start // 200, o[1].start))
+_big = [o for o in _objs if (o[0].stop - o[0].start) > 200][:4]
+for _k, o in enumerate(_big):
+    _r.crop((o[1].start, o[0].start, o[1].stop, o[0].stop)).convert('RGB').resize((1280, 720), Image.LANCZOS).save(os.path.join(OUT, 'room%d.jpg' % _k), quality=87)
+S['spin'] = build_sheet('spin', 'spin.png', 6, 92, ref=0, keyer='magenta', dil=8)
+S['vovagun'] = build_sheet('vovagun', 'vova_gun.png', 6, 86, ref=0, keyer='magenta', even=True)
+S['v9_gun'] = build_sheet('v9_gun', 'v9_gun.png', 8, 86, ref=0, keyer='clean', even=True, anchors=['body'] * 8)
+B['comic4_raid'] = bg('comic4_raid.png', 'comic4_raid', (1280, 720))
+im = seamless(Image.open(os.path.join(SRC, 'club_dark.png'))); im = im.resize((round(im.width * 720 / im.height), 720), Image.LANCZOS)
+im.save(os.path.join(OUT, 'club_dark.jpg'), quality=87, optimize=True)
+B3['club_dark'] = {'img': 'assets/club_dark.jpg', 'w': im.width, 'h': im.height, 'floor': 300 / 360}
+S['brain'] = build_sheet('brain', 'brain.png', 4, [-20] * 4, keyer='clean', anchors=['center'] * 4)
+# лучи прожекторов: ровный конус, цвет взят из нарисованного луча, прозрачность растёт книзу, без круга
+def cone(name, rgb, w=190, h=330):
+    a = np.zeros((h, w, 4), np.uint8)
+    for y in range(h):
+        k = y / (h - 1); half = 3 + (w / 2 - 3) * k
+        alpha = 150 * (1 - k) ** 1.4
+        x0, x1 = int(w / 2 - half), int(w / 2 + half)
+        xs = np.arange(max(0, x0), min(w, x1))
+        edge = np.clip(np.minimum(xs - x0, x1 - xs) / 6.0, 0, 1)
+        a[y, xs, :3] = rgb; a[y, xs, 3] = (alpha * edge).astype(np.uint8)
+    Image.fromarray(a, 'RGBA').save(os.path.join(SPR, name + '.png'))
+_pl = np.array(Image.open(os.path.join(SPR, 'pole.png')).convert('RGBA')).astype(int)
+for _i, _n in [(6, 'cone_m'), (7, 'cone_c')]:
+    _f = S['pole']['f'][_i]; _p = _pl[_f[1]:_f[1] + _f[3], _f[0]:_f[0] + _f[2]]; _m = _p[..., 3] > 120
+    cone(_n, tuple(int(v) for v in np.median(_p[_m][:, :3], axis=0)))
+S['zharness'] = build_sheet('zharness', 'zharness.png', 8, [88, 88, 92, -110, 70, 80, 96, -130], keyer='clean', even=True, anchors=['center'] * 4 + ['feet'] * 4)
+S['v10_gun'] = build_sheet('v10_gun', 'v10_gun.png', 8, 86, ref=0, keyer='clean', even=True, anchors=['body'] * 8)
+S['v11_gun'] = build_sheet('v11_gun', 'v11_gun.png', 8, 86, ref=0, keyer='clean', even=True, anchors=['body'] * 8)
+S['cabstage'] = build_sheet('cabstage', 'cabstage.png', 4, [-260] * 4, keyer='magenta', even=True)
+S['vovagun2'] = build_sheet('vovagun2', 'vova_gun2.png', 6, 86, ref=0, keyer='magenta', even=True)
+S['uiicons'] = build_sheet('uiicons', 'uiicons.png', 6, [-18] * 6, keyer='clean', anchors=['center'] * 6)
+B['club_back3'] = bg('club_back3.png', 'club_back3', (1280, 720))
+for key in ['club_hall_z', 'club_leather_z', 'club_lobby_z']:
+    im = seamless(Image.open(os.path.join(SRC, key + '.png'))); im = im.resize((round(im.width * 720 / im.height), 720), Image.LANCZOS)
+    im.save(os.path.join(OUT, key + '.jpg'), quality=87, optimize=True)
+    B3[key] = {'img': 'assets/' + key + '.jpg', 'w': im.width, 'h': im.height, 'floor': 300 / 360}
+cone('cone_g', (90, 255, 70))
 # портреты персонажей уровня 4 (лица из листов)
 def pcrop(sheet, fi, box, name, flip=False):
     f = S[sheet]['f'][fi]
