@@ -905,8 +905,13 @@ L4.Biker = class {
   }
 };
 L4.drawRay = function (c, r, cx, cy, sc) {
-  c.save(); c.translate(r.x0 - cx, r.y0 - cy); c.rotate(r.ang);
-  for (let x = 0; x < r.len; x += 70) { const w = Math.min(76, r.len - x); c.save(); c.beginPath(); c.rect(x, -20, w, 40); c.clip(); Spr.draw(c, 'l4fx', 6, x + 38, 10 * sc, 1, { scale: sc }); c.restore(); }
+  // тонкая у рта, расширяется к концу, полупрозрачная (как лучи прожекторов)
+  c.save(); c.translate(r.x0 - cx, r.y0 - cy); c.rotate(r.ang); c.globalAlpha *= 0.62; c.globalCompositeOperation = 'lighter';
+  for (let x = 0; x < r.len; x += 30) {
+    const w = Math.min(32, r.len - x), k = Math.min(1, 0.22 + x / 160) * 0.55 * sc;
+    c.save(); c.beginPath(); c.rect(x, -30, w, 60); c.clip(); c.translate(x + 15, 0); c.scale(1, k);
+    Spr.drawC(c, 'l4fx', 6, 0, 0, 0, 1); c.restore();
+  }
   c.restore();
 };
 
