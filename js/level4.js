@@ -272,7 +272,7 @@ L4.Foe = class {
     if (adx < reach && this.cool <= 0 && Math.abs(tg.y - this.y) < 40) this.set('wind');
   }
   ceilingAI(dt, r, tg, dx, adx, hurtT) {
-    const wd = r.world, CEIL = 62;
+    const wd = r.world, CEIL = 0;
     if (this.state === 'idle' || this.state === 'crawl') { this.state = 'crawl'; this.y = CEIL; this.facing = dx > 0 ? 1 : -1; this.x += this.facing * 90 * dt; if (adx < 40 && this.cool <= 0) { this.set('drop'); this.vy = 0; G.say(this, U.choice(['Сверху!', 'Ам!']), 0.8); } return; }
     if (this.state === 'drop') { this.vy += 1500 * dt; this.y += this.vy * dt; if (this.y >= L4.GROUND) { this.y = L4.GROUND; this.set('bite'); G.shake(3, 0.15); } return; }
     if (this.state === 'bite') { this.facing = dx > 0 ? 1 : -1; if (this.st > 0.1 && this.st < 0.3 && adx < 44) hurtT(9, this.x); if (this.st > 0.7) { this.set('leap'); this.vy = -700; } return; }
@@ -283,7 +283,7 @@ L4.Foe = class {
     if (this.type === 'zombie' && this.zv === 9) {
       const s = this.state, fl = this.flash > 0 ? '#ffffff' : null, a = this.dieT != null ? Math.max(0, 1 - this.dieT / 1.6) : 1;
       if (this.dieT != null) Spr.draw(c, 'zharness', 7, x, y, this.facing, { alpha: a });
-      else if (s === 'crawl') Spr.drawC(c, 'zharness', Math.floor(this.t * 6) % 2, x, y + 44, 0, 1);
+      else if (s === 'crawl') Spr.drawC(c, 'zharness', Math.floor(this.t * 6) % 2, x, y + 40, 0, 1);
       else if (s === 'drop') Spr.drawC(c, 'zharness', 2, x, y - 40, 0, 1);
       else if (s === 'leap') Spr.draw(c, 'zharness', 6, x, y, 1, { flash: fl });
       else Spr.draw(c, 'zharness', this.st < 0.15 ? 4 : 5, x, y, -this.facing, { flash: fl });
@@ -421,7 +421,7 @@ L4.Vova = class {
   get box() { return { x: this.x - 12, y: this.y - 80, w: 24, h: 80 }; }
   hurt(dmg, from) {
     if (this.dead || this.inv > 0) return false;
-    this.hp -= Math.round(dmg * (G.DMG_MULT || 1) * 0.45); this.inv = 1.1; this.hurtT = 0.3; this.vx = (this.x > from ? 1 : -1) * 120;
+    this.hp -= Math.round(dmg * (G.DMG_MULT || 1) * 0.3); this.inv = 1.2; this.hurtT = 0.3; this.vx = (this.x > from ? 1 : -1) * 120;
     Sound.play('hurt'); if (Math.random() < 0.5) G.say(this, U.choice(['Ай! Валера, прикрой!', 'Они кусаются!', 'Я слишком молод!']), 1.2);
     if (this.hp <= 0) { this.hp = 0; this.dead = true; }
     return true;
@@ -630,10 +630,10 @@ L4.Stage = class {
   spawnZombies(dt) {
     const wd = this.world, pl = this.player, alive = wd.enemies.filter(e => e.dieT == null).length;
     this.spawnT = (this.spawnT == null ? 1 : this.spawnT) - dt;
-    if (this.spawnT > 0 || alive >= 8) return;
-    this.spawnT = U.rand(1.0, 1.9);
-    const zv = Math.random() < 0.15 ? 9 : U.randi(0, 8), cx = wd.cam.x;
-    if (zv === 9) { wd.enemies.push(new L4.Foe('zombie', U.clamp(pl.x + (Math.random() < 0.5 ? -1 : 1) * U.rand(200, 320), 20, this.W - 20), 62, { zv, state: 'crawl' })); return; }
+    if (this.spawnT > 0 || alive >= 16) return;
+    this.spawnT = U.rand(0.35, 0.75);
+    const r0 = Math.random(), zv = r0 < 0.22 ? 9 : r0 < 0.4 ? 5 : U.randi(0, 8), cx = wd.cam.x;
+    if (zv === 9) { wd.enemies.push(new L4.Foe('zombie', U.clamp(pl.x + (Math.random() < 0.5 ? -1 : 1) * U.rand(200, 320), 20, this.W - 20), 0, { zv, state: 'crawl' })); return; }
     if (zv === 5) { const z = new L4.Foe('zombie', U.clamp(pl.x + U.rand(-120, 120), 20, this.W - 20), -40, { zv, drop: true }); z.onGround = false; wd.enemies.push(z); G.say(z, 'У-у-у!', 0.8); return; }
     const side = Math.random() < 0.5 ? -1 : 1, x = U.clamp(side < 0 ? cx - 30 : cx + W + 30, 10, this.W - 10);
     wd.enemies.push(new L4.Foe('zombie', x, L4.GROUND, { zv }));
@@ -1063,7 +1063,7 @@ L4.Level = class {
 // =====================================================================
 // КАТСЦЕНЫ
 // =====================================================================
-L4.sceneStage = (level, kind, o) => { const st = new L4.Stage(level, kind, Object.assign({ scene: true }, o)); st.fade = 0; level.drawScene = c => st.draw(c); level.updateScene = dt => { for (const p of st.patrons) p.update(dt, st); for (const n of st.npcs) if (n.t != null) n.t += dt; st.world.t += dt; }; return st; };
+L4.sceneStage = (level, kind, o) => { const st = new L4.Stage(level, kind, Object.assign({ scene: true }, o)); st.fade = 0; level.drawScene = c => st.draw(c); level.updateScene = dt => { for (const p of st.patrons) p.update(dt, st); for (const n of st.npcs) if (n.t != null) n.t += dt; st.world.t += dt; st.player.animT = (st.player.animT || 0) + dt; }; return st; };
 L4.sceneIntro = level => function* () {
   const st = L4.sceneStage(level, 'club', { x: 60 }); st.player.controls = false; st.player.animSet = 'valera3';
   if (G.portraits.valera3) G.portraits.valera = G.portraits.valera3;
