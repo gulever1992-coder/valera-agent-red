@@ -590,7 +590,12 @@ from scipy import ndimage as _nd
 _lab, _n = _nd.label(_a); _objs = sorted(_nd.find_objects(_lab), key=lambda o: (o[0].start // 200, o[1].start))
 _big = [o for o in _objs if (o[0].stop - o[0].start) > 200][:4]
 for _k, o in enumerate(_big):
-    _r.crop((o[1].start, o[0].start, o[1].stop, o[0].stop)).convert('RGB').resize((1280, 720), Image.LANCZOS).save(os.path.join(OUT, 'room%d.jpg' % _k), quality=87)
+    _x0, _y0, _x1, _y1 = o[1].start, o[0].start, o[1].stop, o[0].stop
+    _pw, _ph = _x1 - _x0, _y1 - _y0; _x0 += int(_pw * 0.02); _x1 -= int(_pw * 0.02); _y0 += int(_ph * 0.03); _y1 -= int(_ph * 0.03)
+    _w, _h = _x1 - _x0, _y1 - _y0
+    if _w / _h > 16 / 9: _nw = int(_h * 16 / 9); _x0 += (_w - _nw) // 2; _x1 = _x0 + _nw
+    else: _nh = int(_w * 9 / 16); _y0 += (_h - _nh) // 2; _y1 = _y0 + _nh
+    _r.crop((_x0, _y0, _x1, _y1)).convert('RGB').resize((1280, 720), Image.LANCZOS).save(os.path.join(OUT, 'room%d.jpg' % _k), quality=87)
 S['spin'] = build_sheet('spin', 'spin.png', 6, 92, ref=0, keyer='magenta', dil=8)
 S['vovagun'] = build_sheet('vovagun', 'vova_gun.png', 6, 86, ref=0, keyer='magenta', even=True)
 S['v9_gun'] = build_sheet('v9_gun', 'v9_gun.png', 8, 86, ref=0, keyer='clean', even=True, anchors=['body'] * 8)

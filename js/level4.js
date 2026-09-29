@@ -513,7 +513,7 @@ L4.Stage = class {
     if (!this.frozen && !pl.held) pl.update(dt, wd);
     else if (pl.held) { pl.animT += dt; pl.choosePose(dt); }
     this.blockers(pl, prevX);
-    pl.x = U.clamp(pl.x, 12, this.W - 12);
+    pl.x = U.clamp(pl.x, 12, this.kind === 'tower' ? 428 : this.W - 12);
     for (const p of wd.projs) {
       p.update(dt, wd);
       if (p.dead) continue;
@@ -541,7 +541,7 @@ L4.Stage = class {
     if (this.onTick) this.onTick(dt);
     if (this.zombieSpawner) this.spawnZombies(dt);
     this.nearDoor = null;
-    if (this.kind === 'tower' && pl.onGround && I.pressed('down') && Math.abs(pl.x - 540) < 50 && pl.controls) this.level.stairs(-1);
+    if (this.kind === 'tower' && pl.onGround && I.pressed('down') && Math.abs(pl.x - 418) < 40 && pl.controls) this.level.stairs(-1);
     for (const d of this.doors) if (Math.abs(pl.x - d.x) < 28 && Math.abs(pl.y - d.y) < 10 && pl.onGround) this.nearDoor = d;
     if (this.nearDoor && I.pressed('up') && pl.controls && !pl.dead && !pl.climb) this.nearDoor.use(this);
     const zs = L4.ZONES[this.kind];
@@ -701,7 +701,7 @@ L4.BUILD = {
       this.doors.push(new L4.Door(x, L4.HOTEL_G, 'НОМЕР ' + (fl + 1) + '0' + (k + 1) + (room.cleared ? ' (ПУСТО)' : ''), st => st.level.enterRoom(id), { icon: 4 }));
     });
     // лестница справа: {up} — выше, {down} — ниже (на 1 этаже вниз — выход в клуб)
-    this.doors.push(new L4.Door(540, L4.HOTEL_G, fl < L4.FLOORS - 1 ? 'ЛЕСТНИЦА: ВВЕРХ / ВНИЗ' : 'ЛЕСТНИЦА: ВНИЗ', st => st.level.stairs(1), { icon: fl < L4.FLOORS - 1 ? 1 : 2 }));
+    this.doors.push(new L4.Door(418, L4.HOTEL_G, fl < L4.FLOORS - 1 ? 'ЛЕСТНИЦА: ВВЕРХ / ВНИЗ' : 'ЛЕСТНИЦА: ВНИЗ', st => st.level.stairs(1), { icon: fl < L4.FLOORS - 1 ? 1 : 2 }));
     this.fgItems = [{ sheet: 'fg2', fr: 6, x: 30, y: H + 30, scale: 1 }];
   },
   room(wd, o) {
@@ -925,7 +925,7 @@ L4.Level = class {
   start(opts = {}) {
     if (opts.boss) { this.carry = { ammo3: { swatter: 100, chalk: 0, seed: 150 }, hasSeed: true, green: false, weapon: 'seed' }; this.startBoss(); return; }
     if (opts.escort) { this.carry = { ammo3: { swatter: 100, chalk: 0, seed: 200 }, hasSeed: true, green: true, weapon: 'seed' }; this.startEscort(); return; }
-    if (opts.tower) { this.stairsOpen = true; this.setStage('tower', { x: 480, y: L4.HOTEL_G, floor: 0 }); return; }
+    if (opts.tower) { this.stairsOpen = true; this.setStage('tower', { x: 405, y: L4.HOTEL_G, floor: 0 }); return; }
     if (opts.inner) { this.carry = { ammo3: { swatter: 100, chalk: 0, seed: 150 }, hasSeed: true, weapon: 'seed' }; this.setStage('inner', { x: 80 }); return; }
     this.playScene(L4.sceneIntro(this), () => { this.setStage('club', { x: 120 }); this.stage.say('Иди за горничной. {jump} — прыжок, {down} — присесть и ползти, {punch} — удар, {switch} — оружие.', 7); Music.play('epic'); });
   }
@@ -938,12 +938,12 @@ L4.Level = class {
   restartStage() { const [k, o] = this.stageArgs; if (this.carry) this.carry.hp = 100; const r = this.stage.roomData; if (k === 'boss') { this.startBoss(); return; } this.stage = null; this.setStage(k, Object.assign({}, o)); if (r && k === 'room') { this.stage.roomData = r; this.stage.onUpdate = dt => this.roomTick(dt); } }
   enterTower() {
     if (!this.stairsOpen) { const b = this.stage.npcs.find(n => n.idle === 'lean'); if (b) { b.pose = 'shove'; b.poseT = 0.6; G.say(b, 'Только для гостей отеля. Номер снимал? Нет? Гуляй.', 2.2); } return; }
-    this.setStage('tower', { x: 500, y: L4.HOTEL_G, floor: 0 }); if (!this.hasPassword) this.stage.say('Три этажа, девять номеров. Где-то тут записан пароль. Лестница справа: {up} — выше, {down} — ниже.', 6);
+    this.setStage('tower', { x: 405, y: L4.HOTEL_G, floor: 0, facing: -1 }); if (!this.hasPassword) this.stage.say('Три этажа, девять номеров. Где-то тут записан пароль. Лестница справа: {up} — выше, {down} — ниже.', 6);
   }
   stairs(dir) {
     const fl = this.stage.floor || 0;
-    if (G.Input.held('down') || dir < 0) { if (fl === 0) { this.leaveTower(); return; } this.setStage('tower', { x: 520, y: L4.HOTEL_G, floor: fl - 1, facing: -1 }); Sound.play('jump'); return; }
-    if (fl < L4.FLOORS - 1) { this.setStage('tower', { x: 520, y: L4.HOTEL_G, floor: fl + 1, facing: -1 }); Sound.play('jump'); }
+    if (G.Input.held('down') || dir < 0) { if (fl === 0) { this.leaveTower(); return; } this.setStage('tower', { x: 405, y: L4.HOTEL_G, floor: fl - 1, facing: -1 }); Sound.play('jump'); return; }
+    if (fl < L4.FLOORS - 1) { this.setStage('tower', { x: 405, y: L4.HOTEL_G, floor: fl + 1, facing: -1 }); Sound.play('jump'); }
   }
   leaveTower() { this.setStage('club', { x: L4.STAIRS_X, facing: -1 }); if (this.hasPassword) this.stage.say('Пароль есть! Теперь — к железной двери.', 4); }
   enterRoom(id) {
