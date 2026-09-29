@@ -669,7 +669,7 @@ L4.BUILD = {
     // ресепшен: диван с гостем и хостес (задний план); колонки; канат
     P('rope', 330, { layer: 'bg' }); if (!esc) P('sofaA', 560, { layer: 'bg', y: L4.GROUND - 16 }); P('speakers', 800);
     // танцпол: столики с гостями — задний план; перепрыгнуть колонки; проползти под сценой шеста и стойкой
-    if (!esc) { P('tableA', 1060, { layer: 'bg', y: L4.GROUND - 18 }); P('djA', 1620, { layer: 'bg', y: L4.GROUND - 22 }); P('table2A', 2150, { layer: 'bg', y: L4.GROUND - 18 }); P('tableA', 2380, { layer: 'bg', y: L4.GROUND - 18, flip: true }); }
+    if (!esc) { P('tableA', 1060, { layer: 'bg', y: L4.GROUND - 18 }); P('djA', 1620, { layer: 'bg', y: L4.GROUND - 22 }); P('table2A', 2150, { layer: 'bg', y: L4.GROUND - 18 }); P('tableA', 2290, { layer: 'bg', y: L4.GROUND - 18, flip: true }); }
     P('pole', 1320, { layer: 'front' }); P('speakers', 1500); P('bar', 1880, { layer: 'front' }); P('speakers', 2260);
     if (esc) for (const x of [420, 700, 1100, 1450, 1700, 2100, 2500, 2800, 3050]) P('slime', x + U.rand(-40, 40), { layer: 'bg' });
     this.fgItems = [{ sheet: 'fg2', fr: 1, x: 680, y: H + 20, par: 1.3, scale: 1.1 }, { sheet: 'fg2', fr: 3, x: 1250, y: H + 30, par: 1.3 }, { sheet: 'fg2', fr: 0, x: 2520, y: H + 34, par: 1.3 }, { sheet: 'fg2', fr: 4, x: 1150, y: H + 30, par: 1.3 }, { sheet: 'fg2', fr: 5, x: 2900, y: H + 30, par: 1.3 }];
@@ -770,7 +770,7 @@ L4.DRAW_BG = {
   club(c, cx) {
     for (const z of L4.ZONES.club) if (z.wall !== 'club_back') L4.drawWallStrip(c, this.o.escort && L3.img[z.wall + '_z'] ? z.wall + '_z' : z.wall, z.x0, z.x1, cx, 0, null);
     const bx = L4.BACK_X - cx; if (bx < W && L4.img.club_back3) c.drawImage(L4.img.club_back3, bx, 0, W, H);
-    if (bx < W && bx > -320) Spr.draw(c, 'cabstage', this.o.escort ? 3 : [0, 1, 0, 2, 0, 3][Math.floor(G.t * 2.4) % 6], bx + 150, L4.GROUND - 14, 1, { scale: 0.62 });
+    const kx = 2470 - cx; if (kx > -200 && kx < W + 200) Spr.draw(c, 'cabstage', this.o.escort ? 3 : [0, 1, 0, 2, 0, 3][Math.floor(G.t * 2.4) % 6], kx, L4.GROUND - 10, 1, { scale: 0.7 });
   },
   tower(c) { if (L4.img.hotel_floor2) c.drawImage(L4.img.hotel_floor2, 0, 0, W, H); G.text('ЭТАЖ ' + (this.floor + 1), 20, 44, { size: 8, color: '#ff8ad8', outline: true }); },
   room(c) { const r = this.roomData; const img = L4.img['room' + (r.id % 4)]; if (img) c.drawImage(img, 0, 0, W, H); Spr.draw(c, 'nerds', this.nerd + (Math.floor(G.t * 1.2 + this.nerd) % 2) * 4, 430, L4.GROUND + 6, 1); },
