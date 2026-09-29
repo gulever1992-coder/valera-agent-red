@@ -15,7 +15,7 @@ L4.img = {};
   Spr.ANIM.biker = { stand: A('biker', [0], 1, F), run: A('biker', [1, 0], 8, F), jump: A('biker', [2], 1, F), throw: A('biker', [3], 1, F), roar: A('biker', [4], 1, F), hurt: A('biker', [5], 1, F), land: A('biker', [6], 1, F), ko: A('biker', [7], 1, F) };
   Spr.ANIM.zombie = { stand: A('patrons', [4], 1, F), walk: A('patrons', [5, 6], 4, F), attack: A('patrons', [4], 1, F), ko: A('patrons', [7], 1, F) };
   // 9 видов клубных зомби: [ходьба, атака, падение] (null — падение поворотом)
-  L4.ZV = [['zomba', 0, 'zombb', 0, 'zombb', 1], ['zomba', 1, 'zombb', 0, null], ['zomba', 2, 'zombb', 2, 'zombb', 3], ['zomba', 3, 'zombb', 4, 'zombb', 5], ['zomba', 4, 'zomba', 4, null], ['zomba', 5, 'zomba', 5, null], ['zomba', 6, 'zomba', 6, null], ['zomba', 7, 'zomba', 7, null], ['zombb', 6, 'zombb', 6, 'zombb', 7]];
+  L4.ZV = [['zomba', 0, 'zombb', 0, 'zombb', 1], ['zomba', 1, 'zomba', 1, null], ['zomba', 2, 'zombb', 2, 'zombb', 3], ['zomba', 3, 'zombb', 4, 'zombb', 5], ['zomba', 4, 'zomba', 4, null], ['zomba', 5, 'zomba', 5, null], ['zomba', 6, 'zomba', 6, null], ['zomba', 7, 'zomba', 7, null], ['zombb', 6, 'zombb', 6, 'zombb', 7]];
   L4.ZV.forEach((z, i) => { Spr.ANIM['zomb' + i] = { stand: A(z[0], [z[1]], 1, F), walk: A(z[0], [z[1]], 1, F), attack: A(z[2], [z[3]], 1, F), ko: z[4] ? A(z[4], [z[5]], 1, F) : A(z[0], [z[1]], 1, F) }; });
   Spr.ANIM.maid = { stand: A('hostess', [0], 1, F), walk: A('hostess', [1, 2], 5, F), beckon: A('hostess', [3], 1, F) };
   Spr.ANIM.nurse = { stand: A('hostess', [4], 1, F), walk: A('hostess', [5, 6], 5, F), shrug: A('hostess', [7], 1, F) };
