@@ -404,9 +404,13 @@ L4.Flirt = class {
     const y = this.y - cy, f = -this.facing; // листы мужчин смотрят влево
     if (this.kind === 'carrier') {
       if (this.st === 'idle') { const b = -Math.abs(Math.sin(this.t * 3)) * 2; Spr.draw(c, 'men', 0, x - 22, y + b, f); Spr.draw(c, 'men', 6, x + 22, y + b, f); return; }
-      const fr = this.st === 'carry' ? 4 : this.st === 'drop' ? 6 : 4;
-      Spr.draw(c, 'menact', fr, x, y - (this.st === 'run' || this.st === 'back' || this.st === 'carry' ? Math.abs(Math.sin(this.t * 14)) * 3 : 0), this.st === 'back' ? -f : f);
-      if (this.st === 'carry') Spr.drawAnim(c, 'valera4', 'ko', G.t, x, y - 88, 1);
+      if (this.st === 'carry' || this.st === 'drop') {
+        const b = -Math.abs(Math.sin(this.t * 10)) * 3;
+        Spr.draw(c, 'men', 0, x - 30, y + b, 1); Spr.draw(c, 'men', 6, x + 30, y - b, -1);
+        if (this.st === 'carry' || this.stT < 0.25) Spr.drawAnim(c, 'valera4', 'ko', G.t, x, y - 64 + b, 1);
+        return;
+      }
+      Spr.draw(c, 'menact', this.st === 'drop' ? 6 : 4, x, y - (this.st === 'run' || this.st === 'back' ? Math.abs(Math.sin(this.t * 14)) * 3 : 0), this.st === 'back' ? -f : f);
       return;
     }
     if (this.st === 'grab') { Spr.draw(c, 'spin', Math.floor(this.stT * 8) % 6, x, y, 1); return; }
