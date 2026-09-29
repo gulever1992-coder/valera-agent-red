@@ -517,7 +517,7 @@ L4.Stage = class {
     if (!this.frozen && !pl.held) pl.update(dt, wd);
     else if (pl.held) { pl.animT += dt; pl.choosePose(dt); }
     this.blockers(pl, prevX);
-    pl.x = U.clamp(pl.x, 12, this.kind === 'tower' ? 428 : this.W - 12);
+    pl.x = this.kind === 'boss' ? U.clamp(pl.x, 62, 578) : U.clamp(pl.x, 12, this.kind === 'tower' ? 428 : this.W - 12);
     for (const p of wd.projs) {
       p.update(dt, wd);
       if (p.dead) continue;
@@ -749,7 +749,7 @@ L4.BUILD = {
     wd.addPlat({ x: -40, y: L4.BOSS_G, w: 720, h: 60, oneway: false, look: 'none' });
     this.platsB = [[22, 212, 160], [456, 212, 164], [222, 116, 196]];
     for (const [x, y, w] of this.platsB) wd.addPlat({ x, y, w, h: 10, oneway: true, look: 'none' });
-    for (const x of [52, 588]) this.props.push({ type: 'bigspk', x, y: L4.BOSS_G });
+    for (const x of [26, 614]) this.props.push({ type: 'bigspk', x, y: L4.BOSS_G });
     this.floorY = L4.BOSS_G;
   },
 };
@@ -823,7 +823,7 @@ L4.Biker = class {
     if (this.dieT != null) { this.dieT += dt; return; }
     const py = this.y; this.vy = Math.min(800, this.vy + 1500 * dt); this.y += this.vy * dt; this.x += this.vx * dt;
     const g = wd.groundAt(this.x, py, this.y, 6); if (g && this.vy > 0) { if (!this.onGround && this.vy > 300) { G.shake(6, 0.25); Sound.play('stomp'); FX.dust(this.x, g.y, 10); } this.y = g.y; this.vy = 0; this.onGround = true; } else if (!g) this.onGround = false;
-    this.x = U.clamp(this.x, 34, 606); if (this.y > L4.BOSS_G) { this.y = L4.BOSS_G; this.vy = 0; this.onGround = true; } if (this.y < 40) this.y = 40;
+    this.x = U.clamp(this.x, 70, 570); if (this.y > L4.BOSS_G) { this.y = L4.BOSS_G; this.vy = 0; this.onGround = true; } if (this.y < 40) this.y = 40;
     if (U.overlap(this.box, pl.box) && this.s === 'charge') pl.hurt(18, this.x, wd);
     this.cool -= dt;
     const rage = this.hp < this.maxHp * 0.4, fast = this.hp < this.maxHp * 0.6 ? 0.5 : 0.75;
@@ -852,7 +852,7 @@ L4.Biker = class {
           else this.set('taunt');
         }
         break;
-      case 'charge': if (this.stT > 1.1 || this.x <= 36 || this.x >= 604) { this.vx = 0; this.set('idle'); this.cool = U.rand(0.5, 1) * fast; } break;
+      case 'charge': if (this.stT > 1.1 || this.x <= 72 || this.x >= 568) { this.vx = 0; this.set('idle'); this.cool = U.rand(0.5, 1) * fast; } break;
       case 'jump': if (this.onGround && this.stT > 0.3) { this.vx = 0; this.set('idle'); this.cool = U.rand(0.5, 1); } break;
       case 'sing':
         this.vx = 0;
@@ -1013,7 +1013,7 @@ L4.Level = class {
     st.doors.push(new L4.Door(70, L4.BOSS_G, 'РУБИЛЬНИК', s2 => s2.level.pullLever(), { icon: 3 }));
     st.say('Темно, хоть глаз выколи... На стене слева что-то нащупывается — рубильник?', 5);
   }
-  pullLever() { this.stage.carry(); this.leverOn = true; this.playScene(L4.sceneLever(this), () => this.startBoss()); }
+  pullLever() { this.stage.carry(); this.leverOn = false; this.playScene(L4.sceneLever(this), () => this.startBoss()); }
   startBoss() {
     this.setStage('boss', { x: 80, y: L4.BOSS_G });
     const st = this.stage; st.boss = new L4.Biker(st);
@@ -1129,10 +1129,15 @@ L4.sceneHatch = (level, hasPass, showCouple) => function* () {
   yield* Scene.say('valera', 'Отель наверху! Пароль наверняка кто-то из постояльцев записал. Проскочу, пока открыто.', st.player);
 };
 L4.sceneLever = level => function* () {
-  const st2 = L4.sceneStage(level, 'boss', { x: 90, y: L4.BOSS_G }); st2.player.controls = false;
+  const st2 = L4.sceneStage(level, 'boss', { x: 96, y: L4.BOSS_G, facing: -1 }); st2.player.controls = false; st2.lairDark = true;
   yield* Scene.say('valera', 'Тут рубильник... Ну-ка...', st2.player);
-  Sound.play('lever'); G.flash(0.5, '#ffffff'); G.shake(4, 0.3);
-  yield 0.3;
+  st2.player.setAnim('swatWind'); yield 0.35;
+  st2.player.setAnim('swat'); level.leverOn = true; Sound.play('lever'); G.shake(3, 0.2);
+  yield 0.45;
+  Sound.play('clank'); yield 0.25;
+  st2.lairDark = false; G.flash(0.5, '#ffffff'); Sound.play('boom');
+  st2.player.setAnim('stand');
+  yield 0.5;
   const biker = new G.Actor('biker', 540, L4.BOSS_G, -1); biker.headH = 140; biker.voice = 110;
   level.drawScene = c => { st2.draw(c); biker.draw(c, 0, 0); };
   yield 0.5;
