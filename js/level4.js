@@ -168,7 +168,7 @@ L4.FOE = {
   sailor: { hp: 5, w: 26, h: 80, speed: 75, reach: 46, dmg: 9, score: 250, march: true, lines: ['Полундра!', 'Раз-два, левой!', 'Свистать всех наверх!', 'Пшёл вон с палубы!'] },
   sumo: { hp: 10, w: 50, h: 96, speed: 55, bounce: true, dmg: 14, score: 450, lines: ['Хаккейо-о-о!', 'Раздавлю, как пельмень!'] },
   gum: { hp: 6, w: 40, h: 84, speed: 60, gum: true, dmg: 9, score: 300, lines: ['Хочешь жвачку, пупсик?', 'Бабл-гам атака!', 'Чпок!'] },
-  zombie: { hp: 3, w: 26, h: 80, speed: 120, reach: 38, dmg: 7, score: 150, lines: ['Ы-ы-ы... танцуем...', 'Мозги-и... и коктейль...', 'Ам-ам-ам!', 'Вовочка-а-а...', 'Скушаю!'] },
+  zombie: { hp: 6, w: 26, h: 80, speed: 140, reach: 38, dmg: 12, score: 150, lines: ['Ы-ы-ы... танцуем...', 'Мозги-и... и коктейль...', 'Ам-ам-ам!', 'Вовочка-а-а...', 'Скушаю!'] },
   eyes: { hp: 2, w: 30, h: 22, speed: 55, dark: true, dmg: 5, score: 200, lines: ['Ты мне так нравишься...', 'Какой брутальный!', 'Третьим будешь?', 'Давай дружить!', 'Я тебя давно заметил...', 'Не уходи-и-и...'] },
 };
 L4.Foe = class {
@@ -252,7 +252,7 @@ L4.Foe = class {
   zombieAI(dt, r, tg, dx, adx, face, hurtT) {
     const wd = r.world, z = this.zv || 0;
     if (z === 9) { this.ceilingAI(dt, r, tg, dx, adx, hurtT); return; }
-    const speed = [135, 130, 95, 110, 85, 70, 140, 125, 150][z], reach = z === 2 ? 50 : z === 5 ? 56 : 38, dmg = z === 2 ? 12 : z === 5 ? 14 : 7;
+    const speed = [165, 160, 120, 140, 110, 90, 170, 155, 180][z], reach = z === 2 ? 50 : z === 5 ? 56 : 38, dmg = z === 2 ? 18 : z === 5 ? 20 : 12;
     if (this.drop) { if (this.fall(dt, r.world)) { this.drop = false; G.shake(10, 0.4); Sound.play('boom'); FX.dust(this.x, this.y, 14); if (Math.abs(tg.x - this.x) < 60) hurtT(14, this.x); } else return; }
     this.fall(dt, wd); face();
     if (!this.said && adx < 260 && Math.random() < 0.02) { this.said = true; G.say(this, U.choice(this.d.lines), 1.4); }
@@ -263,7 +263,7 @@ L4.Foe = class {
       return; }
     if (this.state === 'attack') {
       if (z !== 3 && z !== 4 && this.st < 0.15) { const hb = { x: this.x + (this.facing > 0 ? 4 : -reach), y: this.y - 64, w: reach, h: 48 }; if (U.overlap(hb, tg.box) && hurtT(dmg, this.x) && z === 2 && tg.vx != null) tg.vx = this.facing * 260; }
-      if (this.st > 0.35) { this.set('chase'); this.cool = z === 3 || z === 4 ? U.rand(1.4, 2.2) : U.rand(0.5, 0.9); }
+      if (this.st > 0.35) { this.set('chase'); this.cool = z === 3 || z === 4 ? U.rand(0.9, 1.4) : U.rand(0.3, 0.6); }
       return;
     }
     const ranged = z === 3 || z === 4;
@@ -425,7 +425,7 @@ L4.Vova = class {
   get box() { return { x: this.x - 12, y: this.y - 80, w: 24, h: 80 }; }
   hurt(dmg, from) {
     if (this.dead || this.inv > 0) return false;
-    this.hp -= Math.round(dmg * (G.DMG_MULT || 1) * 0.3); this.inv = 1.2; this.hurtT = 0.3; this.vx = (this.x > from ? 1 : -1) * 120;
+    this.hp -= Math.round(dmg * (G.DMG_MULT || 1) * 0.7); this.inv = 0.7; this.hurtT = 0.3; this.vx = (this.x > from ? 1 : -1) * 120;
     Sound.play('hurt'); if (Math.random() < 0.5) G.say(this, U.choice(['Ай! Валера, прикрой!', 'Они кусаются!', 'Я слишком молод!']), 1.2);
     if (this.hp <= 0) { this.hp = 0; this.dead = true; }
     return true;
@@ -524,7 +524,7 @@ L4.Stage = class {
       if (this.boss && this.boss.dieT == null && U.overlap(p.box, this.boss.box)) { this.boss.takeHit(p.dmg, p.x - p.vx, false); p.dead = true; p.poof(); continue; }
       for (const e of wd.enemies) if (e.dieT == null && !(p.hitSet && p.hitSet.has(e)) && U.overlap(p.box, e.box)) {
         const killed = e.hit(p.dmg, Math.sign(p.vx) || 1); Sound.play('hit');
-        if (killed) { wd.addScore(e.score); wd.stats.kills++; FX.popText(e.x, e.y - 50, '+' + e.score); if (e.type === 'zombie' && Math.random() < 0.18) wd.pickups.push(new Game.Pickup(Math.random() < 0.75 ? 'tank' : 'bread', e.x, L4.GROUND)); }
+        if (killed) { wd.addScore(e.score); wd.stats.kills++; FX.popText(e.x, e.y - 50, '+' + e.score); if (e.type === 'zombie' && Math.random() < 0.07) wd.pickups.push(new Game.Pickup(Math.random() < 0.75 ? 'tank' : 'bread', e.x, L4.GROUND)); }
         if (p.pierce > 0) { p.pierce--; (p.hitSet || (p.hitSet = new Set())).add(e); } else { p.dead = true; p.poof(); break; }
       }
     }
@@ -634,8 +634,8 @@ L4.Stage = class {
   spawnZombies(dt) {
     const wd = this.world, pl = this.player, alive = wd.enemies.filter(e => e.dieT == null).length;
     this.spawnT = (this.spawnT == null ? 1 : this.spawnT) - dt;
-    if (this.spawnT > 0 || alive >= 16) return;
-    this.spawnT = U.rand(0.35, 0.75);
+    if (this.spawnT > 0 || alive >= 24) return;
+    this.spawnT = U.rand(0.18, 0.4);
     const r0 = Math.random(), zv = r0 < 0.22 ? 9 : r0 < 0.4 ? 5 : U.randi(0, 8), cx = wd.cam.x;
     if (zv === 9) { wd.enemies.push(new L4.Foe('zombie', U.clamp(pl.x + (Math.random() < 0.5 ? -1 : 1) * U.rand(200, 320), 20, this.W - 20), 0, { zv, state: 'crawl' })); return; }
     if (zv === 5) { const z = new L4.Foe('zombie', U.clamp(pl.x + U.rand(-120, 120), 20, this.W - 20), -40, { zv, drop: true }); z.onGround = false; wd.enemies.push(z); G.say(z, 'У-у-у!', 0.8); return; }
