@@ -728,7 +728,9 @@ L4.BUILD = {
       this.doors.push(new L4.Door(L4.LEVER_X, L4.GROUND, 'ДВЕРЬ', st => st.level.enterLair()));
     }
     for (let x = 200; x < L4.DARK_X0; x += 200) this.lights.push({ x, sp: 0.5 + Math.random(), ph: Math.random() * 6, col: Math.random() < 0.5 });
-    this.fgItems = [{ sheet: 'fg2', fr: 2, x: 500, y: H + 30, par: 1.3 }, { sheet: 'fg2', fr: 5, x: 1300, y: H + 30, par: 1.3 }];
+    this.fgItems = [{ sheet: 'fg2', fr: 2, x: 500, y: H + 30, par: 1.3 }, { sheet: 'fg2', fr: 0, x: 900, y: H + 34, par: 1.3 }, { sheet: 'fg2', fr: 4, x: 1200, y: H + 30, par: 1.3 }, { sheet: 'fg2', fr: 3, x: 1600, y: H + 30, par: 1.3 }];
+    for (const x of [560, 1180]) this.props.push({ type: 'speakers', x });
+    this.props.push({ type: 'rope', x: 330, layer: 'bg' }, { type: 'rope', x: 1390, layer: 'bg' });
     if (o.escort) { this.zombieSpawner = true; for (const x of [400, 900, 1500, 2300, 3000]) this.props.push({ type: 'slime', x, layer: 'bg' }); }
   },
   wc(wd, o) {
