@@ -79,6 +79,7 @@ L4.load = async function () {
 // =====================================================================
 Game.PICK.seedgun = { name: '«ОСЕМЕНИТЕЛЬ 3000»!', special: 'seedgun' };
 Game.PICK.tank = { name: 'Бак +60', ammo3: ['seed', 60] };
+{ const dOld = Game.Pickup.prototype.draw; Game.Pickup.prototype.draw = function (c, cx, cy) { if (this.kind === 'tank') { Spr.drawC(c, 'icons4', 2, this.x - cx, this.y - cy - 12 + Math.sin(this.t * 4) * 2, 0, 1); return; } dOld.call(this, c, cx, cy); }; }
 L4.WNAME = { swatter: 'МУХОБОЙКА', fists: 'КУЛАКИ', seed: 'ОСЕМЕНИТЕЛЬ 3000' };
 L4.Player = class extends L3.Player {
   constructor(x, y) { super(x, y); this.animSet = 'valera4'; this.portraitKey = 'valera4'; this.ammo3 = { swatter: 100, chalk: 0, seed: 0 }; this.hasSeed = false; this.green = false; this.weapon = 'swatter'; this.punchN = 0; }
@@ -116,7 +117,7 @@ L4.Player = class extends L3.Player {
           const ang = base + a, sp = 480;
           const s = new L3.Shot('juice', this.x + this.facing * 30, this.y - (this.crouch ? 28 : 48), this.facing);
           s.vx = Math.cos(ang) * sp * this.facing; s.vy = Math.sin(ang) * sp; if (up && base < -1.2) s.vx = Math.sin(a) * sp * 0.6 + this.facing * 20;
-          s.grav = 60; s.dmg = this.green ? 2 : 2; s.green = this.green; s.seed = true; s.pierce = this.green ? 1 : 0;
+          s.grav = 60; s.dmg = this.green ? 2 : 3; s.green = this.green; s.seed = true; s.pierce = this.green ? 1 : 0;
           world.projs.push(s);
         }
         Sound.play('squeak');
@@ -420,7 +421,7 @@ L4.Vova = class {
   get box() { return { x: this.x - 12, y: this.y - 80, w: 24, h: 80 }; }
   hurt(dmg, from) {
     if (this.dead || this.inv > 0) return false;
-    this.hp -= Math.round(dmg * (G.DMG_MULT || 1) * 0.8); this.inv = 0.8; this.hurtT = 0.3; this.vx = (this.x > from ? 1 : -1) * 120;
+    this.hp -= Math.round(dmg * (G.DMG_MULT || 1) * 0.45); this.inv = 1.1; this.hurtT = 0.3; this.vx = (this.x > from ? 1 : -1) * 120;
     Sound.play('hurt'); if (Math.random() < 0.5) G.say(this, U.choice(['Ай! Валера, прикрой!', 'Они кусаются!', 'Я слишком молод!']), 1.2);
     if (this.hp <= 0) { this.hp = 0; this.dead = true; }
     return true;
@@ -519,7 +520,7 @@ L4.Stage = class {
       if (this.boss && this.boss.dieT == null && U.overlap(p.box, this.boss.box)) { this.boss.takeHit(p.dmg, p.x - p.vx, false); p.dead = true; p.poof(); continue; }
       for (const e of wd.enemies) if (e.dieT == null && !(p.hitSet && p.hitSet.has(e)) && U.overlap(p.box, e.box)) {
         const killed = e.hit(p.dmg, Math.sign(p.vx) || 1); Sound.play('hit');
-        if (killed) { wd.addScore(e.score); wd.stats.kills++; FX.popText(e.x, e.y - 50, '+' + e.score); }
+        if (killed) { wd.addScore(e.score); wd.stats.kills++; FX.popText(e.x, e.y - 50, '+' + e.score); if (e.type === 'zombie' && Math.random() < 0.18) wd.pickups.push(new Game.Pickup(Math.random() < 0.75 ? 'tank' : 'bread', e.x, L4.GROUND)); }
         if (p.pierce > 0) { p.pierce--; (p.hitSet || (p.hitSet = new Set())).add(e); } else { p.dead = true; p.poof(); break; }
       }
     }
@@ -629,8 +630,8 @@ L4.Stage = class {
   spawnZombies(dt) {
     const wd = this.world, pl = this.player, alive = wd.enemies.filter(e => e.dieT == null).length;
     this.spawnT = (this.spawnT == null ? 1 : this.spawnT) - dt;
-    if (this.spawnT > 0 || alive >= 11) return;
-    this.spawnT = U.rand(0.7, 1.5);
+    if (this.spawnT > 0 || alive >= 8) return;
+    this.spawnT = U.rand(1.0, 1.9);
     const zv = Math.random() < 0.15 ? 9 : U.randi(0, 8), cx = wd.cam.x;
     if (zv === 9) { wd.enemies.push(new L4.Foe('zombie', U.clamp(pl.x + (Math.random() < 0.5 ? -1 : 1) * U.rand(200, 320), 20, this.W - 20), 62, { zv, state: 'crawl' })); return; }
     if (zv === 5) { const z = new L4.Foe('zombie', U.clamp(pl.x + U.rand(-120, 120), 20, this.W - 20), -40, { zv, drop: true }); z.onGround = false; wd.enemies.push(z); G.say(z, 'У-у-у!', 0.8); return; }
@@ -790,7 +791,7 @@ L4.DRAW_BG = {
 // =====================================================================
 L4.Biker = class {
   constructor(st) {
-    Object.assign(this, { st, x: 520, y: L4.BOSS_G, vx: 0, vy: 0, facing: -1, hp: Math.round(280 * (G.BOSS_MULT || 1)), t: 0, s: 'idle', stT: 0, cool: 1.5, onGround: true, flash: 0, headH: 140, voice: 110, dieT: null, waves: [], rays: [], blackout: false, blackT: 0 });
+    Object.assign(this, { st, x: 520, y: L4.BOSS_G, vx: 0, vy: 0, facing: -1, hp: Math.round(240 * (G.BOSS_MULT || 1)), t: 0, s: 'idle', stT: 0, cool: 1.5, onGround: true, flash: 0, headH: 140, voice: 110, dieT: null, waves: [], rays: [], blackout: false, blackT: 0 });
     this.maxHp = this.hp;
   }
   get box() { return { x: this.x - 26, y: this.y - 126, w: 52, h: 126 }; }
@@ -1009,7 +1010,7 @@ L4.Level = class {
   startBoss() {
     this.setStage('boss', { x: 80, y: L4.BOSS_G });
     const st = this.stage; st.boss = new L4.Biker(st);
-    st.onUpdate = dt => st.boss.update(dt, st);
+    st.onUpdate = dt => { st.boss.update(dt, st); st.dropT = (st.dropT == null ? 4 : st.dropT) - dt; if (st.dropT <= 0 && st.boss.dieT == null) { st.dropT = U.rand(5, 7); const pk = new Game.Pickup(Math.random() < 0.7 ? 'tank' : 'pelmeni3', U.rand(100, 540), 0); pk.falling = true; st.world.pickups.push(pk); } };
     Music.play('epicBoss'); st.say('Прячься за колонки от радуги и волн. Когда он подставляет зад — бей, урон втрое!', 7);
   }
   bossDown() {
