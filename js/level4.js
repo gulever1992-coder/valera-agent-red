@@ -38,7 +38,7 @@ L4.img = {};
   const V = { crawl: A('v7_mv', [0, 1], 6), climb: A('v7_mv', [2, 3], 6), punchA: A('v7_mv', [4]), punchB: A('v7_mv', [5]), held: A('v7_mv', [6]), dance: A('v7_mv', [7, 6], 3) };
   Spr.ANIM.valera4 = Object.assign({}, V, {
     stand: A('v7_act', [0]), angry: A('v7_idle', [7]), hips: A('v7_idle', [0, 1], 4.5), stomp: A('v7_idle', [0, 1], 4.5), scratch: A('v7_idle', [5]), yawn: A('v7_idle', [6]), belly: A('v7_idle', [2, 3, 2, 3, 4], 3),
-    run: A('v16_runs', [0, 1, 2, 3, 4, 5, 6, 7], 14), walk: A('v16_runs', [0, 1, 2, 3, 4, 5, 6, 7], 9),
+    run: A('v17_runs', [0, 1, 2, 3, 4, 5, 6, 7], 14), walk: A('v17_runs', [0, 1, 2, 3, 4, 5, 6, 7], 9),
     crouch: A('v7_act', [1]), land: A('v7_act', [1]), jump: A('v7_act', [2]), fall: A('v7_act', [3]), hurt: A('v7_act', [4]), ko: A('v7_act', [5]),
     swatWind: A('v7_cap', [6]), swat: A('v7_act', [7]), fart: A('v7_cap', [7]), shoot: A('v7_act', [7]),
     angry: A('v16_stomp', [0, 1, 2, 3], 6), stomp: A('v16_stomp', [0, 1, 2, 3], 6), ko: A('v14_swat', [5]),
@@ -627,7 +627,7 @@ L4.Stage = class {
     for (const d of this.doors) d.draw(c, cx, cy, this.nearDoor === d);
     for (const p of this.patrons) p.draw(c, cx, cy);
     // стены: у края зала — позади всех; между фонами — поверх всех, проходят сквозь дверной проём
-    const drawWalls = back => { for (const w of this.walls) { const [wx, sp] = Array.isArray(w) ? w : [w, 'cdoorwall'], sx = wx - cx; if (back && sx > -200 && sx < W + 200) Spr.draw(c, sp, 0, sx, H - cy, 1); } };
+    const drawWalls = back => { for (const w of this.walls) { const [wx, sp] = Array.isArray(w) ? w : [w, 'cdoorwall'], sx = wx - cx; if (back && sx > -200 && sx < W + 200) { const ex = sp === 'swall' || sp === 'iwall'; Spr.draw(c, sp, 0, sx, (ex ? L4.GROUND + 8 : H) - cy, 1, ex ? { scale: 1.3 } : undefined); } } };
     drawWalls(true);
     this.drawProps(c, cx, cy, 'mid');
     for (const p of wd.pickups) p.draw(c, cx, cy);
@@ -712,8 +712,8 @@ L4.floorY = i => L4.TOWER_H - 40 - i * L4.TOWER_FH;
 L4.BUILD = {
   club(wd, o) {
     wd.addPlat({ x: 0, y: L4.GROUND, w: L4.CLUB_W, h: 60, oneway: false, look: 'none' });
-    this.walls = [[-40, 'swall'], L4.WALL1, L4.BACK_X];
-    if (o.escort) this.doors.push(new L4.Door(34, L4.GROUND, 'ВЫХОД', st => { st.player.x = 20; }));
+    this.walls = [[-60, 'swall'], L4.WALL1, L4.BACK_X];
+    if (o.escort) this.doors.push(new L4.Door(36, L4.GROUND, 'ВЫХОД', st => { st.player.x = 20; }));
     const P = (type, x, o2 = {}) => this.props.push(Object.assign({ type, x }, o2));
     const esc = !!o.escort;
     // ресепшен: диван с гостем и хостес (задний план); колонки; канат
@@ -770,7 +770,7 @@ L4.BUILD = {
   inner(wd, o) {
     wd.addPlat({ x: 0, y: L4.GROUND, w: L4.INNER_W, h: 60, oneway: false, look: 'none' });
     this.walls = [[0, 'iwall'], [L4.DARK_X0, 'ddoorwall']];
-    if (o.escort) this.doors.push(new L4.Door(67, L4.GROUND, 'ВЫХОД', st => { st.player.x = 20; }));
+    if (o.escort) this.doors.push(new L4.Door(87, L4.GROUND, 'ВЫХОД', st => { st.player.x = 20; }));
     this.dark = !o.lightsOn;
     if (!o.escort) {
       for (const x of [460, 1000, 1480]) this.npcs.push(new L4.Flirt(x, 'dancer'));
@@ -1003,7 +1003,7 @@ L4.Level = class {
     if (opts.boss) { this.carry = { ammo3: { swatter: 100, chalk: 0, seed: 150 }, hasSeed: true, green: false, weapon: 'seed' }; this.startBoss(); return; }
     if (opts.escort) { this.carry = { ammo3: { swatter: 100, chalk: 0, seed: 200 }, hasSeed: true, green: true, weapon: 'seed' }; this.startEscort(); return; }
     if (opts.tower) { this.stairsOpen = true; this.setStage('tower', { x: L4.stairX(0), y: L4.HOTEL_G, floor: 0 }); return; }
-    if (opts.inner) { this.carry = { ammo3: { swatter: 100, chalk: 0, seed: 150 }, hasSeed: true, weapon: 'seed' }; this.setStage('inner', { x: 78 }); return; }
+    if (opts.inner) { this.carry = { ammo3: { swatter: 100, chalk: 0, seed: 150 }, hasSeed: true, weapon: 'seed' }; this.setStage('inner', { x: 96 }); return; }
     this.playScene(L4.sceneIntro(this), () => { this.setStage('club', { x: 120 }); this.stage.say('Иди за горничной. {jump} — прыжок, {down} — присесть и ползти, {punch} — удар, {switch} — оружие.', 7); Music.play('epic'); });
   }
   playScene(gen, next) { this.mode = 'scene'; Scene.run(gen, next); }
@@ -1048,7 +1048,7 @@ L4.Level = class {
     const st = this.stage; st.carry();
     const couple = !this.stairsOpen && !this.hasPassword;
     this.playScene(L4.sceneHatch(this, this.hasPassword, couple), () => {
-      if (this.hasPassword) this.setStage('inner', { x: 78 });
+      if (this.hasPassword) this.setStage('inner', { x: 96 });
       else { this.stairsOpen = true; this.setStage('club', { x: L4.DOOR_X - 60, facing: -1 }); this.stage.say('Отель наверху открыт — ищи пароль в номерах. Лестница — [ВВЕРХ] у двери рядом.', 6); }
     });
   }

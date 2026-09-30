@@ -694,6 +694,7 @@ S['v16_stomp'] = build_sheet('v16_stomp', 'v16_stomp.png', 4, 88, ref=0, keyer='
 S['toilets'] = build_sheet('toilets', 'toilets.png', 4, 50, ref=0, keyer='cyan', even=True)
 S['vovagun3'] = build_sheet('vovagun3', 'vova_gun3.png', 6, 86, ref=0, keyer='cleanr', even=True)
 B['club_wc3'] = bg('club_wc_open.png', 'club_wc3', (1280, 720))
+S['v17_runs'] = build_sheet('v17_runs', 'v17_runs.png', 8, 84, keyer='magenta', anchors=['body'] * 8, even=True)
 # портреты персонажей уровня 4 (лица из листов)
 def pcrop(sheet, fi, box, name, flip=False):
     f = S[sheet]['f'][fi]
