@@ -54,8 +54,8 @@ L4.img = {};
     angry: A('v14_stomp', [0, 1, 2, 3], 6), stomp: A('v14_stomp', [0, 1, 2, 3], 6), ko: A('v14_punch', [4]), hips: A('v14_stomp', [0]),
   });
   const GUN = g => ({ stand: A(g, [0]), angry: A(g, [0]), hips: A(g, [0]), scratch: A(g, [0]), yawn: A(g, [0]), belly: A(g, [0]), run: A(g, [1, 2, 3, 4], 10), walk: A(g, [1, 2, 3, 4], 7), shoot: A(g, [0]), jump: A(g, [6]), fall: A(g, [6]), crouch: A(g, [7]), land: A(g, [7]) });
-  Spr.ANIM.valera4green = Object.assign({}, Spr.ANIM.valera4, V, GUN('v11_gun'));
-  Spr.ANIM.valera3gun = Object.assign({}, Spr.ANIM.valera4, V, GUN('v10_gun'));
+  Spr.ANIM.valera4green = Object.assign({}, Spr.ANIM.valera4, V, GUN('v11_gun'), { angry: A('v15_gs', [4, 5, 6, 7], 6), stomp: A('v15_gs', [4, 5, 6, 7], 6) });
+  Spr.ANIM.valera3gun = Object.assign({}, Spr.ANIM.valera4, V, GUN('v10_gun'), { angry: A('v15_gs', [0, 1, 2, 3], 6), stomp: A('v15_gs', [0, 1, 2, 3], 6) });
   Spr.ANIM.valera3gunOld = Object.assign({}, Spr.ANIM.valera4, V, {
     stand: A('v8_gun', [0]), angry: A('v8_gun', [0]), run: A('v8_gun', [1, 2, 3, 4], 10), walk: A('v8_gun', [1, 2, 3, 4], 7),
     shoot: A('v8_gun', [5]), jump: A('v8_gun', [6]), fall: A('v8_gun', [6]), crouch: A('v8_gun', [7]), land: A('v8_gun', [7]),
