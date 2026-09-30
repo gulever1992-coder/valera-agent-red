@@ -566,8 +566,8 @@ S['v7_cap'] = build_sheet('v7_cap', 'v7_cap.png', 8, 88, ref=5, keyer='strict', 
 # ---- уровень 4: туалет, закрытый зал, мужчины, ботаники, стена чёрной комнаты, эффекты босса ----
 def doorwall(src, name, k=0.8, keyer=key_pre):
     da = keyer(Image.open(os.path.join(SRC, src))); op = da[..., 3] > 0
+    ys = np.where(op.any(axis=1))[0]; da = da[ys[0]:ys[-1] + 1]; op = op[ys[0]:ys[-1] + 1]
     cov = op.mean(axis=0); wallx = int(np.where(cov > 0.85)[0].min())
-    ys = np.where(op.any(axis=1))[0]; da = da[ys[0]:ys[-1] + 1]
     H0, W0 = da.shape[:2]
     full = Image.fromarray(da.astype(np.uint8), 'RGBA'); fk = full.resize((round(W0 * k), round(H0 * k)), Image.LANCZOS)
     comp = Image.new('RGBA', (fk.width, H0), (0, 0, 0, 0)); top = H0 - fk.height; sx = round(wallx * k)
@@ -656,7 +656,7 @@ S['v12_run'] = build_sheet('v12_run', 'v12_run.png', 8, 84, keyer='cleanr', anch
 S['v12_runs'] = build_sheet('v12_runs', 'v12_runs.png', 8, 84, keyer='cleanr', anchors=['body'] * 8, even=True)
 S['v12_fist'] = build_sheet('v12_fist', 'v12_fist.png', 8, 88, ref=0, keyer='strict', even=True, anchors=['body'] * 5 + ['center', 'body', 'body'])
 S['walk4'] = build_sheet('walk4', 'walk4.png', 8, 88, ref=0, keyer='cleanr', even=True)
-doorwall('exitwall_street_m.png', 'swall', 1.0, key_pre_red)
+doorwall('exitwall_street_n.png', 'swall', 1.0, key_pre_red)
 doorwall('exitwall_iron_m.png', 'iwall', 1.0, key_pre_red)
 S['carry'] = build_sheet('carry', 'carry.png', 4, 96, keyer='magenta', even=True)
 S['lprops'] = build_sheet('lprops', 'lprops.png', 8, [40, 48, 120, 100, 42, 94, 44, 80], keyer='magenta', even=True)
@@ -689,6 +689,11 @@ S['v14_stomp'] = build_sheet('v14_stomp', 'v14_stomp.png', 8, 88, ref=0, keyer='
 S['v14_punch'] = build_sheet('v14_punch', 'v14_punch.png', 6, 88, ref=0, keyer='cleanr', even=True, anchors=['body'] * 4 + ['center', 'body'])
 S['v14_swat'] = build_sheet('v14_swat', 'v14_swat.png', 6, 88, ref=1, keyer='cleanr', even=True, anchors=['body'] * 5 + ['center'])
 S['v15_gs'] = build_sheet('v15_gs', 'v15_gunstomp.png', 8, 86, ref=0, keyer='magenta', even=True, anchors=['body'] * 8)
+S['v16_runs'] = build_sheet('v16_runs', 'v16_runs.png', 8, 84, keyer='magenta', anchors=['body'] * 8, even=True)
+S['v16_stomp'] = build_sheet('v16_stomp', 'v16_stomp.png', 4, 88, ref=0, keyer='cleanr', even=True, anchors=['body'] * 4)
+S['toilets'] = build_sheet('toilets', 'toilets.png', 4, 50, ref=0, keyer='cyan', even=True)
+S['vovagun3'] = build_sheet('vovagun3', 'vova_gun3.png', 6, 86, ref=0, keyer='cleanr', even=True)
+B['club_wc3'] = bg('club_wc_open.png', 'club_wc3', (1280, 720))
 # портреты персонажей уровня 4 (лица из листов)
 def pcrop(sheet, fi, box, name, flip=False):
     f = S[sheet]['f'][fi]
