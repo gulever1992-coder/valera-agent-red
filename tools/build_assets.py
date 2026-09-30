@@ -94,6 +94,17 @@ def key_pre_red(im):
         a[..., 3] = np.where(red, 0, a[..., 3])
     return a.astype(np.uint8)
 
+def key_cyan(im):
+    a = np.array(im.convert('RGBA')).astype(np.int32)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    bg = (r < 90) & (g > 190) & (b > 190)
+    a[..., 3] = np.where(bg, 0, 255)
+    for _ in range(2):
+        tr = a[..., 3] == 0; near = ndimage.binary_dilation(tr, iterations=1) & ~tr
+        cy = near & (a[..., 1] - a[..., 0] > 60) & (a[..., 2] - a[..., 0] > 60)
+        a[..., 3] = np.where(cy, 0, a[..., 3])
+    return a.astype(np.uint8)
+
 def key_black(im):
     a = np.array(im.convert('RGBA')).astype(np.int32)
     dark = a[..., :3].max(axis=2) < 22
@@ -194,7 +205,7 @@ def only_largest(f):
 
 def build_sheet(name, src, n, target, ref=0, keyer='green', grid=None, anchors=None, pad=2, strip=(), dil=4, even=False):
     im = Image.open(os.path.join(SRC, src))
-    a = key_green(im) if keyer == 'green' else key_green_strict(im) if keyer == 'strict' else key_black(im) if keyer == 'black' else key_magenta(im) if keyer == 'magenta' else key_pre(im) if keyer == 'clean' else key_pre_red(im) if keyer == 'cleanr' else np.array(im.convert('RGBA'))
+    a = key_green(im) if keyer == 'green' else key_green_strict(im) if keyer == 'strict' else key_black(im) if keyer == 'black' else key_magenta(im) if keyer == 'magenta' else key_pre(im) if keyer == 'clean' else key_pre_red(im) if keyer == 'cleanr' else key_cyan(im) if keyer == 'cyan' else np.array(im.convert('RGBA'))
     if even:
         # кадры стоят в ряд: крупные куски — тела (слипшиеся делим по «перешейку»), мелочь — к ближайшему телу
         op = a[..., 3] > 0
@@ -646,7 +657,7 @@ S['v12_runs'] = build_sheet('v12_runs', 'v12_runs.png', 8, 84, keyer='cleanr', a
 S['v12_fist'] = build_sheet('v12_fist', 'v12_fist.png', 8, 88, ref=0, keyer='strict', even=True, anchors=['body'] * 5 + ['center', 'body', 'body'])
 S['walk4'] = build_sheet('walk4', 'walk4.png', 8, 88, ref=0, keyer='cleanr', even=True)
 doorwall('exitwall_street_m.png', 'swall', 1.0, key_pre_red)
-doorwall('exitwall_iron.png', 'iwall', 1.0, key_pre_red)
+doorwall('exitwall_iron_m.png', 'iwall', 1.0, key_pre_red)
 S['carry'] = build_sheet('carry', 'carry.png', 4, 96, keyer='magenta', even=True)
 S['lprops'] = build_sheet('lprops', 'lprops.png', 8, [40, 48, 120, 100, 42, 94, 44, 80], keyer='magenta', even=True)
 S['zombc'] = build_sheet('zombc', 'zomb_c.png', 8, 94, ref=7, keyer='cleanr', even=True)
@@ -664,7 +675,19 @@ def room_grid(src, first):
         else: nh = int(ww * 9 / 16); Y0 += (hh - nh); Y1 = Y0 + nh
         im.crop((X0, Y0, X1, Y1)).resize((1280, 720), Image.LANCZOS).save(os.path.join(OUT, 'room%d.jpg' % (first + k)), quality=88)
 room_grid('rooms4b.png', 4); room_grid('rooms4c.png', 8)
+Image.open(os.path.join(SRC, 'room5_fix.png')).convert('RGB').resize((1280, 720), Image.LANCZOS).save(os.path.join(OUT, 'room5.jpg'), quality=88)  # велосипед не у двери
 S['nerds2'] = build_sheet('nerds2', 'nerds2.png', 10, [-120] * 10, keyer='magenta', grid=(2, 5))
+for _k, _src in ((1, 'hotel_f1b.png'), (2, 'hotel_f2b.png'), (3, 'hotel_f3.png')): B['hotel_f%d' % _k] = bg(_src, 'hotel_f%d' % _k, (1280, 720))
+S['mwalk'] = build_sheet('mwalk', 'menwalk.png', 12, 90, ref=0, keyer='cleanr', grid=(3, 4))
+S['cmdrope'] = build_sheet('cmdrope', 'cmd_rope.png', 4, 118, keyer='magenta', even=True)
+S['statue'] = build_sheet('statue', 'statue.png', 2, 140, ref=0, keyer='magenta', even=True)
+S['v13_cap'] = build_sheet('v13_cap', 'v13_cap.png', 6, 88, ref=5, keyer='magenta', even=True, anchors=['body'] * 6)
+S['maidgum'] = build_sheet('maidgum', 'maidgum.png', 6, 88, ref=0, keyer='cleanr', even=True)
+S['maidw'] = build_sheet('maidw', 'maidwalk.png', 8, 88, ref=0, keyer='cleanr', even=True)
+S['stall3'] = build_sheet('stall3', 'stall3.png', 5, [173, 173, 173, 173, 160], keyer='cyan', even=True)
+S['v14_stomp'] = build_sheet('v14_stomp', 'v14_stomp.png', 8, 88, ref=0, keyer='cleanr', even=True, anchors=['body'] * 8)
+S['v14_punch'] = build_sheet('v14_punch', 'v14_punch.png', 6, 88, ref=0, keyer='cleanr', even=True, anchors=['body'] * 4 + ['center', 'body'])
+S['v14_swat'] = build_sheet('v14_swat', 'v14_swat.png', 6, 88, ref=1, keyer='cleanr', even=True, anchors=['body'] * 5 + ['center'])
 # портреты персонажей уровня 4 (лица из листов)
 def pcrop(sheet, fi, box, name, flip=False):
     f = S[sheet]['f'][fi]
