@@ -50,7 +50,7 @@ L4.img = {};
     crouch: A('v12_fist', [1]), land: A('v12_fist', [1]), jump: A('v12_fist', [2]), fall: A('v12_fist', [3]), hurt: A('v12_fist', [4]), ko: A('v12_fist', [5]),
     punchA: A('v12_fist', [6]), punchB: A('v12_fist', [6]), swat: A('v12_fist', [6]), swatWind: A('v12_fist', [0]), shoot: A('v12_fist', [6]),
   });
-  const GUN = g => ({ stand: A(g, [0]), angry: A(g, [0]), hips: A(g, [0]), scratch: A(g, [0]), yawn: A(g, [0]), belly: A(g, [0]), run: A(g, [1, 2, 3, 4], 10), walk: A(g, [1, 2, 3, 4], 7), shoot: A(g, [5]), jump: A(g, [6]), fall: A(g, [6]), crouch: A(g, [7]), land: A(g, [7]) });
+  const GUN = g => ({ stand: A(g, [0]), angry: A(g, [0]), hips: A(g, [0]), scratch: A(g, [0]), yawn: A(g, [0]), belly: A(g, [0]), run: A(g, [1, 2, 3, 4], 10), walk: A(g, [1, 2, 3, 4], 7), shoot: A(g, [0]), jump: A(g, [6]), fall: A(g, [6]), crouch: A(g, [7]), land: A(g, [7]) });
   Spr.ANIM.valera4green = Object.assign({}, Spr.ANIM.valera4, V, GUN('v11_gun'));
   Spr.ANIM.valera3gun = Object.assign({}, Spr.ANIM.valera4, V, GUN('v10_gun'));
   Spr.ANIM.valera3gunOld = Object.assign({}, Spr.ANIM.valera4, V, {
@@ -126,7 +126,7 @@ L4.Player = class extends L3.Player {
         const up = I.held('up'), base = up ? (I.held('left') || I.held('right') ? -0.8 : -1.45) : 0;
         for (const a of this.green ? [-0.15, 0, 0.15] : [0]) {
           const ang = base + a, sp = 480;
-          const s = new L3.Shot('juice', this.x + this.facing * 30, this.y - (this.crouch ? 28 : 48), this.facing);
+          const s = new L3.Shot('juice', this.x + this.facing * 34, this.y - (this.crouch ? 29 : 43), this.facing);
           s.vx = Math.cos(ang) * sp * this.facing; s.vy = Math.sin(ang) * sp; if (up && base < -1.2) s.vx = Math.sin(a) * sp * 0.6 + this.facing * 20;
           s.grav = 60; s.dmg = this.green ? 2 : 3; s.green = this.green; s.seed = true; s.pierce = this.green ? 1 : 0;
           world.projs.push(s);
@@ -175,10 +175,10 @@ L4.drawHUD = function (c, pl, wd) {
 // ВРАГИ
 // =====================================================================
 L4.FOE = {
-  whip: { hp: 5, w: 26, h: 80, speed: 95, reach: 54, dmg: 10, score: 250, lines: ['Плохой мальчик!', 'На колени, рыжий!', 'Сейчас отшлёпаю!', 'Вон отсюда, это наш номер!'] },
-  sailor: { hp: 5, w: 26, h: 80, speed: 75, reach: 46, dmg: 9, score: 250, march: true, lines: ['Полундра!', 'Раз-два, левой!', 'Свистать всех наверх!', 'Пшёл вон с палубы!'] },
-  sumo: { hp: 10, w: 50, h: 96, speed: 55, bounce: true, dmg: 14, score: 450, lines: ['Хаккейо-о-о!', 'Раздавлю, как пельмень!'] },
-  gum: { hp: 6, w: 40, h: 84, speed: 60, gum: true, dmg: 9, score: 300, lines: ['Хочешь жвачку, пупсик?', 'Бабл-гам атака!', 'Чпок!'] },
+  whip: { hp: 14, w: 26, h: 80, speed: 95, reach: 54, dmg: 10, score: 250, lines: ['Плохой мальчик!', 'На колени, рыжий!', 'Сейчас отшлёпаю!', 'Вон отсюда, это наш номер!'] },
+  sailor: { hp: 14, w: 26, h: 80, speed: 75, reach: 46, dmg: 9, score: 250, march: true, lines: ['Полундра!', 'Раз-два, левой!', 'Свистать всех наверх!', 'Пшёл вон с палубы!'] },
+  sumo: { hp: 26, w: 50, h: 96, speed: 55, bounce: true, dmg: 14, score: 450, lines: ['Хаккейо-о-о!', 'Раздавлю, как пельмень!'] },
+  gum: { hp: 16, w: 40, h: 84, speed: 60, gum: true, dmg: 9, score: 300, lines: ['Хочешь жвачку, пупсик?', 'Бабл-гам атака!', 'Чпок!'] },
   zombie: { hp: 6, w: 26, h: 80, speed: 140, reach: 38, dmg: 12, score: 150, lines: ['Ы-ы-ы... танцуем...', 'Мозги-и... и коктейль...', 'Ам-ам-ам!', 'Вовочка-а-а...', 'Скушаю!'] },
   eyes: { hp: 2, w: 30, h: 22, speed: 55, dark: true, dmg: 5, score: 200, lines: ['Ты мне так нравишься...', 'Какой брутальный!', 'Третьим будешь?', 'Давай дружить!', 'Я тебя давно заметил...', 'Не уходи-и-и...'] },
 };
@@ -573,7 +573,8 @@ L4.Stage = class {
       const sx = p.x - cx; if (sx < -300 || sx > W + 300) continue;
       const fr = p.d.anim ? p.d.fr + (Math.floor(G.t * 1.4 + p.x * 0.01) % 2) * p.d.anim : p.d.fr;
       if (p.type === 'slime') { c.save(); c.translate(sx, (p.y || L4.GROUND) - cy + 6); c.scale(1, 0.45); Spr.draw(c, 'acid', Math.floor(G.t * 4 + p.x) % 4, 0, 0, 1, { scale: 1.2 }); c.restore(); continue; }
-      Spr.draw(c, p.d.sheet, fr, sx, (p.y || L4.GROUND) - cy + 2, p.flip ? -1 : 1, { alpha: p.alpha, scale: p.scale });
+      const pl = this.player, under = p.cr && layer === 'front' && pl.crouch && pl.x > p.cr.x0 - 10 && pl.x < p.cr.x1 + 10; // ползущего видно сквозь мебель
+      Spr.draw(c, p.d.sheet, fr, sx, (p.y || L4.GROUND) - cy + 2, p.flip ? -1 : 1, { alpha: under ? 0.55 : p.alpha, scale: p.scale });
     }
   }
   drawDancers(c, cx, cy, layer) {
@@ -605,7 +606,9 @@ L4.Stage = class {
     this.drawProps(c, cx, cy, 'bg');
     for (const d of this.doors) d.draw(c, cx, cy, this.nearDoor === d);
     for (const p of this.patrons) p.draw(c, cx, cy);
-    for (const w of this.walls) { const [wx, sp] = Array.isArray(w) ? w : [w, 'cdoorwall'], sx = wx - cx; if (sx > -200 && sx < W + 200) Spr.draw(c, sp, 0, sx, H - cy, 1); }
+    // стены: у края зала — позади всех; между фонами — поверх всех, проходят сквозь дверной проём
+    const drawWalls = back => { for (const w of this.walls) { const [wx, sp] = Array.isArray(w) ? w : [w, 'cdoorwall'], sx = wx - cx; if ((wx <= 40) === back && sx > -200 && sx < W + 200) Spr.draw(c, sp, 0, sx, H - cy, 1); } };
+    drawWalls(true);
     this.drawProps(c, cx, cy, 'mid');
     for (const p of wd.pickups) p.draw(c, cx, cy);
     for (const n of this.npcs) n.draw(c, cx, cy);
@@ -616,6 +619,7 @@ L4.Stage = class {
     if (this.vova) this.vova.draw(c, cx, cy);
     if (!this.player.held && this.player.visible !== false) this.player.draw(c, cx, cy);
     this.drawProps(c, cx, cy, 'front');
+    drawWalls(false);
     for (const g of wd.globs) g.draw(c, cx, cy);
     for (const cl of wd.clouds) L3.drawCloud(c, cl, cx, cy);
     c.save(); c.translate(0, -cy); for (const p of wd.projs) p.draw(c, cx); c.restore();
@@ -688,12 +692,12 @@ L4.BUILD = {
     P('rope', 330, { layer: 'bg' }); if (!esc) P('sofaA', 560, { layer: 'bg', y: L4.GROUND - 16 }); P('speakers', 800);
     // танцпол: столики с гостями — задний план; перепрыгнуть колонки; проползти под сценой шеста и стойкой
     if (!esc) { P('tableA', 1060, { layer: 'bg', y: L4.GROUND - 18 }); P('djA', 1620, { layer: 'bg', y: L4.GROUND - 22 }); P('table2A', 2150, { layer: 'bg', y: L4.GROUND - 18 }); P('tableA', 2290, { layer: 'bg', y: L4.GROUND - 18, flip: true }); }
-    P('pole', 1320, { layer: 'front' }); P('speakers', 1500); P('bar', 1880, { layer: 'front' }); P('speakers', 2260);
+    P('pole', 1320, { layer: 'front' }); P('speakers', 1500); P('bar', 1880, { layer: 'front', y: L4.GROUND + 16 }); P('speakers', 2260);
     if (esc) for (const x of [420, 700, 1100, 1450, 1700, 2100, 2500, 2800, 3050]) P('slime', x + U.rand(-40, 40), { layer: 'bg' });
     this.fgItems = [{ sheet: 'fg2', fr: 1, x: 680, y: H + 20, par: 1.3, scale: 1.1 }, { sheet: 'fg2', fr: 3, x: 1250, y: H + 30, par: 1.3 }, { sheet: 'fg2', fr: 0, x: 2520, y: H + 34, par: 1.3 }, { sheet: 'fg2', fr: 4, x: 1150, y: H + 30, par: 1.3 }, { sheet: 'fg2', fr: 5, x: 2900, y: H + 30, par: 1.3 }];
     this.dancers = [
-      { x: 1180, y: L4.GROUND - 40, par: 0.85, scale: 0.72, alpha: 0.8, layer: 'bg', ph: 0 },
-      { x: 1760, y: L4.GROUND - 40, par: 0.85, scale: 0.72, alpha: 0.8, layer: 'bg', ph: 2 },
+      { x: 1180, y: L4.GROUND - 40, par: 1, scale: 0.72, alpha: 0.8, layer: 'bg', ph: 0 },
+      { x: 1760, y: L4.GROUND - 40, par: 1, scale: 0.72, alpha: 0.8, layer: 'bg', ph: 2 },
       { x: 1450, y: H + 70, par: 1.3, scale: 1.25, alpha: 1, layer: 'fg', ph: 4 },
     ];
     if (esc) this.dancers = [];
@@ -701,6 +705,7 @@ L4.BUILD = {
     for (let x = 1000; x < 2600; x += 160) this.lights.push({ x, sp: 0.6 + Math.random() * 0.8, ph: Math.random() * 6, col: Math.random() < 0.5 });
     [[1000, 0], [1240, 1], [1600, 2], [2050, 3], [2200, 1], [620, 2]].forEach(([x, fr]) => this.patrons.push(new L4.Patron(x, { fr })));
     this.npcs.push(new L4.Bouncer(1702, 'bouncerA', { guard: true, facing: -1 }), new L4.Bouncer(2062, 'bouncerB', { guard: true, facing: -1 }));
+    if (!esc && !o.scene) this.npcs.push(new L4.Bouncer(350, 'nurse', { facing: -1, headH: 96 }));
     this.npcs.push(new L4.Bouncer(L4.STAIRS_X - 46, 'bouncerB', { idle: 'lean', facing: -1 }));
     if (!this.level.stairsOpen) this.props.push({ type: 'rope', x: L4.STAIRS_X, layer: 'mid' });
     this.doors.push(new L4.Door(L4.STAIRS_X, L4.GROUND, 'ЛЕСТНИЦА В ОТЕЛЬ', st => st.level.enterTower(), { icon: 1 }));
@@ -787,8 +792,8 @@ L4.DRAW_BG = {
     for (const s of this.stalls) {
       if (!s.open) continue;
       const fr = s.what === 'hookah' ? 1 : s.what === 'gun' ? (this.level.gunTaken ? 0 : 2) : s.what === 'bum' ? 3 + Math.floor(G.t * 1.2) % 2 : 0;
-      { const f = Spr.frame('stalls2', fr), w = f[2] * 0.43; c.save(); c.beginPath(); c.rect(s.x - w / 2 + w * 0.13, 0, w, H); c.clip(); Spr.draw(c, 'stalls2', fr, s.x, 250, 1, { scale: 0.86 }); c.restore(); }
-      if (s.what === 'kesha') Spr.drawAnim(c, 'kesha4', Math.floor(G.t * 0.7) % 2 ? 'thumbs' : 'sniff', G.t, s.x, 248, 1, { scale: 0.9 });
+      { const f = Spr.frame('stalls2', fr), w = f[2] * 0.45; c.save(); c.beginPath(); c.rect(s.x - w / 2 + w * 0.13, 0, w, H); c.clip(); Spr.draw(c, 'stalls2', fr, s.x, 264, 1, { scale: 0.9 }); c.restore(); }
+      if (s.what === 'kesha') Spr.drawAnim(c, 'kesha4', Math.floor(G.t * 0.7) % 2 ? 'thumbs' : 'sniff', G.t, s.x, 247, 1, { scale: 0.9 });
     }
   },
   club(c, cx) {
@@ -797,7 +802,7 @@ L4.DRAW_BG = {
     const kx = 2470 - cx; if (kx > -200 && kx < W + 200) Spr.draw(c, 'cabstage', this.o.escort ? 3 : [0, 1, 0, 2, 0, 3][Math.floor(G.t * 2.4) % 6], kx, L4.GROUND - 10, 1, { scale: 0.7 });
   },
   tower(c) { if (L4.img.hotel_floor2) c.drawImage(L4.img.hotel_floor2, 0, 0, W, H); G.text('ЭТАЖ ' + (this.floor + 1), 20, 44, { size: 8, color: '#ff8ad8', outline: true }); },
-  room(c) { const r = this.roomData; const img = L4.img['room' + L4.ROOM_IMG[r.id % 9]]; if (img) c.drawImage(img, 0, 0, W, H); const n = this.nerd, ph = Math.floor(G.t * 1.2 + n) % 2; if (n < 4) Spr.draw(c, 'nerds', n + ph * 4, 430, L4.GROUND + 6, 1); else Spr.draw(c, 'nerds2', n - 4 + ph * 5, 430, L4.GROUND + 6, 1); },
+  room(c) { const r = this.roomData; const img = L4.img['room' + L4.ROOM_IMG[r.id % 9]]; if (img) c.drawImage(img, 0, 0, W, H); const n = this.nerd, ph = Math.floor(G.t * 1.2 + n) % 2; if (n < 4) Spr.draw(c, 'nerds', n + ph * 4, 440, L4.GROUND + 12, 1, { scale: 0.8 }); else Spr.draw(c, 'nerds2', n - 4 + ph * 5, 440, L4.GROUND + 12, 1, { scale: 0.8 }); },
   inner(c, cx) {
     for (const z of L4.ZONES.inner) L4.drawWallStrip(c, this.o.escort && L3.img[z.wall + '_z'] ? z.wall + '_z' : z.wall, z.x0, z.x1, cx, 0, z.x0 > 0 && !this.o.escort ? 'rgba(0,0,0,0.5)' : null);
     if (this.dark) { const dx0 = L4.DARK_X0 - cx; if (dx0 < W) { c.fillStyle = '#000'; c.fillRect(Math.max(0, dx0), 0, W, H); } }
@@ -1102,12 +1107,13 @@ L4.sceneIntro = level => function* () {
   yield 0.5;
   yield* Scene.say('valera', 'Так... В приличное заведение в арбузе не ходят.', v);
   v.setAnim('capOff'); yield 0.5;
-  v.setAnim('capThrow'); Sound.play('throw');
-  const melon = { x: v.x - 10, y: L4.GROUND - 100, vx: -140, vy: -260, rot: 0 };
+  v.setAnim('capThrow'); Sound.play('throw'); yield 0.12;
+  v.setAnim('capHold');
+  const melon = { x: v.x - 20, y: L4.GROUND - 92, vx: -140, vy: -220, rot: 0 };
   st.patrons.push({ update() {}, draw: (c, cx) => { if (melon.y < L4.GROUND - 6) { Art.item(c, 'melon', melon.x - cx, melon.y, melon.rot, 1.1); } } });
   yield* Scene.tween(0.8, k => { melon.vy += 900 * G.dt; melon.x += melon.vx * G.dt; melon.y += melon.vy * G.dt; melon.rot += G.dt * 9; });
   Sound.play('splash');
-  v.animSet = 'valera4'; v.setAnim('capHold'); yield 0.6;
+  yield 0.3;
   v.setAnim('capOn'); Sound.play('pickup'); yield 0.5;
   v.setAnim('capFix'); if (G.portraits.valera4) G.portraits.valera = G.portraits.valera4;
   yield* Scene.say('valera', 'Вот. Совсем другое дело. Капитан Валера на службе.', v);

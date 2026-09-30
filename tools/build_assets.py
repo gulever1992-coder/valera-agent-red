@@ -645,7 +645,7 @@ S['v12_run'] = build_sheet('v12_run', 'v12_run.png', 8, 84, keyer='cleanr', anch
 S['v12_runs'] = build_sheet('v12_runs', 'v12_runs.png', 8, 84, keyer='cleanr', anchors=['body'] * 8, even=True)
 S['v12_fist'] = build_sheet('v12_fist', 'v12_fist.png', 8, 88, ref=0, keyer='strict', even=True, anchors=['body'] * 5 + ['center', 'body', 'body'])
 S['walk4'] = build_sheet('walk4', 'walk4.png', 8, 88, ref=0, keyer='cleanr', even=True)
-doorwall('exitwall_street.png', 'swall', 1.0, key_pre_red)
+doorwall('exitwall_street_m.png', 'swall', 1.0, key_pre_red)
 doorwall('exitwall_iron.png', 'iwall', 1.0, key_pre_red)
 S['carry'] = build_sheet('carry', 'carry.png', 4, 96, keyer='magenta', even=True)
 S['lprops'] = build_sheet('lprops', 'lprops.png', 8, [40, 48, 120, 100, 42, 94, 44, 80], keyer='magenta', even=True)
