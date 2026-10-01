@@ -566,6 +566,7 @@ L4.Stage = class {
     if (this.onUpdate) this.onUpdate(dt);
     if (this.onTick) this.onTick(dt);
     if (this.zombieSpawner) this.spawnZombies(dt);
+    if (this.kind === 'inner' && !this.o.escort && pl.x > L4.INNER_W - 70 && pl.controls && !pl.dead && !this.leaving) { this.leaving = true; this.level.enterLair(); return; }
     if (this.kind === 'inner' && this.dark && pl.x > L4.DARK_X0 + 10 && !pl.dead) {
       this.eyeT = (this.eyeT || 0) - dt;
       const n = wd.enemies.filter(e => e.d && e.d.dark && e.dieT == null).length;
@@ -575,6 +576,7 @@ L4.Stage = class {
         wd.enemies.push(new L4.Foe('eyes', x, y, { pair }), new L4.Foe('eyes', x + 36, y + 6, { pair, k: 1 }));
       }
     }
+    if (this.leverWait) { pl.vx = 0; if (I.pressed('up') || I.pressed('punch') || I.pressed('jump')) { this.leverWait = false; this.level.pullLever(); } return; }
     this.nearDoor = null;
     for (const d of this.doors) if (Math.abs(pl.x - d.x) < 28 && Math.abs(pl.y - d.y) < 10 && pl.onGround) this.nearDoor = d;
     const nd = this.nearDoor, can = nd && pl.controls && !pl.dead && !pl.climb;
@@ -627,7 +629,7 @@ L4.Stage = class {
     for (const d of this.doors) d.draw(c, cx, cy, this.nearDoor === d);
     for (const p of this.patrons) p.draw(c, cx, cy);
     // стены: у края зала — позади всех; между фонами — поверх всех, проходят сквозь дверной проём
-    const drawWalls = back => { for (const w of this.walls) { const [wx, sp] = Array.isArray(w) ? w : [w, 'cdoorwall'], sx = wx - cx; if (back && sx > -200 && sx < W + 200) { const ex = sp === 'swall' || sp === 'iwall'; Spr.draw(c, sp, 0, sx, (ex ? L4.GROUND + 8 : H) - cy, 1, ex ? { scale: 1.3 } : undefined); } } };
+    const drawWalls = back => { for (const w of this.walls) { const [wx, sp] = Array.isArray(w) ? w : [w, 'cdoorwall'], sx = wx - cx; if (back && sx > -200 && sx < W + 200) { const ex = sp === 'swall' || sp === 'iwall'; Spr.draw(c, sp, 0, sx, (sp === 'iwall' ? L4.GROUND - 30 : ex ? L4.GROUND + 8 : H) - cy, 1, ex ? { scale: 1.3 } : undefined); } } };
     drawWalls(true);
     this.drawProps(c, cx, cy, 'mid');
     for (const p of wd.pickups) p.draw(c, cx, cy);
@@ -657,8 +659,8 @@ L4.Stage = class {
     if (this.boss && this.boss.dieT == null && !this.lairDark) {
       const b = this.boss;
       Art.R(c, 160, H - 26, 320, 16, '#111'); Art.R(c, 162, H - 24, 316, 12, '#3a1010');
-      Art.R(c, 162, H - 24, Math.round(316 * b.hp / b.maxHp), 12, b.hp < b.maxHp * 0.25 ? '#ff4020' : '#c85020');
-      G.text('БАЙКЕР', W / 2, H - 40, { align: 'center', color: '#ffb080', outline: true });
+      Art.R(c, 162, H - 24, Math.round(316 * b.hp / b.maxHp), 12, b.st === 'taunt' ? '#ffd84a' : b.hp < b.maxHp * 0.4 ? '#ff3020' : '#d83040');
+      G.text('БАЙКЕР — КОРОЛЬ ДИСКОТЕКИ', W / 2, H - 40, { align: 'center', color: '#ffb080', outline: true });
     }
     if (this.vova) { Art.R(c, 440, 34, 190, 12, '#111'); Art.R(c, 442, 36, Math.round(186 * this.vova.hp / this.vova.maxHp), 8, '#5ab8ff'); G.text('ВОВА', 436, 35, { align: 'right', size: 8, color: '#8cd0ff' }); }
     const zs = L4.ZONES[this.kind];
@@ -762,15 +764,15 @@ L4.BUILD = {
     this.fgItems = [{ sheet: 'fg2', fr: [7, 1, 5, 4][o.room.id % 4], x: 600, y: H + 30, scale: 1 }];
     if (!r.cleared) r.foes.forEach((t, k) => wd.enemies.push(new L4.Foe(t, k ? 590 : 290, L4.GROUND, { aggro: true })));
     // кровать с ботаником — крупная, неподвижная, стоит на полу; её надо перепрыгивать
-    { const i = L4.ROOM_IMG[r.id % 9], n = i >= 4 && i <= 8 ? i : [9, 10, 11, 0].indexOf(i), sheet = n < 4 ? 'nerds' : 'nerds2', fr = n < 4 ? n : n - 4, sc = 1.05;
-      const [bw, bh] = Spr.size(sheet, fr); this.props.push({ type: 'bed', x: 450, sheet, fr, scale: sc, layer: 'mid', solid: [bw * sc * 0.8, bh * sc * 0.42] }); }
+    { const i = L4.ROOM_IMG[r.id % 9], sheet = 'beds9', fr = { 4: 0, 5: 1, 6: 2, 7: 3, 8: 4, 9: 6, 10: 7, 11: 8, 0: 5 }[i], sc = 1;
+      const [bw, bh] = Spr.size(sheet, fr); this.props.push({ type: 'bed', x: 470, y: L4.GROUND - 4, sheet, fr, scale: sc, layer: 'mid', solid: [bw * sc * 0.8, bh * sc * 0.42] }); }
     { const i = L4.ROOM_IMG[r.id % 9]; this.nerd = i >= 4 && i <= 8 ? i : [9, 10, 11, 0].indexOf(i); } // ботаник под тему комнаты
     this.roomData = r;
   },
   inner(wd, o) {
     wd.addPlat({ x: 0, y: L4.GROUND, w: L4.INNER_W, h: 60, oneway: false, look: 'none' });
-    this.walls = [[0, 'iwall'], [L4.DARK_X0, 'ddoorwall']];
-    if (o.escort) this.doors.push(new L4.Door(87, L4.GROUND, 'ВЫХОД', st => { st.player.x = 20; }));
+    this.walls = [[-24, 'iwall'], [L4.DARK_X0, 'ddoorwall']];
+    if (o.escort) this.doors.push(new L4.Door(62, L4.GROUND, 'ВЫХОД', st => { st.player.x = 20; }));
     this.dark = !o.lightsOn;
     if (!o.escort) {
       for (const x of [460, 1000, 1480]) this.npcs.push(new L4.Flirt(x, 'dancer'));
@@ -827,7 +829,7 @@ L4.DRAW_BG = {
       // внутренность кабинки — ровно в проём между столбиками, до пола; створка открыта от правого столбика
       const fr = s.what === 'hookah' ? 1 : s.what === 'gun' ? (this.level.gunTaken ? 0 : 2) : s.what === 'bum' ? 3 : 0;
       // открытая кабинка — тот же фон, только с распахнутой дверцей; внутри унитаз
-      const k = this.stalls.indexOf(s), ox = 178 + k * 108; if (L4.img.club_wc3) c.drawImage(L4.img.club_wc3, ox * 2, 170, 216, 336, ox, 85, 108, 168);
+      const k = this.stalls.indexOf(s), ox = 178 + k * 108; if (L4.img.club_wc3) c.drawImage(L4.img.club_wc3, ox * 2, 170, 216, 354, ox, 85, 108, 177);
       c.save(); c.beginPath(); c.rect(s.x0, 60, s.x1 - s.x0, 262 - 60); c.clip();
       Spr.draw(c, 'toilets', fr, (s.x0 + s.x1) / 2, 249, 1);
       if (s.what === 'kesha') Spr.drawAnim(c, 'kesha4', Math.floor(G.t * 0.7) % 2 ? 'thumbs' : 'sniff', G.t, s.x, 258, 1, { scale: 0.9 });
@@ -975,7 +977,7 @@ L4.drawRay = function (c, r, cx, cy, sc) {
   c.save(); c.translate(r.x0 - cx, r.y0 - cy); c.rotate(r.ang); c.globalAlpha *= 0.62; c.globalCompositeOperation = 'lighter'; c.imageSmoothingEnabled = false;
   const scroll = (G.t * 120) % sw;
   for (let x = 0; x < r.len; x += 2) {
-    const h = Math.min(1, 0.22 + x / 160) * 42 * sc, u = f[0] + Math.floor((x + scroll) % sw);
+    const h = Math.min(1, 0.08 + x / 140) * 42 * sc, u = f[0] + Math.floor((x + scroll) % sw);
     c.drawImage(s.img, u, sy, 1, sh, x, -h / 2, 2.2, h);
   }
   c.restore();
@@ -1003,7 +1005,7 @@ L4.Level = class {
     if (opts.boss) { this.carry = { ammo3: { swatter: 100, chalk: 0, seed: 150 }, hasSeed: true, green: false, weapon: 'seed' }; this.startBoss(); return; }
     if (opts.escort) { this.carry = { ammo3: { swatter: 100, chalk: 0, seed: 200 }, hasSeed: true, green: true, weapon: 'seed' }; this.startEscort(); return; }
     if (opts.tower) { this.stairsOpen = true; this.setStage('tower', { x: L4.stairX(0), y: L4.HOTEL_G, floor: 0 }); return; }
-    if (opts.inner) { this.carry = { ammo3: { swatter: 100, chalk: 0, seed: 150 }, hasSeed: true, weapon: 'seed' }; this.setStage('inner', { x: 96 }); return; }
+    if (opts.inner) { this.carry = { ammo3: { swatter: 100, chalk: 0, seed: 150 }, hasSeed: true, weapon: 'seed' }; this.setStage('inner', { x: 66 }); return; }
     this.playScene(L4.sceneIntro(this), () => { this.setStage('club', { x: 120 }); this.stage.say('Иди за горничной. {jump} — прыжок, {down} — присесть и ползти, {punch} — удар, {switch} — оружие.', 7); Music.play('epic'); });
   }
   playScene(gen, next) { this.mode = 'scene'; Scene.run(gen, next); }
@@ -1048,11 +1050,12 @@ L4.Level = class {
     const st = this.stage; st.carry();
     const couple = !this.stairsOpen && !this.hasPassword;
     this.playScene(L4.sceneHatch(this, this.hasPassword, couple), () => {
-      if (this.hasPassword) this.setStage('inner', { x: 96 });
+      if (this.hasPassword) this.setStage('inner', { x: 66 });
       else { this.stairsOpen = true; this.setStage('club', { x: L4.DOOR_X - 60, facing: -1 }); this.stage.say('Отель наверху открыт — ищи пароль в номерах. Лестница — [ВВЕРХ] у двери рядом.', 6); }
     });
   }
   enterWC() {
+    this.guided = true; // горничная уже довела — после туалета она не появляется снова в начале
     const esc = !!this.stage.vova, hp = esc ? this.stage.vova.hp : 0;
     this.setStage('wc', { x: 110, facing: 1, escort: esc });
     const st = this.stage;
@@ -1079,10 +1082,9 @@ L4.Level = class {
   }
   leaveWC() { const esc = !!this.stage.vova, hp = esc && this.stage.vova.hp; this.setStage('club', { x: L4.WC_X, facing: -1, escort: esc }); if (esc) { this.addVova(); this.stage.vova.hp = hp; } }
   enterLair() {
-    this.setStage('boss', { x: 150, y: L4.BOSS_G, facing: -1 });
-    const st = this.stage; st.lairDark = true;
-    st.doors.push(new L4.Door(L4.LEVER_SX, L4.BOSS_G, 'РУБИЛЬНИК', s2 => s2.level.pullLever(), { icon: 3 }));
-    st.say('Темно, хоть глаз выколи... На стене слева что-то нащупывается — рубильник?', 5);
+    this.setStage('boss', { x: L4.LEVER_SX - 26, y: L4.BOSS_G, facing: 1 });
+    const st = this.stage; st.lairDark = true; st.leverWait = true; st.player.controls = false;
+    st.say('Темно, хоть глаз выколи... Под рукой что-то нащупывается — рубильник! Жми {up}.', 99);
   }
   pullLever() { this.stage.carry(); this.leverOn = false; this.playScene(L4.sceneLever(this), () => this.startBoss()); }
   startBoss() {

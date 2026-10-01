@@ -688,13 +688,14 @@ S['stall3'] = build_sheet('stall3', 'stall3.png', 5, [173, 173, 173, 173, 160], 
 S['v14_stomp'] = build_sheet('v14_stomp', 'v14_stomp.png', 8, 88, ref=0, keyer='cleanr', even=True, anchors=['body'] * 8)
 S['v14_punch'] = build_sheet('v14_punch', 'v14_punch.png', 6, 88, ref=0, keyer='cleanr', even=True, anchors=['body'] * 4 + ['center', 'body'])
 S['v14_swat'] = build_sheet('v14_swat', 'v14_swat.png', 6, 88, ref=1, keyer='cleanr', even=True, anchors=['body'] * 5 + ['center'])
-S['v15_gs'] = build_sheet('v15_gs', 'v15_gunstomp.png', 8, 86, ref=0, keyer='magenta', even=True, anchors=['body'] * 8)
+S['v15_gs'] = build_sheet('v15_gs', 'v18_gs.png', 8, 86, ref=0, keyer='cleanr', even=True, anchors=['body'] * 8)
 S['v16_runs'] = build_sheet('v16_runs', 'v16_runs.png', 8, 84, keyer='magenta', anchors=['body'] * 8, even=True)
 S['v16_stomp'] = build_sheet('v16_stomp', 'v16_stomp.png', 4, 88, ref=0, keyer='cleanr', even=True, anchors=['body'] * 4)
-S['toilets'] = build_sheet('toilets', 'toilets.png', 4, 50, ref=0, keyer='cyan', even=True)
+S['toilets'] = build_sheet('toilets', 'toilets.png', 4, 54, ref=0, keyer='cyan', even=True)
 S['vovagun3'] = build_sheet('vovagun3', 'vova_gun3.png', 6, 86, ref=0, keyer='cleanr', even=True)
-B['club_wc3'] = bg('club_wc_open.png', 'club_wc3', (1280, 720))
+B['club_wc3'] = bg('club_wc_open2.png', 'club_wc3', (1280, 720))
 S['v17_runs'] = build_sheet('v17_runs', 'v17_runs.png', 8, 84, keyer='magenta', anchors=['body'] * 8, even=True)
+S['beds9'] = build_sheet('beds9', 'beds9.png', 9, [-150] * 9, keyer='magenta', grid=(3, 3))
 # портреты персонажей уровня 4 (лица из листов)
 def pcrop(sheet, fi, box, name, flip=False):
     f = S[sheet]['f'][fi]
