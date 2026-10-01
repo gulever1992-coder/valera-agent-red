@@ -629,7 +629,7 @@ L4.Stage = class {
     for (const d of this.doors) d.draw(c, cx, cy, this.nearDoor === d);
     for (const p of this.patrons) p.draw(c, cx, cy);
     // стены: у края зала — позади всех; между фонами — поверх всех, проходят сквозь дверной проём
-    const drawWalls = back => { for (const w of this.walls) { const [wx, sp] = Array.isArray(w) ? w : [w, 'cdoorwall'], sx = wx - cx; if (back && sx > -200 && sx < W + 200) { const ex = sp === 'swall' || sp === 'iwall'; Spr.draw(c, sp, 0, sx, (sp === 'iwall' ? L4.GROUND - 30 : ex ? L4.GROUND + 8 : H) - cy, 1, ex ? { scale: 1.3 } : undefined); } } };
+    const drawWalls = back => { for (const w of this.walls) { const [wx, sp] = Array.isArray(w) ? w : [w, 'cdoorwall'], sx = wx - cx; if (back && sx > -200 && sx < W + 200) { const ex = sp === 'swall' || sp === 'iwall'; Spr.draw(c, sp, 0, sx, (sp === 'iwall' ? L4.GROUND - 30 : ex ? L4.GROUND + 8 : H) - cy, 1, ex ? { scale: sp === 'swall' ? 1.12 : 1.3 } : undefined); } } };
     drawWalls(true);
     this.drawProps(c, cx, cy, 'mid');
     for (const p of wd.pickups) p.draw(c, cx, cy);
@@ -714,8 +714,8 @@ L4.floorY = i => L4.TOWER_H - 40 - i * L4.TOWER_FH;
 L4.BUILD = {
   club(wd, o) {
     wd.addPlat({ x: 0, y: L4.GROUND, w: L4.CLUB_W, h: 60, oneway: false, look: 'none' });
-    this.walls = [[-60, 'swall'], L4.WALL1, L4.BACK_X];
-    if (o.escort) this.doors.push(new L4.Door(36, L4.GROUND, 'ВЫХОД', st => { st.player.x = 20; }));
+    this.walls = [[-50, 'swall'], L4.WALL1, L4.BACK_X];
+    if (o.escort) this.doors.push(new L4.Door(30, L4.GROUND, 'ВЫХОД', st => { st.player.x = 20; }));
     const P = (type, x, o2 = {}) => this.props.push(Object.assign({ type, x }, o2));
     const esc = !!o.escort;
     // ресепшен: диван с гостем и хостес (задний план); колонки; канат
@@ -873,7 +873,9 @@ L4.Biker = class {
     if (mul > 1) { FX.popText(this.x, this.y - 140, 'x3!', '#ffd84a'); if (Math.random() < 0.3) G.say(this, U.choice(['Ай-ай-ай!', 'Больно же!']), 1); }
     if (this.hp <= 0) { this.hp = 0; this.dieT = 0; this.blackout = false; this.blackT = 0; this.rays = []; this.waves = []; this.st.level.bossDown(); }
   }
-  mouth() { return [this.x + this.facing * 16, this.y - 106]; }
+  tiltNow() { if (this.s === 'rainbow' && this.aim != null) { const a = this.facing > 0 ? this.aim : Math.PI - this.aim; let n = a; while (n > Math.PI) n -= Math.PI * 2; return U.clamp(n * 0.35, -0.35, 0.35) * this.facing; } return this.s === 'sing' ? Math.sin(this.t * 8) * 0.06 : 0; }
+  // рот в кадре «рёв» (с учётом наклона корпуса вокруг ступней)
+  mouth() { const t = this.tiltNow(), px = this.facing * 23, py = -104; return [this.x + px * Math.cos(t) - py * Math.sin(t), this.y + px * Math.sin(t) + py * Math.cos(t)]; }
   castRay(ang) {
     const [mx, my] = this.mouth(), dx = Math.cos(ang), dy = Math.sin(ang);
     let len = 900;
@@ -959,9 +961,7 @@ L4.Biker = class {
   draw(c, cx, cy) {
     const s = this.s;
     const anim = this.dieT != null ? 'ko' : this.flash > 0 && s !== 'taunt' ? 'hurt' : s === 'charge' ? 'run' : s === 'remote' ? 'throw' : s === 'sing' ? 'sing' : s === 'rainbow' || s === 'rage' ? 'roar' : s === 'taunt' ? 'taunt' : !this.onGround ? 'jump' : 'stand';
-    let tilt = 0;
-    if (s === 'rainbow' && this.aim != null) { const a = this.facing > 0 ? this.aim : Math.PI - this.aim; let n = a; while (n > Math.PI) n -= Math.PI * 2; tilt = U.clamp(n * 0.35, -0.35, 0.35) * this.facing; }
-    else if (s === 'sing') tilt = Math.sin(this.t * 8) * 0.06;
+    const tilt = this.tiltNow();
     Spr.drawAnim(c, 'biker', anim, this.t, this.x - cx, this.y - cy, this.facing, { flash: this.flash > 0 ? '#ffffff' : null, rot: tilt });
     if (s === 'taunt' && (G.t * 6 | 0) % 2) G.text('x3', this.x - this.facing * 26 - cx, this.y - 80 - cy, { align: 'center', size: 16, color: '#ffd84a', outline: true });
     if (s === 'rainbow' && this.stT < 0.7 && this.aim != null) { const r = this.castRay(this.aim); c.save(); c.globalAlpha = 0.3 + Math.sin(G.t * 30) * 0.2; L4.drawRay(c, r, cx, cy, 0.25); c.restore(); }
