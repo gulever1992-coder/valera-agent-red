@@ -58,6 +58,11 @@ def key_magenta(im):
     a = np.array(im.convert('RGBA')).astype(np.int32)
     r, g, b = a[..., 0], a[..., 1], a[..., 2]
     bg = ((r > 150) & (b > 150) & (g < 120)) | ((r - g > 90) & (b - g > 90))
+    # розовая одежда внутри силуэта не должна становиться дырой: фон — только связанный с краем кадра или чисто-пурпурный
+    lab, nl_ = ndimage.label(bg)
+    edge = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
+    pure = (r > 215) & (b > 215) & (g < 70)
+    bg = np.isin(lab, list(edge)) | (bg & pure)
     a[..., 3] = np.where(bg, 0, 255)
     # розовая кайма: съедаем пурпурные пиксели у края и гасим остаточный оттенок
     for _ in range(3):
@@ -70,6 +75,29 @@ def key_magenta(im):
     m = np.minimum(a[..., 0], a[..., 2]) - a[..., 1]
     fix = near & (m > 0)
     a[..., 0] = np.where(fix, a[..., 0] - m, a[..., 0]); a[..., 2] = np.where(fix, a[..., 2] - m, a[..., 2])
+    return a.astype(np.uint8)
+
+def key_magenta_flood(im):
+    a = np.array(im.convert('RGBA')).astype(np.int32)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    cand = ((r > 150) & (b > 150) & (g < 120)) | ((r - g > 90) & (b - g > 90))
+    lab, n = ndimage.label(cand)
+    edge = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
+    bg = np.isin(lab, list(edge))
+    a[..., 3] = np.where(bg, 0, 255)
+    return a.astype(np.uint8)
+
+def key_magenta_strict(im):
+    # для листов с фиолетовой/розовой одеждой: фон — только яркий пурпур, связанный с краем кадра; без «съедания» каймы
+    a = np.array(im.convert('RGBA')).astype(np.int32)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    cand = (r > 195) & (b > 195) & (g < 100)
+    lab, n = ndimage.label(cand)
+    edge = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
+    bg = np.isin(lab, list(edge)) | ((r > 235) & (b > 235) & (g < 40))
+    a[..., 3] = np.where(bg, 0, 255)
+    near = ndimage.binary_dilation(bg, iterations=1) & ~bg & (r > 170) & (b > 170) & (g < 110)
+    a[..., 3] = np.where(near, 0, a[..., 3])
     return a.astype(np.uint8)
 
 def key_pre(im):
@@ -205,7 +233,7 @@ def only_largest(f):
 
 def build_sheet(name, src, n, target, ref=0, keyer='green', grid=None, anchors=None, pad=2, strip=(), dil=4, even=False):
     im = Image.open(os.path.join(SRC, src))
-    a = key_green(im) if keyer == 'green' else key_green_strict(im) if keyer == 'strict' else key_black(im) if keyer == 'black' else key_magenta(im) if keyer == 'magenta' else key_pre(im) if keyer == 'clean' else key_pre_red(im) if keyer == 'cleanr' else key_cyan(im) if keyer == 'cyan' else np.array(im.convert('RGBA'))
+    a = key_green(im) if keyer == 'green' else key_green_strict(im) if keyer == 'strict' else key_black(im) if keyer == 'black' else key_magenta(im) if keyer == 'magenta' else key_magenta_flood(im) if keyer == 'magentaf' else key_magenta_strict(im) if keyer == 'magentas' else key_pre(im) if keyer == 'clean' else key_pre_red(im) if keyer == 'cleanr' else key_cyan(im) if keyer == 'cyan' else np.array(im.convert('RGBA'))
     if even:
         # кадры стоят в ряд: крупные куски — тела (слипшиеся делим по «перешейку»), мелочь — к ближайшему телу
         op = a[..., 3] > 0
@@ -643,7 +671,14 @@ for _i, _n in [(6, 'cone_m'), (7, 'cone_c')]:
 S['zharness'] = build_sheet('zharness', 'zharness.png', 8, [88, 88, 92, -110, 70, 80, 96, -130], keyer='clean', even=True, anchors=['center'] * 4 + ['feet'] * 4)
 S['v10_gun'] = build_sheet('v10_gun', 'v10_gun.png', 8, 86, ref=0, keyer='clean', even=True, anchors=['body'] * 8)
 S['v11_gun'] = build_sheet('v11_gun', 'v11_gun.png', 8, 86, ref=0, keyer='clean', even=True, anchors=['body'] * 8)
-S['cabstage'] = build_sheet('cabstage', 'cabstage.png', 4, [-260] * 4, keyer='magenta', even=True)
+# в прыжковом кадре v11_gun нарисованы три зелёных заряда позади Валеры — убираем (заряды рисуются только при выстреле у дула)
+_g = S['v11_gun']; _x, _y, _w, _h = _g['f'][6][:4]; _im = Image.open(os.path.join(ROOT, _g['img'])).convert('RGBA'); _a = np.array(_im)
+_lab, _n = ndimage.label(_a[_y:_y + _h, _x:_x + _w, 3] > 0)
+for _i in range(1, _n + 1):
+    _m = _lab == _i
+    if _m.sum() < 3000 and np.where(_m)[1].max() < 60: _a[_y:_y + _h, _x:_x + _w][_m] = 0
+Image.fromarray(_a, 'RGBA').save(os.path.join(ROOT, _g['img']))
+S['cabstage'] = build_sheet('cabstage', 'cabstage.png', 4, [-260] * 4, keyer='magentas', even=True)
 S['vovagun2'] = build_sheet('vovagun2', 'vova_gun2.png', 6, 86, ref=0, keyer='magenta', even=True)
 S['uiicons'] = build_sheet('uiicons', 'uiicons.png', 6, [-18] * 6, keyer='clean', anchors=['center'] * 6)
 B['club_back3'] = bg('club_dress2.png', 'club_back3', (1280, 720))
@@ -662,6 +697,9 @@ S['carry'] = build_sheet('carry', 'carry.png', 4, 96, keyer='magenta', even=True
 S['lprops'] = build_sheet('lprops', 'lprops.png', 8, [40, 48, 120, 100, 42, 94, 44, 80], keyer='magenta', even=True)
 S['zombc'] = build_sheet('zombc', 'zomb_c.png', 8, 94, ref=7, keyer='cleanr', even=True)
 S['zombd'] = build_sheet('zombd', 'zomb_d.png', 8, 92, ref=7, keyer='cleanr', even=True)
+S['zombw'] = build_sheet('zombw', 'zomb_walk.png', 16, 92, keyer='magenta', grid=(2, 8))
+S['zombf'] = build_sheet('zombf', 'zomb_fix.png', 4, [92, 70, 92, -120], keyer='magenta', grid=(1, 4))
+S['bubblegreen'] = build_sheet('bubblegreen', 'bubble_green.png', 1, 34, keyer='magenta')
 # номера отеля: сетки 2x2 с тёмными промежутками -> отдельные фоны 16:9
 def room_grid(src, first):
     im = Image.open(os.path.join(SRC, src)).convert('RGB'); a = np.array(im).astype(np.float32).mean(axis=2); h, w = a.shape
@@ -675,6 +713,16 @@ def room_grid(src, first):
         else: nh = int(ww * 9 / 16); Y0 += (hh - nh); Y1 = Y0 + nh
         im.crop((X0, Y0, X1, Y1)).resize((1280, 720), Image.LANCZOS).save(os.path.join(OUT, 'room%d.jpg' % (first + k)), quality=88)
 room_grid('rooms4b.png', 4); room_grid('rooms4c.png', 8)
+# морская комната: свой фон вместо вырезки из сетки (в вырезке обрезана дверь)
+if os.path.exists(os.path.join(SRC, 'room0_new.jpg')): Image.open(os.path.join(SRC, 'room0_new.jpg')).convert('RGB').resize((1280, 720), Image.LANCZOS).save(os.path.join(OUT, 'room0.jpg'), quality=90)
+# перерисованные фоны номеров (масштаб под персонажей): art_src/roomN_new.jpg -> assets/roomN.jpg; морской — room0s_new.jpg
+for _n, _f in [(4, 'room4_new.jpg'), (5, 'room5_new.jpg'), (6, 'room6_new.jpg'), (7, 'room7_new.jpg'), (8, 'room8_new.jpg'), (9, 'room9_new.jpg'), (10, 'room10_new.jpg'), (11, 'room11_new.jpg'), (0, 'room0s_new.jpg')]:
+    if os.path.exists(os.path.join(SRC, _f)): Image.open(os.path.join(SRC, _f)).convert('RGB').resize((1280, 720), Image.LANCZOS).save(os.path.join(OUT, 'room%d.jpg' % _n), quality=90)
+# финальная сцена уровня 4
+if os.path.exists(os.path.join(SRC, 'end_street_bg3.jpg')): Image.open(os.path.join(SRC, 'end_street_bg3.jpg')).convert('RGB').resize((1280, 720), Image.LANCZOS).save(os.path.join(OUT, 'end_street_bg3.jpg'), quality=90)
+if os.path.exists(os.path.join(SRC, 'end_bolt.png')): S['endbolt'] = build_sheet('endbolt', 'end_bolt.png', 1, 40, keyer='magentaf')
+if os.path.exists(os.path.join(SRC, 'end_bong.png')): S['endbong'] = build_sheet('endbong', 'end_bong.png', 1, 90, keyer='magentaf')
+if os.path.exists(os.path.join(SRC, 'seed_canister.png')): S['seedcan'] = build_sheet('seedcan', 'seed_canister.png', 1, 32, keyer='magentaf')
 Image.open(os.path.join(SRC, 'room5_fix.png')).convert('RGB').resize((1280, 720), Image.LANCZOS).save(os.path.join(OUT, 'room5.jpg'), quality=88)  # велосипед не у двери
 S['nerds2'] = build_sheet('nerds2', 'nerds2.png', 10, [-120] * 10, keyer='magenta', grid=(2, 5))
 for _k, _src in ((1, 'hotel_f1b.png'), (2, 'hotel_f2b.png'), (3, 'hotel_f3.png')): B['hotel_f%d' % _k] = bg(_src, 'hotel_f%d' % _k, (1280, 720))
@@ -695,7 +743,7 @@ S['toilets'] = build_sheet('toilets', 'toilets.png', 4, 54, ref=0, keyer='cyan',
 S['vovagun3'] = build_sheet('vovagun3', 'vova_gun3.png', 6, 86, ref=0, keyer='cleanr', even=True)
 B['club_wc3'] = bg('club_wc_open2.png', 'club_wc3', (1280, 720))
 S['v17_runs'] = build_sheet('v17_runs', 'v17_runs.png', 8, 84, keyer='magenta', anchors=['body'] * 8, even=True)
-S['beds9'] = build_sheet('beds9', 'beds9.png', 9, [-150] * 9, keyer='magenta', grid=(3, 3))
+S['beds9'] = build_sheet('beds9', 'beds9.png', 9, [-150] * 9, keyer='magentaf', grid=(3, 3))
 # портреты персонажей уровня 4 (лица из листов)
 def pcrop(sheet, fi, box, name, flip=False):
     f = S[sheet]['f'][fi]
