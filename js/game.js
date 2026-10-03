@@ -633,7 +633,7 @@ Game.drawHUD = function (c, pl, world) {
   if (pl.hp / pl.maxHp < 0.3 && (G.t * 4 | 0) % 2) R(c, 7, 7, 30, 30, 'rgba(220,40,40,0.35)');
   // здоровье
   R(c, 42, 8, 124, 12, '#111');
-  const k = pl.hp / pl.maxHp;
+  const k = U.clamp(pl.hp / pl.maxHp, 0, 1);
   R(c, 44, 10, 120, 8, '#3a1010');
   R(c, 44, 10, Math.round(120 * k), 8, k > 0.5 ? '#48c048' : k > 0.25 ? '#e0b020' : '#e03030');
   R(c, 44, 10, Math.round(120 * k), 2, 'rgba(255,255,255,0.35)');

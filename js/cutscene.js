@@ -120,7 +120,7 @@ G.Actor = class {
     if (this.clipY != null) { c.save(); c.beginPath(); c.rect(-50, -50, W + 100, this.clipY - cy + 50); c.clip(); }
     const bob = this.talking ? -Math.abs(Math.sin(G.t * 12)) * 1 : 0;
     const x = this.x - cx, y = this.y - cy + bob;
-    Spr.drawAnim(c, this.style, this.anim, this.animT, x, y, this.facing, { alpha: this.alpha, rot: this.rot });
+    Spr.drawAnim(c, this.style, this.anim, this.animT, x, y, this.facing, { alpha: this.alpha, rot: this.rot, scale: this.scale });
     if (this.helmet && this.anim !== 'work' && this.anim !== 'lookUpHat') {
       const anim = Spr.ANIM[this.style][this.anim] || Spr.ANIM[this.style].stand;
       const [sh, i] = Spr.frameOf(anim, this.animT);
