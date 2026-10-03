@@ -80,7 +80,7 @@ Object.assign(WHO, {
 L4.load = async function () {
   const W3 = window.WALLS3 || {};
   await Promise.all(['club_lobby', 'club_hall', 'club_vip', 'club_leather', 'club_dark', 'club_lobby_z', 'club_hall_z', 'club_leather_z'].map(async k => { if (W3[k]) L3.img[k] = await G.loadImage(W3[k].img); }));
-  await Promise.all(['club_back', 'club_back2', 'club_back3', 'club_floor', 'hotel_floor2', 'hotel_f1', 'hotel_f2', 'hotel_f3', 'biker_bg', 'club_room', 'club_wc', 'club_wc2', 'club_wc3', 'comic4_darts', 'comic4_raid', 'comic4_end', 'end_street_bg3', 'room0', 'room1', 'room2', 'room3', 'room4', 'room5', 'room6', 'room7', 'room8', 'room9', 'room10', 'room11'].map(async k => { L4.img[k] = await G.loadImage('assets/' + k + '.jpg?v=96'); }));
+  await Promise.all(['club_back', 'club_back2', 'club_back3', 'club_floor', 'hotel_floor2', 'hotel_f1', 'hotel_f2', 'hotel_f3', 'biker_bg', 'club_room', 'club_wc', 'club_wc2', 'club_wc3', 'comic4_darts', 'comic4_raid', 'comic4_end', 'l4_sq', 'end_street_bg3', 'room0', 'room1', 'room2', 'room3', 'room4', 'room5', 'room6', 'room7', 'room8', 'room9', 'room10', 'room11'].map(async k => { L4.img[k] = await G.loadImage('assets/' + k + '.jpg?v=101'); }));
   await Promise.all(['cone_m', 'cone_c', 'cone_g'].map(async k => { L4.img[k] = await G.loadImage('assets/spr/' + k + '.png'); }));
   G.portraits = G.portraits || {};
   await Promise.all(['maid', 'nurse', 'vova', 'biker', 'hatch', 'valera4'].map(async k => { G.portraits[k] = await G.loadImage('assets/spr/p_' + k + '.png'); }));

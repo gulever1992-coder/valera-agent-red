@@ -84,6 +84,26 @@ Music.songs = {
       { drum: true, vol: 0.15, notes: 'k . h . s . h k k . h . s . s s' },
     ],
   },
+  chase: {
+    bpm: 168, loop: true, tracks: [
+      { wave: 'square', vol: 0.07, notes: bar(`
+        A4 - A4 C5 - A4 E5 - D5 - C5 - B4 - G4 - -   A4 - A4 C5 - A4 E5 - F5 - E5 - D5 - C5 - -
+        A4 - A4 C5 - A4 E5 - G5 - F5 - E5 - D5 - -   C5 - C5 E5 - C5 G5 - F5 - E5 - D5 - B4 - -
+        A4 - A4 C5 - A4 E5 - D5 - C5 - B4 - G4 - -   A4 - A4 C5 - A4 E5 - F5 - E5 - D5 - C5 - -
+        E5 - E5 D5 - C5 B4 - A4 - G4 - A4 - B4 - -   C5 - B4 A4 - G4 E4 - A4 - - - - - - - -`) },
+      { wave: 'sawtooth', vol: 0.045, notes: bar(`
+        A3 - - - E3 - - - A3 - - - E3 - - -   A3 - - - E3 - - - A3 - - - E3 - - -
+        F3 - - - C3 - - - G3 - - - D3 - - -   A3 - - - E3 - - - A3 - - - E3 - - -
+        A3 - - - E3 - - - A3 - - - E3 - - -   A3 - - - E3 - - - A3 - - - E3 - - -
+        F3 - - - C3 - - - G3 - - - D3 - - -   A3 - - - E3 - - - A3 - - - - - - -`) },
+      { wave: 'triangle', vol: 0.2, notes: bar(`
+        A1 . A2 . A1 . A2 . A1 . A2 . A1 . A2 .   A1 . A2 . A1 . A2 . A1 . A2 . A1 . A2 .
+        F1 . F2 . F1 . F2 . G1 . G2 . G1 . G2 .   A1 . A2 . A1 . A2 . A1 . A2 . A1 . A2 .
+        A1 . A2 . A1 . A2 . A1 . A2 . A1 . A2 .   A1 . A2 . A1 . A2 . A1 . A2 . A1 . A2 .
+        F1 . F2 . F1 . F2 . G1 . G2 . G1 . G2 .   A1 . A2 . A1 . A2 . E2 . E2 . A1 . A2 .`) },
+      { drum: true, vol: 0.16, notes: 'k . h . s . h k k . h . s . s s' },
+    ],
+  },
   epicBoss: {
     bpm: 164, loop: true, tracks: [
       { wave: 'square', vol: 0.075, notes: bar(`
@@ -140,6 +160,13 @@ G.onLevelComplete = function (level) {
   setState('results');
 };
 
+function startLevel5(opts = {}) {
+  if (G.portraits && G.portraits.valera4) G.portraits.valera = G.portraits.valera4;
+  App.level = new L5.Level();
+  setState('play');
+  App.paused = false;
+  App.level.start(opts);
+}
 function startLevel4(opts = {}) {
   if (G.portraits && G.portraits.valera4) G.portraits.valera = G.portraits.valera4;
   App.level = new L4.Level();
@@ -172,7 +199,8 @@ const LEVELS = [
   { id: 2, name: 'ДОРОГА ДОМОЙ', sub: 'Вечерний Выборгск', start: () => startLevel2() },
   { id: 3, name: 'ГЛЮКИ', sub: 'Квартира Валеры', start: () => startLevel3() },
   { id: 4, name: 'ДИКИЕ КОШКИ', sub: 'Клуб. Спасти Вову', start: () => startLevel4() },
-  { id: 5, name: '???', sub: 'Скоро', start: null },
+  { id: 5, name: 'ПОГОНЯ', sub: 'Вид сверху. Гонка с Граблионком', start: () => startLevel5() },
+  { id: 6, name: '???', sub: 'Скоро', start: null },
 ];
 function progress() { try { return +(localStorage.getItem('valera_progress') || 1); } catch (e) { return 1; } }
 function applyDiff(i) {
@@ -266,7 +294,7 @@ function update(dt) {
     case 'results': {
       const r = App.results;
       r.shown += dt;
-      if (r.shown > 1 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch'))) { Sound.play('confirm'); if (r.id === 1) startLevel2(); else if (r.id === 2) startLevel3(); else if (r.id === 3) startLevel4(); else { setState('soon'); Music.play('title'); } }
+      if (r.shown > 1 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch'))) { Sound.play('confirm'); if (r.id === 1) startLevel2(); else if (r.id === 2) startLevel3(); else if (r.id === 3) startLevel4(); else if (r.id === 4) startLevel5(); else { setState('soon'); Music.play('title'); } }
       break;
     }
     case 'soon':
@@ -348,7 +376,8 @@ function drawLevels(c) {
     c.save(); c.beginPath(); c.rect(px, py, pw, ph); c.clip();
     if (L.id === 1 && G.bg.hall) { c.drawImage(G.bg.hall, 200, 0, 880, 720, px, py, pw, ph); Spr.draw(c, 'sub', 0, px + pw / 2 + 10, py + 120, 1, { scale: 0.35 }); }
     else if (L.id === 2 && L2.img.sky) { c.drawImage(L2.img.sky, 0, 0, 900, 720, px, py, pw * 1.3, ph * 1.3); if (L2.img.b_shop) c.drawImage(L2.img.b_shop, px + 10, py + 10, pw - 20, (pw - 20) * 0.99); }
-    else if (L.id === 4 && L4.img.comic4_end) c.drawImage(L4.img.comic4_end, 200, 0, 880, 720, px, py, pw, ph);
+    else if (L.id === 4 && L4.img.l4_sq) { const im = L4.img.l4_sq, sh = im.width * ph / pw; c.drawImage(im, 0, (im.height - sh) * 0.6, im.width, sh, px, py, pw, ph); }
+    else if (L.id === 5 && L5.img.l5_card) c.drawImage(L5.img.l5_card, 200, 0, 880, 720, px, py, pw, ph);
     else if (L.id === 3 && L3.img.comic4) c.drawImage(L3.img.comic4, 200, 0, 880, 720, px, py, pw, ph);
     else { c.fillStyle = '#0c0d10'; c.fillRect(px, py, pw, ph); G.text('?', px + pw / 2, py + 55, { align: 'center', size: 32, color: '#3a3f45' }); }
     if (locked) {
@@ -361,7 +390,7 @@ function drawLevels(c) {
     c.restore();
     G.text('УРОВЕНЬ ' + L.id, x + cw / 2, y + 164, { align: 'center', color: locked ? '#6a6e74' : '#ffd84a' });
     G.text(L.name, x + cw / 2, y + 180, { align: 'center', size: L.name.length > 10 ? 12 : 16, color: locked ? '#6a6e74' : '#f4f0e4', outline: true });
-    G.text(L.sub, x + cw / 2, y + 204, { align: 'center', color: '#9aa4ae' });
+    G.wrap(L.sub, cw - 14, 8).slice(0, 2).forEach((ln, k) => G.text(ln, x + cw / 2, y + 202 + k * 11, { align: 'center', color: '#9aa4ae' }));
     let best = null; try { best = JSON.parse(localStorage.getItem('valera_best_l' + L.id) || 'null'); } catch (e) {}
     if (best && !locked) G.text('Рекорд: ' + best.total + ' (' + best.rank + ')', x + cw / 2, y + 226, { align: 'center', size: 8, color: '#8cf08c' });
     if (locked) G.text(L.start ? 'Пройди уровень ' + (L.id - 1) : 'В разработке', x + cw / 2, y + 226, { align: 'center', size: 8, color: '#a86a5a' });
@@ -507,7 +536,7 @@ function frame(now) {
 // ---------- загрузка ----------
 (async function boot() {
   requestAnimationFrame(frame);
-  const [head, street] = await Promise.all([G.loadImage('assets/valera_head.png'), G.loadImage('assets/street.jpg'), Spr.load(), Spr.loadBGs(), L2.load(), L3.load(), L4.load()]);
+  const [head, street] = await Promise.all([G.loadImage('assets/valera_head.png'), G.loadImage('assets/street.jpg'), Spr.load(), Spr.loadBGs(), L2.load(), L3.load(), L4.load(), L5.load()]);
   G.img.valeraHeadSrc = head; G.img.street = street;
   try { await Promise.race([document.fonts.load('8px "Press Start 2P"'), new Promise(r => setTimeout(r, 2500))]); } catch (e) {}
   G.img.valeraHud = G.downscale(head, 52, 54);
@@ -516,7 +545,11 @@ function frame(now) {
   titleActor.a.setAnim('walk');
   const q = new URLSearchParams(location.search);
   if (q.has('sprites')) { App.spriteScale = +(q.get('scale') || 0.5); setState('sprites'); return; }
-  if (q.has('l4')) startLevel4();
+  if (q.has('l5')) startLevel5();
+  else if (q.has('l5drive')) startLevel5({ drive: true });
+  else if (q.has('l5race')) startLevel5({ race: true });
+  else if (q.has('l5end')) startLevel5({ end: true });
+  else if (q.has('l4')) startLevel4();
   else if (q.has('l4tower')) startLevel4({ tower: true });
   else if (q.has('l4inner')) startLevel4({ inner: true });
   else if (q.has('l4boss')) startLevel4({ boss: true });

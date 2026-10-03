@@ -1,0 +1,7 @@
+Generate a TOP-DOWN (view straight from above, like GTA 2) sprite sheet of more vehicles, 3 columns x 4 rows (12 wide cells), solid pure #00FF00 chroma-green background, every vehicle pointing to the RIGHT (east), centered in its own equal cell with big gaps, nothing touching, roofs visible, no baked shadow, same rusty gritty comic pixel style as art_src/l5_cars.png (open it as style reference):
+(1) a long yellow-red city bus (Soviet-style accordion bus), (2) a red-and-cream tram with a pantograph, (3) a blue dump truck with a loaded body,
+(4) an ambulance (white-red, light bar lit), (5) a red fire truck with a ladder, (6) an orange garbage truck,
+(7) a fast black-and-blue police interceptor Lada with a light bar and a big bumper ram, (8) a big armoured green-blue police riot van (UAZ style) with a roof turret and bars on windows, the toughest police vehicle, (9) a police motorcycle with a rider seen from above,
+(10) a rusty red tractor pulling a trailer with hay, (11) a white minibus marshrutka with a sign, (12) a beige old Moskvich sedan.
+Target file: art_src/l5_cars2.png
+Output ONE image, saved as PNG, then copy it into the given path under C:/Users/gulev/CRM/valera-game/art_src/ and print the final path. Do not ask questions.

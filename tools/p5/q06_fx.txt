@@ -1,0 +1,7 @@
+Generate an EFFECTS sprite sheet for a top-down action game, 8 columns x 4 rows (32 cells), solid pure #00FF00 chroma-green background, each frame centered in an equal cell with gaps.
+Row 1: an 8-frame comic fireball car EXPLOSION animation from a small flash to a big orange-yellow fireball with black smoke and flying debris, to fading smoke.
+Row 2: 4 frames of burning-car fire flames (loop), then 4 frames of grey-black smoke puff rising and fading.
+Row 3: 2 frames of muzzle flash from a big cannon pointing right, 2 frames of glowing lime green gooey projectile blobs flying right, 1 frame of green goo splat on the ground, 1 frame of broken glass shards, 1 frame of scattered metal car debris (wheel, bumper, door), 1 frame of a spark burst.
+Row 4: 4 frames of a water splash from a car driving through a puddle, 2 frames of a dust cloud from tyres, 2 frames of a small crumbling wood-splinter and crate debris burst.
+Target file: art_src/l5_fx.png
+Style: detailed pixel art with dark outlines and rich shading, comic-exaggerated. Match the look of art_src/matiz.png (open it first as style reference). Output ONE image, saved as PNG, then copy it into the given path under C:/Users/gulev/CRM/valera-game/art_src/ and print the final path. Do not ask questions.

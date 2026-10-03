@@ -808,8 +808,13 @@ L2.sceneStart = function (level) {
 L2.sceneShop = function (level) {
   const st = { fade: 1 };
   const v = new G.Actor('valeraBig', -60, 342, 1); v.headH = 170;
+  let sf = 0; // кадр продавщицы: 0 спокойно, 1 говорит, 2 «паспорт», 3 скептически, 4 подаёт пиво, 5 подмигивает
+  const SX = 400, SY = 230;
   level.drawScene = c => {
     c.drawImage(G.bg.shop, 0, 0, W, H);
+    Spr.draw(c, 'sellera', sf, SX, SY + 4 + Math.sin(G.t * 1.6) * 0.4, 1, { scale: 0.46 });
+    // прилавок и витрина — поверх неё (она стоит за ними)
+    c.save(); c.beginPath(); c.rect(180, 205, 200, 160); c.rect(380, 227, 125, 140); c.clip(); c.drawImage(G.bg.shop, 0, 0, W, H); c.restore();
     v.draw(c);
     G.drawBubbles(c, 0, 0);
     Scene.drawDialog(c);
@@ -822,12 +827,12 @@ L2.sceneShop = function (level) {
     yield* Scene.moveTo(v, 175, 90, 'walk');
     v.setAnim('tiredStand');
     yield* Scene.say('valera', 'Здрасьте. Дайте пивка... одну. Нет, две.', v);
-    yield* Scene.say('seller', 'Паспорт покажи, рыжий!', null);
+    sf = 2; yield* Scene.say('seller', 'Паспорт покажи, рыжий!', null);
     v.setAnim('shoutFist');
     yield* Scene.say('valera', 'Мне тридцать лет!', v);
-    yield* Scene.say('seller', 'Всем тридцать. Ладно, держи. И тару потом сдай!', null);
+    sf = 3; yield 0.9; sf = 4; yield* Scene.say('seller', 'Всем тридцать. Ладно, держи. И тару потом сдай!', null);
     Sound.play('pickup');
-    v.setAnim('beerHappy');
+    v.setAnim('beerHappy'); sf = 5;
     yield* Scene.say('valera', 'Во! Теперь бутылка — моё оружие!', v);
     yield* Scene.tween(0.5, k => { st.fade = k; });
   };

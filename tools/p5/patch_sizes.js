@@ -1,0 +1,23 @@
+const fs = require('fs');
+let s = fs.readFileSync('js/level5.js', 'utf8');
+function rep(a, b) { if (!s.includes(a)) throw new Error('нет: ' + a.slice(0, 60)); s = s.replace(a, b); }
+rep("n: 'garages', f: 'f6', t: 't19', w: [180, 300], d: [48, 62], H: [20, 24]", "n: 'garages', f: 'f6', t: 't19', w: [220, 320], d: [64, 76], H: [34, 40]");
+rep("n: 'wood', f: 'f7', t: 't17', w: [56, 80], d: [50, 64], H: [24, 30]", "n: 'wood', f: 'f7', t: 't17', w: [110, 150], d: [84, 104], H: [38, 46]");
+rep("n: 'kinder', f: 'f9', t: 't18', w: [170, 230], d: [70, 90], H: [26, 34]", "n: 'kinder', f: 'f9', t: 't18', w: [190, 240], d: [76, 92], H: [36, 44]");
+rep("n: 'church', f: 'f11', t: 't16', w: [70, 90], d: [70, 90], H: [56, 68]", "n: 'church', f: 'f11', t: 't16', w: [110, 130], d: [100, 120], H: [74, 86]");
+rep("n: 'tower9', f: 'f4', t: 't16', w: [84, 100], d: [84, 100]", "n: 'tower9', f: 'f4', t: 't16', w: [110, 130], d: [96, 110]");
+rep("n: 'white9', f: 'f18', t: 't16', w: [90, 110], d: [84, 100]", "n: 'white9', f: 'f18', t: 't16', w: [120, 140], d: [90, 104]");
+rep("n: 'brick12', f: 'f21', t: 't17', w: [96, 120], d: [90, 110]", "n: 'brick12', f: 'f21', t: 't17', w: [116, 136], d: [96, 112]");
+rep("n: 'bank', f: 'f25', t: 't19', w: [120, 160], d: [70, 90], H: [44, 54]", "n: 'bank', f: 'f25', t: 't19', w: [160, 200], d: [76, 92], H: [48, 58]");
+rep("n: 'carwash', f: 'f28', t: 't19', w: [100, 140], d: [60, 80], H: [28, 34]", "n: 'carwash', f: 'f28', t: 't19', w: [160, 200], d: [80, 96], H: [38, 46]");
+rep("n: 'pavil', f: 'f30', t: 't19', w: [140, 200], d: [60, 80], H: [22, 28]", "n: 'pavil', f: 'f30', t: 't19', w: [180, 230], d: [76, 92], H: [36, 44]");
+rep("n: 'newb', f: 'f31', t: 't16', w: [100, 130], d: [90, 110]", "n: 'newb', f: 'f31', t: 't16', w: [120, 150], d: [96, 112]");
+fs.writeFileSync('js/level5.js', s);
+let r = fs.readFileSync('js/level5render.js', 'utf8');
+const a = "const kind = o.tk, z = kind === 'spruce' ? 30 : kind === 'birch' ? 26 : 28, k = 1 + z / RP();";
+if (!r.includes(a)) throw new Error('tree');
+r = r.replace(a, "const kind = o.tk, z = kind === 'spruce' ? 22 : kind === 'birch' ? 19 : 20, k = 1 + z / RP(), km = 1 + z * 0.5 / RP();");
+const b = "  c.save(); c.globalAlpha = Math.max(0.35";
+if (!r.includes(b)) throw new Error('tree2');
+r = r.replace(b, "  // средний ярус: крона непрерывно «растёт» из ствола, не отрываясь от земли\n  c.save(); c.translate(PX(o.x, C, km), PY(o.y, C, km) - 2); c.rotate(sway * 0.5); c.scale(0.78 * o.sz * km, 0.78 * o.sz * km); Spr.drawC(c, 'l5props', fr, 0, 0, 0, 1); c.restore();\n" + b);
+fs.writeFileSync('js/level5render.js', r);

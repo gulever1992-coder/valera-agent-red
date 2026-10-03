@@ -718,6 +718,10 @@ if os.path.exists(os.path.join(SRC, 'room0_new.jpg')): Image.open(os.path.join(S
 # перерисованные фоны номеров (масштаб под персонажей): art_src/roomN_new.jpg -> assets/roomN.jpg; морской — room0s_new.jpg
 for _n, _f in [(4, 'room4_new.jpg'), (5, 'room5_new.jpg'), (6, 'room6_new.jpg'), (7, 'room7_new.jpg'), (8, 'room8_new.jpg'), (9, 'room9_new.jpg'), (10, 'room10_new.jpg'), (11, 'room11_new.jpg'), (0, 'room0s_new.jpg')]:
     if os.path.exists(os.path.join(SRC, _f)): Image.open(os.path.join(SRC, _f)).convert('RGB').resize((1280, 720), Image.LANCZOS).save(os.path.join(OUT, 'room%d.jpg' % _n), quality=90)
+# продавщица (катсцена магазина, уровень 2): портрет, лист кадров, новый фон
+if os.path.exists(os.path.join(SRC, 'seller_portrait.png')): Image.open(os.path.join(SRC, 'seller_portrait.png')).convert('RGBA').resize((128, 128), Image.LANCZOS).save(os.path.join(SPR, 'p_seller.png'))
+if os.path.exists(os.path.join(SRC, 'seller_sheet.png')): S['sellera'] = build_sheet('sellera', 'seller_sheet.png', 6, 128, keyer='magentaf', grid=(1, 6))
+if os.path.exists(os.path.join(SRC, 'shop_bg2.jpg')): Image.open(os.path.join(SRC, 'shop_bg2.jpg')).convert('RGB').resize((1280, 720), Image.LANCZOS).save(os.path.join(OUT, 'bg_shop.jpg'), quality=90)
 # финальная сцена уровня 4
 if os.path.exists(os.path.join(SRC, 'end_street_bg3.jpg')): Image.open(os.path.join(SRC, 'end_street_bg3.jpg')).convert('RGB').resize((1280, 720), Image.LANCZOS).save(os.path.join(OUT, 'end_street_bg3.jpg'), quality=90)
 if os.path.exists(os.path.join(SRC, 'end_bolt.png')): S['endbolt'] = build_sheet('endbolt', 'end_bolt.png', 1, 40, keyer='magentaf')

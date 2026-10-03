@@ -1,0 +1,5 @@
+Generate a sprite sheet of 8 TOP-DOWN smoke/gas cloud sprites for a GTA-2-style game, 4 columns x 2 rows, on a flat solid pure #00FF00 chroma-green background (RGB 0,255,0, no gradient), each cloud centred in its own cell with big green gaps, not touching. Pixel art with dark soft outlines and puffy shading like art_src/l5_fx.png (open it as the style reference: same puffy smoke style, same line weight).
+Row 1: four different round billowing clouds of TOXIC GREEN gas (acid-green and yellow-green, slightly translucent look, puffy lobes, small bubbles), each about the same size, filling most of the cell.
+Row 2: (5) a round soft grey-beige DUST cloud, (6) another dust cloud, (7) a white-grey steam puff, (8) a small black exhaust puff.
+Target file: art_src/l5_gas.png
+Output ONE image, saved as PNG, then copy it into the given path under C:/Users/gulev/CRM/valera-game/art_src/ and print the final path. Do not ask questions.

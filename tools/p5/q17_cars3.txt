@@ -1,0 +1,6 @@
+Generate a sprite sheet of 12 TOP-DOWN (bird's-eye, straight from above) vehicles for a GTA-2-style game, 4 columns x 3 rows, on a flat solid pure #00FF00 chroma-green background (RGB 0,255,0, no gradient, no shadow on the background), each vehicle centered in its own equal cell with big gaps, all pointing RIGHT (front to the right), nothing touching. Gritty rusty Russian pixel art with dark outlines, exactly like art_src/l5_cars2.png (open it as the style reference: same viewing angle, same line weight, same weathering).
+Row 1: (1) a red-and-green diesel locomotive (long, with roof fans and a headlight), (2) a grey-brown freight boxcar with a roof walkway, (3) a black oil-tank wagon, (4) a flat wagon loaded with logs.
+Row 2: (5) a blue-and-white city tram (articulated, with roof pantograph), (6) a police helicopter seen from above with spinning rotor blur and a bright white searchlight beam cone pointing down-right, (7) a yellow tow truck with a hook, (8) a long black limousine with chrome.
+Row 3: (9) an orange cement mixer truck, (10) a blue truck crane with the arm folded, (11) a yellow small PAZ school bus, (12) a white ice-cream van with a cone on the roof.
+Target file: art_src/l5_cars3.png
+Output ONE image, saved as PNG, then copy it into the given path under C:/Users/gulev/CRM/valera-game/art_src/ and print the final path. Do not ask questions.

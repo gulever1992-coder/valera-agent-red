@@ -1,0 +1,5 @@
+Generate a sprite sheet of 8 SINGLE falling autumn leaves, TOP-DOWN view, for a GTA-2-style game, 4 columns x 2 rows, on a flat solid pure #00FF00 chroma-green background (RGB 0,255,0, no gradient, no shadows on the green), each leaf centred in its own equal square cell with wide green gaps, nothing touching or cropped. EXACTLY ONE leaf per cell, never a pile or a cluster. Gritty pixel art with dark outlines, in the style and line weight of art_src/l5_props.png (open it as reference). Leaves are small relative to the cell (leaf takes about 45% of cell width), slightly curled and weathered.
+(1) orange maple leaf; (2) red maple leaf; (3) yellow birch leaf (small, oval, toothed edge); (4) brown dry oak leaf; (5) yellow-orange maple leaf, slightly curled; (6) dark red leaf with a torn edge; (7) golden birch leaf, tilted; (8) rusty brown crumpled leaf.
+No text, no letters, no real brands.
+Target file: art_src/l5_leaves.png
+Output ONE image, saved as PNG, then copy it into the given path under C:/Users/gulev/CRM/valera-game/art_src/ and print the final path. Do not ask questions.

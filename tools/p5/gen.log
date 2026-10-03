@@ -1,0 +1,251 @@
+start Fri Oct  2 22:53:02 RTZ 2026
+start Fri Oct  2 23:24:32 RTZ 2026
+Fri Oct  2 23:24:32 RTZ 2026 run tools/p5/q01_cut_cars.txt try 1
+Fri Oct  2 23:29:43 RTZ 2026 OK art_src/l5_cut_cars.png
+l5_tiles.png OK
+l5cars 12 кадров (1584, 89)
+  !! кадров 1 из 9
+Traceback (most recent call last):
+  File "C:\Users\gulev\CRM\valera-game\tools\build_l5.py", line 104, in <module>
+    S['l5cut'] = build_sheet('l5cut', 'l5_cut_cars.png', 9, [-300] * 9, grid=(3, 3), anchors=['feet'] * 9)
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "build_assets_helpers", line 296, in build_sheet
+ValueError: max() iterable argument is empty
+Fri Oct  2 23:29:44 RTZ 2026 run tools/p5/q02_hq_bg.txt try 1
+Fri Oct  2 23:31:36 RTZ 2026 OK art_src/l5_hq_bg.png
+l5_tiles.png OK
+l5cars 12 кадров (1584, 89)
+  !! кадров 1 из 9
+Traceback (most recent call last):
+  File "C:\Users\gulev\CRM\valera-game\tools\build_l5.py", line 104, in <module>
+    S['l5cut'] = build_sheet('l5cut', 'l5_cut_cars.png', 9, [-300] * 9, grid=(3, 3), anchors=['feet'] * 9)
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "build_assets_helpers", line 296, in build_sheet
+ValueError: max() iterable argument is empty
+Fri Oct  2 23:31:38 RTZ 2026 run tools/p5/q03_land_a.txt try 1
+Fri Oct  2 23:35:06 RTZ 2026 OK art_src/l5_land_a.png
+l5_tiles.png OK
+l5_elev OK
+l5cars 12 кадров (1584, 89)
+  !! кадров 1 из 9
+Traceback (most recent call last):
+  File "C:\Users\gulev\CRM\valera-game\tools\build_l5.py", line 104, in <module>
+    S['l5cut'] = build_sheet('l5cut', 'l5_cut_cars.png', 9, [-300] * 9, grid=(3, 3), anchors=['feet'] * 9)
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "build_assets_helpers", line 296, in build_sheet
+ValueError: max() iterable argument is empty
+Fri Oct  2 23:35:07 RTZ 2026 run tools/p5/q04_land_b.txt try 1
+Fri Oct  2 23:37:58 RTZ 2026 OK art_src/l5_land_b.png
+l5_tiles.png OK
+l5_elev OK
+l5cars 12 кадров (1584, 89)
+  !! кадров 1 из 9
+Traceback (most recent call last):
+  File "C:\Users\gulev\CRM\valera-game\tools\build_l5.py", line 104, in <module>
+    S['l5cut'] = build_sheet('l5cut', 'l5_cut_cars.png', 9, [-300] * 9, grid=(3, 3), anchors=['feet'] * 9)
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "build_assets_helpers", line 296, in build_sheet
+ValueError: max() iterable argument is empty
+Fri Oct  2 23:38:00 RTZ 2026 run tools/p5/q05_props.txt try 1
+Fri Oct  2 23:41:29 RTZ 2026 OK art_src/l5_props.png
+l5_tiles.png OK
+l5_elev OK
+l5cars 12 кадров (1584, 89)
+l5props 24 кадров (2664, 194)
+  !! кадров 1 из 9
+Traceback (most recent call last):
+  File "C:\Users\gulev\CRM\valera-game\tools\build_l5.py", line 104, in <module>
+    S['l5cut'] = build_sheet('l5cut', 'l5_cut_cars.png', 9, [-300] * 9, grid=(3, 3), anchors=['feet'] * 9)
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "build_assets_helpers", line 296, in build_sheet
+ValueError: max() iterable argument is empty
+Fri Oct  2 23:41:31 RTZ 2026 run tools/p5/q06_fx.txt try 1
+Fri Oct  2 23:44:13 RTZ 2026 OK art_src/l5_fx.png
+l5_tiles.png OK
+l5_elev OK
+l5cars 12 кадров (1584, 89)
+l5fx 32 кадров (3516, 206)
+l5props 24 кадров (2664, 194)
+  !! кадров 1 из 9
+Traceback (most recent call last):
+  File "C:\Users\gulev\CRM\valera-game\tools\build_l5.py", line 104, in <module>
+    S['l5cut'] = build_sheet('l5cut', 'l5_cut_cars.png', 9, [-300] * 9, grid=(3, 3), anchors=['feet'] * 9)
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "build_assets_helpers", line 296, in build_sheet
+ValueError: max() iterable argument is empty
+Fri Oct  2 23:44:15 RTZ 2026 run tools/p5/q07_houses.txt try 1
+Fri Oct  2 23:46:48 RTZ 2026 OK art_src/l5_houses.png
+l5_tiles.png OK
+l5_facades OK
+l5_elev OK
+l5cars 12 кадров (1584, 89)
+l5fx 32 кадров (3516, 206)
+l5props 24 кадров (2664, 194)
+  !! кадров 1 из 9
+Traceback (most recent call last):
+  File "C:\Users\gulev\CRM\valera-game\tools\build_l5.py", line 104, in <module>
+    S['l5cut'] = build_sheet('l5cut', 'l5_cut_cars.png', 9, [-300] * 9, grid=(3, 3), anchors=['feet'] * 9)
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "build_assets_helpers", line 296, in build_sheet
+ValueError: max() iterable argument is empty
+Fri Oct  2 23:46:50 RTZ 2026 run tools/p5/q08_life.txt try 1
+Fri Oct  2 23:49:56 RTZ 2026 OK art_src/l5_life.png
+l5_tiles.png OK
+l5_facades OK
+l5_elev OK
+l5cars 12 кадров (1584, 89)
+l5fx 32 кадров (3516, 206)
+l5props 24 кадров (2664, 194)
+l5life 32 кадров (1532, 70)
+  !! кадров 1 из 9
+Traceback (most recent call last):
+  File "C:\Users\gulev\CRM\valera-game\tools\build_l5.py", line 104, in <module>
+    S['l5cut'] = build_sheet('l5cut', 'l5_cut_cars.png', 9, [-300] * 9, grid=(3, 3), anchors=['feet'] * 9)
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "build_assets_helpers", line 296, in build_sheet
+ValueError: max() iterable argument is empty
+Fri Oct  2 23:49:59 RTZ 2026 run tools/p5/q09_cars2.txt try 1
+Fri Oct  2 23:56:20 RTZ 2026 OK art_src/l5_cars2.png
+l5_tiles.png OK
+l5_facades OK
+l5_elev OK
+l5cars 12 кадров (1584, 89)
+l5cars2 12 кадров (2308, 125)
+l5fx 32 кадров (3516, 206)
+l5props 24 кадров (2664, 194)
+l5life 32 кадров (1532, 70)
+  !! кадров 1 из 9
+Traceback (most recent call last):
+  File "C:\Users\gulev\CRM\valera-game\tools\build_l5.py", line 104, in <module>
+    S['l5cut'] = build_sheet('l5cut', 'l5_cut_cars.png', 9, [-300] * 9, grid=(3, 3), anchors=['feet'] * 9)
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "build_assets_helpers", line 296, in build_sheet
+ValueError: max() iterable argument is empty
+Fri Oct  2 23:56:23 RTZ 2026 run tools/p5/q10_vips.txt try 1
+Fri Oct  2 23:58:58 RTZ 2026 OK art_src/l5_vips.png
+l5_tiles.png OK
+l5_facades OK
+l5_elev OK
+l5cars 12 кадров (1584, 89)
+l5cars2 12 кадров (2308, 125)
+l5fx 32 кадров (3516, 206)
+l5props 24 кадров (2664, 194)
+l5life 32 кадров (1532, 70)
+  !! кадров 1 из 9
+Traceback (most recent call last):
+  File "C:\Users\gulev\CRM\valera-game\tools\build_l5.py", line 104, in <module>
+    S['l5cut'] = build_sheet('l5cut', 'l5_cut_cars.png', 9, [-300] * 9, grid=(3, 3), anchors=['feet'] * 9)
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "build_assets_helpers", line 296, in build_sheet
+ValueError: max() iterable argument is empty
+Fri Oct  2 23:59:02 RTZ 2026 run tools/p5/q11_roofelems.txt try 1
+Sat Oct  3 00:02:07 RTZ 2026 OK art_src/l5_roofelems.png
+l5_tiles.png OK
+l5_facades OK
+l5_elev OK
+l5cars 12 кадров (1584, 89)
+l5cars2 12 кадров (2308, 125)
+l5fx 32 кадров (3516, 206)
+l5props 24 кадров (2664, 194)
+l5roof 24 кадров (2421, 200)
+l5life 32 кадров (1532, 70)
+  !! кадров 1 из 9
+Traceback (most recent call last):
+  File "C:\Users\gulev\CRM\valera-game\tools\build_l5.py", line 104, in <module>
+    S['l5cut'] = build_sheet('l5cut', 'l5_cut_cars.png', 9, [-300] * 9, grid=(3, 3), anchors=['feet'] * 9)
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "build_assets_helpers", line 296, in build_sheet
+ValueError: max() iterable argument is empty
+Sat Oct  3 00:02:11 RTZ 2026 run tools/p5/q12_tiles2.txt try 1
+Sat Oct  3 00:04:03 RTZ 2026 OK art_src/l5_tiles2.png
+l5_tiles.png OK
+l5_tiles2.png OK
+l5_facades OK
+l5_elev OK
+l5cars 12 кадров (1584, 89)
+l5cars2 12 кадров (2308, 125)
+l5fx 32 кадров (3516, 206)
+l5props 24 кадров (2664, 194)
+l5roof 24 кадров (2421, 200)
+l5life 32 кадров (1532, 70)
+  !! кадров 1 из 9
+Traceback (most recent call last):
+  File "C:\Users\gulev\CRM\valera-game\tools\build_l5.py", line 104, in <module>
+    S['l5cut'] = build_sheet('l5cut', 'l5_cut_cars.png', 9, [-300] * 9, grid=(3, 3), anchors=['feet'] * 9)
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "build_assets_helpers", line 296, in build_sheet
+ValueError: max() iterable argument is empty
+finished Sat Oct  3 00:04:07 RTZ 2026
+Sat Oct  3 00:14:48 RTZ 2026 run tools/p5/q01_cut_cars.txt try 1
+Sat Oct  3 00:21:53 RTZ 2026 OK art_src/l5_cut_cars.png
+Sat Oct  3 00:21:53 RTZ 2026 run tools/p5/q13_land_c.txt try 1
+Sat Oct  3 00:29:56 RTZ 2026 OK art_src/l5_land_c.png
+Sat Oct  3 00:29:56 RTZ 2026 run tools/p5/q14_land_d.txt try 1
+Sat Oct  3 00:34:30 RTZ 2026 OK art_src/l5_land_d.png
+Sat Oct  3 00:34:30 RTZ 2026 run tools/p5/q15_land_e.txt try 1
+Sat Oct  3 00:38:45 RTZ 2026 OK art_src/l5_land_e.png
+Sat Oct  3 00:38:45 RTZ 2026 run tools/p5/q16_houses2.txt try 1
+Sat Oct  3 00:42:28 RTZ 2026 OK art_src/l5_houses2.png
+gen2 finished Sat Oct  3 00:42:28 RTZ 2026
+Sat Oct  3 00:42:53 RTZ 2026 run tools/p5/q17_cars3.txt try 1
+Sat Oct  3 00:45:22 RTZ 2026 run tools/p5/q19_kop_parts.txt try 1 (gen5)
+Sat Oct  3 00:45:45 RTZ 2026 OK art_src/l5_cars3.png
+Sat Oct  3 00:45:45 RTZ 2026 run tools/p5/q18_props2.txt try 1
+gen5 finished Sat Oct  3 00:48:32 RTZ 2026
+Sat Oct  3 00:48:56 RTZ 2026 OK art_src/l5_props2.png
+gen3 finished Sat Oct  3 00:48:56 RTZ 2026
+Sat Oct  3 00:49:10 RTZ 2026 run tools/p5/q01_cut_cars.txt try 1 (gen4)
+Sat Oct  3 00:54:09 RTZ 2026 run tools/p5/q20_roofs_a.txt try 1 (gen6)
+Sat Oct  3 00:56:11 RTZ 2026 OK art_src/l5_cut_cars.png gen4
+gen4 finished Sat Oct  3 00:56:11 RTZ 2026
+Sat Oct  3 00:57:50 RTZ 2026 run tools/p5/q21_roofs_b.txt try 1 (gen6)
+gen6 finished Sat Oct  3 01:03:19 RTZ 2026
+Sat Oct  3 01:22:47 RTZ 2026 run tools/p5/q22_portraits.txt try 1 (gen7)
+Sat Oct  3 01:26:01 RTZ 2026 run tools/p5/q23_rail.txt try 1 (gen7)
+gen7 finished Sat Oct  3 01:28:10 RTZ 2026
+Sat Oct  3 01:30:38 RTZ 2026 run tools/p5/q24_decals.txt try 1 (gen8)
+Sat Oct  3 01:33:58 RTZ 2026 run tools/p5/q25_lights.txt try 1 (gen8)
+Sat Oct  3 01:34:15 RTZ 2026 run tools/p5/q25_lights.txt try 2 (gen8)
+Sat Oct  3 01:34:23 RTZ 2026 run tools/p5/q25_lights.txt try 3 (gen8)
+Sat Oct  3 01:34:30 RTZ 2026 run tools/p5/q25_lights.txt try 4 (gen8)
+gen8 finished Sat Oct  3 01:34:48 RTZ 2026
+Sat Oct  3 01:35:00 RTZ 2026 run tools/p5/q26_gas.txt try 1 (gen9)
+Sat Oct  3 01:35:07 RTZ 2026 run tools/p5/q26_gas.txt try 2 (gen9)
+Sat Oct  3 01:35:19 RTZ 2026 run tools/p5/q26_gas.txt try 3 (gen9)
+Sat Oct  3 01:35:26 RTZ 2026 run tools/p5/q26_gas.txt try 4 (gen9)
+gen9 finished Sat Oct  3 01:35:33 RTZ 2026
+Sat Oct  3 01:40:12 RTZ 2026 run tools/p5/q25_lights.txt try 1
+Sat Oct  3 01:40:20 RTZ 2026 limit, sleep
+Sat Oct  3 05:16:31 RTZ 2026 run tools/p5/q25_lights.txt try 1 (gen10)
+Sat Oct  3 05:17:46 RTZ 2026 run tools/p5/q26_gas.txt try 1 (gen10)
+gen10 finished Sat Oct  3 05:19:34 RTZ 2026
+Sat Oct  3 10:25:13 RTZ 2026 run tools/p5/q27_vova_rear.txt try 1 (gen12)
+Sat Oct  3 10:28:59 RTZ 2026 run tools/p5/q28_signs.txt try 1 (gen12)
+gen12 finished Sat Oct  3 10:31:26 RTZ 2026
+Sat Oct  3 10:46:55 RTZ 2026 run tools/p5/q29_spikes.txt try 1 (gen13)
+gen13 finished Sat Oct  3 10:52:03 RTZ 2026
+Sat Oct  3 16:20:01 RTZ 2026 run tools/p5/q30_leaves.txt try 1 (gen14)
+Sat Oct  3 16:39:59 RTZ 2026 run tools/p5/q30_leaves.txt try 1 (gen18)
+Sat Oct  3 16:42:53 RTZ 2026 run tools/p5/q31_trees2.txt try 1 (gen18)
+Sat Oct  3 16:45:41 RTZ 2026 run tools/p5/q32_vova_rear2.txt try 1 (gen18)
+Sat Oct  3 16:54:37 RTZ 2026 run tools/p5/q33_potholes.txt try 1 (gen18)
+Sat Oct  3 16:56:30 RTZ 2026 run tools/p5/q34_walkA.txt try 1 (gen18)
+Sat Oct  3 17:00:13 RTZ 2026 run tools/p5/q35_walkB.txt try 1 (gen18)
+Sat Oct  3 17:01:42 RTZ 2026 run tools/p5/q35_walkB.txt try 2 (gen18)
+Sat Oct  3 17:03:15 RTZ 2026 run tools/p5/q35_walkB.txt try 3 (gen18)
+Sat Oct  3 17:04:36 RTZ 2026 run tools/p5/q35_walkB.txt try 4 (gen18)
+gen18 finished Sat Oct  3 17:07:01 RTZ 2026
+Sat Oct  3 17:07:10 RTZ 2026 run tools/p5/q36_cliff_bg.txt try 1 (gen19)
+Sat Oct  3 17:09:20 RTZ 2026 run tools/p5/q38_comic_end1.txt try 1 (gen19)
+Sat Oct  3 17:11:50 RTZ 2026 run tools/p5/q39_comic_end2.txt try 1 (gen19)
+Sat Oct  3 17:14:01 RTZ 2026 run tools/p5/q37_matiz_side.txt try 1 (gen19)
+gen19 finished Sat Oct  3 17:15:54 RTZ 2026
+Sat Oct  3 17:15:56 RTZ 2026 run tools/p5/q40_walkB1.txt try 1 (gen20)
+Sat Oct  3 17:20:04 RTZ 2026 run tools/p5/q41_walkB2.txt try 1 (gen20)
+gen20 finished Sat Oct  3 17:24:48 RTZ 2026
+Sat Oct  3 17:25:00 RTZ 2026 run tools/p5/q42_card.txt try 1 (gen21)
+gen21 finished Sat Oct  3 17:29:28 RTZ 2026
+Sat Oct  3 17:38:55 RTZ 2026 run tools/p5/q43_endzone.txt try 1 (gen22)
+Sat Oct  3 17:41:34 RTZ 2026 run tools/p5/q43_endzone.txt try 2 (gen22)
+Sat Oct  3 17:42:02 RTZ 2026 run tools/p5/q43_endzone.txt try 3 (gen22)
+gen22 finished Sat Oct  3 17:42:30 RTZ 2026

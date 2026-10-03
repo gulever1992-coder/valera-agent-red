@@ -1,0 +1,9 @@
+Generate a sprite sheet of 24 TOP-DOWN (bird's-eye) city and port props, 4 columns x 6 rows, on a flat solid pure #00FF00 chroma-green background (RGB 0,255,0, no gradient), each object centered in its own equal cell with big gaps, nothing touching. Gritty autumn Russian pixel art with dark outlines, exactly the style of art_src/l5_props.png (open it as the reference: same angle, line weight, weathering).
+Row 1: (1) a blue shipping container, (2) a red shipping container, (3) a green shipping container, (4) a stack of rusty steel pipes.
+Row 2: (5) a railway crossing barrier arm striped red-white lowered across (horizontal), (6) a railway crossing signal post with two red lights and a cross sign, (7) three steel bollards in a row, (8) a pile of black coal.
+Row 3: (9) a children's playground: slide and swing frame, (10) a sandbox with a bucket, (11) a round flower bed with autumn flowers, (12) a dry round stone fountain with leaves.
+Row 4: (13) a stone statue of a man in a long coat on a dark square plinth seen from above, (14) a market stall with a striped awning and crates of vegetables, (15) a small fishing boat on a trailer, (16) a mini football pitch with two goals (a flat rectangle of worn green).
+Row 5: (17) a clothesline with colourful laundry between two poles, (18) a stack of wooden pallets, (19) a fish crate stack with ice, (20) a roadside neon-less sign pole with a «STOP» octagon.
+Row 6: (21) a coiled mooring rope and an anchor, (22) a wooden pier segment with posts, (23) a heap of sand with a shovel, (24) a wrecked burnt-out car shell (generic, no brand).
+Target file: art_src/l5_props2.png
+Output ONE image, saved as PNG, then copy it into the given path under C:/Users/gulev/CRM/valera-game/art_src/ and print the final path. Do not ask questions.

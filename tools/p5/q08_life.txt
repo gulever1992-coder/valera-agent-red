@@ -1,0 +1,7 @@
+Generate a TOP-DOWN (seen from above, like GTA 2) sprite sheet of city life with walking animation frames, 8 columns x 4 rows (32 cells), solid pure #00FF00 chroma-green background, each figure centered in an equal cell with big gaps, all figures walking/facing RIGHT:
+Row 1: four pedestrians, two walking frames each (frame A, frame B with legs swapped): (1-2) a babushka in a headscarf with a shopping bag; (3-4) a man in a grey coat with a briefcase; (5-6) a kid with a backpack; (7-8) a drunk guy in a puffy jacket with a bottle.
+Row 2: (9-10) a woman pushing a baby pram; (11-12) a courier on a bicycle (pedalling frames); (13-14) an old man with a cane and a flat cap; (15-16) a worker in an orange safety vest carrying a plank.
+Row 3: animals, two running frames each: (17-18) a stray dog; (19-20) a ginger cat; (21-22) a hen (comic, flapping); (23-24) a goose.
+Row 4: (25) a pigeon sitting; (26-28) a pigeon flying, three wing-flap frames; (29-30) a crow flying, two frames; (31) a person lying flat on the ground dazed with stars around the head (comic); (32) a flying hat.
+Target file: art_src/l5_life.png
+Style: detailed pixel art with dark outlines and rich shading, comic-exaggerated, Russian provincial 2000s mood, autumn clothes. Match the look of art_src/matiz.png and art_src/street_cars.png (open them first as style reference). Output ONE image, saved as PNG, then copy it into the given path under C:/Users/gulev/CRM/valera-game/art_src/ and print the final path. Do not ask questions.
