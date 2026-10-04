@@ -618,7 +618,7 @@ def build_gate_trees():
     ytop = int(H * 0.075); row = np.where(al[ytop + 6])[0]
     plats.append([(row.min() - tc) * k / 2, (H - ytop) * k / 2, (row.max() - row.min()) * k / 2])
     # новая детальная сосна (Flow): ветки размечены вручную по картинке [x слева от центра, высота, ширина]
-    L_ = [(-137, 105, 100), (-154, 140, 132), (-102, 185, 80), (-142, 215, 120), (-112, 270, 95), (-117, 330, 100), (-67, 377, 60), (-94, 422, 77), (-82, 467, 75), (-64, 507, 64)]
+    L_ = [(-137, 94, 100), (-154, 140, 132), (-102, 185, 80), (-142, 215, 120), (-112, 270, 95), (-117, 330, 100), (-67, 377, 60), (-94, 422, 77), (-82, 467, 75), (-64, 507, 64)]
     R_ = [(23, 130, 115), (23, 167, 132), (23, 212, 122), (13, 270, 125), (13, 345, 102), (13, 408, 90), (13, 447, 75), (13, 485, 60)]
     plats = [[x, h_, w_] for x, h_, w_ in L_ + R_] + [[-42, 530, 95]]
     plats.sort(key=lambda p_: p_[1])
@@ -850,3 +850,61 @@ if have('kick6.png'):
     with open(DATA, 'w', encoding='utf-8') as fp:
         fp.write('// автоматически создано tools/build_assets.py\n' + ''.join('window.%s = %s;\n' % (k, json.dumps(v)) for k, v in G.items()))
 portrait_src('kick6.png', (0, 0, 344, 384), 'p_wiz')
+
+# ---- нарезка по фигурам (а не по сетке) с вычищением линий сетки: items6 (очкарик не обрезан), гадюка (хвост целиком) ----
+def rp_rows(name, fn, bands, per_row, target, ref=0, anchors=None):
+    if not have(fn): return
+    im = Image.open(os.path.join(L6SRC, fn)).convert('RGB'); fr = []
+    for (y0, y1) in bands:
+        band = np.array(im.crop((0, y0, im.width, y1))).astype(np.int32)
+        dark = band.max(axis=2) < 70
+        cols = dark.mean(axis=0) > 0.92; rows = dark.mean(axis=1) > 0.92
+        band[:, cols] = (0, 255, 0); band[rows, :] = (0, 255, 0)   # линии сетки -> фон
+        a = np.array(key_green(Image.fromarray(band.astype(np.uint8)))).astype(np.uint8); al = a[..., 3] > 0
+        lab, k = ndimage.label(ndimage.binary_dilation(al, iterations=5))
+        sz = ndimage.sum(al, lab, range(1, k + 1)); ids = sorted(range(1, k + 1), key=lambda i: -sz[i - 1])[:per_row]
+        sls = ndimage.find_objects(lab); ids.sort(key=lambda i: sls[i - 1][1].start)
+        for i in ids:
+            sl = sls[i - 1]; sub = a[sl].copy(); sub[..., 3] = np.where(lab[sl] == i, sub[..., 3], 0); fr.append(sub)
+    S[name] = pack(name, fr, target, ref, anchors or ['feet'] * len(fr)); print(name, len(fr), 'фигур (по фигурам)')
+if have('items6.png'):   # ячейки разной ширины: режем по реальным линиям сетки (340/708/958), иначе очкарик обрезан
+    _xs = [(0, 340), (344, 708), (712, 958), (962, 1200)]
+    rp_green('items6', 'items6.png', [(x0, y0, x1, y1) for (y0, y1) in [(0, 221), (225, 446)] for (x0, x1) in _xs], [-66, -66, -36, -28, -28, -52, -34, -42], anchors=['center'] * 8)
+# гадюка: в исходнике у кадра броска хвост обрезан краем ячейки — бросок рисуется кадром 4 (см. level6foes.js)
+
+# ---- кайма: розовая у объектов с пурпурного фона, зелёная у персонажей с зелёного ----
+def defringe(name, pink=False, green=False, it=2):
+    if name not in S: return
+    p = os.path.join(ROOT, S[name]['img']); a = np.array(Image.open(p).convert('RGBA')).astype(np.int32)
+    for _ in range(it):
+        tr = a[..., 3] == 0; edge = ndimage.binary_dilation(tr) & ~tr
+        r, g, b = a[..., 0], a[..., 1], a[..., 2]; bad = np.zeros_like(edge)
+        if pink: bad |= ((r - g > 25) & (b - g > 10)) | ((b > g + 4) & (r > g + 8) & (r > 170))   # розовато-сиреневая кайма
+        if green: bad |= (g - r > 35) & (g - b > 35) & (g > 120)
+        a[..., 3] = np.where(edge & bad, 0, a[..., 3])
+    if green:   # остаточный зелёный отсвет по краю — в нейтральный
+        tr = a[..., 3] == 0; edge = ndimage.binary_dilation(tr, iterations=2) & ~tr
+        g2 = np.minimum(a[..., 1], np.maximum(a[..., 0], a[..., 2]) + 10); a[..., 1] = np.where(edge, g2, a[..., 1])
+    Image.fromarray(a.astype(np.uint8), 'RGBA').save(p, optimize=True)
+for _n in ('plat6', 'deco6', 'lm6', 'fg6', 'items6'): defringe(_n, pink=True, it=4)
+for _n in ('v6_run', 'v6_jump', 'v6_fight', 'v6_wand', 'v6_eat', 'v6_tap', 'v6_py', 'v6_kick', 'amanita', 'amanita2', 'beaver', 'beaver2', 'crow', 'crow2', 'mowgli', 'mowgli2', 'rose', 'rose2', 'nettle', 'nettle2', 'yeti', 'yeti2', 'yeti3', 'yeti4', 'viper', 'snk6', 'boss6', 'b_loco', 'b_evade', 'b_cast', 'b_py', 'b_taunt', 'b_hurt', 'vova6', 'wiz6'):
+    defringe(_n, green=True)
+with open(DATA, 'w', encoding='utf-8') as fp:
+    fp.write('// автоматически создано tools/build_assets.py\n' + ''.join('window.%s = %s;\n' % (k, json.dumps(v)) for k, v in G.items()))
+# ---- циклы бега: очкарик (без палочки / с палочкой) и Вова (Flow) ----
+def rp_bands(name, fn, bands, n_per, target, ref=0):
+    if not have(fn): return
+    im = Image.open(os.path.join(L6SRC, fn)).convert('RGB'); fr = []
+    for (y0, y1) in bands:
+        a = np.array(key_green(im.crop((0, y0, im.width, y1)))).astype(np.uint8); al = a[..., 3] > 0
+        lab, k = ndimage.label(ndimage.binary_dilation(al, iterations=6))
+        sz = ndimage.sum(al, lab, range(1, k + 1)); ids = sorted(range(1, k + 1), key=lambda i: -sz[i - 1])[:n_per]
+        sls = ndimage.find_objects(lab); ids.sort(key=lambda i: sls[i - 1][1].start)
+        for i in ids:
+            sl = sls[i - 1]; sub = a[sl].copy(); sub[..., 3] = np.where(lab[sl] == i, sub[..., 3], 0); fr.append(sub)
+    S[name] = pack(name, fr, target, ref, ['feet'] * len(fr)); print(name, len(fr), 'кадров бега')
+rp_bands('wizrun', 'wizrun6.png', [(0, 384), (384, 768)], 4, 70, ref=1)
+rp_bands('vovarun', 'vovarun6.png', [(0, 384)], 4, 86, ref=0)
+for _n in ('wizrun', 'vovarun'): defringe(_n, green=True)
+with open(DATA, 'w', encoding='utf-8') as fp:
+    fp.write('// автоматически создано tools/build_assets.py\n' + ''.join('window.%s = %s;\n' % (k, json.dumps(v)) for k, v in G.items()))

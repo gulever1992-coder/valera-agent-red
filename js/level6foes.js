@@ -28,7 +28,7 @@ Spr.ANIM.rose = {
   inflate: A6('rose2', [16], 1), spray: A6('rose2', [17], 1), hurt: A6('rose', [5], 1), ko: A6('rose', [7], 1),
 };
 Spr.ANIM.viper = {
-  idle: A6('viper', [0], 1), walk: A6('viper', [1, 2, 3, 2], 8), rear: A6('viper', [4], 1), strike: A6('viper', [5], 1), hurt: A6('viper', [6], 1), ko: A6('viper', [7], 1),
+  idle: A6('viper', [0], 1), walk: A6('viper', [1, 2, 3, 2], 8), rear: A6('viper', [4], 1), strike: A6('viper', [4], 1), hurt: A6('viper', [6], 1), ko: A6('viper', [7], 1),
 };
 Spr.ANIM.nettle = {
   idle: A6('nettle', [0], 1), walk: A6('nettle2', rng(6), 11), jabWind: A6('nettle2', [6], 1), jab: A6('nettle2', [7], 1), hookWind: A6('nettle2', [8], 1), hook: A6('nettle2', [9], 1),

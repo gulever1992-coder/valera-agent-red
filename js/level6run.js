@@ -54,7 +54,7 @@ L6.build = function () {
   f('mowgli', 7340, { plat: 'boulder' }); f('amanita', 7500); f('amanita', 7640); f('crow', 7800); f('yeti', 8000); f('mowgli', 8300, { plat: 'hill' }); f('rose', 8450); f('nettle', 8650); f('amanita', 8900); f('crow', 9000);
   // дюны
   f('yeti', 9800); f('mowgli', 10120, { plat: 'drift' }); f('nettle', 10000); f('rose', 10300); f('beaver', 10450); f('crow', 10550); f('amanita', 10750); f('amanita', 10860); f('yeti', 11050); f('nettle', 11350); f('crow', 11450); f('mowgli', 11700, { plat: 'drift' }); f('rose', 11900); f('amanita', 12050); f('beaver', 12300); f('yeti', 12500); f('nettle', 12800); f('crow', 12900); f('amanita', 13050); f('rose', 13400); f('nettle', 13600);
-  [2450, 4700, 6900, 9100, 11300, 12900].forEach(x => pick('growshroom', x));
+  [2450, 3700, 4700, 5800, 6900, 8000, 9100, 10200, 11300, 12200, 12900, 13600].forEach(x => pick('growshroom', x));
   // предметы для итоговой статистики: монеты, еда, значки-секреты (на верхушках деревьев-ворот)
   { const rc = U.seeded(17); for (let x = 400; x < L6.ARENA_X - 200; x += rc.int(240, 420)) { if (L6.GATES.some(g => x > g.x - 200 && x < g.x + 400)) continue; pick('coin', x); } }
   [1300, 5200, 8600, 12000].forEach(x => pick('pie', x)); pick('kefir', 10500);
@@ -105,11 +105,12 @@ L6.GrowPick = class extends Game.Pickup {
 // ориентиры lm6 (большие цельные объекты, как здания в ур.2): кадр -> опорная площадка (доля высоты сверху, доля ширины)
 const LMDEF = { 4: [0.4, 0.5], 5: [0.36, 0.8], 7: [0.4, 0.7], 10: [0.1, 0.5], 11: [0.3, 0.9], 12: [0.3, 0.75], 13: [0.2, 0.5], 14: [0.08, 0.6], 16: [0.28, 0.7], 17: [0.3, 0.6] };
 const LMPOOL = { forest: [0, 1, 2, 3, 1, 2, 5, 0, 3, 1], bog: [6, 7, 8, 9, 10, 11, 6, 9, 7], dunes: [12, 14, 15, 17, 12, 15, 14, 17] };
-L6.FRONT = { log: 1, log2: 1, drift: 1 };   // брёвна и коряги — перед персонажами, стоящими на земле
+L6.SINK = 12;   // насколько основания объектов утоплены в землю (иначе «висят»)
+L6.FRONT = { log: 1, log2: 1 };   // коряги (drift) — позади персонажей   // брёвна и коряги — перед персонажами, стоящими на земле
 // персонажи, стоящие НА таком бревне, перерисовываются поверх него
 L6.drawFront = (c, plats, cx, actors) => { let any = false; for (const p of plats) if (L6.FRONT[p.name] && p.x - cx > -300 && p.x - cx < W + 300) { L6.drawPlat(c, p, cx); any = true; }
   if (any) for (const a of actors) if (a && (a.force || a.y < L6.GROUND - 6) && plats.some(p => L6.FRONT[p.name] && Math.abs(a.x - p.x) < p.sw / 2 + 20) || a && a.force) a.redraw(); };
-L6.drawPlat = (c, p, cx) => { c.save(); c.translate(Math.round(p.x - cx), L6.GROUND + 2); c.scale(p.sx || 1, p.sy || 1); Spr.draw(c, 'plat6', p.fr, 0, 0, 1); c.restore(); };
+L6.drawPlat = (c, p, cx) => { c.save(); c.translate(Math.round(p.x - cx), L6.GROUND + 2 + L6.SINK); c.scale(p.sx || 1, p.sy || 1); Spr.draw(c, 'plat6', p.fr, 0, 0, 1); c.restore(); };
 L6.GATES = [{ x: 3050, tree: 0, wall: 3 }, { x: 7550, tree: 0, wall: 3 }, { x: 12650, tree: 15, wall: 14 }];
 
 // ---------- режим прохождения ----------
@@ -130,7 +131,7 @@ L6.Run = class {
     // платформы
     this.platSpr = D.plats.map(p => {
       const def = PLATDEF[p.name], f = Spr.frame('plat6', def[0]); const w = f ? f[2] / 2 : 100, h = f ? f[3] / 2 : 40;
-      const top = L6.GROUND - h * p.sy * (1 - def[1]), sw = w * p.sx * def[2];
+      const top = L6.GROUND + L6.SINK - h * p.sy * (1 - def[1]), sw = w * p.sx * def[2];
       wd.addPlat({ x: p.x - sw / 2, y: top, w: sw, h: 8, oneway: true, look: 'none' });
       return Object.assign({}, p, { fr: def[0], top, w, h, sw });
     });
@@ -144,11 +145,11 @@ L6.Run = class {
       } }
     D.foes = D.foes.filter(f => (f.o && f.o.at) || !L6.GATES.some(g => f.x > g.x - 180 && f.x < g.x + 450));
     const GY = L6.GROUND + 3;
-    for (const m of this.lms) { const d = LMDEF[m.fr], f = Spr.frame('lm6', m.fr); if (!d || !f) continue; const w = f[2] / 2 * m.s, h = f[3] / 2 * m.s; wd.addPlat({ x: m.x - w * d[1] / 2, y: GY - h * (1 - d[0]), w: w * d[1], h: 8, oneway: true, look: 'none' }); }
+    for (const m of this.lms) { const d = LMDEF[m.fr], f = Spr.frame('lm6', m.fr); if (!d || !f) continue; const w = f[2] / 2 * m.s, h = f[3] / 2 * m.s; wd.addPlat({ x: m.x - w * d[1] / 2, y: GY + L6.SINK - h * (1 - d[0]), w: w * d[1], h: 8, oneway: true, look: 'none' }); }
     // «ворота»: огромное дерево + высокая стена-ствол. Надо залезть по веткам до кроны, перепрыгнуть на стену и спрыгнуть вниз
     this.gateSpr = [];
     const T6 = window.TREE6;
-    L6.HELP = [[-150, 60, 64]];   // одна доска-ступенька до первой ветки   // доски-ступени, чтобы достать до нижних веток
+    L6.HELP = [];   // одна доска-ступенька до первой ветки   // доски-ступени, чтобы достать до нижних веток
     if (T6) for (const g of L6.GATES) {
       const wx = g.x + 250;
       for (const [dx, hh, ww] of T6.plats) wd.addPlat({ x: g.x + dx, y: GY - hh, w: ww, h: 8, oneway: true, look: 'none' });
@@ -336,15 +337,15 @@ L6.Run = class {
   }
   drawWorld(c, camX, o = {}) {
     this.drawBackdrop(c, camX);
-    for (const m of this.lms) if (m.x - camX > -260 && m.x - camX < W + 260) Spr.draw(c, 'lm6', m.fr, m.x - camX, L6.GROUND + 3, 1, { scale: m.s });
+    for (const m of this.lms) if (m.x - camX > -260 && m.x - camX < W + 260) Spr.draw(c, 'lm6', m.fr, m.x - camX, L6.GROUND + 3 + L6.SINK, 1, { scale: m.s });
     for (const gs of this.gateSpr) { const g = gs.g, T6 = window.TREE6, I = L6.img; if (g.x - camX > -300 && g.x - camX < W + 300) {
       if (I.treeT) c.drawImage(I.treeT, Math.round(g.x - camX - T6.w / 2), Math.round(L6.GROUND + 3 - T6.h), T6.w, T6.h);
       if (I.wallT) c.drawImage(I.wallT, Math.round(gs.wx - camX - T6.ww / 2), Math.round(L6.GROUND + 3 - T6.wh), T6.ww, T6.wh);
       const pf = Spr.frame('plat6', 9) || [0, 0, 160]; for (const [dx, hh, ww] of L6.HELP) Spr.draw(c, 'plat6', 9, g.x + dx + ww / 2 - camX, L6.GROUND + 3 - hh + 9, 1, { scale: ww / (pf[2] / 2) }); } }
-    for (const q of this.D.scen || []) if (q.x - camX > -300 && q.x - camX < W + 300) Spr.draw(c, 'plat6', q.fr, q.x - camX, L6.GROUND + 3, 1, { scale: q.s });   // фон-декор стоит на земле и не «едет» за камерой
-    for (const p of this.props) if (p.back && p.x - camX > -120 && p.x - camX < W + 120) Spr.draw(c, 'deco6', DECO[p.kind], p.x - camX, p.y, 1, { scale: p.s });
+    for (const q of this.D.scen || []) if (q.x - camX > -300 && q.x - camX < W + 300) Spr.draw(c, 'plat6', q.fr, q.x - camX, L6.GROUND + 3 + L6.SINK, 1, { scale: q.s });   // фон-декор стоит на земле и не «едет» за камерой
+    for (const p of this.props) if (p.back && p.x - camX > -120 && p.x - camX < W + 120) Spr.draw(c, 'deco6', DECO[p.kind], p.x - camX, p.y + L6.SINK * 0.6, 1, { scale: p.s });
     for (const p of this.platSpr) if (!L6.FRONT[p.name] && p.x - camX > -300 && p.x - camX < W + 300) L6.drawPlat(c, p, camX);
-    for (const p of this.props) if (!p.back && p.x - camX > -120 && p.x - camX < W + 120) Spr.draw(c, 'deco6', DECO[p.kind], p.x - camX, p.y, 1, { scale: p.s });
+    for (const p of this.props) if (!p.back && p.x - camX > -120 && p.x - camX < W + 120) Spr.draw(c, 'deco6', DECO[p.kind], p.x - camX, p.y + L6.SINK * 0.6, 1, { scale: p.s });
     if (this.eatProp) Spr.drawC(c, 'items6', 4, this.eatProp.x - camX, L6.GROUND - 10, 0, 1.2);
     if (L6.EAT_X - camX < W + 200 && this.eatProp) for (const dx of [-22, 26]) Spr.drawC(c, 'items6', 3, this.eatProp.x + dx - camX, L6.GROUND - 8, 0, 0.9);
     Spr.drawC(c, 'items6', this.wizProp.fr === 0 ? 0 : this.wizProp.fr, this.wizProp.x - camX, L6.GROUND - 14, 0, 1.2);

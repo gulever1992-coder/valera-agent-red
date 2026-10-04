@@ -198,7 +198,7 @@ L6.sceneFinale = function (level) {
     yield* Scene.tween(0.45, k => { pl.x += 2.4; wandOnGround.x += 4.2; wandOnGround.r = k * 6; });   // палочка вылетает вперёд, дальше Валеры
     pl.forcePose = 'rubKnees'; pl.setAnim('rubKnees'); pl.hasWand = false; Sound.play('hurt'); FX.dust(pl.x, pl.y, 6);
     yield 0.6;
-    yield* Scene.moveTo(wiz, wandOnGround.x - 6, 160, 'run');   // обегает Валеру к палочке
+    yield* Scene.moveTo(wiz, wandOnGround.x - 6, 160, 'sneak');   // бежит к упавшей палочке (руки пустые)
     wandOnGround = null; wiz.setAnim('grab'); yield 0.45;   // на кадре «хватает» палочка уже нарисована у руки
  Sound.play('pickup'); FX.burst(wiz.x + 14, L6.GROUND - 10, 12, { colors: ['#9fd4ff', '#ffffff', '#c8a0ff'], speed: 120, life: 0.5, grav: 0 });
     wiz.setAnim('run'); yield 0.3;

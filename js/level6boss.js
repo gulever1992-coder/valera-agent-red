@@ -205,6 +205,14 @@ L6.Vande = class {
     else if (this.phase === 2 && this.hp <= this.maxHp * 0.33 && this.state !== 'dying') this.enrage3(ar);
   }
   arenaPlats(ar) { return ar.world.plats.filter(p => p.oneway && p.y < L6.GROUND - 20 && p.x > BG6() - 20 && p.x + p.w < BG6() + 660 && p.w > 40); }
+  flee(ar) {   // три попадания — укрывается: прыгает на дальнюю дюну или убегает к краю арены
+    const pl = ar.player, ps = this.arenaPlats(ar).filter(p => Math.abs(p.x + p.w / 2 - pl.x) > 200);
+    this.say(U.choice(['Ай! Хватит!', 'Не достанешь!', 'Отступаю!']));
+    FX.burst(this.x, this.y - 50, 12, { colors: ['#201028', '#4a2060', '#ffd84a'], speed: 110, life: 0.5, grav: 0 });
+    if (ps.length) { const p = ps.reduce((b, q) => Math.abs(q.x - pl.x) > Math.abs(b.x - pl.x) ? q : b); this.hopTo(p.x + p.w / 2, p.y, p); }
+    else this.hopTo(pl.x > BG6() + 320 ? BG6() + 50 : BG6() + 590, L6.GROUND, null);
+    this.dodgeCool = 1.2;
+  }
   hopTo(tx, ty, plat) {
     this.state = 'hop'; this.seq = null; this.hp0 = { x0: this.x, y0: this.y, x1: tx, y1: ty, t: 0, d: 0.7, plat };
     this.facing = tx > this.x ? 1 : -1; this.play('jumpUp'); Sound.play('jump', 0.8);
@@ -338,6 +346,8 @@ L6.Vande = class {
     this.hp -= n; this.flash = 0.12; this.flashCol = null; Sound.play('hit'); G.hitStop = 0.04;
     if (this.hp <= 0) { this.hp = 0; this.die(ar); return true; }
     this.combo = this.t - this.lastHit < 1.0 ? this.combo + 1 : 1; this.lastHit = this.t;
+    this.hits3 = (this.hits3 || []).filter(t => this.t - t < 2.5); this.hits3.push(this.t);
+    if (this.hits3.length >= 3 && this.state !== 'hop' && this.vuln <= 0 && ar) { this.hits3 = []; this.flee(ar); return false; }
     if (this.state === 'idle' || (this.state === 'act' && !this.seqLocked())) {
       this.state = 'hurt'; this.st = 0; this.seq = null; this.vx = dir * 120;
       this.play(this.combo >= 3 ? 'stagger' : this.combo === 2 ? 'hurt2' : 'hurt1');

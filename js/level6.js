@@ -28,18 +28,18 @@ Spr.ANIM.valera6 = {
   stomp: A6('v6_tap', [1, 2, 3, 4, 5], 8), hips: A6('v6_jump', [0, 1], 3), scratch: A6('v6_jump', [3]), yawn: A6('v6_jump', [1]), belly: A6('v6_jump', [1]),
   dazed: A6('v6_jump', [3]), scared: A6('v6_jump', [3]), shout: A6('v6_eat', [6]), climb: A6('v6_jump', [3]),
   eat0: A6('v6_eat', [0]), eat1: A6('v6_eat', [1]), eat2: A6('v6_eat', [2]), eat3: A6('v6_eat', [3]), eat4: A6('v6_eat', [4]), eat5: A6('v6_eat', [5]),
-  roar: A6('v6_eat', [6]), kneel: A6('v6_eat', [7]), look: A6('v6_eat', [8]), py0: A6('v6_py', [0]), py1: A6('v6_py', [1, 2, 3, 2], 7), py2: A6('v6_py', [4]),
+  roar: A6('v6_eat', [6]), kneel: A6('v6_eat', [7]), look: A6('v6_eat', [3]), py0: A6('v6_py', [0]), py1: A6('v6_py', [1, 2, 3, 2], 7), py2: A6('v6_py', [4]),
   chew: A6('v6_eat', [1, 2, 1, 2], 6), glow: A6('v6_eat', [4, 5], 8),
   kicked: A6('v6_kick', [0]), rubKnees: A6('v6_kick', [1]), lookBack: A6('v6_kick', [2]), headScratch: A6('v6_kick', [3]),
 };
-Spr.ANIM.wiz6 = { stand: A6('wiz6', [0]), sneak: A6('wiz6', [0]), kick: A6('wiz6', [1]), grab: A6('wiz6', [2]), run: A6('wiz6', [3]) };   // очкарик — хозяин палочки
+Spr.ANIM.wiz6 = { stand: A6('wiz6', [0]), sneak: A6('wizrun', [0, 1, 2, 3], 10), kick: A6('wiz6', [1]), grab: A6('wiz6', [2]), run: A6('wizrun', [4, 6, 7, 6], 10) };   // бежит без палочки; после подбора — с палочкой   // очкарик — хозяин палочки
 Spr.ANIM.valera6w = Object.assign({}, Spr.ANIM.valera6, {   // (кадры пинка — общие)
   stand: A6('v6_tap', [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7], 5),
-  castWind: A6('v6_wand', [2]), castFire: A6('v6_wand', [3]), castRecoil: A6('v6_wand', [4]), castUp: A6('v6_wand', [5]),
+  look: A6('v6_eat', [8]), castWind: A6('v6_wand', [2]), castFire: A6('v6_wand', [3]), castRecoil: A6('v6_wand', [4]), castUp: A6('v6_wand', [5]),
   castDown: A6('v6_wand', [6]), castCrouch: A6('v6_wand', [7]), castAir: A6('v6_wand', [8]), flourish: A6('v6_wand', [9]), victory: A6('v6_wand', [10]), laugh: A6('v6_wand', [11]),
 });
 Spr.ANIM.vova6 = {
-  stand: A6('vova6', [0]), run: A6('vova6', [1, 2], 9), walk: A6('vova6', [1, 2], 7), point: A6('vova6', [3]), push: A6('vova6', [4]), laugh: A6('vova6', [5]), head: A6('vova6', [6]), shroom: A6('vova6', [7]),
+  stand: A6('vova6', [0]), run: A6('vovarun', [0, 1, 2, 3], 10), walk: A6('vovarun', [0, 1, 2, 3], 7), point: A6('vova6', [3]), push: A6('vova6', [4]), laugh: A6('vova6', [5]), head: A6('vova6', [6]), shroom: A6('vova6', [7]),
 };
 Spr.ANIM.vande = {
   idle: A6('b_loco', [0, 1, 2, 3], 4), walk: A6('b_loco', [4, 5, 6, 7, 8, 9, 10, 11], 11),
