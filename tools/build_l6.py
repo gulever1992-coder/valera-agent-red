@@ -741,7 +741,16 @@ def rp_green(name, fn, rects, target, ref=0, anchors=None):
         a = np.array(key_green(im.crop((r[0] + 6, r[1] + 6, r[2] - 6, r[3] - 6)))).astype(np.uint8)
         lab, n = ndimage.label(a[..., 3] > 0)
         if n:
-            sz = ndimage.sum(a[..., 3] > 0, lab, range(1, n + 1)); keep = np.isin(lab, [i + 1 for i, v in enumerate(sz) if v >= 60])
+            sz = ndimage.sum(a[..., 3] > 0, lab, range(1, n + 1)); big = int(np.argmax(sz)) + 1
+            ys_, xs_ = np.where(lab == big); h_, w_ = ys_.max() - ys_.min(), xs_.max() - xs_.min()
+            bx0, bx1, by0, by1 = xs_.min() - w_ * 0.15, xs_.max() + w_ * 0.15, ys_.min() - h_ * 0.1, ys_.max() + h_ * 0.1
+            ok = []
+            for i, sl in enumerate(ndimage.find_objects(lab)):   # куски соседних ячеек у края кадра — прочь
+                if sz[i] < 60: continue
+                cy_, cx_ = (sl[0].start + sl[0].stop) / 2, (sl[1].start + sl[1].stop) / 2
+                edge = sl[1].start <= 2 or sl[1].stop >= a.shape[1] - 2
+                if i + 1 == big or (bx0 <= cx_ <= bx1 and by0 <= cy_ <= by1 and not edge): ok.append(i + 1)
+            keep = np.isin(lab, ok)
             a[..., 3] = np.where(keep, a[..., 3], 0)
         fr.append(a)
     S[name] = pack(name, fr, target, ref, anchors or ['feet'] * len(fr)); print(name, len(fr), 'кадров')
@@ -823,3 +832,21 @@ def tall_layer(fn, out, height, xcrop=None):
 tall_layer('forest_tall.png', 'forest.png', 340)
 tall_layer('bog_tall.png', 'bog.png', 330)
 tall_layer('dunes_tall.png', 'dunes.png', 290, xcrop=(0.48, 1.0))   # левая часть с соснами за краем кадра отброшена
+# ---- финал: очкарик пинает Валеру и забирает палочку (Flow kick6.png) ----
+if have('kick6.png'):
+    _cw, _ch = 1376 / 4, 768 / 2
+    _r = lambda q, w: (int(w * _cw), int(q * _ch), int((w + 1) * _cw), int((q + 1) * _ch))
+    def rp_auto(name, fn, band, n, target, ref=0):   # нарезка по фигурам, а не по сетке (фигуры вылезают за четверти)
+        im = Image.open(os.path.join(L6SRC, fn)).convert('RGB').crop((0, band[0], 1376, band[1]))
+        a = np.array(key_green(im)).astype(np.uint8); al = a[..., 3] > 0
+        lab, k = ndimage.label(ndimage.binary_dilation(al, iterations=6))
+        sz = ndimage.sum(al, lab, range(1, k + 1)); ids = sorted(range(1, k + 1), key=lambda i: -sz[i - 1])[:n]
+        sls = ndimage.find_objects(lab); ids.sort(key=lambda i: sls[i - 1][1].start); fr = []
+        for i in ids:
+            sl = sls[i - 1]; sub = a[sl].copy(); sub[..., 3] = np.where(lab[sl] == i, sub[..., 3], 0); fr.append(sub)
+        S[name] = pack(name, fr, target, ref, ['feet'] * len(fr)); print(name, len(fr), 'фигур')
+    rp_auto('wiz6', 'kick6.png', (4, 380), 4, 70, ref=0)
+    rp_auto('v6_kick', 'kick6.png', (388, 764), 4, 80, ref=3)
+    with open(DATA, 'w', encoding='utf-8') as fp:
+        fp.write('// автоматически создано tools/build_assets.py\n' + ''.join('window.%s = %s;\n' % (k, json.dumps(v)) for k, v in G.items()))
+portrait_src('kick6.png', (0, 0, 344, 384), 'p_wiz')

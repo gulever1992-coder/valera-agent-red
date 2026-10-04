@@ -2,6 +2,7 @@
 // ============ УРОВЕНЬ 6: катсцены и класс уровня ============
 WHO.vande = { name: 'ВАНДЕЛОРД', color: '#d8a0ff', voice: 150 };
 WHO.vova6 = { name: 'ВОВА', color: '#ff7a7a', voice: 300 };
+WHO.wiz = { name: 'ОЧКАРИК', color: '#ffd84a', voice: 420 };
 WHO.vova = WHO.vova || { name: 'ВОВА', color: '#ffb070', voice: 300 };
 
 // сцена в мире уровня: фон + игрок/актёры + диалог
@@ -102,7 +103,7 @@ L6.sceneWand = function (level, run) {
     G.say(wiz, 'Мои... очки?..', 2.0);
     yield 1.2;
     pl.forcePose = null; pl.setAnim('stand');
-    run.hints.push({ x: pl.x - 10, w: 900, text: 'Держи {punch} или {throw} — колдовать палочкой. {switch} — сменить на кулаки и обратно.', shown: 0 });
+    run.hints.push({ x: pl.x - 10, w: 900, text: '{punch} или {throw} — заклинание. Палочка перезаряжается 5 секунд — пока ждёшь, бей кулаками. {switch} — сменить оружие.', shown: 0 });
   };
 };
 
@@ -143,6 +144,8 @@ L6.sceneFinale = function (level) {
   const ar = level.arena, b = ar.boss, pl = ar.player;
   const st = level.sc = { fade: 0, heli: 0, poof: 0 };
   const vova = new G.Actor('vova6', L6.ARENA_X - 40, L6.GROUND, 1); vova.setAnim('run'); vova.voice = 300; vova.visible = false; vova.scale = 1;
+  const wiz = new G.Actor('wiz6', L6.ARENA_X - 40, L6.GROUND, 1); wiz.voice = 420; wiz.visible = false; wiz.headH = 70; wiz.scale = 1;
+  let wandOnGround = null;
   let poofT = -1;
   level.drawScene = c => {
     if (st.heli > 0) {
@@ -155,17 +158,19 @@ L6.sceneFinale = function (level) {
       ar.draw(c);
       const cx = L6.ARENA_X;
       vova.draw(c, cx, 0);
-      L6.drawFront(c, ar.run.platSpr.filter(p => p.x >= cx - 60), cx, [{ x: b.x, y: b.y, force: true, redraw: () => b.draw(c, cx) }, { x: pl.x, y: pl.y, force: true, redraw: () => pl.draw(c, cx, 0) }, { x: vova.x, y: vova.y, force: true, redraw: () => vova.draw(c, cx, 0) }]);   // брёвна перед Вовой
+      if (wandOnGround) Spr.drawC(c, 'items6', 2, wandOnGround.x - cx, L6.GROUND - 3, wandOnGround.r, 0.8);
+      wiz.draw(c, cx, 0);
+      L6.drawFront(c, ar.run.platSpr.filter(p => p.x >= cx - 60), cx, [{ x: b.x, y: b.y, force: true, redraw: () => b.draw(c, cx) }, { x: pl.x, y: pl.y, force: true, redraw: () => pl.draw(c, cx, 0) }, { x: vova.x, y: vova.y, force: true, redraw: () => vova.draw(c, cx, 0) }, { x: wiz.x, y: wiz.y, force: true, redraw: () => wiz.draw(c, cx, 0) }]);   // брёвна перед Вовой
       if (poofT >= 0 && poofT < 0.6) { const k = poofT / 0.6; c.globalAlpha = 1 - k; Spr.drawC(c, 'vfx6', 11, vova.x - cx, vova.y - 50, 0, 0.8 + k); Spr.drawC(c, 'gibs6', 6, vova.x - cx, vova.y - 50, 0, 1.2 + k * 1.6); c.globalAlpha = 1; }
       G.drawBubbles(c, cx, 0);
       Scene.drawDialog(c);
     }
     if (st.fade > 0) { c.fillStyle = `rgba(0,0,0,${st.fade})`; c.fillRect(0, 0, W, H); }
   };
-  level.updateScene = dt => { b.animT += dt; pl.animT += dt; vova.update(dt); if (poofT >= 0) poofT += dt; FX.update(dt); G.updateBubbles(dt); };
+  level.updateScene = dt => { b.animT += dt; pl.animT += dt; vova.update(dt); wiz.update(dt); if (poofT >= 0) poofT += dt; FX.update(dt); G.updateBubbles(dt); };
   return function* () {
     Music.play('city');
-    b.state = 'down'; b.play('ko'); pl.forcePose = null; pl.setAnim('stand'); pl.hasWand = true;
+    b.state = 'down'; b.play('ko'); pl.forcePose = null; pl.setAnim('stand'); pl.hasWand = true; ar.hint = null; ar.hintA = 0; ar.hintT = 0;
     yield 1.0;
     yield* Scene.say('valera', 'Готов... Теперь Вова свободен!', pl);
     vova.visible = true; vova.x = L6.ARENA_X - 30; vova.facing = 1;
@@ -182,6 +187,28 @@ L6.sceneFinale = function (level) {
     pl.forcePose = 'dazed'; pl.setAnim('dazed');
     yield 0.8;
     yield* Scene.say('valera', 'Ладно... Пойду дальше один.', pl);
+    // очкарик, у которого Валера забрал палочку, догоняет его
+    pl.forcePose = null; pl.setAnim('stand'); pl.facing = 1;
+    wiz.visible = true; wiz.x = L6.ARENA_X - 30; wiz.facing = 1;
+    yield* Scene.moveTo(wiz, pl.x - 34, 120, 'sneak');
+    wiz.setAnim('kick'); Sound.play('punch', 1.2); G.shake(5, 0.3);
+    FX.burst(pl.x - 10, pl.y - 30, 10, { colors: ['#ffffff', '#ffd84a'], speed: 140, life: 0.4, grav: 0 });
+    pl.forcePose = 'kicked'; pl.setAnim('kicked'); G.say(pl, 'АЙ!!!', 1.0);
+    wandOnGround = { x: pl.x + 20, r: 0 };
+    yield* Scene.tween(0.45, k => { pl.x += 2.4; wandOnGround.x += 4.2; wandOnGround.r = k * 6; });   // палочка вылетает вперёд, дальше Валеры
+    pl.forcePose = 'rubKnees'; pl.setAnim('rubKnees'); pl.hasWand = false; Sound.play('hurt'); FX.dust(pl.x, pl.y, 6);
+    yield 0.6;
+    yield* Scene.moveTo(wiz, wandOnGround.x - 6, 160, 'run');   // обегает Валеру к палочке
+    wandOnGround = null; wiz.setAnim('grab'); yield 0.45;   // на кадре «хватает» палочка уже нарисована у руки
+ Sound.play('pickup'); FX.burst(wiz.x + 14, L6.GROUND - 10, 12, { colors: ['#9fd4ff', '#ffffff', '#c8a0ff'], speed: 120, life: 0.5, grav: 0 });
+    wiz.setAnim('run'); yield 0.3;
+    yield* Scene.say('wiz', 'Палочку свою не отдам! Колдуй своими кулаками, Валера!', wiz);
+    pl.forcePose = 'lookBack'; pl.setAnim('lookBack'); pl.facing = -1;
+    yield* Scene.say('valera', 'Э! Это вообще-то я твоего грибного некроманта победил!', pl);
+    yield* Scene.moveTo(wiz, L6.ARENA_X + W + 60, 210, 'run');
+    wiz.visible = false;
+    pl.forcePose = 'headScratch'; pl.setAnim('headScratch'); pl.facing = 1;
+    yield* Scene.say('valera', 'Ни Вовы, ни палочки... Зато задница цела. Почти.', pl);
     yield* Scene.tween(0.7, k => { st.fade = k; });
     yield 0.3;
     st.heli = 1; st.fade = 1;

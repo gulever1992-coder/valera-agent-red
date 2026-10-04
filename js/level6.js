@@ -15,7 +15,7 @@ const rng = n => Array.from({ length: n }, (_, i) => i);
 L6.load = async function () {
   const names = { bgf: 'bgf.jpg', bgb: 'bgb.jpg', bgd: 'bgd.jpg', sky: 'sky.jpg', city: 'city.png', far: 'far.png', forest: 'forest.png', bog: 'bog.png', dunefar: 'dunefar.png', dunes: 'dunes.png', fg: 'fg.png', gr_forest: 'gr_forest.jpg', gr_bog: 'gr_bog.jpg', gr_sand: 'gr_sand.jpg', arena: 'arena.jpg', heli: 'heli.jpg', sky_forest: 'sky_forest.jpg', sky_bog: 'sky_bog.jpg', sky_dunes: 'sky_dunes.jpg', mg_forest: 'mg_forest.png', mg_bog: 'mg_bog.png', mg_dunes: 'mg_dunes.png' };
   await Promise.all(Object.entries(names).map(async ([k, f]) => { try { L6.img[k] = await G.loadImage('assets/l6/' + f); } catch (e) {} }));
-  for (const k of ['valera6', 'vande', 'vova6']) { try { G.portraits[k] = await G.loadImage('assets/spr/p_' + (k === 'valera6' ? 'valera6' : k === 'vande' ? 'vande' : 'vova6') + '.png'); } catch (e) {} }
+  for (const k of ['valera6', 'vande', 'vova6', 'wiz']) { try { G.portraits[k] = await G.loadImage('assets/spr/p_' + k + '.png'); } catch (e) {} }
   try { L6.img.card = await G.loadImage('assets/l6_card.jpg'); } catch (e) {}
   try { L6.img.treeT = await G.loadImage('assets/spr/tree_tall.png'); L6.img.wallT = await G.loadImage('assets/spr/wall_tall.png'); } catch (e) {}
 };
@@ -30,8 +30,10 @@ Spr.ANIM.valera6 = {
   eat0: A6('v6_eat', [0]), eat1: A6('v6_eat', [1]), eat2: A6('v6_eat', [2]), eat3: A6('v6_eat', [3]), eat4: A6('v6_eat', [4]), eat5: A6('v6_eat', [5]),
   roar: A6('v6_eat', [6]), kneel: A6('v6_eat', [7]), look: A6('v6_eat', [8]), py0: A6('v6_py', [0]), py1: A6('v6_py', [1, 2, 3, 2], 7), py2: A6('v6_py', [4]),
   chew: A6('v6_eat', [1, 2, 1, 2], 6), glow: A6('v6_eat', [4, 5], 8),
+  kicked: A6('v6_kick', [0]), rubKnees: A6('v6_kick', [1]), lookBack: A6('v6_kick', [2]), headScratch: A6('v6_kick', [3]),
 };
-Spr.ANIM.valera6w = Object.assign({}, Spr.ANIM.valera6, {
+Spr.ANIM.wiz6 = { stand: A6('wiz6', [0]), sneak: A6('wiz6', [0]), kick: A6('wiz6', [1]), grab: A6('wiz6', [2]), run: A6('wiz6', [3]) };   // очкарик — хозяин палочки
+Spr.ANIM.valera6w = Object.assign({}, Spr.ANIM.valera6, {   // (кадры пинка — общие)
   stand: A6('v6_tap', [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7], 5),
   castWind: A6('v6_wand', [2]), castFire: A6('v6_wand', [3]), castRecoil: A6('v6_wand', [4]), castUp: A6('v6_wand', [5]),
   castDown: A6('v6_wand', [6]), castCrouch: A6('v6_wand', [7]), castAir: A6('v6_wand', [8]), flourish: A6('v6_wand', [9]), victory: A6('v6_wand', [10]), laugh: A6('v6_wand', [11]),
@@ -109,7 +111,7 @@ L6.Player = class extends Game.Player {
     if (this.castT > 0) this.castT -= dt;
     const s = this.sc, big = s > 1.2 ? 2 : 1;
     if (ctl && this.hasWand && I.pressed('switch')) { this.wmode = this.wmode === 'wand' ? 'fist' : 'wand'; Sound.play('select'); FX.popText(this.x, this.y - 92 * s, this.wmode === 'wand' ? 'ПАЛОЧКА' : 'КУЛАКИ', '#ffffff'); }
-    const wandOn = this.hasWand && this.wmode === 'wand';
+    const wandOn = this.hasWand && this.wmode === 'wand' && (this.rapid || this.castCool <= 0);   // пока палочка перезаряжается — бьём кулаками
     if (ctl && !wandOn && I.pressed('punch') && (!this.atk || this.atk.t > this.atk.dur * 0.7) && this.castT <= 0) {
       const idx = this.comboT > 0 || this.atk ? (this.combo + 1) % 3 : 0;
       this.combo = idx;
@@ -129,7 +131,9 @@ L6.Player = class extends Game.Player {
       }
       if (a.t >= a.dur) { this.atk = null; this.comboT = 0.35; }
     }
-    if (ctl && this.hasWand && (I.held('throw') || (wandOn && I.held('punch'))) && this.castCool <= 0 && !this.atk) this.cast(world, I);
+    const want = this.rapid ? (I.pressed('throw') || (wandOn && I.pressed('punch'))) : (I.held('throw') || (wandOn && I.held('punch')));
+    if (ctl && this.hasWand && want && this.castCool <= 0 && !this.atk) { this.cast(world, I); this.castMax = this.castCool = this.rapid ? 0.12 : 5; }   // в бою с боссом — выстрел на каждое нажатие, иначе перезарядка 5 с
+    else if (ctl && this.hasWand && !this.rapid && I.pressed('throw') && this.castCool > 0) FX.popText(this.x, this.y - 92 * this.sc, 'ПЕРЕЗАРЯДКА ' + Math.ceil(this.castCool) + ' С', '#8a93a0');
   }
   cast(world, I) {
     let k; do { k = U.randi(0, SPELLS.length - 1); } while (k === this.lastSpell);
@@ -185,7 +189,8 @@ L6.drawWeaponHUD = function (c, pl) {   // в стиле ур. 3: ячейки �
   };
   cell(174, !on, x => Spr.drawC(c, 'hud6', 0, x + 12, 17, 0, sel0(!on) * 0.8), 'УДАР');
   if (pl.hasWand) {
-    cell(230, on, x => Spr.drawC(c, 'hud6', 1, x + 13, 17, 0, sel0(on)), 'ЧАРЫ');
+    cell(230, on, x => Spr.drawC(c, 'hud6', 1, x + 13, 17, 0, sel0(on)), pl.castCool > 0.2 && !pl.rapid ? Math.ceil(pl.castCool) + ' С' : 'ЧАРЫ');
+    if (pl.castCool > 0 && !pl.rapid) { R(c, 230, 25, 52, 3, '#101216'); R(c, 230, 25, Math.round(52 * (1 - pl.castCool / (pl.castMax || 5))), 3, '#c8a0ff'); }
     G.text((Game.keyName('switch') || 'Q') + ' — смена', 174, 32, { size: 6, color: '#a8b0b8' });
     if (pl.spellT > 0) G.text(pl.spellName, 288, 13, { size: 7, color: '#c8a0ff' });
   }

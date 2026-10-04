@@ -397,7 +397,7 @@ L6.Vande = class {
 L6.Arena = class {
   constructor(level, run) {
     this.level = level; this.run = run; this.world = run.world;
-    this.player = run.player; this.player.controls = false;
+    this.player = run.player; this.player.controls = false; this.player.rapid = true; this.player.castCool = 0;
     this.boss = new L6.Vande(BG6() + 440); this.boss.state = 'wait';
     this.portals = []; this.shrooms = []; this.foes = []; this.pyshots = []; this.quakes = []; this.spores = []; this.shots = []; this.spells = []; this.fx = []; this.clouds = [];
     this.drops = []; this.splashes = []; this.rainT = 0; this.rainAcc = 0; this.fighting = false; this.dropped = {}; this.quipT = 5; this.hint = null; this.hintA = 0; this.hintT = 0; this.resetting = false;
@@ -408,7 +408,7 @@ L6.Arena = class {
   }
   targetList() { const b = this.boss; return [...this.spores.filter(s => !s.dead), ...this.foes.filter(e => !e.dead && e.dieT == null), ...this.shrooms.filter(s => s.grown && !s.dead), ...(b.state !== 'wait' && b.state !== 'down' ? [b] : [])]; }
   transform(foe, id) { L6.Run.prototype.transform.call(this, foe, id); this.world.addScore(0); }
-  startFight() { this.fighting = true; this.player.controls = true; this.boss.state = 'idle'; this.boss.st = 0; this.hint = 'Ванделорд уворачивается от выстрелов. Бей, когда он занят колдовством. Грибы-щиты ломай первыми!'; this.hintT = 7; }
+  startFight() { this.fighting = true; this.player.controls = true; this.boss.state = 'idle'; this.boss.st = 0; this.hint = 'Палочка заряжена силой арены: заклинание на каждое нажатие! Ванделорд уворачивается — бей, когда он колдует. Грибы-щиты ломай первыми!'; this.hintT = 7; }
   playerAttack(hb, dmg, atk, pl) {
     const b = this.boss;
     for (const s of this.shrooms) if (s.grown && !s.dead && !atk.hit.has(s) && U.overlap(hb, s.box)) { atk.hit.add(s); const k = s.hit(dmg); if (k) this.world.addScore(300); FX.burst(s.x, s.y - 40, 5, { colors: ['#fff', '#c02030'], speed: 100, life: 0.3, grav: 0 }); }
