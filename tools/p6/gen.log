@@ -1,0 +1,12 @@
+Sun Oct  4 14:25:48 RTZ 2026 tools/p6/c1_forest.txt try 1
+OK art_src/l6/forest_tall.png
+Sun Oct  4 14:27:13 RTZ 2026 tools/p6/c2_vova.txt try 1
+OK art_src/l6/vovawalk6.png
+Sun Oct  4 14:29:33 RTZ 2026 tools/p6/c3_wiz.txt try 1
+Sun Oct  4 14:30:59 RTZ 2026 tools/p6/c3_wiz.txt try 2
+FAIL art_src/l6/wizwalk6.png
+Sun Oct  4 14:32:23 RTZ 2026 tools/p6/c4_vande.txt try 1
+OK art_src/l6/vandewalk6.png
+done
+Sun Oct  4 14:35:02 RTZ 2026 c3b_wiz try 1
+OK2 wizwalk6

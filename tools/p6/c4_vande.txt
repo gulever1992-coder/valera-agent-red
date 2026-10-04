@@ -1,0 +1,5 @@
+Generate ONE pixel-art game sprite sheet. Character: EXACTLY the same villain as in the reference C:/Users/gulev/CRM/valera-game/art_src/l6/boss6_a.png (open it; same face, hair, clothes, colors, proportions and pixel-art style). Flat solid pure green #00FF00 background (RGB 0,255,0), no shadows. Layout: 2 rows x 4 columns, equal cells, one full-body figure per cell, identical scale, side view facing RIGHT, feet on one baseline, wide green margins, nothing cut off, no text, no grid lines.
+Row 1: 4-frame RUNNING cycle, legs clearly alternating: (1) right leg forward heel down, left leg far back; (2) passing, left knee high; (3) left leg forward, right leg far back; (4) passing, right knee high; arms swinging, crazy grin.
+Row 2: 4-frame WALKING cycle, same alternation with smaller steps, menacing.
+Target file: art_src/l6/vandewalk6.png
+Output ONE image, saved as PNG at C:/Users/gulev/CRM/valera-game/art_src/l6/vandewalk6.png and print the final path. Do not ask questions.

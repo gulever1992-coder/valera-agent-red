@@ -1,0 +1,5 @@
+Generate ONE original pixel-art game sprite sheet for a comedy platformer. Character: a skinny adult man (about 25 years old) with messy black hair, round glasses, long plain black coat, dark trousers — copy the look, colors and pixel-art style of the figures in C:/Users/gulev/CRM/valera-game/art_src/l6/wizrun6.png (open it as a style reference). Flat solid pure green #00FF00 background (RGB 0,255,0), no shadows. Layout: 2 rows x 4 columns, equal cells, one full-body figure per cell, identical scale, side view facing RIGHT, feet on one baseline, wide green margins, nothing cut off, no text, no grid lines.
+Row 1: 4-frame running cycle, empty hands, legs clearly alternating: (1) right leg forward, left leg far back; (2) passing, left knee high; (3) left leg forward, right leg far back; (4) passing, right knee high. Coat flapping, arms swinging.
+Row 2: the same 4-frame running cycle while holding a thin wooden stick up in one hand, cheerful.
+Target file: art_src/l6/wizwalk6.png
+Output ONE image, saved as PNG at C:/Users/gulev/CRM/valera-game/art_src/l6/wizwalk6.png and print the final path. Do not ask questions.

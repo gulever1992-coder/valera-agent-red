@@ -282,7 +282,7 @@ L6.Vande = class {
       case 'relocate': {   // перебегает в другую часть арены
         A.relocate = 3.5; const tx = pl.x > BG6() + 320 ? BG6() + U.rand(60, 200) : BG6() + U.rand(440, 580);
         this.facing = tx > this.x ? 1 : -1; const d = Math.abs(tx - this.x);
-        this.doSeq('relocate', [{ a: 'walk', d: Math.max(0.4, d / 230), fixed: true, move: 230, upd: () => { if ((tx - this.x) * this.facing < 0) this.sqT = 99; } }, { a: 'smirk', d: 0.3 }]);
+        this.doSeq('relocate', [{ a: 'run', d: Math.max(0.4, d / 230), fixed: true, move: 230, upd: () => { if ((tx - this.x) * this.facing < 0) this.sqT = 99; } }, { a: 'smirk', d: 0.3 }]);
         if (Math.random() < 0.4) this.say(U.choice(['Лови меня!', 'Здесь удобнее.', 'Не догонишь!']));
         break;
       }

@@ -894,9 +894,13 @@ with open(DATA, 'w', encoding='utf-8') as fp:
 # ---- циклы бега: очкарик (без палочки / с палочкой) и Вова (Flow) ----
 def rp_bands(name, fn, bands, n_per, target, ref=0):
     if not have(fn): return
-    im = Image.open(os.path.join(L6SRC, fn)).convert('RGB'); fr = []
+    im0 = Image.open(os.path.join(L6SRC, fn)); fr = []
+    alpha = im0.mode == 'RGBA' and np.array(im0)[..., 3].min() < 10   # уже прозрачный фон (Codex) — кей не нужен
+    im = im0.convert('RGBA') if alpha else im0.convert('RGB')
     for (y0, y1) in bands:
-        a = np.array(key_green(im.crop((0, y0, im.width, y1)))).astype(np.uint8); al = a[..., 3] > 0
+        a = np.array(im.crop((0, y0, im.width, y1)) if alpha else key_green(im.crop((0, y0, im.width, y1)))).astype(np.uint8)
+        if alpha: a[..., 3] = np.where(a[..., 3] > 128, 255, 0)
+        al = a[..., 3] > 0
         lab, k = ndimage.label(ndimage.binary_dilation(al, iterations=6))
         sz = ndimage.sum(al, lab, range(1, k + 1)); ids = sorted(range(1, k + 1), key=lambda i: -sz[i - 1])[:n_per]
         sls = ndimage.find_objects(lab); ids.sort(key=lambda i: sls[i - 1][1].start)
@@ -905,6 +909,11 @@ def rp_bands(name, fn, bands, n_per, target, ref=0):
     S[name] = pack(name, fr, target, ref, ['feet'] * len(fr)); print(name, len(fr), 'кадров бега')
 rp_bands('wizrun', 'wizrun6.png', [(0, 384), (384, 768)], 4, 70, ref=1)
 rp_bands('vovarun', 'vovarun6.png', [(0, 384)], 4, 86, ref=0)
-for _n in ('wizrun', 'vovarun'): defringe(_n, green=True)
+# новые циклы бег+ходьба с явной сменой ног (Codex, 2x4): верхний ряд — бег, нижний — ходьба / бег с палочкой
+def _halves(fn): h = Image.open(os.path.join(L6SRC, fn)).height; return [(0, h // 2), (h // 2, h)]
+if have('vovawalk6.png'): rp_bands('vovarun', 'vovawalk6.png', _halves('vovawalk6.png'), 4, 86, ref=4)
+if have('wizwalk6.png'): rp_bands('wizrun', 'wizwalk6.png', _halves('wizwalk6.png'), 4, 70, ref=0)
+if have('vandewalk6.png'): rp_bands('vandewalk', 'vandewalk6.png', _halves('vandewalk6.png'), 4, 90, ref=4)
+for _n in ('wizrun', 'vovarun', 'vandewalk'): defringe(_n, green=True)
 with open(DATA, 'w', encoding='utf-8') as fp:
     fp.write('// автоматически создано tools/build_assets.py\n' + ''.join('window.%s = %s;\n' % (k, json.dumps(v)) for k, v in G.items()))

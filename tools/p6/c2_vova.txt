@@ -1,0 +1,5 @@
+Generate ONE pixel-art game sprite sheet. Character: EXACTLY the same character as in the references C:/Users/gulev/CRM/valera-game/art_src/l6/vova6.png and C:/Users/gulev/CRM/valera-game/art_src/l6/vovarun6.png (open both; same face, hair, clothes, colors, proportions and pixel-art style). Flat solid pure green #00FF00 background (RGB 0,255,0), no shadows. Layout: 2 rows x 4 columns, equal cells, one full-body figure per cell, identical scale, side view facing RIGHT, feet on the same baseline in every cell, wide green margins, nothing cut off, no text, no grid lines.
+Row 1: 4-frame RUNNING cycle with clearly alternating legs: (1) right leg forward heel down, left leg far back; (2) passing, left knee lifted high in front; (3) left leg forward heel down, right leg far back; (4) passing, right knee lifted high. Arms swing opposite to legs.
+Row 2: 4-frame WALKING cycle, same leg alternation but smaller steps, relaxed.
+Target file: art_src/l6/vovawalk6.png
+Output ONE image, saved as PNG at C:/Users/gulev/CRM/valera-game/art_src/l6/vovawalk6.png and print the final path. Do not ask questions.

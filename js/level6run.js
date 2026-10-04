@@ -333,7 +333,7 @@ L6.Run = class {
       if (cu > 1) { let x = -(((camX * 0.36) % tw) + tw) % tw; const sh = im.height * 0.35;   // низ слоя продлён зеркальным отражением подлеска (без растянутых полос)
         for (; x < W; x += tw) { cc.save(); cc.translate(0, ty + th * 2 - 2); cc.scale(1, -1); cc.drawImage(im, 0, im.height - sh, im.width, sh, Math.floor(x), th - sh / 2, Math.ceil(tw) + 1, sh / 2); cc.restore(); } } };
     { const mt = gy + 8 - Math.max(...['forest', 'bog', 'dunes'].map(k => I[k] ? I[k].height / 2 : 0));   // верх самого высокого слоя
-      lay(0.07, () => this.wipe(c, camX, 0.36, midOf, 110, [mt - 4, mt + 130])); }   // по вертикали почти неподвижен: при лазании по деревьям верх слоя не открывается
+      lay(0.07, () => this.wipe(c, camX, 0.36, midOf, 110)); }   // слои с целыми кронами (Flow/Codex) — верх не растворяется
     // 5) земля
     const grOf = id => cc => { const im = I[{ forest: 'gr_forest', bog: 'gr_bog', dunes: 'gr_sand' }[id]]; if (im) tileOn(cc, im, camX, gy, 640, Math.round(im.height / 2)); };
     this.wipe(c, camX, 1, grOf, 160);

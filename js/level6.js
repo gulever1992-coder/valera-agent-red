@@ -32,17 +32,17 @@ Spr.ANIM.valera6 = {
   chew: A6('v6_eat', [1, 2, 1, 2], 6), glow: A6('v6_eat', [4, 5], 8),
   kicked: A6('v6_kick', [0]), rubKnees: A6('v6_kick', [1]), lookBack: A6('v6_kick', [2]), headScratch: A6('v6_kick', [3]),
 };
-Spr.ANIM.wiz6 = { stand: A6('wiz6', [0]), sneak: A6('wizrun', [0, 1, 2, 3], 10), kick: A6('wiz6', [1]), grab: A6('wiz6', [2]), run: A6('wizrun', [4, 6, 7, 6], 10) };   // бежит без палочки; после подбора — с палочкой   // очкарик — хозяин палочки
+Spr.ANIM.wiz6 = { stand: A6('wiz6', [0]), sneak: A6('wizrun', [0, 1, 2, 3], 10), kick: A6('wiz6', [1]), grab: A6('wiz6', [2]), run: A6('wizrun', [4, 5, 6, 7], 10) };   // бежит без палочки; после подбора — с палочкой   // очкарик — хозяин палочки
 Spr.ANIM.valera6w = Object.assign({}, Spr.ANIM.valera6, {   // (кадры пинка — общие)
   stand: A6('v6_tap', [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7], 5),
   look: A6('v6_eat', [8]), castWind: A6('v6_wand', [2]), castFire: A6('v6_wand', [3]), castRecoil: A6('v6_wand', [4]), castUp: A6('v6_wand', [5]),
   castDown: A6('v6_wand', [6]), castCrouch: A6('v6_wand', [7]), castAir: A6('v6_wand', [8]), flourish: A6('v6_wand', [9]), victory: A6('v6_wand', [10]), laugh: A6('v6_wand', [11]),
 });
 Spr.ANIM.vova6 = {
-  stand: A6('vova6', [0]), run: A6('vovarun', [0, 1, 2, 3], 10), walk: A6('vovarun', [0, 1, 2, 3], 7), point: A6('vova6', [3]), push: A6('vova6', [4]), laugh: A6('vova6', [5]), head: A6('vova6', [6]), shroom: A6('vova6', [7]),
+  stand: A6('vova6', [0]), run: A6('vovarun', [0, 1, 2, 3], 10), walk: A6('vovarun', [4, 5, 6, 7], 7), point: A6('vova6', [3]), push: A6('vova6', [4]), laugh: A6('vova6', [5]), head: A6('vova6', [6]), shroom: A6('vova6', [7]),
 };
 Spr.ANIM.vande = {
-  idle: A6('b_loco', [0, 1, 2, 3], 4), walk: A6('b_loco', [4, 5, 6, 7, 8, 9, 10, 11], 11),
+  idle: A6('b_loco', [0, 1, 2, 3], 4), walk: A6('vandewalk', [4, 5, 6, 7], 7), run: A6('vandewalk', [0, 1, 2, 3], 11),
   crouch: A6('b_evade', [0]), jumpUp: A6('b_evade', [1]), apex: A6('b_evade', [2]), fall: A6('b_evade', [3]), land: A6('b_evade', [4]),
   side: A6('b_evade', [5]), flip: A6('b_evade', [6, 7], 8, { once: true }), dash: A6('b_evade', [8]), slide: A6('b_evade', [9]), duck: A6('b_evade', [10]), vanish: A6('b_evade', [11]),
   raise: A6('b_cast', [0]), draw: A6('b_cast', [1]), slam: A6('b_cast', [2]), glow: A6('b_cast', [3]), kneelCast: A6('b_cast', [4]), burst: A6('b_cast', [5]), orbA: A6('b_cast', [6]),
