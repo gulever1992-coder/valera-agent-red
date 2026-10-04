@@ -344,7 +344,8 @@ L6.Run = class {
   drawGroundLip(c, camX) {
     if (!this.grOf) return; const gy = L6.GROUND - 5;
     c.save(); c.beginPath(); c.moveTo(0, H);
-    for (let sx = 0; sx <= W + 4; sx += 4) { const wx = sx + camX; const n = Math.sin(wx * 0.071) * 2.5 + Math.sin(wx * 0.193 + 1.3) * 2 + ((wx * 7919 | 0) % 7 === 0 ? -5 : 0) + ((wx * 104729 | 0) % 11 === 0 ? -3 : 0); c.lineTo(sx, gy + 6 + n); }
+    // точки волны на неподвижной сетке мира (шаг 4), иначе выемки «прыгают» при каждом сдвиге камеры и кромка мигает
+    for (let wx = Math.floor(camX / 4) * 4 - 4; wx <= camX + W + 8; wx += 4) { const k = wx / 4; const n = Math.sin(wx * 0.071) * 2.5 + Math.sin(wx * 0.193 + 1.3) * 2 + ((k * 7919) % 7 === 0 ? -5 : 0) + ((k * 104729) % 11 === 0 ? -3 : 0); c.lineTo(wx - camX, gy + 6 + n); }
     c.lineTo(W + 4, H); c.closePath(); c.clip();
     this.wipe(c, camX, 1, this.grOf, 160); c.restore();
   }
