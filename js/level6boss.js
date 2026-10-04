@@ -26,7 +26,7 @@ L6.Portal = class {   // змея вылезает из пентаграммы �
 
 // ---------- грибная броня босса ----------
 L6.Shroom = class {
-  constructor(x, ar) { this.x = x; const pp = ar && ar.world.plats.find(p => p.oneway && x > p.x && x < p.x + p.w && p.y < L6.GROUND - 20 && p.x > BG6() - 40); this.y = pp ? pp.y : L6.GROUND; this.t = 0; this.hp = 6; this.maxHp = 6; this.dead = false; this.flash = 0; Sound.play('pickup', 0.5); }
+  constructor(x, ar) { this.x = x; this.y = L6.GROUND; this.t = 0; this.hp = 6; this.maxHp = 6; this.dead = false; this.flash = 0; Sound.play('pickup', 0.5); }
   get box() { return { x: this.x - 18, y: this.y - 70, w: 36, h: 70 }; }
   get grown() { return this.t > 1.4; }
   hit(dmg) {
@@ -264,6 +264,7 @@ L6.Vande = class {
     if (ok('rain') && !ar.rainT) opts.push(['rain', ph2 ? 2 : 1.2]);
     if (ok('bolt')) opts.push(['bolt', 2]);
     if (ok('quake') && ph2 && !perched) opts.push(['quake', 2.6]);
+    if (ok('relocate') && !perched) opts.push(['relocate', 4.5]);
     if (ok('volley') && ph2) opts.push(['volley', 2.4]);
     if (ok('spore') && this.phase === 3 && ar.spores.length < 2) opts.push(['spore', 2.2]);
     if (ok('taunt') && adx > 160 && this.phase < 3) opts.push(['taunt', 0.8]);
@@ -278,6 +279,13 @@ L6.Vande = class {
     const pl = ar.player, f = this.facing, ph2 = this.phase >= 2, A = this.actCool;
     this.facing = pl.x > this.x ? 1 : -1;
     switch (k) {
+      case 'relocate': {   // перебегает в другую часть арены
+        A.relocate = 3.5; const tx = pl.x > BG6() + 320 ? BG6() + U.rand(60, 200) : BG6() + U.rand(440, 580);
+        this.facing = tx > this.x ? 1 : -1; const d = Math.abs(tx - this.x);
+        this.doSeq('relocate', [{ a: 'walk', d: Math.max(0.4, d / 230), fixed: true, move: 230, upd: () => { if ((tx - this.x) * this.facing < 0) this.sqT = 99; } }, { a: 'smirk', d: 0.3 }]);
+        if (Math.random() < 0.4) this.say(U.choice(['Лови меня!', 'Здесь удобнее.', 'Не догонишь!']));
+        break;
+      }
       case 'perch': {
         A.perch = this.phase === 3 ? 4.5 : 6;
         const ps = this.arenaPlats(ar).filter(p => Math.abs(p.x + p.w / 2 - pl.x) > 90);
@@ -361,7 +369,7 @@ L6.Vande = class {
     if (this.state === 'dying' || this.state === 'down' || this.state === 'wait' || this.state === 'dodge') return false;
     if (this.invul) { this.flash = 0.1; this.flashCol = '#ffd84a'; FX.popText(this.x, this.y - 100, 'БРОНЯ: ЛОМАЙ ГРИБЫ!', '#ffd84a'); Sound.play('clank'); return false; }
     const dir = ar.player.facing;
-    this.damage(sp.dmg * (L6.zapMul || 1) * 0.5 * (this.phase >= 2 ? 0.85 : 1) * (this.vuln > 0 ? 1.5 : 1), dir, ar);
+    this.damage(sp.dmg * (L6.zapMul || 1) * 0.3 * (this.phase >= 2 ? 0.85 : 1) * (this.vuln > 0 ? 1.5 : 1), dir, ar);
     if (this.state === 'dying') return true;
     switch (sp.id) {
       case 'fire': this.flash = 0.5; this.flashCol = '#ff7a20'; break;
@@ -370,7 +378,7 @@ L6.Vande = class {
       case 'slime': FX.popText(this.x, this.y - 104, 'ПРЫГ-ПРЫГ!', '#a0ff80'); this.vx = dir * 60; break;
       case 'skull': this.x = U.clamp(this.x + dir * 80, BG6() + 30, BG6() + 610); FX.popText(this.x, this.y - 104, 'ПОТЯНУЛО!', '#d8a0ff'); break;
       case 'star': this.vx = dir * 260; this.state = 'hurt'; this.st = 0; this.seq = null; this.play('stagger'); break;
-      case 'rainbow': if (this.state !== 'act') { this.state = 'act'; this.doSeq('dance', [{ a: 'clap', d: 0.5 }, { a: 'laugh', d: 0.5 }, { a: 'bow', d: 0.4 }]); FX.popText(this.x, this.y - 104, 'ПЛЯШЕТ!', '#ff9ad0'); } break;
+      case 'rainbow': if (this.state !== 'act' && Math.random() < 0.25) { this.state = 'act'; this.doSeq('dance', [{ a: 'clap', d: 0.5 }, { a: 'laugh', d: 0.5 }, { a: 'bow', d: 0.4 }]); FX.popText(this.x, this.y - 104, 'ПЛЯШЕТ!', '#ff9ad0'); } break;
       default: this.flash = 0.4; this.flashCol = '#301040'; FX.popText(this.x, this.y - 104, 'УКУСИЛИ!', '#c8a0ff');
     }
     return true;

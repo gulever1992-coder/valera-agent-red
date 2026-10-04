@@ -132,7 +132,7 @@ L6.Player = class extends Game.Player {
       if (a.t >= a.dur) { this.atk = null; this.comboT = 0.35; }
     }
     const want = this.rapid ? (I.pressed('throw') || (wandOn && I.pressed('punch'))) : (I.held('throw') || (wandOn && I.held('punch')));
-    if (ctl && this.hasWand && want && this.castCool <= 0 && !this.atk) { this.cast(world, I); this.castMax = this.castCool = this.rapid ? 0.12 : 5; }   // в бою с боссом — выстрел на каждое нажатие, иначе перезарядка 5 с
+    if (ctl && this.hasWand && want && this.castCool <= 0 && !this.atk) { this.cast(world, I); this.castMax = this.castCool = this.rapid ? 0.22 : 5; }   // в бою с боссом — выстрел на каждое нажатие, иначе перезарядка 5 с
     else if (ctl && this.hasWand && !this.rapid && I.pressed('throw') && this.castCool > 0) FX.popText(this.x, this.y - 92 * this.sc, 'ПЕРЕЗАРЯДКА ' + Math.ceil(this.castCool) + ' С', '#8a93a0');
   }
   cast(world, I) {

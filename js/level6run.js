@@ -109,7 +109,11 @@ L6.SINK = 12;   // насколько основания объектов уто
 L6.FRONT = { log: 1, log2: 1 };   // коряги (drift) — позади персонажей   // брёвна и коряги — перед персонажами, стоящими на земле
 // персонажи, стоящие НА таком бревне, перерисовываются поверх него
 L6.drawFront = (c, plats, cx, actors) => { let any = false; for (const p of plats) if (L6.FRONT[p.name] && p.x - cx > -300 && p.x - cx < W + 300) { L6.drawPlat(c, p, cx); any = true; }
-  if (any) for (const a of actors) if (a && (a.force || a.y < L6.GROUND - 6) && plats.some(p => L6.FRONT[p.name] && Math.abs(a.x - p.x) < p.sw / 2 + 20) || a && a.force) a.redraw(); };
+  if (!any) return;
+  for (const a of actors) { if (!a) continue;
+    const pl = plats.find(p => L6.FRONT[p.name] && Math.abs(a.x - p.x) < p.sw / 2 + 20);
+    if (a.force || (pl && a.y < L6.GROUND - 6)) { a.redraw(); continue; }
+    if (pl) { c.save(); c.beginPath(); c.rect(-50, -400, W + 100, pl.top + 4 + 400); c.clip(); a.redraw(); c.restore(); } } };   // стоит за бревном: видно всё выше бревна
 L6.drawPlat = (c, p, cx) => { c.save(); c.translate(Math.round(p.x - cx), L6.GROUND + 2 + L6.SINK); c.scale(p.sx || 1, p.sy || 1); Spr.draw(c, 'plat6', p.fr, 0, 0, 1); c.restore(); };
 L6.GATES = [{ x: 3050, tree: 0, wall: 3 }, { x: 7550, tree: 0, wall: 3 }, { x: 12650, tree: 15, wall: 14 }];
 
@@ -329,11 +333,20 @@ L6.Run = class {
       if (cu > 1) { let x = -(((camX * 0.36) % tw) + tw) % tw; const sh = im.height * 0.35;   // низ слоя продлён зеркальным отражением подлеска (без растянутых полос)
         for (; x < W; x += tw) { cc.save(); cc.translate(0, ty + th * 2 - 2); cc.scale(1, -1); cc.drawImage(im, 0, im.height - sh, im.width, sh, Math.floor(x), th - sh / 2, Math.ceil(tw) + 1, sh / 2); cc.restore(); } } };
     { const mt = gy + 8 - Math.max(...['forest', 'bog', 'dunes'].map(k => I[k] ? I[k].height / 2 : 0));   // верх самого высокого слоя
-      lay(0.07, () => this.wipe(c, camX, 0.36, midOf, 110, [mt, mt + 40])); }   // по вертикали почти неподвижен: при лазании по деревьям верх слоя не открывается
+      lay(0.07, () => this.wipe(c, camX, 0.36, midOf, 110, [mt - 4, mt + 130])); }   // по вертикали почти неподвижен: при лазании по деревьям верх слоя не открывается
     // 5) земля
     const grOf = id => cc => { const im = I[{ forest: 'gr_forest', bog: 'gr_bog', dunes: 'gr_sand' }[id]]; if (im) tileOn(cc, im, camX, gy, 640, Math.round(im.height / 2)); };
     this.wipe(c, camX, 1, grOf, 160);
     c.fillStyle = '#0c0d10'; c.fillRect(0, gy + 75, W, H);
+    this.grOf = grOf;
+  }
+  // кромка земли с неровным (травяным) верхом поверх оснований объектов — нет ровной линии и «висящих» низов
+  drawGroundLip(c, camX) {
+    if (!this.grOf) return; const gy = L6.GROUND - 5;
+    c.save(); c.beginPath(); c.moveTo(0, H);
+    for (let sx = 0; sx <= W + 4; sx += 4) { const wx = sx + camX; const n = Math.sin(wx * 0.071) * 2.5 + Math.sin(wx * 0.193 + 1.3) * 2 + ((wx * 7919 | 0) % 7 === 0 ? -5 : 0) + ((wx * 104729 | 0) % 11 === 0 ? -3 : 0); c.lineTo(sx, gy + 6 + n); }
+    c.lineTo(W + 4, H); c.closePath(); c.clip();
+    this.wipe(c, camX, 1, this.grOf, 160); c.restore();
   }
   drawWorld(c, camX, o = {}) {
     this.drawBackdrop(c, camX);
@@ -346,6 +359,7 @@ L6.Run = class {
     for (const p of this.props) if (p.back && p.x - camX > -120 && p.x - camX < W + 120) Spr.draw(c, 'deco6', DECO[p.kind], p.x - camX, p.y + L6.SINK * 0.6, 1, { scale: p.s });
     for (const p of this.platSpr) if (!L6.FRONT[p.name] && p.x - camX > -300 && p.x - camX < W + 300) L6.drawPlat(c, p, camX);
     for (const p of this.props) if (!p.back && p.x - camX > -120 && p.x - camX < W + 120) Spr.draw(c, 'deco6', DECO[p.kind], p.x - camX, p.y + L6.SINK * 0.6, 1, { scale: p.s });
+    this.drawGroundLip(c, camX);
     if (this.eatProp) Spr.drawC(c, 'items6', 4, this.eatProp.x - camX, L6.GROUND - 10, 0, 1.2);
     if (L6.EAT_X - camX < W + 200 && this.eatProp) for (const dx of [-22, 26]) Spr.drawC(c, 'items6', 3, this.eatProp.x + dx - camX, L6.GROUND - 8, 0, 0.9);
     Spr.drawC(c, 'items6', this.wizProp.fr === 0 ? 0 : this.wizProp.fr, this.wizProp.x - camX, L6.GROUND - 14, 0, 1.2);
