@@ -122,7 +122,7 @@ L6.PyShot = class {
 // ---------- Ванделорд ----------
 L6.Vande = class {
   constructor(x) {
-    this.x = x; this.y = L6.GROUND; this.facing = -1; this.maxHp = Math.round(450 * (G.BOSS_MULT || 1));   // финальный босс: втрое крепче прошлых this.hp = this.maxHp;
+    this.x = x; this.y = L6.GROUND; this.facing = -1; this.maxHp = Math.round(450 * (G.BOSS_MULT || 1)); this.hp = this.maxHp;   // финальный босс: втрое крепче прошлых
     this.state = 'wait'; this.st = 0; this.t = 0; this.anim = 'idle'; this.animT = 0; this.phase = 1; this.flash = 0; this.flashCol = null;
     this.seq = null; this.sq = 0; this.sqT = 0; this.think = 1.2; this.vx = 0; this.vy = 0; this.slow = 0; this.stun = 0; this.invul = false;
     this.headH = 100; this.voice = 150; this.quip = 5; this.pyCool = 2; this.pyAway = false; this.lastAct = ''; this.combo = 0; this.lastHit = -9; this.dodgeCool = 0; this.actCool = {};
@@ -164,10 +164,10 @@ L6.Vande = class {
       for (const s of ar.spells) {
         if (s.dead || s.reacted) continue;
         const toward = (this.x - s.x) * s.vx > 0, d = Math.abs(this.x - s.x);
-        if (toward && d < 220 && d > 40 && Math.abs(s.y - (this.y - 50)) < 90) { s.reacted = true; if (Math.random() < [0, 0.4, 0.55, 0.62][this.phase]) { this.dodge(s, ar); break; } }
+        if (toward && d < 280 && d > 30 && Math.abs(s.y - (this.y - 50)) < 100) { s.reacted = true; if (Math.random() < [0, 0.8, 0.88, 0.94][this.phase]) { this.dodge(s, ar); break; } }
       }
     }
-    if (this.state !== 'dodge' && this.state !== 'hurt' && this.dodgeCool <= 0 && !this.seqLocked() && this.vuln <= 0 && pl.atk && pl.atk.t < 0.06 && adx < 60 && Math.random() < [0, 0.35, 0.5, 0.6][this.phase]) {
+    if (this.state !== 'dodge' && this.state !== 'hurt' && this.dodgeCool <= 0 && !this.seqLocked() && this.vuln <= 0 && pl.atk && pl.atk.t < 0.06 && adx < 70 && Math.random() < [0, 0.7, 0.8, 0.9][this.phase]) {
       this.dodge({ vx: pl.facing, y: this.y - 50 }, ar);   // увернулся от кулака
     }
     switch (this.state) {
@@ -211,7 +211,7 @@ L6.Vande = class {
     FX.burst(this.x, this.y - 50, 12, { colors: ['#201028', '#4a2060', '#ffd84a'], speed: 110, life: 0.5, grav: 0 });
     if (ps.length) { const p = ps.reduce((b, q) => Math.abs(q.x - pl.x) > Math.abs(b.x - pl.x) ? q : b); this.hopTo(p.x + p.w / 2, p.y, p); }
     else this.hopTo(pl.x > BG6() + 320 ? BG6() + 50 : BG6() + 590, L6.GROUND, null);
-    this.dodgeCool = 1.2;
+    this.dodgeCool = 0.5;
   }
   hopTo(tx, ty, plat) {
     this.state = 'hop'; this.seq = null; this.hp0 = { x0: this.x, y0: this.y, x1: tx, y1: ty, t: 0, d: 0.7, plat };
@@ -227,10 +227,10 @@ L6.Vande = class {
   }
   seqLocked() { return this.state === 'act' && this.seq && this.seq[this.sq] && this.seq[this.sq].lock; }
   dodge(s, ar) {
-    this.state = 'dodge'; this.dt2 = 0; this.seq = null; this.dodgeCool = this.phase >= 2 ? 1.1 : 1.8; this.teleported = false;
+    this.state = 'dodge'; this.dt2 = 0; this.seq = null; this.dodgeCool = this.phase >= 3 ? 0.45 : this.phase >= 2 ? 0.55 : 0.7;   // уклоняется почти постоянно this.teleported = false;
     const back = s.vx > 0 ? 1 : -1, high = s.y < this.y - 62, low = s.y > this.y - 34;
     let kind;
-    if (this.perchT > 0) kind = high || this.phase < 2 ? 'duck' : 'vanish'; else if (high) kind = 'duck'; else if (low) kind = 'jump'; else kind = U.choice(['jump', 'flip', 'side', 'side', this.phase >= 2 ? 'vanish' : 'flip']);
+    if (this.perchT > 0) kind = U.choice(['duck', 'jump', this.phase >= 2 ? 'vanish' : 'duck']); else if (high) kind = U.choice(['duck', 'duck', 'side', 'flip', this.phase >= 2 ? 'vanish' : 'jump']); else if (low) kind = 'jump'; else kind = U.choice(['jump', 'flip', 'side', 'side', this.phase >= 2 ? 'vanish' : 'flip']);
     this.dKind = kind; Sound.play('squeak', 0.6);
     if (kind === 'duck') { this.dDur = 0.5; this.play('duck'); this.dvx = 0; this.dKind = 'duck'; }
     else if (kind === 'jump') { this.dDur = 0.78; this.vy = -430; this.dvx = back * 40; this.play('jumpUp'); }
@@ -369,7 +369,7 @@ L6.Vande = class {
     if (this.state === 'dying' || this.state === 'down' || this.state === 'wait' || this.state === 'dodge') return false;
     if (this.invul) { this.flash = 0.1; this.flashCol = '#ffd84a'; FX.popText(this.x, this.y - 100, 'БРОНЯ: ЛОМАЙ ГРИБЫ!', '#ffd84a'); Sound.play('clank'); return false; }
     const dir = ar.player.facing;
-    this.damage(sp.dmg * (L6.zapMul || 1) * 0.3 * (this.phase >= 2 ? 0.85 : 1) * (this.vuln > 0 ? 1.5 : 1), dir, ar);
+    this.damage(sp.dmg * (L6.zapMul || 1) * 1.0 * (this.phase >= 2 ? 0.85 : 1) * (this.vuln > 0 ? 1.5 : 1), dir, ar);
     if (this.state === 'dying') return true;
     switch (sp.id) {
       case 'fire': this.flash = 0.5; this.flashCol = '#ff7a20'; break;
