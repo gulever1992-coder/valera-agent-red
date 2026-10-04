@@ -440,7 +440,7 @@ function drawResults(c) {
     ['Врагов повержено', st.kills],
     ['Отбито предметов', st.deflect],
     ['Съедено вкусняшек', st.food],
-    ['Значков «Ударник»', st.secrets + ' / 3'],
+    ['Значков «Ударник»', st.secrets + ' / ' + (st.secretsTotal || 3)],
     ['Получено урона', Math.round(st.dmg)],
     ['Падений (смертей)', st.deaths],
     ['Очки', r.score],

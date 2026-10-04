@@ -186,7 +186,7 @@ sheet('rose', 'rose.png', 8, 66, ref=0, grid=(2, 4), keyer='strict', anchors=['f
 sheet('nettle', 'nettle.png', 8, 84, ref=1, grid=(2, 4), keyer='strict', anchors=['feet'] * 7 + ['center'])
 # ---------- босс и Вова ----------
 sheet('boss6', 'boss6_a.png', 8, 90, ref=1, grid=(2, 4), anchors=['feet'] * 4 + ['feet', 'feet', 'feet', 'center'], strip=(4,))
-csheet('vova6', 'vova6.png', 2, 4, 86, anchors=['feet'] * 8)
+# vova6: ячейки листа разной ширины — режется по реальным линиям сетки (в конце файла, rp_green)
 # ---------- предметы / эффекты ----------
 csheet('items6', 'items6.png', 4, 4, [-66, -66, -36, -28, -28, -52, -34, -42] + [-42] * 8, anchors=['center'] * 16)
 sheet('spells6', 'spells.png', 8, [-46] * 8, grid=(4, 2), keyer='strict', anchors=['center'] * 8)
@@ -364,7 +364,7 @@ def pcrop6(sheetname, fi, box, name, flip=False):
 
 pcrop6('v6_tap', 0, (0.08, 0.0, 0.92, 0.46), 'p_valera6')
 pcrop6('boss6', 0, (0.28, 0.0, 0.72, 0.36), 'p_vande')
-pcrop6('vova6', 3, (0.12, 0.0, 0.88, 0.4), 'p_vova6')
+
 
 with open(DATA, 'w', encoding='utf-8') as fp:
     fp.write('// автоматически создано tools/build_assets.py\n' + ''.join('window.%s = %s;\n' % (k, json.dumps(v)) for k, v in G.items()))
@@ -755,3 +755,71 @@ if have('hud_icons.png'):
     csheet('hud6', 'hud_icons.png', 1, 4, [22, 24, 18, 18], anchors=['center'] * 4)
     with open(DATA, 'w', encoding='utf-8') as fp:
         fp.write('// автоматически создано tools/build_assets.py\n' + ''.join('window.%s = %s;\n' % (k, json.dumps(v)) for k, v in G.items()))
+
+# ---- Вова: ячейки разной ширины, режем по линиям сетки ----
+if have('vova6.png'):
+    rp_green('vova6', 'vova6.png', [(0, 0, 231, 447), (233, 0, 508, 447), (510, 0, 811, 447), (813, 0, 1200, 447), (0, 449, 284, 896), (286, 449, 520, 896), (522, 449, 760, 896), (762, 449, 1200, 896)], 86, ref=0)
+    with open(DATA, 'w', encoding='utf-8') as fp:
+        fp.write('// автоматически создано tools/build_assets.py\n' + ''.join('window.%s = %s;\n' % (k, json.dumps(v)) for k, v in G.items()))
+# ---- портреты из исходного арта: голова с плечами по центру, без обреза ----
+def portrait_src(fn, rect, name, grid=None, cell=0, head=0.40):
+    if not have(fn): return
+    im = Image.open(os.path.join(L6SRC, fn)).convert('RGB')
+    if grid:
+        r_, c_ = grid; cw, ch = im.width / c_, im.height / r_; q, w_ = divmod(cell, c_)
+        rect = (int(w_ * cw) + 6, int(q * ch) + 6, int((w_ + 1) * cw) - 6, int((q + 1) * ch) - 6)
+    a = np.array(im.crop(rect)).astype(np.int32)
+    bg = np.median(np.concatenate([a[:4].reshape(-1, 3), a[:, :4].reshape(-1, 3)]), axis=0)
+    m = (np.abs(a - bg).sum(axis=2) > 90) & ~((a[..., 1] > a[..., 0] + 40) & (a[..., 1] > a[..., 2] + 40))   # без зелёной/фоновой каймы
+    m = ndimage.binary_opening(m, iterations=1)
+    lab, n = ndimage.label(m); big = 1 + int(np.argmax(ndimage.sum(m, lab, range(1, n + 1)))); m = lab == big
+    ys, xs = np.where(m); y0, y1 = ys.min(), ys.max(); hh = y1 - y0
+    side = int(hh * head); top = max(0, y0 - int(side * 0.06))
+    rows = m[y0:y0 + int(side * 0.6)]; cx = int(np.where(rows.any(axis=0))[0].mean())
+    out = np.zeros((side, side, 4), np.uint8)
+    for yy in range(side):
+        sy = top + yy
+        if sy >= a.shape[0]: break
+        for_x0 = cx - side // 2
+        xs_ = np.arange(for_x0, for_x0 + side); ok = (xs_ >= 0) & (xs_ < a.shape[1])
+        out[yy, ok, :3] = a[sy, xs_[ok]]; out[yy, ok, 3] = np.where(m[sy, xs_[ok]], 255, 0)
+    Image.fromarray(out, 'RGBA').resize((128, 128), Image.NEAREST if side < 128 else Image.LANCZOS).save(os.path.join(SPR, name + '.png'))
+    print('портрет', name, side)
+portrait_src('v6_tap.png', None, 'p_valera6', grid=(2, 4), cell=0)
+portrait_src('vova6.png', (0, 0, 231, 447), 'p_vova6')
+portrait_src('boss6_a.png', None, 'p_vande', grid=(2, 4), cell=0, head=0.34)
+# ---- высокие средние планы (Flow): деревья целиком с кронами — при подъёме камеры нет обреза ----
+def tall_layer(fn, out, height, xcrop=None):
+    if not have(fn): return
+    im = Image.open(os.path.join(L6SRC, fn)).convert('RGB')
+    if xcrop: im = im.crop((int(im.width * xcrop[0]), 0, int(im.width * xcrop[1]), im.height))
+    rgb = np.array(im).astype(np.int32)
+    std = rgb[:, int(rgb.shape[1] * .2):int(rgb.shape[1] * .8)].std(axis=1).mean(axis=1)
+    y = rgb.shape[0] - 1
+    while y > 0 and std[y] < 16: y -= 1          # нижняя ровная полоса земли — под игровой землёй
+    a = key_magenta_hue(im)[:min(rgb.shape[0], y + 10)].astype(np.int32)
+    al = a[..., 3] > 0
+    # деревья, упёршиеся в верхний край, удаляем целиком (только «древесные» пиксели, песок/землю не трогаем)
+    r_, g_, b_ = a[..., 0], a[..., 1], a[..., 2]
+    light = (r_ > 175) & (g_ > 150) & (b_ > 110)   # светлый песок / туман
+    tree = al & ~light
+    lab, n = ndimage.label(tree)
+    top_ids = set(np.unique(lab[0][lab[0] > 0]).tolist())
+    if False and top_ids:   # эвристика ломала дюны; вместо этого арт перерисован во Flow без обрезанных крон
+        kill = np.isin(lab, list(top_ids)); a[..., 3] = np.where(kill, 0, a[..., 3]); print(out, 'убрано обрезанных деревьев:', len(top_ids))
+    # оставляем только то, что связано с землёй (оторванные клочки хвои от обрезанных деревьев — прочь)
+    al = a[..., 3] > 0; lab, n = ndimage.label(ndimage.binary_dilation(al, iterations=4))
+    H_ = al.shape[0]; ground_ids = set(np.unique(lab[int(H_ * 0.7):][lab[int(H_ * 0.7):] > 0]).tolist())
+    a[..., 3] = np.where(np.isin(lab, list(ground_ids)), a[..., 3], 0)
+    al = a[..., 3] > 0; ys = np.where(al.any(axis=1))[0]; a = a[max(0, ys[0] - 4):]
+    p = Image.fromarray(a.astype(np.uint8), 'RGBA'); p = p.resize((round(p.width * height * 2 / p.height), height * 2), Image.LANCZOS)
+    arr = np.array(p).astype(np.int32); arr[..., 3] = np.where(arr[..., 3] > 100, 255, 0)
+    for _ in range(3):
+        tr = arr[..., 3] == 0; near = ndimage.binary_dilation(tr) & ~tr
+        arr[..., 3] = np.where(near & (arr[..., 0] - arr[..., 1] > 10) & (arr[..., 2] - arr[..., 1] > 10), 0, arr[..., 3])
+    p = Image.fromarray(arr.astype(np.uint8), 'RGBA')
+    m = Image.new('RGBA', (p.width * 2, p.height)); m.paste(p, (0, 0)); m.paste(p.transpose(Image.FLIP_LEFT_RIGHT), (p.width, 0))
+    m.save(os.path.join(L6OUT, out), optimize=True); print('высокий слой', out, m.size)
+tall_layer('forest_tall.png', 'forest.png', 340)
+tall_layer('bog_tall.png', 'bog.png', 330)
+tall_layer('dunes_tall.png', 'dunes.png', 290, xcrop=(0.48, 1.0))   # левая часть с соснами за краем кадра отброшена

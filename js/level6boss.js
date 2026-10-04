@@ -122,7 +122,7 @@ L6.PyShot = class {
 // ---------- Ванделорд ----------
 L6.Vande = class {
   constructor(x) {
-    this.x = x; this.y = L6.GROUND; this.facing = -1; this.maxHp = Math.round(96 * (G.BOSS_MULT || 1)); this.hp = this.maxHp;
+    this.x = x; this.y = L6.GROUND; this.facing = -1; this.maxHp = Math.round(450 * (G.BOSS_MULT || 1));   // финальный босс: втрое крепче прошлых this.hp = this.maxHp;
     this.state = 'wait'; this.st = 0; this.t = 0; this.anim = 'idle'; this.animT = 0; this.phase = 1; this.flash = 0; this.flashCol = null;
     this.seq = null; this.sq = 0; this.sqT = 0; this.think = 1.2; this.vx = 0; this.vy = 0; this.slow = 0; this.stun = 0; this.invul = false;
     this.headH = 100; this.voice = 150; this.quip = 5; this.pyCool = 2; this.pyAway = false; this.lastAct = ''; this.combo = 0; this.lastHit = -9; this.dodgeCool = 0; this.actCool = {};
@@ -166,6 +166,9 @@ L6.Vande = class {
         const toward = (this.x - s.x) * s.vx > 0, d = Math.abs(this.x - s.x);
         if (toward && d < 220 && d > 40 && Math.abs(s.y - (this.y - 50)) < 90) { s.reacted = true; if (Math.random() < [0, 0.4, 0.55, 0.62][this.phase]) { this.dodge(s, ar); break; } }
       }
+    }
+    if (this.state !== 'dodge' && this.state !== 'hurt' && this.dodgeCool <= 0 && !this.seqLocked() && this.vuln <= 0 && pl.atk && pl.atk.t < 0.06 && adx < 60 && Math.random() < [0, 0.35, 0.5, 0.6][this.phase]) {
+      this.dodge({ vx: pl.facing, y: this.y - 50 }, ar);   // увернулся от кулака
     }
     switch (this.state) {
       case 'idle':
@@ -245,7 +248,7 @@ L6.Vande = class {
     const ok = k => !(A[k] > 0);
     const perched = this.perchT > 0;
     if (!perched && adx < 230 && ok('dash')) opts.push(['dash', 3]);
-    if (!perched && ok('perch') && this.arenaPlats(ar).length) opts.push(['perch', this.phase === 1 ? 1.6 : 2.4]);
+    if (!perched && ok('perch') && this.arenaPlats(ar).length) opts.push(['perch', this.phase === 1 ? 3.5 : 4.5]);
     if (ok('portal') && ar.portals.length < (ph2 ? 3 : 2)) opts.push(['portal', 3]);
     if (ok('shroom') && !this.invul) opts.push(['shroom', ar.shrooms.length ? 0 : 2.2]);
     if (ok('summon') && ar.foes.length < (ph2 ? 3 : 2)) opts.push(['summon', 2]);
@@ -268,7 +271,7 @@ L6.Vande = class {
     this.facing = pl.x > this.x ? 1 : -1;
     switch (k) {
       case 'perch': {
-        A.perch = this.phase === 3 ? 7 : 9;
+        A.perch = this.phase === 3 ? 4.5 : 6;
         const ps = this.arenaPlats(ar).filter(p => Math.abs(p.x + p.w / 2 - pl.x) > 90);
         const p = ps.length ? ps.reduce((b, q) => q.y < b.y ? q : b) : null;
         if (p) this.hopTo(p.x + p.w / 2, p.y, p);
@@ -348,7 +351,7 @@ L6.Vande = class {
     if (this.state === 'dying' || this.state === 'down' || this.state === 'wait' || this.state === 'dodge') return false;
     if (this.invul) { this.flash = 0.1; this.flashCol = '#ffd84a'; FX.popText(this.x, this.y - 100, 'БРОНЯ: ЛОМАЙ ГРИБЫ!', '#ffd84a'); Sound.play('clank'); return false; }
     const dir = ar.player.facing;
-    this.damage(sp.dmg * (L6.zapMul || 1) * 0.9 * (this.phase >= 2 ? 0.85 : 1) * (this.vuln > 0 ? 1.5 : 1), dir, ar);
+    this.damage(sp.dmg * (L6.zapMul || 1) * 0.5 * (this.phase >= 2 ? 0.85 : 1) * (this.vuln > 0 ? 1.5 : 1), dir, ar);
     if (this.state === 'dying') return true;
     switch (sp.id) {
       case 'fire': this.flash = 0.5; this.flashCol = '#ff7a20'; break;
@@ -464,7 +467,7 @@ L6.Arena = class {
   draw(c) {
     const wd = this.world, cx = BG6(), b = this.boss;
     if (L6.img.arena) c.drawImage(L6.img.arena, 0, 0, W, H); else { c.fillStyle = '#c8a070'; c.fillRect(0, 0, W, H); }
-    for (const p of this.run.platSpr) if (p.x >= cx - 60) L6.drawPlat(c, p, cx);
+    for (const p of this.run.platSpr) if (p.x >= cx - 60 && !L6.FRONT[p.name]) L6.drawPlat(c, p, cx);
     for (const p of this.portals) p.draw(c, cx);
     for (const q of this.quakes) q.draw(c, cx);
     for (const s of this.shrooms) s.draw(c, cx, this);
@@ -473,6 +476,7 @@ L6.Arena = class {
     for (const f of this.fx) f.draw(c, cx);
     b.draw(c, cx);
     if (this.player) this.player.draw(c, cx, 0);
+    L6.drawFront(c, this.run.platSpr.filter(p => p.x >= cx - 60), cx, [{ x: b.x, y: b.y, force: b.state === 'dying' || b.state === 'down', redraw: () => b.draw(c, cx) }, this.player && { x: this.player.x, y: this.player.y, redraw: () => this.player.draw(c, cx, 0) }, ...this.foes.map(e => ({ x: e.x, y: e.y, redraw: () => e.draw(c, cx, 0) }))].filter(Boolean));
     for (const p of this.pyshots) p.draw(c, cx, this);
     for (const s of this.shots) s.draw(c, cx);
     for (const q of this.spores) q.draw(c, cx);

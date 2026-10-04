@@ -105,6 +105,10 @@ L6.GrowPick = class extends Game.Pickup {
 // ориентиры lm6 (большие цельные объекты, как здания в ур.2): кадр -> опорная площадка (доля высоты сверху, доля ширины)
 const LMDEF = { 4: [0.4, 0.5], 5: [0.36, 0.8], 7: [0.4, 0.7], 10: [0.1, 0.5], 11: [0.3, 0.9], 12: [0.3, 0.75], 13: [0.2, 0.5], 14: [0.08, 0.6], 16: [0.28, 0.7], 17: [0.3, 0.6] };
 const LMPOOL = { forest: [0, 1, 2, 3, 1, 2, 5, 0, 3, 1], bog: [6, 7, 8, 9, 10, 11, 6, 9, 7], dunes: [12, 14, 15, 17, 12, 15, 14, 17] };
+L6.FRONT = { log: 1, log2: 1, drift: 1 };   // брёвна и коряги — перед персонажами, стоящими на земле
+// персонажи, стоящие НА таком бревне, перерисовываются поверх него
+L6.drawFront = (c, plats, cx, actors) => { let any = false; for (const p of plats) if (L6.FRONT[p.name] && p.x - cx > -300 && p.x - cx < W + 300) { L6.drawPlat(c, p, cx); any = true; }
+  if (any) for (const a of actors) if (a && (a.force || a.y < L6.GROUND - 6) && plats.some(p => L6.FRONT[p.name] && Math.abs(a.x - p.x) < p.sw / 2 + 20) || a && a.force) a.redraw(); };
 L6.drawPlat = (c, p, cx) => { c.save(); c.translate(Math.round(p.x - cx), L6.GROUND + 2); c.scale(p.sx || 1, p.sy || 1); Spr.draw(c, 'plat6', p.fr, 0, 0, 1); c.restore(); };
 L6.GATES = [{ x: 3050, tree: 0, wall: 3 }, { x: 7550, tree: 0, wall: 3 }, { x: 12650, tree: 15, wall: 14 }];
 
@@ -115,6 +119,7 @@ L6.Run = class {
     const D = this.D = L6.build();
     const wd = this.world = new Game.World(L6.W, H);
     wd.stats = level.stats; wd.score = level.score;
+    level.stats.secretsTotal = D.pickups.filter(p => p.kind === 'badge').length;
     wd.addScore = n => { wd.score += n; level.score = wd.score; };
     wd.addPlat({ x: 0, y: L6.GROUND, w: L6.W, h: 80, oneway: false, look: 'none' });
     wd.castSpell = (k, x, y, dir, up, o) => { const sp = new L6.Spell(k, x, y, dir, up, o); this.spells.push(sp); return sp; };
@@ -148,7 +153,7 @@ L6.Run = class {
       const wx = g.x + 250;
       for (const [dx, hh, ww] of T6.plats) wd.addPlat({ x: g.x + dx, y: GY - hh, w: ww, h: 8, oneway: true, look: 'none' });
       for (const [dx, hh, ww] of L6.HELP) wd.addPlat({ x: g.x + dx, y: GY - hh, w: ww, h: 8, oneway: true, look: 'none' });
-      wd.addPlat({ x: wx - T6.blockW / 2, y: GY - T6.blockH, w: T6.blockW, h: T6.blockH, oneway: false, look: 'none' });          // ствол-преграда (твёрдый)
+      { const bh = Math.max(T6.blockH, T6.wallPlat[1] - 16); wd.addPlat({ x: wx - T6.blockW / 2, y: GY - bh, w: T6.blockW, h: bh, oneway: false, look: 'none' }); }          // ствол-преграда (твёрдый)
       wd.addPlat({ x: wx + T6.wallPlat[0], y: GY - T6.wallPlat[1], w: T6.wallPlat[2], h: 8, oneway: true, look: 'none' });          // верх кроны
       this.gateSpr.push({ g, wx });
     }
@@ -308,20 +313,22 @@ L6.Run = class {
     const top = im => { if (!im) return '#000'; if (!im._top) { const cv = document.createElement('canvas'); cv.width = 1; cv.height = 1; const x = cv.getContext('2d'); x.drawImage(im, 0, 0, im.width, 1, 0, 0, 1, 1); const d = x.getImageData(0, 0, 1, 1).data; im._top = `rgb(${d[0]},${d[1]},${d[2]})`; } return im._top; };
     const tileOn = (cc, im, off, y, w, h) => { let x = -((off % w) + w) % w; for (; x < W; x += w) cc.drawImage(im, Math.floor(x), y, Math.ceil(w) + 1, h); };
     // 1) небо (отдельный слой, почти неподвижен)
-    lay(0.08, () => { const im = I.sky; if (!im) return; c.fillStyle = top(im); c.fillRect(0, -cu - 10, W, cu + 12);   // небо одним широким кадром — без стыков тайлов
+    lay(0.02, () => { const im = I.sky; if (!im) return; c.fillStyle = top(im); c.fillRect(0, -cu - 10, W, cu + 12);   // небо одним широким кадром — без стыков тайлов
       const off = camX * 0.03, n0 = Math.floor(off / 640);   // тайлы через один зеркально: края совпадают, стыка не видно
       for (let n = n0; n * 640 - off < W; n++) { const x = Math.floor(n * 640 - off); if (n % 2) { c.save(); c.translate(x + 640, 0); c.scale(-1, 1); c.drawImage(im, 0, 0, 641, 480); c.restore(); } else c.drawImage(im, x, 0, 641, 480); } });
     // 2) далёкий город в дымке + 3) лесистые холмы — только над лесом и болотом
     const farOf = id => id === 'dunes' ? null : cc => {
       if (I.city) { const h = I.city.height / 2, w = I.city.width / 2; cc.globalAlpha = 0.9; tileOn(cc, I.city, camX * 0.07, GRD - 40 - h, w, h); cc.globalAlpha = 1; }
       if (I.far) { const h = I.far.height / 2, w = I.far.width / 2; tileOn(cc, I.far, camX * 0.16, GRD - 22 - h, w, h); } };
-    lay(0.3, () => this.wipe(c, camX, 0.16, id => farOf(id) || (() => {}), 140));
+    lay(0.04, () => this.wipe(c, camX, 0.16, id => farOf(id) || (() => {}), 140));
     // 4) средний план зоны (исходные слои)
     const midOf = id => cc => { const im = I[id]; if (!im) return;
       const tw = im.width / 2, th = im.height / 2, ty = gy + 8 - th;
-      tileOn(cc, im, camX * 0.36, ty, tw, th); };
+      tileOn(cc, im, camX * 0.36, ty, tw, th);
+      if (cu > 1) { let x = -(((camX * 0.36) % tw) + tw) % tw; const sh = im.height * 0.35;   // низ слоя продлён зеркальным отражением подлеска (без растянутых полос)
+        for (; x < W; x += tw) { cc.save(); cc.translate(0, ty + th * 2 - 2); cc.scale(1, -1); cc.drawImage(im, 0, im.height - sh, im.width, sh, Math.floor(x), th - sh / 2, Math.ceil(tw) + 1, sh / 2); cc.restore(); } } };
     { const mt = gy + 8 - Math.max(...['forest', 'bog', 'dunes'].map(k => I[k] ? I[k].height / 2 : 0));   // верх самого высокого слоя
-      lay(0.3, () => this.wipe(c, camX, 0.36, midOf, 110, [mt, mt + (cu > 1 ? 70 : 40)])); }
+      lay(0.07, () => this.wipe(c, camX, 0.36, midOf, 110, [mt, mt + 40])); }   // по вертикали почти неподвижен: при лазании по деревьям верх слоя не открывается
     // 5) земля
     const grOf = id => cc => { const im = I[{ forest: 'gr_forest', bog: 'gr_bog', dunes: 'gr_sand' }[id]]; if (im) tileOn(cc, im, camX, gy, 640, Math.round(im.height / 2)); };
     this.wipe(c, camX, 1, grOf, 160);
@@ -336,7 +343,7 @@ L6.Run = class {
       const pf = Spr.frame('plat6', 9) || [0, 0, 160]; for (const [dx, hh, ww] of L6.HELP) Spr.draw(c, 'plat6', 9, g.x + dx + ww / 2 - camX, L6.GROUND + 3 - hh + 9, 1, { scale: ww / (pf[2] / 2) }); } }
     for (const q of this.D.scen || []) if (q.x - camX > -300 && q.x - camX < W + 300) Spr.draw(c, 'plat6', q.fr, q.x - camX, L6.GROUND + 3, 1, { scale: q.s });   // фон-декор стоит на земле и не «едет» за камерой
     for (const p of this.props) if (p.back && p.x - camX > -120 && p.x - camX < W + 120) Spr.draw(c, 'deco6', DECO[p.kind], p.x - camX, p.y, 1, { scale: p.s });
-    for (const p of this.platSpr) if (p.x - camX > -300 && p.x - camX < W + 300) L6.drawPlat(c, p, camX);
+    for (const p of this.platSpr) if (!L6.FRONT[p.name] && p.x - camX > -300 && p.x - camX < W + 300) L6.drawPlat(c, p, camX);
     for (const p of this.props) if (!p.back && p.x - camX > -120 && p.x - camX < W + 120) Spr.draw(c, 'deco6', DECO[p.kind], p.x - camX, p.y, 1, { scale: p.s });
     if (this.eatProp) Spr.drawC(c, 'items6', 4, this.eatProp.x - camX, L6.GROUND - 10, 0, 1.2);
     if (L6.EAT_X - camX < W + 200 && this.eatProp) for (const dx of [-22, 26]) Spr.drawC(c, 'items6', 3, this.eatProp.x + dx - camX, L6.GROUND - 8, 0, 0.9);
@@ -352,6 +359,7 @@ L6.Run = class {
     for (const e of wd.enemies) if (e.x - cx > -160 && e.x - cx < W + 160) e.draw(c, cx, 0);
     for (const f of this.fx) f.draw(c, cx);
     this.player.draw(c, cx, 0);
+    L6.drawFront(c, this.platSpr, cx, [Object.assign(Object.create(null), { x: this.player.x, y: this.player.y, redraw: () => this.player.draw(c, cx, 0) }), ...wd.enemies.filter(e => !e.dead && Math.abs(e.x - cx - W / 2) < W).map(e => ({ x: e.x, y: e.y, redraw: () => e.draw(c, cx, 0) }))]);
     for (const s of this.shots) s.draw(c, cx);
     for (const s of this.spells) s.draw(c, cx);
     c.save(); c.translate(-cx, 0); FX.draw(c); c.restore();

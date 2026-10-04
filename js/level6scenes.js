@@ -7,6 +7,7 @@ WHO.vova = WHO.vova || { name: 'ВОВА', color: '#ffb070', voice: 300 };
 // сцена в мире уровня: фон + игрок/актёры + диалог
 L6.sceneDraw = function (level, run, extra) {
   const st = level.sc = { fade: 0, title: null, flash: 0, extra: null };
+  { const tx = U.clamp(run.player.x - W * 0.4, 0, L6.W - W); if (Math.abs(run.world.cam.x - tx) > W * 0.5) run.world.cam.x = tx; }   // герой всегда в кадре сцены
   level.drawScene = c => {
     const cx = Math.round(run.world.cam.x);
     run.drawWorld(c, cx);
@@ -154,6 +155,7 @@ L6.sceneFinale = function (level) {
       ar.draw(c);
       const cx = L6.ARENA_X;
       vova.draw(c, cx, 0);
+      L6.drawFront(c, ar.run.platSpr.filter(p => p.x >= cx - 60), cx, [{ x: b.x, y: b.y, force: true, redraw: () => b.draw(c, cx) }, { x: pl.x, y: pl.y, force: true, redraw: () => pl.draw(c, cx, 0) }, { x: vova.x, y: vova.y, force: true, redraw: () => vova.draw(c, cx, 0) }]);   // брёвна перед Вовой
       if (poofT >= 0 && poofT < 0.6) { const k = poofT / 0.6; c.globalAlpha = 1 - k; Spr.drawC(c, 'vfx6', 11, vova.x - cx, vova.y - 50, 0, 0.8 + k); Spr.drawC(c, 'gibs6', 6, vova.x - cx, vova.y - 50, 0, 1.2 + k * 1.6); c.globalAlpha = 1; }
       G.drawBubbles(c, cx, 0);
       Scene.drawDialog(c);
@@ -172,7 +174,7 @@ L6.sceneFinale = function (level) {
     yield 0.6;
     yield* Scene.say('valera', 'Вова! Ты хотел куда-то меня привезти?', pl);
     vova.setAnim('point');
-    yield* Scene.say('vova6', 'Отстань от меня! Иди в свой заводоуправление!', vova);
+    yield* Scene.say('vova6', 'Отстань от меня! Иди в своё заводоуправление!', vova);
     poofT = 0; Sound.play('boom', 0.9); G.shake(5, 0.4); G.flash(0.15);
     yield 0.35;
     vova.setAnim('shroom'); vova.scale = 1.5;
