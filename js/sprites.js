@@ -101,7 +101,9 @@ Spr.frameOf = function (anim, t) {
   return anim.fr[i];
 };
 Spr.drawAnim = function (c, set, name, t, x, y, facing, o = {}) {
-  const anim = (Spr.ANIM[set] || {})[name] || Spr.ANIM[set].stand;
+  const S = Spr.ANIM[set] || {};   // нет такой анимации — берём stand/idle/первую (иначе исключение обрывает кадр и Валера «пропадает»)
+  const anim = S[name] || S.stand || S.idle || S[Object.keys(S)[0]];
+  if (!anim) return;
   const [sheet, i] = Spr.frameOf(anim, t);
   Spr.draw(c, sheet, i, x, y, anim.flip ? -facing : facing, o);
 };

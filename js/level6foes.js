@@ -20,7 +20,7 @@ Spr.ANIM.crow = {
   caw: A6('crow2', [10, 9], 10), bank: A6('crow2', [11], 1), hurt: A6('crow', [5], 1), ko: A6('crow', [7], 1),
 };
 Spr.ANIM.mowgli = {
-  idle: A6('mowgli2', [11], 1), hang: A6('mowgli2', [11, 9], 3), hangWind: A6('mowgli2', [9], 1), hangThrow: A6('mowgli2', [10], 1), gallop: A6('mowgli2', rng(6), 14),
+  idle: A6('mowgli2', [11], 1), hang: A6('mowgli2', [11, 9], 3), hangWind: A6('mowgli2', [9], 1), hangThrow: A6('mowgli2', [10], 1), gallop: A6('mowgli2', rng(6), 14), walk: A6('mowgli2', rng(6), 10),
   crouch: A6('mowgli2', [6], 1), leap: A6('mowgli2', [7], 1), land: A6('mowgli2', [8], 1), hurt: A6('mowgli', [5], 1), ko: A6('mowgli', [7], 1), beat: A6('mowgli', [6], 1),
 };
 Spr.ANIM.rose = {
