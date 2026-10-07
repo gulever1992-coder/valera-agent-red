@@ -185,7 +185,7 @@ sheet('mowgli', 'mowgli.png', 8, 60, ref=0, grid=(2, 4), anchors=['feet'] * 3 + 
 sheet('rose', 'rose.png', 8, 66, ref=0, grid=(2, 4), keyer='strict', anchors=['feet'] * 8)
 sheet('nettle', 'nettle.png', 8, 84, ref=1, grid=(2, 4), keyer='strict', anchors=['feet'] * 7 + ['center'])
 # ---------- босс и Вова ----------
-sheet('boss6', 'boss6_a.png', 8, 90, ref=1, grid=(2, 4), anchors=['feet'] * 4 + ['feet', 'feet', 'feet', 'center'], strip=(4,))
+sheet('vande6', 'boss6_a.png', 8, 90, ref=1, grid=(2, 4), anchors=['feet'] * 4 + ['feet', 'feet', 'feet', 'center'], strip=(4,))
 # vova6: ячейки листа разной ширины — режется по реальным линиям сетки (в конце файла, rp_green)
 # ---------- предметы / эффекты ----------
 csheet('items6', 'items6.png', 4, 4, [-66, -66, -36, -28, -28, -52, -34, -42] + [-42] * 8, anchors=['center'] * 16)
@@ -363,13 +363,13 @@ def pcrop6(sheetname, fi, box, name, flip=False):
 
 
 pcrop6('v6_tap', 0, (0.08, 0.0, 0.92, 0.46), 'p_valera6')
-pcrop6('boss6', 0, (0.28, 0.0, 0.72, 0.36), 'p_vande')
+pcrop6('vande6', 0, (0.28, 0.0, 0.72, 0.36), 'p_vande')
 
 
 with open(DATA, 'w', encoding='utf-8') as fp:
     fp.write('// автоматически создано tools/build_assets.py\n' + ''.join('window.%s = %s;\n' % (k, json.dumps(v)) for k, v in G.items()))
 json.dump(LAY, open(os.path.join(L6OUT, 'layers.json'), 'w'))
-print('готово l6:', [k for k in S if k in ('v6_run', 'v6_jump', 'v6_fight', 'yeti', 'amanita', 'beaver', 'crow', 'mowgli', 'rose', 'nettle', 'boss6', 'vova6', 'items6', 'spells6', 'fx6', 'deco6', 'plat6')])
+print('готово l6:', [k for k in S if k in ('v6_run', 'v6_jump', 'v6_fight', 'yeti', 'amanita', 'beaver', 'crow', 'mowgli', 'rose', 'nettle', 'vande6', 'vova6', 'items6', 'spells6', 'fx6', 'deco6', 'plat6')])
 
 sheet2('viper', 'viper.png', (2, 4), 20, ref=0, anchors=['feet'] * 8)
 # ---- лесной йети-швырятель деревьями (Flow) и дерево-снаряд ----
@@ -887,7 +887,7 @@ def defringe(name, pink=False, green=False, it=2):
         g2 = np.minimum(a[..., 1], np.maximum(a[..., 0], a[..., 2]) + 10); a[..., 1] = np.where(edge, g2, a[..., 1])
     Image.fromarray(a.astype(np.uint8), 'RGBA').save(p, optimize=True)
 for _n in ('plat6', 'deco6', 'lm6', 'fg6', 'items6'): defringe(_n, pink=True, it=4)
-for _n in ('v6_run', 'v6_jump', 'v6_fight', 'v6_wand', 'v6_eat', 'v6_tap', 'v6_py', 'v6_kick', 'amanita', 'amanita2', 'beaver', 'beaver2', 'crow', 'crow2', 'mowgli', 'mowgli2', 'rose', 'rose2', 'nettle', 'nettle2', 'yeti', 'yeti2', 'yeti3', 'yeti4', 'viper', 'snk6', 'boss6', 'b_loco', 'b_evade', 'b_cast', 'b_py', 'b_taunt', 'b_hurt', 'vova6', 'wiz6'):
+for _n in ('v6_run', 'v6_jump', 'v6_fight', 'v6_wand', 'v6_eat', 'v6_tap', 'v6_py', 'v6_kick', 'amanita', 'amanita2', 'beaver', 'beaver2', 'crow', 'crow2', 'mowgli', 'mowgli2', 'rose', 'rose2', 'nettle', 'nettle2', 'yeti', 'yeti2', 'yeti3', 'yeti4', 'viper', 'snk6', 'vande6', 'b_loco', 'b_evade', 'b_cast', 'b_py', 'b_taunt', 'b_hurt', 'vova6', 'wiz6'):
     defringe(_n, green=True)
 with open(DATA, 'w', encoding='utf-8') as fp:
     fp.write('// автоматически создано tools/build_assets.py\n' + ''.join('window.%s = %s;\n' % (k, json.dumps(v)) for k, v in G.items()))

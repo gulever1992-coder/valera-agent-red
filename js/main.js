@@ -217,7 +217,9 @@ const LEVELS = [
   { id: 6, name: 'ГРИБНОЙ ДОЖДЬ', sub: 'Лес, болото, дюны. Ванделорд', start: () => startLevel6() },
   { id: 7, name: 'ЗАВОДОУПРАВЛЕНИЕ', sub: 'Стелс под дождём. Главный зал', start: () => startLevel7() },
 ];
-function progress() { try { return +(localStorage.getItem('valera_progress') || 1); } catch (e) { return 1; } }
+// ТЕСТ: все уровни открыты. Вернуть открытие по прохождению — поставить OPEN_ALL = false
+const OPEN_ALL = true;
+function progress() { if (OPEN_ALL) return 99; try { return +(localStorage.getItem('valera_progress') || 1); } catch (e) { return 1; } }
 function applyDiff(i) {
   const d = DIFFS[i];
   G.DMG_MULT = d.dmg; G.HEAL_MULT = d.heal; G.BOSS_MULT = d.boss; G.DIFF = i;
@@ -227,7 +229,7 @@ try { const sd = localStorage.getItem('valera_diff'); if (sd != null) applyDiff(
 function chooseDiff(levelIdx) { App.pendingLevel = levelIdx; App.diffSel = G.DIFF != null ? G.DIFF : 1; setState('difficulty'); }
 function menuItems() {
   const it = [['НАЧАТЬ ИГРУ', () => chooseDiff(0)]];
-  it.push(['ВЫБОР УРОВНЯ', () => { App.lvlSel = Math.min(progress(), 2) - 1; setState('levels'); }]);
+  it.push(['ВЫБОР УРОВНЯ', () => { App.lvlSel = OPEN_ALL ? 0 : Math.min(progress(), 2) - 1; setState('levels'); }]);
   it.push(['УПРАВЛЕНИЕ', () => setState('controls')]);
   it.push(['ЗВУК: ' + (Sound.muted ? 'ВЫКЛ' : 'ВКЛ'), () => Sound.toggleMute()]);
   return it;

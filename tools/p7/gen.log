@@ -1,0 +1,49 @@
+Sun Oct  4 16:20:58 RTZ 2026 tools/p7/a01_sneak.txt try 1
+OK art_src/l7/v7sneak.png
+Sun Oct  4 16:24:09 RTZ 2026 tools/p7/a02_guard.txt try 1
+OK art_src/l7/guard7.png
+Sun Oct  4 16:27:35 RTZ 2026 tools/p7/a03_dog.txt try 1
+OK art_src/l7/dog7.png
+Sun Oct  4 16:30:20 RTZ 2026 tools/p7/a05_props_in.txt try 1
+OK art_src/l7/props7in.png
+Sun Oct  4 16:33:48 RTZ 2026 tools/p7/a04_props_out.txt try 1
+OK art_src/l7/props7out.png
+Sun Oct  4 16:36:38 RTZ 2026 tools/p7/b05_rooms_a.txt try 1
+OK art_src/l7/rooms7a.png
+Sun Oct  4 16:39:28 RTZ 2026 tools/p7/b06_rooms_b.txt try 1
+OK art_src/l7/rooms7b.png
+Sun Oct  4 16:41:39 RTZ 2026 tools/p7/b04_facade.txt try 1
+OK art_src/l7/facade7.png
+Sun Oct  4 16:44:30 RTZ 2026 tools/p7/b03_yard.txt try 1
+Sun Oct  4 16:46:49 RTZ 2026 tools/p7/b03_yard.txt try 2
+OK art_src/l7/yard7.png
+Sun Oct  4 16:49:11 RTZ 2026 tools/p7/b02_alley.txt try 1
+OK art_src/l7/alley7.png
+Sun Oct  4 16:50:53 RTZ 2026 tools/p7/b01_sky.txt try 1
+OK art_src/l7/sky7.png
+Sun Oct  4 16:52:26 RTZ 2026 tools/p7/c02_cars.txt try 1
+LIMIT Sun Oct  4 16:52:35 RTZ 2026 ERROR: You've hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 7:26 PM.
+Tue Oct  6 21:51:18 RTZ 2026 tools/p7/k1_mock.txt try 1
+OK art_src/l7/mock_parking.png
+Tue Oct  6 21:53:30 RTZ 2026 tools/p7/k2_cast.txt try 1
+OK art_src/l7/cast7.png
+done
+Tue Oct  6 22:03:20 RTZ 2026 tools/p7/k3_sneak.txt try 1
+OK art_src/l7/v7sneak2.png
+Tue Oct  6 22:05:10 RTZ 2026 tools/p7/k5_max.txt try 1
+OK art_src/l7/max_cmdr.png
+Tue Oct  6 22:07:28 RTZ 2026 tools/p7/k4_cars.txt try 1
+OK art_src/l7/cars7n.png
+Tue Oct  6 22:10:14 RTZ 2026 tools/p7/k6_props.txt try 1
+OK art_src/l7/props7n.png
+Tue Oct  6 22:13:32 RTZ 2026 tools/p7/k7_bg.txt try 1
+OK art_src/l7/bg_parking.png
+done
+Tue Oct  6 22:21:04 RTZ 2026 tools/p7/k8_ms.txt try 1
+OK art_src/l7/stas_max.png
+done
+Tue Oct  6 22:27:30 RTZ 2026 tools/p7/k9_ms.txt try 1
+OK art_src/l7/stas_max2.png
+Tue Oct  6 22:29:36 RTZ 2026 tools/p7/k10_port.txt try 1
+OK art_src/l7/port_sm.png
+done

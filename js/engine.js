@@ -1,7 +1,7 @@
 'use strict';
 // ============ ДВИЖОК: экран, ввод, звук, утилиты, частицы, текст ============
 const W = 640, H = 360;
-const G = { W, H, t: 0, dt: 0, debug: false, VER: '279' };
+const G = { W, H, t: 0, dt: 0, debug: false, VER: '280' };
 window.G = G;
 
 const canvas = document.getElementById('game');
@@ -373,11 +373,14 @@ G.hitStop = 0;
 
 // ---------- изображения ----------
 G.img = {};
+// сжатая копия .webp (tools/optimize_assets.py), при ошибке — оригинал
 G.loadImage = src => new Promise(res => {
+  const ver = s => s + (s.indexOf('?') < 0 ? '?v=' + G.VER : '');
+  const webp = window.WEBP_OK && WEBP_OK.has(src) ? src.replace(/\.(png|jpe?g)$/i, '.webp') : null;
   const im = new Image();
   im.onload = () => res(im);
-  im.onerror = () => res(null);
-  im.src = src + (src.indexOf('?') < 0 ? '?v=' + G.VER : '');
+  im.onerror = () => { if (webp && im.src.indexOf('.webp') >= 0) im.src = ver(src); else res(null); };
+  im.src = ver(webp || src);
 });
 // качественное уменьшение (для «пиксельного» вида)
 G.downscale = function (img, w, h) {
