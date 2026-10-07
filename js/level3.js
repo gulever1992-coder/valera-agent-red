@@ -1153,7 +1153,7 @@ L3.comic = function (level, panels, after) {
   const st = { i: 0, t: 0, fade: 1, bubbles: [], cap: '', title: 0 };
   level.drawScene = c => {
     const p = panels[st.i]; if (!p) return;
-    const img = L3.img[p.img];
+    const img = p.image || L3.img[p.img];
     const k = 1 + Math.min(1, st.t / 6) * 0.05;
     c.fillStyle = '#0a0a0c'; c.fillRect(0, 0, W, H);
     if (img) { c.save(); c.translate(W / 2, H / 2); c.scale(k, k); c.drawImage(img, -W / 2, -H / 2, W, H); c.restore(); }

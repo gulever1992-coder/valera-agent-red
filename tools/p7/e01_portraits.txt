@@ -1,0 +1,9 @@
+Generate ONE image (landscape 3:2) with a grid of 6 square PORTRAITS (head and shoulders, facing the viewer, plain dark background in each cell) for game dialog boxes, 2 rows x 3 columns, equal cells, detailed pixel-art in the style of C:/Users/gulev/CRM/valera-game/assets/spr/p_vova6.png and C:/Users/gulev/CRM/valera-game/assets/spr/p_biker.png:
+(1) Stas - young adult man from photo C:/Users/gulev/CRM/valera-game/art_src/refs/l7/stas.jpg (short brown hair, light blue eyes, light stubble, dark hoodie);
+(2) Maxim - adult man from photo C:/Users/gulev/CRM/valera-game/art_src/refs/l7/maxim.jpg (very short dark hair, full dark beard, white t-shirt, sunglasses on head);
+(3) Denis Ch. - the BALD man on the right in photo C:/Users/gulev/CRM/valera-game/art_src/refs/l7/denis_o_ch.jpg, white lab coat;
+(4) Denis O. - the man with longer dark hair and short beard on the left in that photo, black tuxedo, bow tie;
+(5) Mister X - man in a dark suit, face completely hidden in black shadow, one biomechanical metal hand raised;
+(6) a burly man in a black leather cap and sunglasses, leather vest with studs (family-friendly).
+No text. Thin black lines between cells.
+Output ONE image, saved as PNG at C:/Users/gulev/CRM/valera-game/art_src/l7/portraits7.png and print the final path. Do not ask questions.

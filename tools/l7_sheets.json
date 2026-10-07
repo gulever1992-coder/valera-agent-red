@@ -1,0 +1,365 @@
+{
+ "g7": {
+  "src": "guard_0.jpg",
+  "target": 85,
+  "ref": 8,
+  "pick": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   19,
+   20,
+   21,
+   22
+  ]
+ },
+ "dog7b": {
+  "src": "dog_0.jpg",
+  "target": 40
+ },
+ "deno7": {
+  "src": "deniso_1.jpg",
+  "target": 84
+ },
+ "dench7": {
+  "src": "denisch_0.jpg",
+  "target": 84
+ },
+ "crowd7": {
+  "src": "crowd_0.jpg",
+  "target": 80,
+  "pick": [
+   0,
+   6,
+   17,
+   29,
+   1,
+   7,
+   18,
+   30,
+   2,
+   13,
+   19,
+   31
+  ]
+ },
+ "press7": {
+  "src": "press_0.jpg",
+  "target": 82
+ },
+ "v7a": {
+  "src": "pick_valera.jpg",
+  "target": 80,
+  "ref": 18
+ },
+ "v7b": {
+  "src": "valx_0.jpg",
+  "target": 80,
+  "ref": 6,
+  "pick": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19,
+   20,
+   21,
+   22
+  ]
+ },
+ "van7": {
+  "src": "van_1.jpg",
+  "target": [
+   -218,
+   -218,
+   -218,
+   -30,
+   -30,
+   -30,
+   -30,
+   -14,
+   -20,
+   -28
+  ],
+  "anchors": [
+   "feet",
+   "feet",
+   "feet",
+   "center",
+   "center",
+   "center",
+   "center",
+   "center",
+   "center",
+   "center"
+  ]
+ },
+ "bus7": {
+  "src": "bus_0.jpg",
+  "target": [
+   -440,
+   -440,
+   -40,
+   -40,
+   -40,
+   -40,
+   -220,
+   105,
+   105,
+   -18
+  ],
+  "anchors": [
+   "feet",
+   "feet",
+   "center",
+   "center",
+   "center",
+   "center",
+   "feet",
+   "feet",
+   "feet",
+   "feet"
+  ]
+ },
+ "po7": {
+  "src": "propout_1.jpg",
+  "target": [
+   -40,
+   95,
+   95,
+   52,
+   250,
+   34,
+   -14,
+   -9,
+   -16,
+   -48,
+   50,
+   46,
+   70,
+   -90,
+   120
+  ]
+ },
+ "pi7": {
+  "src": "propin_0.jpg",
+  "target": [
+   100,
+   100,
+   58,
+   64,
+   104,
+   104,
+   150,
+   100,
+   100,
+   -44,
+   22,
+   -28,
+   36,
+   38
+  ],
+  "pick": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13
+  ]
+ },
+ "pr7": {
+  "src": "props7n.png",
+  "target": [
+   102,
+   102,
+   96,
+   96,
+   52,
+   46,
+   34,
+   28,
+   40,
+   -42,
+   -28,
+   -40
+  ]
+ },
+ "car7": {
+  "src": "cars7n.png",
+  "target": [
+   67,
+   64,
+   64,
+   82,
+   58,
+   64
+  ]
+ },
+ "fg7": {
+  "src": "fg_1.jpg",
+  "target": [
+   70,
+   70,
+   50,
+   110,
+   90,
+   60,
+   100,
+   260,
+   70,
+   70
+  ],
+  "kw": {
+   "dil": 4
+  }
+ },
+ "stas7": {
+  "src": "anim_stas_0.jpg",
+  "target": 80,
+  "ref": 10
+ },
+ "max7": {
+  "src": "anim_max_0.jpg",
+  "target": 82,
+  "pick": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   20,
+   21,
+   22,
+   23
+  ]
+ },
+ "maxt7": {
+  "src": "anim_max_talk_a.jpg",
+  "target": 82
+ },
+ "leap7": {
+  "src": "anim_leather_p0.jpg",
+  "target": 82,
+  "ref": 20
+ },
+ "bik7": {
+  "src": "anim_biker_b0.jpg",
+  "target": 86,
+  "ref": 8,
+  "pick": [
+   0,
+   2,
+   3,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19,
+   20,
+   21
+  ]
+ },
+ "moto7": {
+  "src": "moto_a0.jpg",
+  "target": 50,
+  "anchors": [
+   "feet",
+   "feet",
+   "feet",
+   "feet",
+   "feet",
+   "feet",
+   "feet",
+   "feet",
+   "feet",
+   "center",
+   "center",
+   "center",
+   "center",
+   "center",
+   "center",
+   "center",
+   "center"
+  ]
+ },
+ "bm7": {
+  "src": "biker_moto_0.jpg",
+  "target": 74
+ },
+ "duo7": {
+  "src": "duo_moto_0.jpg",
+  "target": 76,
+  "pick": [
+   0,
+   1,
+   2,
+   4,
+   5,
+   6,
+   7,
+   9,
+   10,
+   11,
+   12
+  ]
+ },
+ "lea7": {
+  "src": "lea_0.jpg",
+  "target": 82
+ },
+ "rat7": {
+  "src": "rat_1.jpg",
+  "target": 16
+ }
+}

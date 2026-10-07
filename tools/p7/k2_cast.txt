@@ -1,0 +1,9 @@
+Generate ONE 16:9 pixel-art CHARACTER LINEUP sheet (1376x768) on a flat pure green #00FF00 background, 6 full-body adult men standing side by side facing right in 3/4 view, same height scale, in EXACTLY the pixel-art style, proportions, outline and shading of the hero sprites in C:/Users/gulev/CRM/valera-game/_old/l7/art_src/v7sneak.png and C:/Users/gulev/CRM/valera-game/_old/l7/art_src/leather7.png (open them). Caricatured, friendly comedic game look.
+1) STAS (likeness from photo C:/Users/gulev/CRM/valera-game/art_src/refs/l7/stas.jpg): short brown hair, clean-shaven with light stubble, round face, light blue eyes, grey puffer jacket over black hoodie, jeans, sneakers; holds car keys.
+2) MAX (likeness from photo C:/Users/gulev/CRM/valera-game/art_src/refs/l7/maxim.jpg): very short dark hair, thick dark beard, stocky, white t-shirt, sunglasses pushed up on the head, jeans.
+3) DENIS O. (the long-haired man on the LEFT of photo C:/Users/gulev/CRM/valera-game/art_src/refs/l7/denis_o_ch.jpg): long dark hair, short beard, black tuxedo with bow tie, holding a microphone, smug.
+4) DENIS CH. (the bald man on the RIGHT of the same photo): bald round head, clean-shaven, friendly smile, long white lab coat over a black shirt, dark trousers, holding a clipboard.
+5) A muscular hitchhiker in tight black leather trousers, tight black leather tank top and a pink scarf, thumb raised, dramatic pose.
+6) An Indian special-forces guard boss: black uniform, red beret, big moustache, sunglasses, pointing forward.
+Each character separated by plenty of green space, no overlaps, no text, no shadows on the background, no national flags.
+Output ONE image, saved as PNG at C:/Users/gulev/CRM/valera-game/art_src/l7/cast7.png and print the final path. Do not ask questions.

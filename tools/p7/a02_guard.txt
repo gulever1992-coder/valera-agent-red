@@ -1,0 +1,6 @@
+Generate ONE pixel-art game sprite sheet. Character: EXACTLY the same special-forces soldier as in the references C:/Users/gulev/CRM/valera-game/art_src/commandos.png and C:/Users/gulev/CRM/valera-game/art_src/cmd_rope.png (open them; same uniform, helmet/balaclava, colors and proportions). Detailed 16-bit pixel-art, same style, palette and proportions as the game references. Flat solid pure green #00FF00 background (RGB 0,255,0), no shadows on the background, wide green margins, nothing cut off, no text, no grid lines, every figure fully separated from others.
+Layout: 3 rows x 4 columns, equal cells, one full-body soldier per cell, identical scale, side view facing RIGHT, feet on the same baseline in every cell.
+Row 1: 4-frame calm PATROL WALK cycle holding a rifle pointed down, clearly alternating legs.
+Row 2: (5) standing guard, rifle across chest; (6) looking back over his shoulder, suspicious; (7) shining a flashlight forward, rifle raised (alert); (8) aiming the rifle forward.
+Row 3: (9) hit from behind: staggering forward with stars around head; (10) knocked out, lying flat on the floor; (11) kneeling, tying a rope; (12) walking while pulling a rope over his shoulder (dragging something behind).
+Output ONE image, saved as PNG at C:/Users/gulev/CRM/valera-game/art_src/l7/guard7.png and print the final path. Do not ask questions.

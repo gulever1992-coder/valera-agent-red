@@ -1,0 +1,9 @@
+Generate ONE image (landscape 3:2) containing a grid of 6 ROOM BACKGROUNDS for a 2D side-scrolling stealth game in the style of 'Neighbours from Hell': 3 rows x 2 columns, equal cells, each cell is one room of a pompous soviet administrative office building seen in cross-section straight from the front (only the back wall and the floor strip; NO side walls; ceiling at the top 12%, the floor line at 83% of the cell height; doors are about 1.35x the height of a man). Warm evening interior light. Rooms:
+(1) RECEPTION hall: marble walls, red carpet, portrait frames, secretary desk;
+(2) DIRECTOR'S OFFICE: wood panels, huge desk, big empty portrait frame, flags, chandelier;
+(3) DEPUTY DIRECTOR'S office: smaller, wood panels, bookcases, aquarium;
+(4) DEPUTY OF DEPUTY office: tiny, cluttered, papers, a fan, a calendar on the wall;
+(5) ACCOUNTING office: rows of desks with old computers, abacus, filing cabinets;
+(6) ARCHIVE: metal shelves full of folders and boxes, dim lamp.
+Detailed 16-bit pixel-art, same style and palette as the game references. (references: C:/Users/gulev/CRM/valera-game/art_src/hotel_f1.png, C:/Users/gulev/CRM/valera-game/art_src/club_vip.png). No readable text. Thin black separating lines between cells.
+Output ONE image, saved as PNG at C:/Users/gulev/CRM/valera-game/art_src/l7/rooms7a.png and print the final path. Do not ask questions.

@@ -214,7 +214,7 @@ Game.Player = class {
     if (L) target -= RUN; if (Rr) target += RUN;
     if ((L || Rr) && world.ev) world.ev('move');
     if (busy) target *= 0.25;
-    if (this.crouch) target = 0;
+    if (this.crouch) target = this.crawlSpeed ? Math.sign(target) * this.crawlSpeed : 0;   // ур.7: ползком
     if (this.hurtT > 0) target = this.vx;
     const acc = this.onGround ? 1500 : 900;
     this.vx = U.approach(this.vx, target, acc * dt);

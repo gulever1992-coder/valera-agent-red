@@ -160,6 +160,13 @@ G.onLevelComplete = function (level) {
   setState('results');
 };
 
+function startLevel7(opts = {}) {
+  if (G.portraits && G.portraits.valera6) G.portraits.valera = G.portraits.valera6;
+  App.level = new L7.Level();
+  setState('play');
+  App.paused = false;
+  App.level.start(opts);
+}
 function startLevel6(opts = {}) {
   if (G.portraits && G.portraits.valera6) G.portraits.valera = G.portraits.valera6;
   App.level = new L6.Level();
@@ -208,6 +215,7 @@ const LEVELS = [
   { id: 4, name: 'ДИКИЕ КОШКИ', sub: 'Клуб. Спасти Вову', start: () => startLevel4() },
   { id: 5, name: 'ПОГОНЯ', sub: 'Вид сверху. Гонка с Граблионком', start: () => startLevel5() },
   { id: 6, name: 'ГРИБНОЙ ДОЖДЬ', sub: 'Лес, болото, дюны. Ванделорд', start: () => startLevel6() },
+  { id: 7, name: 'ЗАВОДОУПРАВЛЕНИЕ', sub: 'Стелс под дождём. Главный зал', start: () => startLevel7() },
 ];
 function progress() { try { return +(localStorage.getItem('valera_progress') || 1); } catch (e) { return 1; } }
 function applyDiff(i) {
@@ -301,7 +309,7 @@ function update(dt) {
     case 'results': {
       const r = App.results;
       r.shown += dt;
-      if (r.shown > 1 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch'))) { Sound.play('confirm'); if (r.id === 1) startLevel2(); else if (r.id === 2) startLevel3(); else if (r.id === 3) startLevel4(); else if (r.id === 4) startLevel5(); else if (r.id === 5) startLevel6(); else { setState('soon'); Music.play('title'); } }
+      if (r.shown > 1 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch'))) { Sound.play('confirm'); if (r.id === 1) startLevel2(); else if (r.id === 2) startLevel3(); else if (r.id === 3) startLevel4(); else if (r.id === 4) startLevel5(); else if (r.id === 5) startLevel6(); else if (r.id === 6) startLevel7(); else { setState('soon'); Music.play('title'); } }
       break;
     }
     case 'soon':
@@ -385,6 +393,8 @@ function drawLevels(c) {
     else if (L.id === 2 && L2.img.sky) { c.drawImage(L2.img.sky, 0, 0, 900, 720, px, py, pw * 1.3, ph * 1.3); if (L2.img.b_shop) c.drawImage(L2.img.b_shop, px + 10, py + 10, pw - 20, (pw - 20) * 0.99); }
     else if (L.id === 4 && L4.img.l4_sq) { const im = L4.img.l4_sq, sh = im.width * ph / pw; c.drawImage(im, 0, (im.height - sh) * 0.6, im.width, sh, px, py, pw, ph); }
     else if (L.id === 5 && L5.img.l5_card) c.drawImage(L5.img.l5_card, 200, 0, 880, 720, px, py, pw, ph);
+    else if (L.id === 7 && L7.img.card) c.drawImage(L7.img.card, 200, 0, 880, 720, px, py, pw, ph);
+    else if (L.id === 7 && L7.img.plaza) c.drawImage(L7.img.plaza, 200, 0, 880, 720, px, py, pw, ph);
     else if (L.id === 6 && L6.img.card) c.drawImage(L6.img.card, 200, 0, 880, 720, px, py, pw, ph);
     else if (L.id === 3 && L3.img.comic4) c.drawImage(L3.img.comic4, 200, 0, 880, 720, px, py, pw, ph);
     else { c.fillStyle = '#0c0d10'; c.fillRect(px, py, pw, ph); G.text('?', px + pw / 2, py + 55, { align: 'center', size: 32, color: '#3a3f45' }); }
@@ -544,7 +554,7 @@ function frame(now) {
 // ---------- загрузка ----------
 (async function boot() {
   requestAnimationFrame(frame);
-  const [head, street] = await Promise.all([G.loadImage('assets/valera_head.png'), G.loadImage('assets/street.jpg'), Spr.load(), Spr.loadBGs(), L2.load(), L3.load(), L4.load(), L5.load(), L6.load()]);
+  const [head, street] = await Promise.all([G.loadImage('assets/valera_head.png'), G.loadImage('assets/street.jpg'), Spr.load(), Spr.loadBGs(), L2.load(), L3.load(), L4.load(), L5.load(), L6.load(), L7.load()]);
   G.img.valeraHeadSrc = head; G.img.street = street;
   try { await Promise.race([document.fonts.load('8px "Press Start 2P"'), new Promise(r => setTimeout(r, 2500))]); } catch (e) {}
   G.img.valeraHud = G.downscale(head, 52, 54);
@@ -558,6 +568,16 @@ function frame(now) {
   else if (q.has('l6dunes')) startLevel6({ dunes: true });
   else if (q.has('l6eat')) startLevel6({ grown: true });
   else if (q.has('l6')) startLevel6();
+  else if (q.has('l7wall')) startLevel7({ wall: true });
+  else if (q.has('l7yard')) startLevel7({ yard: true });
+  else if (q.has('l7sewer')) startLevel7({ sewer: true });
+  else if (q.has('l7in')) startLevel7({ inside: true });
+  else if (q.has('l7run')) startLevel7({ run: true });
+  else if (q.has('l7hall')) startLevel7({ hall: true });
+  else if (q.has('l7van')) startLevel7({ van: true });
+  else if (q.has('l7plaza')) startLevel7({ plaza: true });
+  else if (q.has('l7bus')) startLevel7({ bus: true });
+  else if (q.has('l7')) startLevel7();
   else if (q.has('l5')) startLevel5();
   else if (q.has('l5drive')) startLevel5({ drive: true });
   else if (q.has('l5race')) startLevel5({ race: true });

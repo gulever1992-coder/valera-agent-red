@@ -1,0 +1,6 @@
+Generate ONE pixel-art game sprite sheet of a big muscular GUARD DOG (black and tan rottweiler with a spiked steel collar), cartoonish but fierce, for a 2D side-scrolling game. Detailed 16-bit pixel-art, same style, palette and proportions as the game references. (style reference: C:/Users/gulev/CRM/valera-game/art_src/l6/yeti4.png and C:/Users/gulev/CRM/valera-game/art_src/punk_dogs.png) Flat solid pure green #00FF00 background (RGB 0,255,0), no shadows on the background, wide green margins, nothing cut off, no text, no grid lines, every figure fully separated from others.
+Layout: 3 rows x 4 columns, equal cells, one dog per cell, identical scale, side view facing RIGHT, paws on the same baseline in every cell.
+Row 1: 4-frame calm WALK cycle with alternating legs.
+Row 2: (5) RUN frame A stretched; (6) RUN frame B gathered; (7) sniffing the ground, nose down; (8) barking angrily, mouth open.
+Row 3: (9) lunging bite in the air; (10) lying down chewing a white bone happily; (11) sitting, ears up, alert; (12) lying asleep with a dizzy look.
+Output ONE image, saved as PNG at C:/Users/gulev/CRM/valera-game/art_src/l7/dog7.png and print the final path. Do not ask questions.
