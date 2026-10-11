@@ -1,7 +1,7 @@
 'use strict';
 // ============ ДВИЖОК: экран, ввод, звук, утилиты, частицы, текст ============
 const W = 640, H = 360;
-const G = { W, H, t: 0, dt: 0, debug: false, VER: '280' };
+const G = { W, H, t: 0, dt: 0, debug: false, VER: '353' };
 window.G = G;
 
 const canvas = document.getElementById('game');
@@ -189,6 +189,7 @@ const Sound = {
       case 'heal': [523, 659, 784, 1046].forEach((f, i) => s.tone(f, 0.12, { type: 'triangle', vol: 0.18, delay: i * 0.06 })); break;
       case 'throw': s.noise(0.12, { freq: 3000, slide: 800, vol: 0.12, filter: 'bandpass' }); break;
       case 'glass': for (let i = 0; i < 5; i++) s.tone(U.rand(2200, 4200), 0.06, { type: 'triangle', vol: 0.08, delay: i * 0.02 }); s.noise(0.2, { freq: 6000, vol: 0.12, filter: 'highpass' }); break;
+      case 'thunder': s.noise(2.2, { freq: 260, slide: 60, vol: 0.5, filter: 'lowpass' }); s.noise(0.5, { freq: 900, slide: 200, vol: 0.25, filter: 'lowpass', delay: 0.05 }); s.tone(42, 1.6, { type: 'sine', vol: 0.3 }); break;
       case 'brick': s.noise(0.18, { freq: 400, slide: 100, vol: 0.4 }); s.tone(70, 0.15, { type: 'sine', vol: 0.3 }); break;
       case 'clank': s.tone(1400 * p, 0.12, { type: 'square', vol: 0.08, slide: 1100 * p }); s.tone(2100 * p, 0.2, { type: 'triangle', vol: 0.08 }); break;
       case 'warn': s.tone(880, 0.06, { vol: 0.08 }); break;

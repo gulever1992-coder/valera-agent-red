@@ -170,7 +170,7 @@ def portrait(fn, box, name):
     a = np.array(key_green(im)).astype(np.uint8); bgc = Image.new('RGBA', im.size, (26, 28, 36, 255))
     bgc.alpha_composite(Image.fromarray(a, 'RGBA')); bgc.convert('RGB').resize((128, 128), Image.LANCZOS).save(os.path.join(SPR, 'p_' + name + '.png'))
     print('портрет', name)
-for fn, box, name in [('pick_stas.jpg', (60, 0, 620, 560), 'stas'), ('pick_max.jpg', (60, 0, 620, 560), 'maxim'), ('pick_denis_o.jpg', (60, 0, 620, 560), 'deniso'),
+for fn, box, name in [('pick_stas.jpg', (60, 0, 620, 560), 'stas'), ('pick_max.jpg', (0, 0, 690, 690), 'maxim'), ('pick_denis_o.jpg', (60, 0, 620, 560), 'deniso'),
                       ('pick_denis_ch.jpg', (60, 0, 620, 560), 'denisch'), ('pick_leather.jpg', (0, 20, 344, 364), 'leather'), ('pick_biker.jpg', (110, 0, 570, 460), 'biker7'),
                       ('pick_cmd.jpg', (0, 20, 344, 364), 'cmd7'), ('pick_cmd.jpg', (688, 20, 1032, 364), 'cmdr7'), ('pick_mrx.jpg', (0, 20, 344, 364), 'mrx')]:
     portrait(fn, box, name)

@@ -33,7 +33,7 @@ L7.MG = class {
         if (I.pressed('down')) this.rsel = (this.rsel + 1) % 3;
         if (I.pressed('left')) this.stage = 'L';
         if (ok) {
-          if (this.right[this.rsel] === this.pick && !this.link.includes(this.rsel)) { this.link[this.pick] = this.rsel; Sound.play('confirm'); this.stage = 'L'; if (!this.link.includes(-1)) { this.say('КАМЕРЫ ОБЕСТОЧЕНЫ!'); this.done = 1.1; } else this.sel = this.link.indexOf(-1); }
+          if (this.right[this.rsel] === this.pick && !this.link.includes(this.rsel)) { this.link[this.pick] = this.rsel; Sound.play('confirm'); this.stage = 'L'; if (!this.link.includes(-1)) { this.say(this.okMsg || 'КАМЕРЫ ОБЕСТОЧЕНЫ!'); this.done = 1.1; } else this.sel = this.link.indexOf(-1); }
           else { this.err++; Sound.play('zap'); G.shake(3, 0.2); G.flash(0.08, '#fff'); this.say('БЗЗЗТ! НЕ ТОТ ПРОВОД', 1); this.stage = 'L';
             if (this.err >= 3) { this.err = 0; this.link = [-1, -1, -1]; this.right.sort(() => Math.random() - 0.5); this.run.player.hp = Math.max(1, this.run.player.hp - 8); this.say('УДАРИЛО ТОКОМ! ВСЁ ЗАНОВО', 1.6); } }
         }

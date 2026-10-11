@@ -8,6 +8,11 @@ class H(http.server.BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Private-Network', 'true')
     def do_OPTIONS(self):
         self.send_response(204); self._cors(); self.end_headers()
+    def do_GET(self):   # отдать хелперы из tools/p7v4 (для вставки на страницу Flow)
+        f = os.path.join(os.path.dirname(__file__), '..', 'p7v4', os.path.basename(self.path.split('?')[0]))
+        if not os.path.isfile(f): self.send_response(404); self._cors(); self.end_headers(); return
+        self.send_response(200); self._cors(); self.send_header('Content-Type', 'text/javascript; charset=utf-8'); self.end_headers()
+        self.wfile.write(open(f, 'rb').read())
     def do_POST(self):
         body = self.rfile.read(int(self.headers['Content-Length'])).decode()
         name, b64 = body.split('|', 1)

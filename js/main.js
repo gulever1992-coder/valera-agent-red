@@ -162,7 +162,8 @@ G.onLevelComplete = function (level) {
 
 function startLevel7(opts = {}) {
   if (G.portraits && G.portraits.valera6) G.portraits.valera = G.portraits.valera6;
-  App.level = new L7.Level();
+  if (!Object.keys(opts).length) opts = { stage: 'intro' };   // новая версия ур.7 (v4); старая — ?l7* тест-параметрами
+  App.level = opts.stage ? new V4.Level() : new L7.Level();
   setState('play');
   App.paused = false;
   App.level.start(opts);
@@ -556,7 +557,7 @@ function frame(now) {
 // ---------- загрузка ----------
 (async function boot() {
   requestAnimationFrame(frame);
-  const [head, street] = await Promise.all([G.loadImage('assets/valera_head.png'), G.loadImage('assets/street.jpg'), Spr.load(), Spr.loadBGs(), L2.load(), L3.load(), L4.load(), L5.load(), L6.load(), L7.load()]);
+  const [head, street] = await Promise.all([G.loadImage('assets/valera_head.png'), G.loadImage('assets/street.jpg'), Spr.load(), Spr.loadBGs(), L2.load(), L3.load(), L4.load(), L5.load(), L6.load(), L7.load(), V4.load()]);
   G.img.valeraHeadSrc = head; G.img.street = street;
   try { await Promise.race([document.fonts.load('8px "Press Start 2P"'), new Promise(r => setTimeout(r, 2500))]); } catch (e) {}
   G.img.valeraHud = G.downscale(head, 52, 54);
@@ -570,6 +571,7 @@ function frame(now) {
   else if (q.has('l6dunes')) startLevel6({ dunes: true });
   else if (q.has('l6eat')) startLevel6({ grown: true });
   else if (q.has('l6')) startLevel6();
+  else if (q.has('l7v4')) { App.level = new V4.Level(); setState('play'); App.paused = false; App.level.start({ stage: q.get('l7v4') || 'intro' }); }
   else if (q.has('l7wall')) startLevel7({ wall: true });
   else if (q.has('l7yard')) startLevel7({ yard: true });
   else if (q.has('l7sewer')) startLevel7({ sewer: true });
