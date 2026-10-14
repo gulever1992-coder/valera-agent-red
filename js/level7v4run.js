@@ -69,6 +69,7 @@ V4.Player = class extends L7.Player {
     if (this.barkAnim > 0) { this.barkAnim -= dt; return this.setAnim('bark4'); }
     super.choosePose(dt);
   }
+  drawOpts() { return this.anim === 'crouch' || this.anim === 'sneak' ? { scale: 0.84 } : {}; }   // на четвереньках — в тех же пропорциях, что и стоя
   draw(c, camX, camY) {
     if (this.depthK > 0) { const k = this.depthK, x = this.x - camX, y = this.y - (camY || 0) - 9 * k, o = { scale: 1 - 0.15 * k };   // в проёме: глубже, мельче, темнее
       Spr.drawAnim(c, this.animSet, this.anim, this.animT, x, y, this.facing, o); Spr.drawAnim(c, this.animSet, this.anim, this.animT, x, y, this.facing, { scale: o.scale, flash: '#05080a', alpha: 0.82 * k }); return; }
@@ -121,6 +122,8 @@ V4.Laser = class extends L7.Laser {
     const on = this.on(run), x = this.x - cx; if (x < -40 || x > W + 40) return;
     if (on) { const fl = 0.7 + Math.sin(G.t * 40) * 0.3; c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = `rgba(255,30,30,${0.35 * fl})`; c.fillRect(x - 2, this.y0 - cy, 5, this.y1 - this.y0); c.fillStyle = '#ff6060'; c.fillRect(x, this.y0 - cy, 1, this.y1 - this.y0); c.restore(); }
     else if (this.blink && !(this.group && run.flags[this.group] > 0)) { const left = this.blink[0] + this.blink[1] - this.t % (this.blink[0] + this.blink[1]); if (left < 0.5 && (G.t * 18 | 0) % 2) { c.fillStyle = 'rgba(255,90,90,0.45)'; c.fillRect(x, this.y0 - cy, 1, this.y1 - this.y0); } }   // вот-вот включится
+    if (this.v5 && V4.img.pr_las_top) { const P = window.V4_PROPS, off = on ? '' : '_off', t = P.las_top, b = P.las_bot;   // излучатели из Flow: на потолке смотрит вниз, на полу — вверх
+      c.drawImage(V4.img['pr_las_top' + off], Math.round(x - t[0] / 2), this.y0 - cy, t[0], t[1]); c.drawImage(V4.img['pr_las_bot' + off], Math.round(x - b[0] / 2), this.y1 - cy - b[1], b[0], b[1]); return; }
     Spr.draw(c, 'inp4', 5, x, this.y0 - cy + 4, 1);
     Spr.draw(c, 'inp4', 6, x, this.y1 - cy + 8, 1, { scale: 0.8 });
   }
@@ -183,6 +186,26 @@ V4.MG = class extends L7.MG {
     return null;
   }
   // «провода»: вся графика — картинки Flow (tools/l7v4_mg.py): коробка, клеммы с проводом слева, гнёзда справа, провод, перчатка-указатель
+  // пульт лазерной защиты: панель из Flow (mgl_a — всё выключено, mgl_b — всё включено; горящие трубки, лампы и поднятые рычаги берутся кусками из mgl_b)
+  drawLasers(c) {
+    const A = V4.img.mgl_a, B = V4.img.mgl_b, k = 430 / 1376, px = 105, py = 62, ph = 768 * k, CX = [226, 536, 840, 1149];
+    const part = (sx, sy, sw, sh, dx) => c.drawImage(B, sx, sy, sw, sh, px + dx * k, py + sy * k, sw * k, sh * k);
+    c.fillStyle = 'rgba(0,0,0,0.72)'; c.fillRect(0, 0, W, H);
+    c.drawImage(A, px, py, 430, ph);
+    G.text('ПУЛЬТ ЛАЗЕРНОЙ ЗАЩИТЫ', W / 2, py - 18, { align: 'center', color: '#ffd84a', outline: true });
+    for (let i = 0; i < 4; i++) {
+      const x = CX[i];
+      if (this.beam[i] && B) part(x - 70, 100, 140, 250, x - 70);                                  // трубка с лучом
+      if (this.sw[i] && B) { part(x - 32, 432, 64, 64, x - 32); part(840 - 46, 488, 92, 128, x - 46); }   // зелёная лампа и рычаг вверх
+      const sx = px + x * k, on = this.beam[i];
+      G.text('Л' + (i + 1), sx, py + 384 * k, { align: 'center', size: 8, color: on ? '#ff9a8a' : '#c8ccd2', outline: true });
+      G.text(this.map[i].map(b => 'Л' + (b + 1)).join('+'), sx, py + 660 * k, { align: 'center', size: 8, color: '#ffe9a8', outline: true });
+      if (this.sel === i) { const y0 = py + 425 * k, s = 78 * k, t = 0.6 + 0.4 * Math.sin(this.t * 8); c.strokeStyle = `rgba(255,216,74,${t})`; c.lineWidth = 2; c.strokeRect(Math.round(sx - s) + 0.5, Math.round(y0) + 0.5, Math.round(s * 2), Math.round(205 * k)); }
+    }
+    G.text('СХЕМА: тумблер переключает два луча', W / 2, py + ph + 8, { align: 'center', size: 8, color: '#c8ccd2', outline: true });
+    G.text(Game.fmtHint('Стрелки — выбор, {jump} — щёлкнуть. Погаси все лучи.'), W / 2, py + ph + 22, { align: 'center', size: 8, color: '#9aa0a8', outline: true });
+    if (this.msgT > 0) G.text(this.msg, W / 2, py + ph / 2 - 4, { align: 'center', color: '#8cf08c', outline: true });
+  }
   drawWires(c) {
     const I = V4.img, px = 105, py = 62, pw = 430, ph = 240, lx = px + 118, rx = px + pw - 104, row = i => py + 62 + i * 58;
     const P = (im, x, y, k) => { if (im) c.drawImage(im, x - im.width * k / 2, y - im.height * k / 2, im.width * k, im.height * k); };
@@ -210,6 +233,7 @@ V4.MG = class extends L7.MG {
   }
   draw(c) {
     if (this.kind === 'wires' && V4.img.mgw_panel) return this.drawWires(c);
+    if (this.kind === 'lasers' && V4.img.mgl_a) return this.drawLasers(c);
     const img = V4.img[{ wires: 'mg0', lasers: 'mg0', code: 'mg2', bell: 'mg1' }[this.kind]];
     c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(0, 0, W, H);
     if (img) { c.globalAlpha = 0.9; c.drawImage(img, W / 2 - 150, 18, 300, 324); c.globalAlpha = 1; }
@@ -322,7 +346,10 @@ V4.Run = class {
     Sound.play('warn'); Music.play('alarm'); G.flash(0.15, '#ff2010'); this.level.stats.caught = (this.level.stats.caught || 0) + 1;
     let g = by instanceof L7.Guard ? by : null;
     if (!g) for (const q of this.guards) if (q.alive && q.state !== 'stagger' && Math.abs(q.x - pl.x) < 420 && Math.abs(q.y - pl.y) < 40 && (!g || Math.abs(q.x - pl.x) < Math.abs(g.x - pl.x))) g = q;
-    if (!g) { const side = pl.x - this.world.cam.x > W / 2 ? -1 : 1; g = new L7.Guard({ x: side > 0 ? this.world.cam.x - 40 : this.world.cam.x + W + 40, kind: 'post', facing: side, y: pl.y }); g.draw = V4.drawGuard; this.guards.push(g); }
+    if (!g) { let side = pl.x - this.world.cam.x > W / 2 ? -1 : 1; const vd = this.D.voidAt, sx0 = s => s > 0 ? this.world.cam.x - 40 : this.world.cam.x + W + 40;
+      const bad = s => { if (!vd) return false; for (let x = pl.x; (sx0(s) - x) * -s > 0; x -= s * 10) if (vd(x, pl.y)) return true; return false; };   // охранник не бежит над шахтой лестницы — заходит с той стороны, где есть пол
+      if (bad(side) && !bad(-side)) side = -side;
+      g = new L7.Guard({ x: sx0(side), kind: 'post', facing: side, y: pl.y }); g.draw = V4.drawGuard; this.guards.push(g); }
     this.caught.g = g; g.state = 'catch'; g.facing = Math.sign(pl.x - g.x) || 1;
     if (by instanceof L7.Dog) { by.state = 'catch'; Sound.play('bark'); }
     G.say(g, U.choice(['Стоять! Мистер Рэд!', 'Попался! Руки за спину!', 'Тревога! Это он, по фотороботу!']), 1.6);
@@ -361,7 +388,8 @@ V4.Run = class {
     if (this.caught) { this.updateCaught(dt); this.camFollow(dt); return; }
     wd.updatePlats(dt);
     const near = !pl.seq && pl.onGround && pl.controls ? this.nearInt(pl) : null; this.near = near;
-    if (near && I.pressed('up')) { if (near.hide) this.hideIn(near.hide); else near.act(this); I.hit.up = false; }
+    const nk = near && (near.key || 'up');   // клавиша по смыслу: вниз по лестнице — «вниз»
+    if (near && I.pressed(nk)) { if (near.hide) this.hideIn(near.hide); else near.act(this); I.hit[nk] = false; }
     pl.update(dt, wd);
     if (D.update) D.update(dt, this);
     for (const g of this.guards) g.update(dt, this);
@@ -465,6 +493,22 @@ V4.Run = class {
     m.items.forEach((it, i) => G.text((i === m.sel ? '> ' : '  ') + it.label, bx + 20, by + 26 + i * 18, { size: 8, color: it.locked ? '#7a6a50' : i === m.sel ? '#fff' : '#c8c0a8' }));
     G.text(Game.fmtHint('{up}/{down}, {jump} — выбрать, {throw} — выйти'), W / 2, by + bh - 10, { align: 'center', size: 8, color: '#8a8070' });
   }
+  // указатели взаимодействия у самих объектов: клавиша-стрелка (вверх/вниз) и короткая подпись; вдалеке — маленькая стрелка
+  drawMarks(c) {
+    const pl = this.player; if (!pl || this.mg || this.caught || this.menu || this.level.scene || pl.seq || pl.auto) return;
+    const talk = G.bubbles.some(b => b.target === pl);   // пока Валера говорит, подпись не лезет в реплику
+    const cx = this.world.cam.x, cy = this.camY || 0, nr = this.near, list = this.ints.filter(it => !it.cond || it.cond(this)).concat(this.hides.map(h => ({ x: h.x, y: h.y, hide: h, label: h.label || 'спрятаться' })));
+    const tri = (x, y, s, down) => { c.beginPath(); c.moveTo(x, y + (down ? s : -s)); c.lineTo(x + s, y + (down ? -s : s) * 0.7); c.lineTo(x - s, y + (down ? -s : s) * 0.7); c.closePath(); c.fill(); };
+    for (const it of list) {
+      const y0 = it.y == null ? V4.GY : it.y; if (Math.abs(y0 - pl.y) > 30) continue;
+      const on = nr && (nr === it || (it.hide && nr.hide === it.hide)), x = it.x - cx, down = it.key === 'down', y = y0 - cy - 100 + Math.sin(G.t * 5) * 2;
+      if (x < -20 || x > W + 20) continue;
+      if (!on) { if (it.quiet || Math.abs(it.x - pl.x) > 190) continue; c.globalAlpha = 0.55; c.fillStyle = '#0a0c10'; tri(x, y + 1, 6.5, down); c.fillStyle = '#ffd84a'; tri(x, y, 5, down); c.globalAlpha = 1; continue; }
+      if (talk) continue;
+      c.fillStyle = '#0a0c10'; c.fillRect(x - 10, y - 10, 20, 20); c.fillStyle = '#ffd84a'; c.fillRect(x - 9, y - 9, 18, 18); c.fillStyle = '#1a1e26'; c.fillRect(x - 7.5, y - 7.5, 15, 15); c.fillStyle = '#ffd84a'; tri(x, y, 5, down);
+      G.text(it.label.toUpperCase(), U.clamp(x, 50, W - 50), y - 22, { align: 'center', size: 8, color: '#fff', outline: true });
+    }
+  }
   drawHUD(c) {
     const R = Art.R, pl = this.player, k = U.clamp(this.susp, 0, 1);
     Game.drawHUD(c, pl, this.world);
@@ -472,9 +516,8 @@ V4.Run = class {
       R(c, 245, 8, 150, 12, '#111'); R(c, 247, 10, 146, 8, '#1a2a1a'); R(c, 247, 10, Math.round(146 * k), 8, k < 0.4 ? '#e0c040' : k < 0.75 ? '#f08a30' : '#ff3020');
       G.text(pl.seq && pl.seq.phase === 'hid' ? 'СПРЯТАН' : k > 0 ? 'ТЕБЯ ЗАМЕЧАЮТ!' : pl.crouch ? 'НА ЧЕТВЕРЕНЬКАХ' : 'НЕЗАМЕТНОСТЬ', 320, 23, { align: 'center', size: 8, color: pl.seq ? '#8cf08c' : k > 0 ? '#ff8a6a' : '#c8d0d8' });
     }
-    if (this.D.task) G.text('Задача: ' + (typeof this.D.task === 'function' ? this.D.task(this) : this.D.task), W - 8, 40, { align: 'right', size: 8, color: '#e8e0c8' });
-    if (this.near && !this.mg && !this.caught && !this.menu) Game.drawHint(c, '{up} — ' + this.near.label, 1, H - 52);
-    else if (this.hint && !this.caught && !this.mg) Game.drawHint(c, this.hint, this.hintA);
+    this.drawMarks(c);
+    if (this.hint && !this.near && !this.caught && !this.mg) Game.drawHint(c, this.hint, this.hintA);
     if (this.arrow) { const a = this.arrow, x = a.x - this.world.cam.x, bob = Math.sin(G.t * 6) * 4 - (this.camY || 0); if (x > -20 && x < W + 20) G.text('V', x, a.y - 30 + bob, { align: 'center', size: 16, color: '#ffd84a', outline: true }); else G.text(x > W ? '>>' : '<<', x > W ? W - 20 : 20, 150, { align: 'center', size: 16, color: '#ffd84a', outline: true }); }
   }
 };

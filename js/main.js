@@ -217,6 +217,7 @@ const LEVELS = [
   { id: 5, name: 'ПОГОНЯ', sub: 'Вид сверху. Гонка с Граблионком', start: () => startLevel5() },
   { id: 6, name: 'ГРИБНОЙ ДОЖДЬ', sub: 'Лес, болото, дюны. Ванделорд', start: () => startLevel6() },
   { id: 7, name: 'ЗАВОДОУПРАВЛЕНИЕ', sub: 'Стелс под дождём. Главный зал', start: () => startLevel7() },
+  { id: 8, name: 'ЗАКУЛИСЬЕ', sub: 'Тир. Зомби, кран, роботы', start: () => startLevel8() },
 ];
 // ТЕСТ: все уровни открыты. Вернуть открытие по прохождению — поставить OPEN_ALL = false
 const OPEN_ALL = true;
@@ -399,6 +400,7 @@ function drawLevels(c) {
     else if (L.id === 7 && L7.img.card) c.drawImage(L7.img.card, 200, 0, 880, 720, px, py, pw, ph);
     else if (L.id === 7 && L7.img.plaza) c.drawImage(L7.img.plaza, 200, 0, 880, 720, px, py, pw, ph);
     else if (L.id === 6 && L6.img.card) c.drawImage(L6.img.card, 200, 0, 880, 720, px, py, pw, ph);
+    else if (L.id === 8 && L8.card) c.drawImage(L8.card, 200, 0, 880, 720, px, py, pw, ph);
     else if (L.id === 3 && L3.img.comic4) c.drawImage(L3.img.comic4, 200, 0, 880, 720, px, py, pw, ph);
     else { c.fillStyle = '#0c0d10'; c.fillRect(px, py, pw, ph); G.text('?', px + pw / 2, py + 55, { align: 'center', size: 32, color: '#3a3f45' }); }
     if (locked) {
@@ -454,6 +456,7 @@ function drawResults(c) {
     ['Отбито предметов', st.deflect],
     ['Съедено вкусняшек', st.food],
     ['Значков «Ударник»', st.secrets + ' / ' + (st.secretsTotal || 3)],
+    ...(st.eggsTotal ? [['Пасхалок найдено', (st.eggs || 0) + ' / ' + st.eggsTotal]] : []),
     ['Получено урона', Math.round(st.dmg)],
     ['Падений (смертей)', st.deaths],
     ['Очки', r.score],
@@ -571,6 +574,7 @@ function frame(now) {
   else if (q.has('l6dunes')) startLevel6({ dunes: true });
   else if (q.has('l6eat')) startLevel6({ grown: true });
   else if (q.has('l6')) startLevel6();
+  else if (q.has('l8')) startLevel8({ stage: q.get('l8') || 'A' });
   else if (q.has('l7v4')) { App.level = new V4.Level(); setState('play'); App.paused = false; App.level.start({ stage: q.get('l7v4') || 'intro' }); }
   else if (q.has('l7wall')) startLevel7({ wall: true });
   else if (q.has('l7yard')) startLevel7({ yard: true });

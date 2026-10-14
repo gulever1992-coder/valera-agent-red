@@ -260,31 +260,73 @@ V4.sceneBus = function (level, run) {
 // ---------- антенна → трос → окно заводоуправления ----------
 // ---------- крыша цеха издалека (как вид с парковки): маленький Валера выходит на крышу, цепляется за трос и уезжает ----------
 // Здание — слой shopfar (px картинки -> экран: ROOF.x + px * s, ROOF.y + py * s); перед ним — забор и парковка (тот же фон, что на карте C).
-V4.ROOF = { x: 18, y: -6, s: 0.44, door: [1010, 196], mast: [826, 150], end: [-60, 300], k: 0.22 };
+V4.ROOF = { x: -150, y: -30, s: 0.6, k: 0.56, mast: 687, hook: 80, pan: 820,
+  wall: [[540, 160], [612, 160], [614, 136], [760, 136], [762, 155], [1010, 197], [1011, 194], [1066, 194], [1067, 215], [1180, 232], [1181, 230], [1228, 230], [1230, 330]] };   // верх стены-парапета (px картинки shopfar)
+// Крыша цеха крупнее: Валера поднимается на крышу и идёт ЗА парапетом (ног не видно), цепляется за трос на шпиле;
+// камера уходит влево к заводоуправлению, он едет по тросу прямо в окно правого крыла.
 V4.sceneRoof = function (level) {
-  const R = V4.ROOF, P = p => [R.x + p[0] * R.s, R.y + p[1] * R.s];
+  const R = V4.ROOF, S = R.s, K = R.k, HANG = 84 * K, LEG = 17;
   const strip = V4.roofStrip || (V4.roofStrip = V4.buildStrip([{ k: 'park', s: 0.9, fy: 476 }, { k: 'park', s: 0.9, fy: 476, ov: 80, flip: true }]));
-  const [mx, my] = P(R.mast), [ex, ey] = P(R.end);
+  const ease = k => k * k * (3 - 2 * k);
+  const adm = e => ({ x: U.lerp(-430, 300, e), s: 0.4, y: 322, par: 0 });
+  const sx = px => R.x + px * S, sy = py => R.y + py * S;
+  const feet = px => sy(px > 762 ? U.lerp(157, 236, (px - 762) / 438) : 136) + LEG;   // пол крыши за стеной: видно Валеру от колен и выше
+  const hook = st => [sx(R.mast) + st.sh, sy(R.hook)];
   const st = V4.stormStage(level, {
     bg: (c, st) => {
-      V4.drawFar(c, 300);
-      const im = V4.img.shopfar; if (im) c.drawImage(im, R.x, R.y, im.width * R.s, im.height * R.s);
-      V4.drawCable(c, mx, my, ex, ey, 10, 'rgba(170,180,200,0.85)');
+      V4.drawFar(c, 300 - st.sh * 0.25);
+      V4.drawAdmin(c, 0, adm(st.e));
+      const im = V4.img.shopfar; if (im) c.drawImage(im, R.x + st.sh, R.y, im.width * S, im.height * S);
     },
-    over: (c) => { c.drawImage(strip.cv, 600, 0, W * 2, H * 2, 0, 64, W, H); },
+    over: (c, st) => {
+      const im = V4.img.shopfar;
+      if (st.behind && im) {   // стена поверх Валеры: он чуть за ней
+        c.save(); c.beginPath(); R.wall.forEach((p, i) => c[i ? 'lineTo' : 'moveTo'](sx(p[0]) + st.sh, sy(p[1]))); c.lineTo(sx(1230) + st.sh, H); c.lineTo(sx(540) + st.sh, H); c.closePath(); c.clip();
+        c.drawImage(im, R.x + st.sh, R.y, im.width * S, im.height * S); c.restore();
+      }
+      const [hx, hy] = hook(st), [ex, ey] = V4.adminWin(adm(st.e));
+      V4.drawCable(c, hx, hy, ex, ey, 14, 'rgba(176,186,206,0.9)');
+      c.drawImage(strip.cv, 2500 - st.sh * 2.5, 0, W * 2, H * 2, 0, 138, W, H);   // ближний план: забор и деревья, едут быстрее здания
+    },
   });
-  const [dx, dy] = P(R.door);
-  const v = L7.actor(st, 'valera7', dx, -1, { y: dy, z: 2, scale: R.k, alpha: 0 }); v.setAnim('stand');
-  const HANG = 84 * R.k;
+  st.sh = 0; st.e = 0; st.behind = true;
+  const x0 = 1150, v = L7.actor(st, 'valera7', sx(x0), -1, { y: feet(x0) + 30, z: 2, scale: K }); v.setAnim('walk');
   return function* () {
     yield* Scene.tween(0.6, k => { st.fade = 1 - k; });
-    yield* Scene.tween(0.5, k => { v.alpha = k; });
-    G.say(v, 'Крыша! А вон и трос...', 1.6); yield 1.2;
-    v.setAnim('walk'); yield* Scene.tween(2.2, k => { v.x = U.lerp(dx, mx + 6, k); v.y = U.lerp(dy, my + HANG, k); });
-    v.setAnim('hang4'); st.storm.strike(true); yield 0.5;
-    G.say(v, 'Поехали!', 1, { shout: true });
-    yield* Scene.tween(2.6, k => { const q = k * k, sag = 10 * 4 * q * (1 - q) * 0.5; v.x = U.lerp(mx + 6, ex, q); v.y = U.lerp(my, ey, q) + sag + HANG; });
-    yield* Scene.tween(0.5, k => { st.fade = k; });
+    yield* Scene.tween(0.9, k => { v.x = sx(U.lerp(x0, 1120, k)); v.y = feet(U.lerp(x0, 1120, k)) + 30 * (1 - k); });   // поднимается на крышу
+    v.setAnim('stand'); G.say(v, 'Крыша! А вон и трос...', 1.6); yield 1.3;
+    v.setAnim('walk'); yield* Scene.tween(3.4, k => { const px = U.lerp(1120, 790, k); v.x = sx(px); v.y = feet(px); });
+    { const y0 = feet(790), y1 = feet(740); yield* Scene.tween(0.35, k => { v.x = sx(U.lerp(790, 745, k)); v.y = U.lerp(y0, y1, k) - 9 * 4 * k * (1 - k); }); }   // запрыгивает на выступ
+    yield* Scene.tween(0.6, k => { v.x = sx(U.lerp(745, R.mast + 8, k)); });
+    v.setAnim('climb'); { const y0 = v.y, y1 = sy(R.hook) + HANG; yield* Scene.tween(0.7, k => { v.y = U.lerp(y0, y1, k); }); }
+    st.behind = false; v.setAnim('hang4'); st.storm.strike(true); yield 0.45;
+    G.say(v, 'Поехали!', 1, { shout: true }); yield 0.35;
+    yield* Scene.tween(5.2, k => {   // камера уходит влево, к заводоуправлению; Валера катится по тросу к окну
+      st.e = ease(k); st.sh = R.pan * st.e;
+      const q = Math.pow(k, 1.35), [hx, hy] = hook(st), [ex, ey] = V4.adminWin(adm(st.e)), sc = U.lerp(K, 0.2, q);
+      v.scale = sc; v.x = U.lerp(hx, ex, q); v.y = U.lerp(hy, ey, q) + 14 * 2 * q * (1 - q) + 84 * sc;
+      if (k > 0.45 && !st.yell) { st.yell = 1; G.say(v, 'А-А-А-А!', 1.4, { shout: true }); }
+    });
+    const [ex, ey] = V4.adminWin(adm(1));
+    Sound.play('glass'); G.shake(6, 0.4); G.flash(0.12, '#fff'); v.alpha = 0;
+    FX.burst(ex, ey + 4, 14, { colors: ['#cfe8ff', '#ffffff', '#8ab0d0'], speed: 120, life: 0.6, grav: 400 });
+    yield 0.25; yield* Scene.tween(0.25, k => { st.fade = k; });
+  };
+};
+// Сразу следом, уже на карте заводоуправления: Валера влетает через окно архива, стекло вдребезги — и уровень продолжается.
+V4.sceneWinIn = function (level, run) {
+  const pl = run.player, D = run.D, wx = D.KEY.WIN, fy = pl.y, x1 = D.KEY.START;
+  return function* () {
+    run.hidePlayer = true; run.fade = 1;
+    const v = Act('valera7', wx, -1, 'kick4'); v.scale = 0.72; v.y = fy - 34; run.crowd.push(v);
+    yield 0.15; run.fade = 0;
+    Sound.play('glass'); G.shake(8, 0.5); G.flash(0.14, '#fff');
+    FX.burst(wx, fy - 62, 26, { colors: ['#cfe8ff', '#ffffff', '#8ab0d0'], speed: 220, life: 0.8, grav: 420 });
+    yield* Scene.tween(0.5, k => { v.x = U.lerp(wx, x1, k); v.scale = U.lerp(0.72, 1, k); v.y = U.lerp(fy - 34, fy, k) - 26 * 4 * k * (1 - k); });
+    v.setAnim('crouch'); G.shake(3, 0.2); Sound.play('land'); yield 0.5;
+    v.setAnim('stand'); G.say(v, 'Окно — вдребезги. Зато без пропуска!', 1.8); yield 1.5;
+    pl.x = v.x; pl.facing = -1; v.visible = false; run.crowd = run.crowd.filter(a => a !== v); run.hidePlayer = false;
+    G.say(pl, 'Заводоуправление. Мрамор, бархат... На наши деньги!', 2.2);
   };
 };
 V4.sceneCable = function (level, run) {
@@ -348,7 +390,7 @@ V4.Level = class {
     FX.list = []; G.bubbles = [];
     this.run = new V4.Run(this);
     const st = opts.stage || 'intro';
-    const at = { A: ['A', 700, 1], B: ['B', 200, 1], A2: ['A2', 140, 1], C: ['C', 90, 1], E: ['E', 80, 1], D: ['D', 40, 1], D1: ['D', 40, 1], F4: ['F4', 1060, -1], F3: ['F3', 346, 1], F2: ['F2', 346, 1], F1: ['F1', 346, 1], RA1: ['RA1', 600, -1], RA2: ['RA2', 600, -1], RB1: ['RB1', 600, -1], RA0: ['RA0', 600, -1], RB3: ['RB3', 40, 1] }[st];
+    const at = { A: ['A', 700, 1], B: ['B', 200, 1], A2: ['A2', 140, 1], C: ['C', 90, 1], E: ['E', 80, 1], D: ['D', 40, 1], D1: ['D', 40, 1], F: ['F', 700, -1], RA1: ['RA1', 600, -1], RA2: ['RA2', 600, -1], RB1: ['RB1', 600, -1], RA0: ['RA0', 600, -1], RB3: ['RB3', 40, 1] }[st];
     if (opts.flags) Object.assign(this.run.flags, opts.flags);
     if (st === 'hall') return this.toHall(this.run);
     if (st === 'roof') { this.run.flags.dIn = 1; this.run.load('D', 40, 1); return this.roofExit(this.run); }
@@ -372,12 +414,12 @@ V4.Level = class {
   matizScene(run) { this.playOnMap(V4.sceneMatiz(this, run)); }
   busScene(run) { this.playOnMap(V4.sceneBus(this, run)); }
   enterShop(run) { delete run.flags.dSeg; delete run.flags.dCp; delete run.flags.dIn; run.go('D', 40, 'Цех сортировки', 1); }
-  roofExit(run) {   // дверь на крышу -> мини-сцена издалека -> полёт по тросу -> леса -> заводоуправление
+  roofExit(run) {   // дверь на крышу -> крыша и проезд по тросу к заводоуправлению -> влетает в окно архива
     run.player.controls = false;
-    this.playStage(V4.sceneRoof(this), () => this.playStage(V4.sceneSlide(this), () => this.playStage(V4.sceneScaff(this), () => { this.mode = 'run'; this.run.hidePlayer = false; this.run.player = null; this.run.load('F4', 1060, -1); G.say(this.run.player, 'Заводоуправление. Мрамор, бархат... На наши деньги!', 2.2); })));
+    this.playStage(V4.sceneRoof(this), () => { this.mode = 'run'; this.run.hidePlayer = false; this.run.player = null; this.run.load('F', 700, -1); this.playOnMap(V4.sceneWinIn(this, this.run)); });
   }
   climbAntenna(run) {
-    this.playOnMap(V4.sceneCable(this, run), () => this.playStage(V4.sceneSlide(this), () => this.playStage(V4.sceneScaff(this), () => { this.mode = 'run'; this.run.hidePlayer = false; this.run.player = null; this.run.load('F4', 1060, -1); G.say(this.run.player, 'Заводоуправление. Мрамор, бархат... На наши деньги!', 2.2); })));
+    this.playOnMap(V4.sceneCable(this, run), () => this.playStage(V4.sceneRoof(this), () => { this.mode = 'run'; this.run.hidePlayer = false; this.run.player = null; this.run.load('F', 700, -1); this.playOnMap(V4.sceneWinIn(this, this.run)); }));
   }
   toHall(run) { this.playStage(V4.sceneHall(this), () => this.finish()); }
   finish() { this.mode = 'done'; G.onLevelComplete(this); }

@@ -63,164 +63,189 @@ V4.drawPicks = (c, cx, run) => {
   }
 };
 
-// ================= D: «Цех сортировки» — здание в разрезе, 4 этажа по 4 комнаты (как Terminator 2D: No Fate), стелс =================
-// Вся графика из Flow, сборка tools/l7v4_rooms.py:
-//   flN.png — пустые комнаты этажа (2724x384; окна прозрачные — за ними гроза); всё остальное — отдельные спрайты assets/l7v4/pr/*.png
-//   (размеры — js/l7v4_props.js): мебель на заднем (у стены) и переднем (ближе к зрителю) плане, двери и шкаф по 3 кадра, лестница и её ближние перила.
-// Мир этажа: 1063 x 150 лог. px; комнаты 13..262 | 275..524 | 539..788 | 801..1050, между ними стены с дверными проёмами.
-V4.ROOMS = { k: 1 / 2.5624, w: 2724 / 2.5624, pitch: 384 / 2.5624, top: 312 / 2.5624 };
+// ================= D: «Цех сортировки» v5 — здание в разрезе, 4 этажа (как Terminator 2D: No Fate), стелс =================
+// Вся графика из Flow (стиль finestyle), сборка tools/l7v5_rooms.py:
+//   flN.png — полоса этажа: комнаты (каждая — отдельный кадр Flow, мебель в самой картинке) и половина лестничной клетки;
+//   лестничная клетка — ОДИН кадр 9:16 сразу на два этажа, лестница нарисована вместе с фоном (спрайта лестницы нет);
+//   assets/l7v4/pr/*.png — спрайты (размеры — js/l7v4_props.js): стена-перегородка, шкаф/дверь-укрытия по 3 кадра, предметы переднего плана, излучатели.
+// Раскладка — window.V4_LAY (создаёт сборщик): комнаты разной ширины (масштаб подобран так, чтобы двери были одной высоты), этажи 2-3 короче.
+//   1: проходная | приёмная | шлюз с гермодверью | клетка A;  2: клетка B | раздевалка | склад вещей | клетка A (приход);
+//   3: клетка B (приход) | мониторная | пультовая | клетка C;  4: тамбур (дверь на крышу) | коридор с лазерами | вентиляционная | клетка C (приход).
+V4.ROOMS = { pitch: 190, top: 176, junc: 15, low: 14 };
 V4.MAPS.D = function (run) {
-  const RM = V4.ROOMS, G0 = V4.GY, I = () => V4.img, PS = window.V4_PROPS || {}, NF = 4, T = [0, 1, 2, 3].map(i => G0 - i * RM.pitch), CEIL = 112;
-  const D = { w: RM.w, vertical: true, topY: Math.round(T[NF - 1] - RM.top), dark: 0.03, suspK: 0.85, minX: 20, maxX: 1044 };
+  const RM = V4.ROOMS, G0 = V4.GY, I = () => V4.img, PS = window.V4_PROPS || {}, NF = 4, T = [0, 1, 2, 3].map(i => G0 - i * RM.pitch), CEIL = 158;
+  const LAY = window.V4_LAY, ROW = LAY.rows, RX = (m, k, f) => { const q = ROW[f || 0][m - 1]; return q[0] + (k || 0) * q[1]; };   // x: комната m (1..4) этажа f (0..3), доля ширины k
+  const R1 = (m, k) => RX(m, k, 0), R2 = (m, k) => RX(m, k, 1), R3 = (m, k) => RX(m, k, 2), R4 = (m, k) => RX(m, k, 3), ZM = (m, f) => ROW[f][m - 1][2];   // ZM — масштаб кадра комнаты
+  const D = { w: LAY.w, RX, vertical: true, topY: Math.round(T[NF - 1] - RM.top - 4), dark: 0.03, suspK: 0.85, minX: 24, maxX: LAY.w - 24 };
   const floorOf = y => { for (let i = NF - 1; i > 0; i--) if (y < T[i] + 6) return i; return 0; };
-  const DOOR = { x: 923, y: T[0] - 61.5, w: 62, h: 36.3 }, PANEL = 640, LOCK = 240, ROOFDOOR = 105, LZ = [468, 404, 340];
-  // ---------- лестницы: спрайт 205x178, марш вправо-вверх до площадки, второй марш влево-вверх до следующего этажа ----------
-  const SK = 150 / 622, sx = px => (px - 177) * SK;   // px картинки лестницы -> лог. px от левого края спрайта
-  const ST = [{ f: 0, x0: 560 }, { f: 1, x0: 38 }, { f: 2, x0: 824 }];
-  const FOOT = sx(420), TURN = sx(836), TOPX = sx(410), LAND = 302 * SK;
-  const stepH = (lx, upper) => {   // высота ступени под ногой (лог. px над полом этажа)
-    if (!upper) { if (lx >= sx(742)) return LAND; if (lx <= sx(420) + 0.6) return 0; const i = Math.floor((lx - sx(420)) / (46 * SK)) + 1; return U.clamp(i, 0, 7) * 37.75 * SK; }
-    if (lx <= sx(446)) return RM.pitch; const j = Math.floor((sx(814) - lx) / (46 * SK)) + 1; return LAND + U.clamp(j, 0, 8) * 35.6 * SK;
+  const ZD = ZM(3, 0), DOOR = { x: R1(3, 0.5), y: T[0] - 15 - 69 * ZD, w: 66 * ZD, h: 29 * ZD }, PANEL = R3(3, 0.5), LOCK = R4(1, 0.365), ROOFDOOR = R4(1, 0.52), LZ = [R4(2, 0.66), R4(2, 0.5), R4(2, 0.34)];
+  // ---------- лестницы (единая геометрия): марш от пола к площадке у торцевой стены, второй марш обратно — к площадке следующего этажа ----------
+  // ступени сняты с кадра v4_ndwa_0.jpg (768x1376, x0.2762; кадр опущен на WDY = WELLDY сборщика)
+  const SW = 212, WS = 380 / 1376, WDY = 14, HY = y => (1321 - y) * WS - WDY;   // HY: строка кадра -> высота над полом нижнего этажа клетки
+  const LOW = [[234, 1231], [277, 1185], [315, 1147], [357, 1106], [399, 1065], [440, 1020], [483, 973], [523, 936]].map(([x, y]) => [x * WS, HY(y)]);   // нижний марш: [x подступёнка, высота проступи]
+  const UPP = [[529, 849], [489, 805], [453, 767], [418, 726], [376, 690], [343, 646], [305, 607], [270, 578]].map(([x, y]) => [x * WS, Math.min(RM.pitch, HY(y))]);   // верхний марш (идём влево), последняя — площадка этажа
+  const LAND = LOW[7][1], FOOT = LOW[0][0] - 5, L0 = LOW[7][0], LMID = 590 * WS, U0 = UPP[0][0], TOPE = UPP[7][0], TOPX = TOPE - 22;
+  const ST = [{ f: 0, x0: R1(4), dir: 1 }, { f: 1, x0: R2(1), dir: -1 }, { f: 2, x0: R3(4), dir: 1 }];
+  const SX = (s, lx) => s.dir > 0 ? s.x0 + lx : s.x0 + SW - lx, LXof = (s, x) => s.dir > 0 ? x - s.x0 : s.x0 + SW - x;
+  const stepH = (lx, upper) => {   // высота нарисованной ступени под ногой: нога встаёт точно на проступь
+    let h = upper ? LAND : 0;
+    if (!upper) { for (const [x, y] of LOW) if (lx >= x + 3) h = y; } else for (const [x, y] of UPP) if (lx <= x - 3) h = y;
+    return upper && lx <= TOPE - 3 ? RM.pitch : h;
   };
-  const climb = (r, s, up) => { const pl = r.player, a = { x: s.x0 + FOOT, y: T[s.f] }, m = { x: s.x0 + TURN, y: T[s.f] - LAND }, b = { x: s.x0 + TOPX, y: T[s.f + 1] };
+  const climb = (r, s, up) => { const pl = r.player, a = { x: SX(s, FOOT), y: T[s.f] }, m = { x: SX(s, LMID), y: T[s.f] - LAND }, b = { x: SX(s, TOPX), y: T[s.f + 1] };
     pl.crouch = false; pl.auto = { i: 0, sp: 52, stair: s, up, path: up ? [a, m, b] : [b, m, a], done: () => { pl.setAnim('stand'); pl.y = up ? T[s.f + 1] : T[s.f]; } }; };
-  // ---------- мебель: [имя, x, этаж, план('b' у стены | 'f' ближе к зрителю), зеркально] ----------
+  // ---------- предметы: [имя, x, этаж, план('f' — передний, стоит на полу, за ним прячутся | 'n' — висит под потолком выше голов)] ----------
   const PR = [
-    ['door0', 58, 0, 'b'], ['coatrack', 112, 0, 'b'], ['bench', 168, 0, 'b'], ['vending', 232, 0, 'b'], ['bin', 204, 0, 'f'],
-    ['counter', 322, 0, 'b'], ['folders', 398, 0, 'b'], ['gurney', 368, 0, 'f'], ['exting', 552, 0, 'b'], ['trolley', 736, 0, 'f'],
-    ['tank', 1008, 0, 'b'], ['barrel', 826, 0, 'f'], ['barrel2', 850, 0, 'f'],
-    ['mop', 244, 1, 'b'], ['lockers4', 348, 1, 'b'], ['bench2', 350, 1, 'f'], ['sacks', 852, 1, 'b'], ['coats', 928, 1, 'b'], ['table', 1008, 1, 'b'],
-    ['suitcases', 884, 1, 'f'], ['cart', 972, 1, 'f'],
-    ['desk', 338, 2, 'b'], ['chair', 372, 2, 'f'], ['rack', 432, 2, 'b'], ['rack2', 488, 2, 'b'], ['spectank', 762, 2, 'b'], ['reel', 716, 2, 'f'], ['toolcart', 566, 2, 'b', 1], ['ladder', 846, 2, 'b'],
-    ['elcab', 44, 3, 'b'], ['crates2', 300, 3, 'f'], ['ventunit', 592, 3, 'b'], ['duct', 742, 3, 'b'], ['drums', 668, 3, 'f'],
+    ['crates', R1(2, 0.8), 0, 'f'], ['handcart', R1(3, 0.82), 0, 'f'],
+    ['laundry', R2(2, 0.32), 1, 'f'], ['sacks', R2(3, 0.38), 1, 'f'], ['toolbox', R2(3, 0.9), 1, 'f'],
+    ['spool', R3(2, 0.42), 2, 'f'], ['gas', R3(3, 0.18), 2, 'f'], ['barrier', R3(3, 0.68), 2, 'f'],
+    ['crates', R4(1, 0.84), 3, 'f'], ['barrels', R4(3, 0.36), 3, 'f'],
+    ['cables', R2(3, 0.75), 1, 'n'], ['cables', R1(2, 0.62), 0, 'n'],
   ].map(([n, x, f, pl, flip]) => ({ n, x, f, pl, flip, w: (PS[n] || [40, 40])[0], h: (PS[n] || [40, 40])[1] }));
-  const COVER = { gurney: 1, bench2: 1, suitcases: 1, cart: 1, reel: 1, drums: 1, crates: 1, crates2: 1, trolley: 1, barrel: 1 };
-  const BACK = 7, FRONT = 11, FSC = 1.14;   // задний план — у стены (выше линии ног), передний — ближе к зрителю (ниже, чуть крупнее)
+  const BACK = 12, FRONT = 12, FSC = 1.1;   // у стены — выше линии ног; передний план — ниже линии ног и чуть крупнее (стоит на полу, не двигается)
   const pimg = n => I()['pr_' + n];
-  const drawProp = (c, cx, p) => { const im = pimg(p.n); if (!im) return; const k = p.pl === 'f' ? FSC : 1, w = p.w * k, h = p.h * k, base = T[p.f] + (p.pl === 'f' ? FRONT : -BACK);
-    const x = p.x - cx + (p.pl === 'f' ? (p.x - cx - W / 2) * 0.04 : 0);   // ближний план чуть обгоняет камеру (параллакс)
+  const drawProp = (c, cx, p) => { const im = pimg(p.n); if (!im) return;
+    if (p.pl === 'n') { const x = p.x - cx, k = 0.8; if (x + p.w < -20 || x - p.w > W + 20) return; c.drawImage(im, Math.round(x - p.w * k / 2), T[p.f] - RM.top + 8, p.w * k, p.h * k); return; }
+    const w = p.w * FSC, h = p.h * FSC, base = T[p.f] + FRONT, x = p.x - cx;
     if (x + w < -20 || x - w > W + 20) return;
-    if (p.flip) { c.save(); c.translate(Math.round(x), 0); c.scale(-1, 1); c.drawImage(im, -w / 2, base - h, w, h); c.restore(); } else c.drawImage(im, Math.round(x - w / 2), base - h, w, h); };
+    c.fillStyle = 'rgba(0,0,0,0.35)'; c.beginPath(); c.ellipse(x, base - 1, w * 0.52, 3.5, 0, 0, 6.3); c.fill();
+    c.drawImage(im, Math.round(x - w / 2), base - h, w, h); };
   // ---------- укрытия: дверь/шкаф открываются по кадрам, Валера заходит вглубь и стоит в тени ----------
   D.hides = [
-    { x: 462, y: T[0], f: 0, a3: 'cab', fr: 0, label: 'спрятаться в шкаф' },
-    { x: 728, y: T[1], f: 1, a3: 'door', fr: 0, label: 'спрятаться в кладовке' },
-    { x: 470, y: T[1], f: 1, a3: 'shower', fr: 0, label: 'спрятаться в душевой' },
-    { x: 226, y: T[2], f: 2, a3: 'door', fr: 0, label: 'спрятаться в кладовке' },
+    { x: R1(2, 0.45), y: T[0], f: 0, a3: 'cab', fr: 0, label: 'в шкаф' },
+    { x: R2(3, 0.5), y: T[1], f: 1, a3: 'door', fr: 0, label: 'в кладовку' },
+    { x: R2(2, 0.72), y: T[1], f: 1, a3: 'pic', fr: 0, label: 'в душевую' },
+    { x: R3(2, 0.72), y: T[2], f: 2, a3: 'door', fr: 0, label: 'в кладовку' },
   ];
-  const drawHide = (c, cx, h) => { const base = T[h.f] - BACK;
-    if (h.a3 === 'door') { const im = pimg('door' + h.fr), s = PS['door' + h.fr]; if (im && s) c.drawImage(im, Math.round(h.x - 30.5 - cx), base - 92, s[0], s[1]); }
-    else if (h.a3 === 'cab') { const im = pimg('cab' + h.fr), s = PS['cab' + h.fr]; if (im && s) c.drawImage(im, Math.round(h.x - s[0] / 2 - cx), base - s[1], s[0], s[1]); }
-    else if (h.a3 === 'shower') { const im = pimg('shower'), s = PS.shower; if (im && s) c.drawImage(im, Math.round(h.x - s[0] / 2 - cx), base - s[1], s[0], s[1]); } };
+  const drawA3 = (c, cx, n, x, f, left) => { const im = pimg(n), s = PS[n]; if (im && s) c.drawImage(im, Math.round((left ? x - 29 : x - s[0] / 2) - cx), T[f] - BACK - s[1], s[0], s[1]); };
+  const drawHide = (c, cx, h) => { if (h.a3 === 'door') drawA3(c, cx, 'door' + h.fr, h.x, h.f, true); else if (h.a3 === 'cab') drawA3(c, cx, 'cab' + h.fr, h.x, h.f); };
+  // награды (значки «Ударник» — в статистику, еда лечит) и пасхалки; собранное не возвращается после поимки
+  const got = r => r.level.got || (r.level.got = new Set());
+  const COLL = [
+    { id: 'b1', n: 'badge', x: R1(2, 0.45), f: 0, hid: 0 }, { id: 'b2', n: 'badge', x: R2(2, 0.86), f: 1 }, { id: 'b3', n: 'badge', x: R4(1, 0.1), f: 3 },
+    { id: 'kefir', n: 'kefir', x: R2(3, 0.25), f: 1, say: 'Кефир! Ночная смена забыла.' }, { id: 'can', n: 'can', x: R3(2, 0.5), f: 2, say: 'Тушёнка. Стратегический запас.' },
+    { id: 'roll', n: 'roll', x: R3(3, 0.3), f: 2, say: 'Туалетка за три рубля! Улика.' },
+  ];
+  const take = (r, p) => { const pl = r.player, st = r.level.stats; got(r).add(p.id); Sound.play('coin');
+    if (p.n === 'badge') { st.secrets++; r.world.addScore(1000); FX.popText(p.x, T[p.f] - 70, 'ЗНАЧОК «УДАРНИК» +1000', '#ffd84a'); }
+    else if (p.n === 'roll') { st.eggs = (st.eggs || 0) + 1; r.world.addScore(500); FX.popText(p.x, T[p.f] - 70, 'ПАСХАЛКА +500', '#ffd84a'); G.say(pl, p.say, 2); }
+    else { pl.heal(30); st.food++; G.say(pl, p.say, 1.6); } };
+  const egg = (id, x, f, txt) => ({ x, y: T[f], r: 14, label: 'осмотреть', quiet: true, act: r => { if (!got(r).has(id)) { got(r).add(id); r.level.stats.eggs = (r.level.stats.eggs || 0) + 1; r.world.addScore(200); FX.popText(x, T[f] - 96, 'ПАСХАЛКА +200', '#ffd84a'); Sound.play('coin'); } G.say(r.player, txt, 2.6); } });
+  const EGGS = [egg('vend', R1(1, 0.64), 0, 'Автомат с газировкой. Сироп кончился ещё при прошлом директоре.'), egg('reg', R1(2, 0.2), 0, 'Регистратура. Талончики кончились в девяносто восьмом.'),
+    egg('socks', R2(2, 0.32), 1, 'Чьи-то носки. Химическое оружие, запрещённое всеми конвенциями.'), egg('box', R4(1, 0.66), 3, 'Щиток «Не влезай — убьёт». Влез. Не убило. Даже обидно.')];
+  D.voidAt = (x, y) => ST.some(s => { const lx = LXof(s, x); return lx > 0 && lx < SW && ((Math.abs(y - T[s.f + 1]) < 8 && lx > TOPE - 4) || (Math.abs(y - T[s.f]) < 8 && lx > FOOT + 6) || (y < T[s.f] - 8 && y > T[s.f + 1] + 8)); });   // шахта лестницы: ровного пола нет
   D.plats = [1, 2, 3].map(i => ({ x: 0, y: T[i], w: RM.w, h: 20, oneway: false }));
   const alive = (r, f, x0 = 0, x1 = 9999) => r.guards.some(g => g.alive && g.state !== 'stagger' && Math.abs(g.y - T[f]) < 5 && g.x > x0 && g.x < x1);
-  D.task = r => { const f = floorOf(r.player.y); return f === 0 ? (alive(r, 0) ? 'этаж 1: выруби часового со спины' : 'этаж 1: к лестнице') : f === 1 ? 'этаж 2: мимо собаки, камеры и кладовщика — к лестнице слева'
+  D.task = r => { const f = floorOf(r.player.y); return f === 0 ? (alive(r, 0) ? 'этаж 1: выруби часового со спины' : 'этаж 1: к лестнице справа') : f === 1 ? 'этаж 2: мимо собаки, камеры и кладовщика — к лестнице слева'
     : f === 2 ? (r.flags.twL3 ? 'этаж 3: лазер отключён — к лестнице справа' : 'этаж 3: сними охрану и отключи лазер на пульте') : r.flags.roofOpen ? 'выйти на крышу' : 'этаж 4: пройди лазеры, сними постового и взломай замок двери'; };
   D.guards = [
-    { x: 480, y: T[0], x1: 290, x2: 600, facing: -1, range: 120, sp: 36 },                   // 1: часовой (приёмная — лестничная клетка)
-    { x: 200, y: T[1], x1: 122, x2: 400, facing: 1, range: 120, sp: 34 },                    // 2: кладовщик (раздевалка)
-    { x: 380, y: T[2], x1: 285, x2: 500, facing: 1, range: 120, sp: 34 },                    // 3: мониторная
-    { x: 592, y: T[2], kind: 'post', facing: -1, range: 116, x1: 592, x2: 592 },             // 3: у пульта, вертит головой
-    { x: 720, y: T[2], x1: 676, x2: 772, facing: 1, range: 110, sp: 28 },                    // 3: между пультом и лазером
-    { x: 170, y: T[3], kind: 'post', facing: 1, range: 122, x1: 170, x2: 170 },              // 4: у двери на крышу
+    { x: R1(2, 0.6), y: T[0], x1: R1(2, 0.12), x2: R1(3, 0.25), facing: -1, range: 120, sp: 36 },          // 1: часовой (приёмная — шлюз)
+    { x: R2(2, 0.3), y: T[1], x1: R2(2, 0.08), x2: R2(2, 0.62), facing: 1, range: 120, sp: 34 },           // 2: кладовщик (раздевалка)
+    { x: R3(2, 0.4), y: T[2], x1: R3(2, 0.1), x2: R3(2, 0.9), facing: 1, range: 120, sp: 34 },             // 3: мониторная
+    { x: PANEL - 50, y: T[2], kind: 'post', facing: -1, range: 116, x1: PANEL - 50, x2: PANEL - 50 },       // 3: у пульта, вертит головой
+    { x: R3(3, 0.7), y: T[2], x1: R3(3, 0.62), x2: R3(3, 0.78), facing: 1, range: 110, sp: 28 },           // 3: между пультом и лазером
+    { x: R4(1, 0.7), y: T[3], kind: 'post', facing: 1, range: 122, x1: R4(1, 0.7), x2: R4(1, 0.7) },       // 4: у двери на крышу
   ];
-  D.dogs = [{ x: 900, y: T[1], x1: 700, x2: 1020, range: 100, facing: 1 }, { x: 680, y: T[3], x1: 600, x2: 765, range: 100, facing: -1 }];
-  D.cams = [{ x: 505, y: T[1] - 108, floorY: T[1], a0: 1.5, a1: 2.6, per: 6, range: 150, half: 0.19 }];
-  D.lasers = [{ x: 794.5, y0: T[2] - 98, y1: T[2], group: 'twL3' }, ...LZ.map((x, i) => ({ x, y0: T[3] - CEIL, y1: T[3], blink: [2.9, 1.3], ph: [0, 2.8, 1.4][i] }))];
+  D.dogs = [{ x: R2(3, 0.6), y: T[1], x1: R2(3, 0.1), x2: R2(3, 0.8), range: 100, facing: 1 }, { x: R4(3, 0.5), y: T[3], x1: R4(3, 0.3), x2: R4(3, 0.78), range: 100, facing: -1 }];
+  D.cams = [{ x: R2(2, 0.9), y: T[1] - 126, floorY: T[1], a0: 1.5, a1: 2.6, per: 6, range: 160, half: 0.19 }];
+  D.lasers = [{ x: R3(3, 0.93), y0: T[2] - CEIL, y1: T[2] + 6, group: 'twL3', v5: 1 }, ...LZ.map((x, i) => ({ x, y0: T[3] - CEIL, y1: T[3] + 6, blink: [2.9, 1.3], ph: [0, 2.8, 1.4][i], v5: 1 }))];
   const glow = (c, x, y, r, col, a) => { const g = c.createRadialGradient(x, y, 1, x, y, r); g.addColorStop(0, `rgba(${col},${a})`); g.addColorStop(1, `rgba(${col},0)`); c.fillStyle = g; c.fillRect(x - r, y - r, r * 2, r * 2); };
-  const stairImg = (c, cx, s, k) => { const im = pimg(k), z = PS.stair; if (im && z) c.drawImage(im, Math.round(s.x0 - cx), T[s.f] - 176.1, z[0], z[1]); };
+  const stairImg = (c, cx, s) => { const im = pimg(s.dir > 0 ? 'stair' : 'stair_l'), z = PS.stair; if (im && z) c.drawImage(im, Math.round(s.x0 - cx), T[s.f] + 2.8 - z[1], z[0], z[1]); };
   D.bgFn = (c, cx, r) => {
-    const cy = r.camY || 0, pl = r.player, Im = I();
-    c.save(); c.translate(0, cy); r.storm.drawSky(c, cx); if (Im.far) V4.drawFar(c, cx); r.storm.drawRain(c, cx); c.restore();   // дальний план в окнах: гроза, верфь, дождь
-    for (let n = 0; n < NF; n++) { const im = Im['fl' + (n + 1)]; if (im) c.drawImage(im, -cx, T[n] - RM.top, RM.w, RM.pitch + 0.5); }
-    const f0 = Im.fl1; if (f0) { const yb = T[0] + RM.pitch - RM.top; c.drawImage(f0, 0, f0.height - 6, f0.width, 6, -cx, yb, RM.w, 60); c.fillStyle = 'rgba(4,6,8,0.6)'; c.fillRect(0, yb, W, 60); }
-    if (Im.tw_sign) { c.globalAlpha = U.clamp(0.9 + 0.1 * Math.sin(G.t * 9) * (Math.sin(G.t * 1.7) > 0.93 ? 4 : 1), 0.4, 1); c.drawImage(Im.tw_sign, 878 - cx, T[0] - 121, 92, 17.2); c.globalAlpha = 1; }
-    const fr = D.winFr; if (fr != null && Im['tw_win' + fr]) {
-      c.drawImage(Im['tw_win' + fr], DOOR.x - DOOR.w / 2 - cx + (D.winShake || 0), DOOR.y - DOOR.h / 2, DOOR.w, DOOR.h);
-      if (D.winMix > 0 && Im.tw_win5) { c.globalAlpha = D.winMix; c.drawImage(Im.tw_win5, DOOR.x - DOOR.w / 2 - cx, DOOR.y - DOOR.h / 2, DOOR.w, DOOR.h * 254 / 249); c.globalAlpha = 1; }
+    const Im = I();
+    for (let n = 0; n < NF; n++) { const im = Im['fl' + (n + 1)]; if (im) c.drawImage(im, -cx, T[n] - RM.top, LAY.w, RM.pitch); }
+    c.fillStyle = '#05070a'; c.fillRect(0, T[0] + RM.low, W, 80);   // под зданием — фундамент
+    if (Im.tw_sign) { c.globalAlpha = U.clamp(0.9 + 0.1 * Math.sin(G.t * 9) * (Math.sin(G.t * 1.7) > 0.93 ? 4 : 1), 0.4, 1); c.drawImage(Im.tw_sign, DOOR.x - 32 * ZD - cx, T[0] - 15 - 109.5 * ZD, 64 * ZD, 11.6 * ZD); c.globalAlpha = 1; }
+    const fr = D.winFr; if (fr != null) {   // за стеклом гермодвери: бомж с ур.2 стучит -> сползает -> зелёный газ (всё строго в раме стекла)
+      const gx = DOOR.x - DOOR.w / 2 - cx, gy = DOOR.y - DOOR.h / 2, k = D.winK || 0, gas = fr >= 4 ? 1 : fr >= 2 ? 0.55 : 0.12;
+      c.save(); c.beginPath(); c.rect(gx, gy, DOOR.w, DOOR.h); c.clip();
+      c.fillStyle = '#0b1210'; c.fillRect(gx, gy, DOOR.w, DOOR.h);
+      if (k < 1) { const sh = (D.winShake || 0) * 2, by = gy + 62 * ZD + k * 46;   // бомж и алкаш с ур.2: стучат в стекло, потом сползают
+        Spr.draw(c, 'bomzh', fr === 1 ? 5 : 4, DOOR.x + 15 * ZD - cx - sh, by + 2 + k * 10, -1, { scale: 0.8 * ZD });
+        Spr.draw(c, 'bomzh', fr === 1 ? 1 : 0, DOOR.x - 13 * ZD - cx + sh, by, 1, { scale: 0.8 * ZD }); }
+      c.fillStyle = `rgba(70,230,90,${gas * (0.34 + 0.1 * Math.sin(G.t * 1.3))})`; c.fillRect(gx, gy, DOOR.w, DOOR.h);
+      if (Im.tw_win5 && gas > 0.5) { c.globalAlpha = 0.5 * (D.winMix || 0.6); c.drawImage(Im.tw_win5, gx, gy, DOOR.w, DOOR.h); c.globalAlpha = 1; }
+      c.fillStyle = 'rgba(190,230,255,0.07)'; c.beginPath(); c.moveTo(gx + 8, gy); c.lineTo(gx + 22, gy); c.lineTo(gx + 6, gy + DOOR.h); c.lineTo(gx - 8, gy + DOOR.h); c.fill();
+      c.restore();
     }
-    for (const s of ST) { c.fillStyle = 'rgba(4,6,9,0.86)'; c.fillRect(s.x0 + sx(448) - cx, T[s.f + 1] + 0.5, sx(840) - sx(448), 28); }   // проём в перекрытии под верхним маршем
-    for (const p of PR) if (p.pl === 'b') drawProp(c, cx, p);
     for (const h of D.hides) drawHide(c, cx, h);
-    { const im = pimg('door' + (D.roofFr || 0)), s = PS['door' + (D.roofFr || 0)]; if (im && s) c.drawImage(im, Math.round(ROOFDOOR - 30.5 - cx), T[3] - BACK - 92, s[0], s[1]); }   // дверь на крышу
-    for (const s of ST) { stairImg(c, cx, s, 'stair'); if (!(pl.auto && pl.auto.stair === s)) stairImg(c, cx, s, 'stair_rail'); }
+    for (const p of COLL) if (!got(r).has(p.id) && p.hid == null) { const im = pimg(p.n), z = PS[p.n]; if (im && z) { const y = T[p.f] - 6 + Math.sin(G.t * 3 + p.x) * 1.5; c.fillStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(p.x - cx, T[p.f] - 5, z[0] * 0.5, 2.5, 0, 0, 6.3); c.fill(); c.drawImage(im, Math.round(p.x - z[0] / 2 - cx), y - z[1], z[0], z[1]); } }
+    if (r.flags.roofOpen && Im.roofopen && window.V4_ROOFOPEN) { const q = window.V4_ROOFOPEN; c.drawImage(Im.roofopen, q[0] - cx, T[3] - RM.top + q[1], q[2], q[3]); }   // та же дверь распахнута, за ней — крыша под дождём
     c.save(); c.globalCompositeOperation = 'lighter';   // живой свет: бак, пульт, газ за стеклом
     const p = 0.5 + 0.5 * Math.sin(G.t * 2.2);
-    glow(c, 1008 - cx, T[0] - 52, 44, '80,255,120', 0.07 + 0.09 * p); glow(c, 762 - cx, T[2] - 58, 40, '80,255,120', 0.07 + 0.09 * (1 - p));
-    if (!r.flags.twL3) glow(c, 659 - cx, T[2] - 65, 30, '255,40,30', 0.10 + 0.14 * (0.5 + 0.5 * Math.sin(G.t * 5))); else glow(c, 659 - cx, T[2] - 65, 26, '60,255,90', 0.16);
+    glow(c, R1(3, 0.8) - cx, T[0] - 15 - 45 * ZD, 40, '80,255,120', 0.07 + 0.09 * p); glow(c, R3(3, 0.83) - cx, T[2] - 15 - 47 * ZM(3, 2), 40, '80,255,120', 0.07 + 0.09 * (1 - p));
+    if (!r.flags.twL3) glow(c, PANEL - cx, T[2] - 44, 30, '255,40,30', 0.10 + 0.14 * (0.5 + 0.5 * Math.sin(G.t * 5))); else glow(c, PANEL - cx, T[2] - 44, 26, '60,255,90', 0.16);
     if (fr >= 2) glow(c, DOOR.x - cx, DOOR.y, 60, '90,255,90', (fr >= 4 ? 0.2 : 0.1) + 0.05 * p);
     c.restore();
   };
-  D.overPlayer = (c, cx, r) => { const a = r.player.auto; if (a && a.stair) stairImg(c, cx, a.stair, 'stair_rail'); };   // на лестнице Валера — за ближними перилами
   D.drawFront = (c, cx, r) => {
-    const cy = r.camY || 0, pl = r.player;
-    for (let n = 0; n < NF; n++) { const im = I()['fl' + (n + 1)]; if (im) for (const [a, b] of [[669, 709], [1342, 1382], [2017, 2057]]) c.drawImage(im, a, 0, b - a, 76, a * RM.k - cx, T[n] - RM.top, (b - a) * RM.k, 76 * RM.k); }   // перемычки стен над проёмами — поверх персонажей
+    const cy = r.camY || 0, pl = r.player, col = pimg('wall'), z = PS.wall, Im = I();
+    for (let n = 0; n < NF; n++) { const im = Im['fl' + (n + 1)]; if (im) for (const [x, w] of (LAY.occ[n] || [])) c.drawImage(im, x * 2, 0, w * 2, im.height, x - cx, T[n] - RM.top, w, RM.pitch); }   // простенки у проёмов — поверх персонажей: вошёл в проём, вышел из соседнего
+    if (col && z) for (let n = 0; n < NF; n++) for (let m = 0; m <= 4; m++) { const q = ROW[n][Math.min(m, 3)], x = m < 4 ? q[0] : q[0] + q[1], well = m === 4 || (m === 0 && n > 0 && n < 3);   // тонкие стены-перегородки в разрезе — поверх персонажей
+      c.drawImage(col, Math.round(x - z[0] / 2 - cx), T[n] - RM.top + (well && n % 2 === 0 ? 0 : 0), z[0], z[1]); }
     for (const p of PR) if (p.pl === 'f') drawProp(c, cx, p);   // передний план — поверх всех персонажей
+    for (const p of PR) if (p.pl === 'n') drawProp(c, cx, p);   // ближний план
     c.save(); c.translate(0, cy);
-    if (r.storm.flash > 0.05) { c.globalCompositeOperation = 'lighter'; c.fillStyle = `rgba(120,130,190,${0.08 * r.storm.flash})`; c.fillRect(0, 0, W, H); c.globalCompositeOperation = 'source-over'; }
+    if (r.storm.flash > 0.05) { c.globalCompositeOperation = 'lighter'; c.fillStyle = `rgba(120,130,190,${0.05 * r.storm.flash})`; c.fillRect(0, 0, W, H); c.globalCompositeOperation = 'source-over'; }
     // значок опасности: враг на этом этаже за краем экрана
     if (!r.level.scene) for (const e of [...r.guards, ...r.dogs]) { if (e.alive === false || e.state === 'stagger' || Math.abs(e.y - pl.y) > 40) continue; const ex = e.x - cx; if ((ex > -8 && ex < W + 8) || Math.abs(e.x - pl.x) > 560) continue;
       const x = ex < 0 ? 16 : W - 16, y = e.y - cy - 60 + Math.sin(G.t * 8) * 2; c.fillStyle = '#e02818'; c.beginPath(); c.moveTo(x, y - 11); c.lineTo(x + 11, y + 8); c.lineTo(x - 11, y + 8); c.closePath(); c.fill(); G.text('!', x, y - 5, { align: 'center', size: 8, color: '#fff' }); }
     c.restore();
   };
-  const door = { x: DOOR.x, y: T[0] - 20, headH: 60, voice: 400 };
+  const door = { x: DOOR.x, y: T[0] - 20, headH: 108, voice: 400 };   // реплика — над табло, окно не закрывает
   D.update = (dt, r) => {
     const pl = r.player, f = floorOf(pl.y), a = pl.auto;
-    r.storm.update(dt, false); if (r.stairT > 0) r.stairT -= dt; if (a && a.stair) r.stairT = 4;
+    r.storm.update(dt, false); if (r.stairT > 0) r.stairT -= dt;
+    if (!r.level.scene && !r.caught) for (const p of COLL) if (!got(r).has(p.id) && (p.hid != null ? pl.seq && pl.seq.phase === 'hid' && pl.seq.h === r.hides[p.hid] : Math.abs(pl.x - p.x) < 18 && Math.abs(pl.y - T[p.f]) < 8)) take(r, p); if (a && a.stair) r.stairT = 4;
     if (a && a.stair) {   // шаг по ступеням: высота ног — по ступени под ногой
-      const s = a.stair, seg = a.up ? a.i : 3 - a.i, lx = pl.x - s.x0;
+      const s = a.stair, seg = a.up ? a.i : 3 - a.i, lx = LXof(s, pl.x);
       if (a.i > 0 && a.i < 3) pl.y = T[s.f] - stepH(lx, seg === 2);
+    } else if (!r.level.scene) for (const s of ST) {   // шахта: сквозь лестницу не пройти, на верхнем этаже над шахтой пола нет
+      const lx = LXof(s, pl.x); let lim = null;
+      if (f === s.f && lx > FOOT + 2) lim = FOOT + 2; else if (f === s.f + 1 && lx > TOPE - 8) lim = TOPE - 8;
+      if (lim != null) { pl.x = SX(s, lim); if (pl.vx * s.dir > 0) pl.vx = 0; }
     }
-    D.roofFr = r.flags.roofOpen ? 1 : 0;
     if (r.flags.dDoor === 2 && Math.random() < dt * 6) FX.burst(DOOR.x + U.rand(-40, 40), T[0] - 2, 1, { angle: -Math.PI / 2, spread: 1.6, speed: 12, colors: ['#5cd65c', '#8cf08c', '#3a9a3a'], grav: -10, life: 1.3, size: 3, drag: 1, type: 'puff' });
-    if (!r.flags.dDoor && f === 0 && pl.x > 586 && pl.onGround && !pl.auto && !r.caught && !r.level.scene) { r.flags.dDoor = 1; r.level.playOnMap(V4.sceneGasDoor(r.level, r, D)); }
+    if (!r.flags.dDoor && f === 0 && pl.x > R1(3, 0.16) && pl.onGround && !pl.auto && !r.caught && !r.level.scene) { r.flags.dDoor = 1; r.level.playOnMap(V4.sceneGasDoor(r.level, r, D)); }
     const ds = D.ds;
     if (ds) {   // сцена в окошке: бомж стучит и зовёт на помощь -> сползает -> зелёный газ
       ds.t += dt; const t = ds.t; D.winShake = 0; D.winMix = 0;
       const say = (n, text, dur) => { if (ds.said < n) { ds.said = n; G.say(door, text, dur, { shout: true }); } };
-      if (t < 2.7) { D.winFr = (t * 5.5 | 0) % 2; const k = t / 0.36 | 0; if (k >= ds.k) { ds.k = k + 1; Sound.play('land'); G.shake(1.2, 0.1); } D.winShake = D.winFr ? 1 : 0; say(1, 'ПОМОГИТЕ!!! ОТКРОЙТЕ!', 1.6); }
-      else if (t < 3.9) { D.winFr = 2; say(2, 'Я ПЕРЕДУМАЛ! Не надо мне вашей рабо...', 1.2); if (ds.k < 100) { ds.k = 100; Sound.play('zap'); } }
-      else if (t < 5.1) D.winFr = 3;
+      if (t < 2.7) { D.winK = 0; D.winFr = (t * 5.5 | 0) % 2; const k = t / 0.36 | 0; if (k >= ds.k) { ds.k = k + 1; Sound.play('land'); G.shake(1.2, 0.1); } D.winShake = D.winFr ? 1 : 0; say(1, 'ПОМОГИТЕ!!! ОТКРОЙТЕ!', 1.6); }
+      else if (t < 3.9) { D.winFr = 2; D.winK = (t - 2.7) / 1.2; say(2, 'Я ПЕРЕДУМАЛ! Не надо мне вашей рабо...', 1.2); if (ds.k < 100) { ds.k = 100; Sound.play('zap'); } }
+      else if (t < 5.1) { D.winFr = 3; D.winK = 1; }
       else { D.winFr = 4; if (t > 6.2) { r.flags.dDoor = 2; D.ds = null; } }
-    } else if (r.flags.dDoor) { D.winFr = 4; D.winMix = 0.5 + 0.5 * Math.sin(G.t * 1.3); if (r.flags.dDoor === 1 && !r.level.scene) r.flags.dDoor = 2; }
+    } else if (r.flags.dDoor) { D.winFr = 4; D.winK = 1; D.winMix = 0.5 + 0.5 * Math.sin(G.t * 1.3); if (r.flags.dDoor === 1 && !r.level.scene) r.flags.dDoor = 2; }
     if (!r.caught && pl.onGround && !pl.auto && f > (r.flags.dCp || 0)) {   // чекпоинт — каждый новый этаж
-      r.flags.dCp = f; r.cp = { id: 'D', x: ST[f - 1].x0 + 30, face: f === 2 ? 1 : -1 }; r.saved = { flags: Object.assign({}, r.flags), ko: new Set(r.ko) }; FX.popText(pl.x, pl.y - 96, 'ЭТАЖ ' + (f + 1), '#8cf08c');
+      r.flags.dCp = f; r.cp = { id: 'D', x: SX(ST[f - 1], TOPX), face: -ST[f - 1].dir }; r.saved = { flags: Object.assign({}, r.flags), ko: new Set(r.ko) }; FX.popText(pl.x, pl.y - 96, 'ЭТАЖ ' + (f + 1), '#8cf08c');
     }
   };
   D.onLoad = r => {
     const pl = r.player, wd = r.world, cp = r.flags.dCp || 0;
-    for (const p of PR) if (p.pl === 'f' && COVER[p.n]) r.covers.push({ x1: p.x - p.w * 0.45, x2: p.x + p.w * 0.45, y: T[p.f] });
+    r.level.stats.secretsTotal = 5; r.level.stats.eggsTotal = EGGS.length + 1;
+    for (const p of PR) if (p.pl === 'f') r.covers.push({ x1: p.x - p.w * 0.45, x2: p.x + p.w * 0.45, y: T[p.f] });
     for (const cam of r.cams) cam.draw = function (c, cx, cy, rr) {   // камера из Flow + луч (свет)
-      const x = this.x - cx, y = this.y - cy, left = Math.cos(this.a) < 0, im = V4.img.tw_cam;
+      const x = this.x - cx, y = this.y - cy, mid = (this.a0 + this.a1) / 2, left = Math.cos(mid) < 0, im = V4.img.tw_cam;   // сторона — по середине сектора, головка плавно поворачивается
       const g = c.createRadialGradient(x, y, 4, x, y, this.range), col = this.see > 0.05 ? '255,60,40' : '150,255,235';
       g.addColorStop(0, `rgba(${col},0.34)`); g.addColorStop(1, `rgba(${col},0)`); c.fillStyle = g; c.beginPath(); c.moveTo(x, y); c.arc(x, y, this.range, this.a - this.half, this.a + this.half); c.closePath(); c.fill();
-      if (im) { c.save(); c.translate(x, y - 6); if (left) c.scale(-1, 1); c.drawImage(im, -18, -8, im.width * 0.2, im.height * 0.2); c.restore(); }
+      if (im) { const k = 0.2, sw = im.width, hy = 64, px = 66;   // кронштейн неподвижен (нижняя часть картинки), поворачивается только головка камеры вокруг шарнира
+        c.save(); c.translate(x, y - 6); if (left) c.scale(-1, 1); c.drawImage(im, 0, hy, sw, im.height - hy, -18, -8 + hy * k, sw * k, (im.height - hy) * k);
+        c.translate(-18 + px * k, -8 + hy * k); c.rotate((left ? -1 : 1) * (this.a - mid) * 0.8); c.drawImage(im, 0, 0, sw, hy, -px * k, -hy * k, sw * k, hy * k); c.restore(); }
     };
     if (cp) { pl.y = T[cp]; wd.cam.y = U.clamp(pl.y - 236, D.topY, 0); }
-    else { pl.x = 70; if (!r.flags.dIn) { r.flags.dIn = 1; G.say(pl, 'Цех сортировки... Тихо, как в морге.', 2.6); } }
+    else { pl.x = 50; if (!r.flags.dIn) { r.flags.dIn = 1; G.say(pl, 'Цех сортировки... Тихо, как в морге.', 2.6); } }
     wd.cam.x = U.clamp(pl.x - W / 2, 0, D.w - W);
   };
   const on = f => r => Math.abs(r.player.y - T[f]) < 8;
   D.ints = [
-    ...ST.map(s => ({ x: s.x0 + FOOT, y: T[s.f], r: 18, label: 'подняться по лестнице', act: r => climb(r, s, true) })),
-    ...ST.map(s => ({ x: s.x0 + TOPX, y: T[s.f + 1], r: 12, label: 'спуститься по лестнице', cond: r => !(r.stairT > 0), act: r => climb(r, s, false) })),
-    { x: PANEL, y: T[2], r: 22, label: 'пульт лазерной защиты', cond: r => !r.flags.twL3 && !alive(r, 2, 539, 800), act: r => { r.player.setAnim('panel4'); r.startMG('lasers', ok => { if (ok) { r.flags.twL3 = 1; Sound.play('zap'); G.say(r.player, 'Лазер сдох. Путь свободен.', 1.8); } }); } },
-    { x: LOCK, y: T[3], r: 16, label: 'взломать замок двери', cond: r => !r.flags.roofOpen && !alive(r, 3), act: r => { r.player.setAnim('panel4'); r.startMG('wires', ok => { if (ok) { r.flags.roofOpen = 1; Sound.play('zap'); Sound.play('door'); G.say(r.player, 'Коротнуло — и открыто!', 1.6); } }); r.mg.title = 'ДВЕРЬ НА КРЫШУ: ЗАМКНИ ПРОВОДА'; r.mg.okMsg = 'ЗАМОК СГОРЕЛ. ОТКРЫТО!'; } },
-    { x: ROOFDOOR, y: T[3], r: 24, label: 'выйти на крышу', cond: r => r.flags.roofOpen, act: r => r.level.roofExit(r) },
+    ...ST.map(s => ({ x: SX(s, FOOT), y: T[s.f], r: 18, label: 'наверх', act: r => climb(r, s, true) })),
+    ...ST.map(s => ({ x: SX(s, TOPX), y: T[s.f + 1], r: 14, key: 'down', label: 'вниз', cond: r => !(r.stairT > 0), act: r => climb(r, s, false) })),
+    { x: PANEL, y: T[2], r: 22, label: 'пульт лазеров', cond: r => !r.flags.twL3 && !alive(r, 2, R3(3), R3(4)), act: r => { r.player.setAnim('panel4'); r.startMG('lasers', ok => { if (ok) { r.flags.twL3 = 1; Sound.play('zap'); G.say(r.player, 'Лазер сдох. Путь свободен.', 1.8); } }); } },
+    { x: LOCK, y: T[3], r: 16, label: 'замок двери', cond: r => !r.flags.roofOpen && !alive(r, 3), act: r => { r.player.setAnim('panel4'); r.startMG('wires', ok => { if (ok) { r.flags.roofOpen = 1; Sound.play('zap'); Sound.play('door'); G.say(r.player, 'Коротнуло — и открыто!', 1.6); } }); r.mg.title = 'ДВЕРЬ НА КРЫШУ: ЗАМКНИ ПРОВОДА'; r.mg.okMsg = 'ЗАМОК СГОРЕЛ. ОТКРЫТО!'; } },
+    { x: ROOFDOOR, y: T[3], r: 20, label: 'на крышу', cond: r => r.flags.roofOpen, act: r => r.level.roofExit(r) },
+    ...EGGS,
   ];
-  D.hints = [
-    { x1: 0, x2: 1100, text: 'Часовой идёт сюда. Не подходи — дождись, когда повернётся спиной, догони и бей: {punch}', cond: r => on(0)(r) && alive(r, 0) },
-    { x1: 0, x2: 600, text: 'Чисто. Лестничная клетка — направо', cond: on(0) },
-    { x1: 600, x2: 1100, text: 'Собака! На четвереньки ({down}) — ползущего она не тронет. Или пережди в кладовке ({up})', cond: on(1) },
-    { x1: 400, x2: 600, text: 'Камера! Проскочи, пока луч в стороне, и ныряй в душевую — {up}', cond: on(1) },
-    { x1: 0, x2: 400, text: 'Кладовщик. Со спины — {punch}. Лестница наверх — в дальнем конце', cond: on(1) },
-    { x1: 0, x2: 530, text: 'Мониторная. Первого догони со спины — {punch}', cond: r => on(2)(r) && alive(r, 2, 0, 530) },
-    { x1: 0, x2: 800, text: 'Пульт сторожат двое: один вертит головой, другой ходит. Бей, когда отвернутся', cond: r => on(2)(r) && !r.flags.twL3 && alive(r, 2, 539, 800) },
-    { x1: 0, x2: 800, text: 'Охрана снята. Красная кнопка на пульте — {up}', cond: r => on(2)(r) && !r.flags.twL3 },
-    { x1: 540, x2: 1100, text: 'Опять собака. Ползком ({down}) мимо неё — налево', cond: on(3) },
-    { x1: 300, x2: 540, text: 'Лазеры гаснут по очереди. Перебегай по одному и жди в промежутке — там как раз место для Валеры', cond: on(3) },
-    { x1: 0, x2: 300, text: 'Последний пост. За ящики ({down}), дождись, когда отвернётся, — {punch}. Потом щиток замка — {up}', cond: r => on(3)(r) && !r.flags.roofOpen },
-  ];
+  D.hints = [];   // текстовых подсказок нет — только указатели у объектов
   return D;
 };
 

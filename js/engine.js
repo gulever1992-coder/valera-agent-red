@@ -1,7 +1,7 @@
 'use strict';
 // ============ ДВИЖОК: экран, ввод, звук, утилиты, частицы, текст ============
 const W = 640, H = 360;
-const G = { W, H, t: 0, dt: 0, debug: false, VER: '353' };
+const G = { W, H, t: 0, dt: 0, debug: false, VER: '410' };
 window.G = G;
 
 const canvas = document.getElementById('game');
@@ -196,6 +196,7 @@ const Sound = {
       case 'blip': s.tone(p, 0.035, { type: 'square', vol: 0.05 }); break;
       case 'stomp': s.noise(0.1, { freq: 300, vol: 0.4 }); s.tone(60, 0.12, { type: 'sine', vol: 0.35 }); break;
       case 'boom': s.noise(0.6, { freq: 800, slide: 60, vol: 0.5 }); s.tone(55, 0.5, { type: 'sine', vol: 0.4, slide: 30 }); break;
+      case 'crow': [[520, 600, 0, 0.11], [600, 640, 0.13, 0.1], [700, 760, 0.25, 0.12], [780, 520, 0.4, 0.55]].forEach(([a, b, d, l]) => { s.tone(a, l, { type: 'sawtooth', vol: 0.11, slide: b, delay: d }); s.tone(a * 1.5, l, { type: 'square', vol: 0.03, slide: b * 1.5, delay: d }); }); break;
       case 'shout': s.tone(180, 0.35, { type: 'sawtooth', vol: 0.12, slide: 240 }); s.tone(186, 0.35, { type: 'sawtooth', vol: 0.1, slide: 250 }); break;
       case 'deflect': s.tone(900, 0.08, { vol: 0.15 }); s.tone(1800, 0.15, { type: 'triangle', vol: 0.15, delay: 0.04 }); break;
       case 'crane': s.tone(70, 0.8, { type: 'sawtooth', vol: 0.12, slide: 90 }); s.noise(0.8, { freq: 300, vol: 0.1 }); break;
