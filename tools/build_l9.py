@@ -1,0 +1,178 @@
+# Сборка ассетов уровня 9: art_src/l9/*.jpg (Flow) -> assets/l9/*.png|jpg + js/l9_data.js
+# Запуск: py tools/build_l9.py [--debug]   (потом py tools/optimize_assets.py)
+import os, sys, json
+sys.path.insert(0, os.path.dirname(__file__))
+from l9lib import *
+import l9lib
+
+DATA = l9lib.DATA
+# выбранные варианты Flow (_0/_1)
+HCAP, HEN, HCOP, ARCH, HBAR, TUNA, TUNB = 'l9hcap_1.jpg', 'l9hen_2.jpg', 'l9hcop_1.jpg', 'l9arch_0.jpg', 'l9hbar_1.jpg', 'l9tunA_0.jpg', 'l9tunB_1.jpg'
+
+# ---------- A. ТОННЕЛЬ ----------
+# капсула Валеры (l9capv_0: ряды 3/4/4)
+cv = cut('l9capv_0.jpg', 'mf', 3, [3, 4, 4], clean=True)
+CAP_W = 300                                   # длина капсулы в px холста (150 логических)
+k = CAP_W / cv[0].width
+pack('cap9', [cv[0], cv[1], cv[3], cv[6], cv[7], cv[8], cv[9], cv[10]], k,
+     names=['run', 'run2', 'idle', 'crack', 'fire', 'fireUp', 'hit', 'wreck'])
+# вражеские капсулы (l9cape_1: 3 капсулы x [едет, бросок, перевёрнута])
+ce = cut('l9cape_1.jpg', 'mf', 3, 3, clean=True)
+for i, nm in enumerate(['capA9', 'capB9', 'capC9']):
+    fr = ce[i * 3:i * 3 + 3]
+    pack(nm, fr, CAP_W / fr[0].width, names=['run', 'throw', 'flip'])
+# поезд: локомотив, вагон, хвост (одна высота)
+tr = cut('l9train_1.jpg', 'mf', 3, 1, clean=True)
+TR_H = 150
+pack('train9', tr, TR_H / tr[1].height, names=['loco', 'wagon', 'tail'])
+# дрезина охраны
+dz = cut('l9drez_0.jpg', 'mf', 2, 3, clean=True)
+pack('drez9', dz, CAP_W * 0.62 / dz[0].width, names=['run', 'fire', 'fireBack', 'shout', 'hit', 'wreck'])
+# препятствия
+pr = cut('l9props_1.jpg', 'm', 3, 4, clean='edge')
+pack('prop9', pr, 0.62, names=['barrel', 'barrel2', 'barrelLeak', 'slab', 'boom', 'boomUp', 'cable', 'slime', 'bottle', 'scrap', 'lampOn', 'lampOff'])
+# передний план тоннеля
+fg = cut('l9fg1_0.jpg', 'm', 2, 4, mode='grid', clean='edge')
+pack('fgT9', fg, 1.0, names=['pillar', 'rib', 'cables', 'pipe', 'fence', 'crates', 'lamp', 'broken'])
+# виадук (пещера): ровный кусок и обломанный край
+vi = cut('l9via_1.jpg', 'm', 2, 3, clean='edge')
+pack('via9', vi, 0.9, anchor='mid', names=['flat', 'up', 'down', 'cUp', 'cTop', 'broken'])
+
+# эффекты на чёрном: рисуются наложением 'lighter' — режем сеткой без кея
+def black_grid(name, rows, cols, out, names, scale=0.6):
+    im = Image.open(os.path.join(SRC, name)).convert('RGB'); W, H = im.size
+    frs = []
+    for j in range(rows):
+        for i in range(cols):
+            c = im.crop((W * i // cols + 4, H * j // rows + 4, W * (i + 1) // cols - 4, H * (j + 1) // rows - 4))
+            a = np.asarray(c).max(2); ys, xs = np.where(a > 24)
+            if len(xs): c = c.crop((max(0, xs.min() - 6), max(0, ys.min() - 6), min(c.width, xs.max() + 7), min(c.height, ys.max() + 7)))
+            frs.append(c.resize((max(1, round(c.width * scale)), max(1, round(c.height * scale))), Image.LANCZOS))
+    Wd = sum(f.width + 2 for f in frs) + 2; Hd = max(f.height for f in frs) + 2
+    sh = Image.new('RGB', (Wd, Hd), (0, 0, 0)); x = 1; meta = []
+    for f in frs:
+        sh.paste(f, (x, 1)); meta.append([x, 1, f.width, f.height, f.width // 2, f.height // 2]); x += f.width + 2
+    sh.save(os.path.join(OUT, out + '.jpg'), quality=92)
+    DATA[out] = {'f': meta, 'n': names, 'add': 1}
+    print('%-8s %4dx%-4d кадров %d (lighter)' % (out, Wd, Hd, len(frs)))
+black_grid('l9fxa_0.jpg', 3, 4, 'fxA9', ['boom0', 'boom1', 'boom2', 'boom3', 'fire0', 'fire1', 'fire2', 'fire3', 'plasma', 'flash', 'spark', 'steam'])
+
+# фоны тоннеля: кадр -> высота 720; линия «стена/пол» и три рельса (доли высоты) — замер ниже
+DATA['_bg'] = {}
+def bg(out, name, wall_k=None):
+    im = Image.open(os.path.join(SRC, name)).convert('RGB')
+    im = im.resize((round(im.width * 720 / im.height), 720), Image.LANCZOS)
+    im.save(os.path.join(OUT, out + '.jpg'), quality=90)
+    DATA['_bg'][out] = {'w': im.width, 'h': 720, 'wall': wall_k}
+    return im
+# стены зон: часть кадра над полом (cut — линия низа стены на высоте 720) -> высота WALL_H; пол общий (l9floor)
+WALL_H, FLOOR_H = 444, 290
+def wall(out, name, cutk):
+    im = Image.open(os.path.join(SRC, name)).convert('RGB')
+    im = im.resize((round(im.width * 720 / im.height), 720), Image.LANCZOS)
+    im = im.crop((0, 0, im.width, cutk)).resize((im.width, WALL_H), Image.LANCZOS)
+    im.save(os.path.join(OUT, out + '.jpg'), quality=90)
+    DATA['_bg'][out] = {'w': im.width, 'h': WALL_H}
+for out, nm, ck in (('wTun1', 'l9tun1_0.jpg', 492), ('wSta1', 'l9tun2_0.jpg', 492), ('wSta2', 'l9tun2_1.jpg', 468), ('wPip1', 'l9tun3_0.jpg', 462),
+                    ('wPip2', 'l9tun3_1.jpg', 512), ('wLock', 'l9tun5_0.jpg', 490)):
+    wall(out, nm, ck)
+fl = Image.open(os.path.join(SRC, 'l9floor_0.jpg')).convert('RGB')
+fl = fl.resize((round(fl.width * FLOOR_H / fl.height), FLOOR_H), Image.LANCZOS); fl.save(os.path.join(OUT, 'floor9.jpg'), quality=90)
+DATA['_bg']['floor9'] = {'w': fl.width, 'h': FLOOR_H}
+for out, nm in (('cave1', 'l9tun4_0.jpg'), ('cave2', 'l9tun4_1.jpg')):
+    bg(out, nm)
+
+# ---------- Валера сбоку (лаборатория) ----------
+VH = 168   # рост стоя, px холста (84 логических)
+r0 = cut('l9vrun_0.jpg', 'm', 2, 4, clean=True)
+k = VH / hgt(r0, 0) * 1.0
+pack('vRun9', r0, k, names=['r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7'])
+pack('vRunUD9', cut('l9vrunud_0.jpg', 'm', 2, 4, clean=True), k, names=['u0', 'u1', 'u2', 'u3', 'd0', 'd1', 'd2', 'd3'])
+pack('vAim9', cut('l9vaim3_0.jpg', 'm', 2, 4, clean=True), k, names=['stand', 'fire', 'diag', 'up', 'down', 'crouch', 'crouchFire', 'crouchDiag'])
+pack('vJump9', cut('l9vjump2_0.jpg', 'm', 2, 4, clean=True), k, names=['take', 'rise', 'flip1', 'flip2', 'flip3', 'fallDown', 'fallDiag', 'land'])
+pack('vRoll9', cut('l9vroll2_0.jpg', 'm', 2, 4, clean=True), k, names=['roll0', 'roll1', 'roll2', 'roll3', 'butt0', 'butt1', 'butt2', 'butt3'])
+pack('vClimb9', cut('l9vclimb2_1.jpg', 'm', 2, 4, clean=True), k, names=['c0', 'c1', 'c2', 'c3', 'hit', 'stagger', 'fall', 'down'])
+pack('vRage9', cut('l9vrage2_0.jpg', 'm', 2, 4, clean=True), k, names=['stance', 'jab', 'hook', 'upper', 'head', 'hammer', 'kick', 'roar'])
+# ---------- враги лаборатории ----------
+eh = cut('l9eHat_1.jpg', 'm', 2, [8, 6], clean=True)
+pack('eHat9', eh, VH * 1.02 / hgt(eh, 0), names=['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'wind', 'throw', 'crouch', 'jump', 'hit', 'dead'])
+ea = cut('l9eArm_1.jpg', 'm', 2, 6, mode='grid', clean='edge')
+pack('eArm9', ea, VH * 1.18 / hgt(ea, 0), names=['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'raise', 'slam', 'block', 'roar', 'hit', 'dead'])
+
+# ---------- лаборатория: платформы, механизмы, фоны ----------
+pl = cut('l9plat_1.jpg', 'm', 3, 4, mode='grid', clean='edge')
+pack('plat9', pl, 0.5, anchor='mid', names=['walk', 'walkL', 'walkR', 'rail', 'ladder', 'ladderTop', 'block', 'stairs', 'lift', 'column', 'walkBroken', 'pipe'])
+va = cut('l9vat_1.jpg', 'm', 2, 4, clean=True)
+pack('vat9', va, 0.62, names=['v0', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'])
+tvs = cut('l9tv_0.jpg', 'm', 2, 4, clean=True)
+pack('tv9', tvs, 0.42, anchor='mid', names=['off', 'noise', 'x0', 'x1', 'x2', 'x3', 'broken', 'smoke'])
+for out, nm in (('lab1a', 'l9lab1_0.jpg'), ('lab1b', 'l9lab1_1.jpg'), ('lab1c', 'l9lab1b_0.jpg'), ('lab1d', 'l9lab1b_1.jpg')):
+    bg(out, nm)
+
+for out, nm in (('lab2a', 'l9lab2_0.jpg'), ('lab2b', 'l9lab2_1.jpg'), ('lab3a', 'l9lab3_0.jpg'), ('lab3b', 'l9lab3_1.jpg'), ('lab4a', 'l9lab4_0.jpg'), ('lab4b', 'l9lab4_1.jpg'), ('lab5a', 'l9lab5_0.jpg'), ('lab5b', 'l9lab5_1.jpg')):
+    bg(out, nm)
+cv2 = cut('l9conv_0.jpg', 'm', 3, 4, mode='grid', clean='edge')
+pack('conv9', cv2, 0.5, anchor='mid', names=['belt0', 'belt1', 'belt2', 'belt3', 'bum', 'drunk', 'thug', 'lady', 'arm0', 'arm1', 'hook', 'chute'])
+mc = cut('l9mech_0.jpg', 'm', 3, 4, mode='grid', clean='edge')
+pack('mech9', mc, 0.5, anchor='mid', names=['gear0', 'gear1', 'gear2', 'gear3', 'valve0', 'valve1', 'valve2', 'lift', 'tur', 'turFire', 'turDead', 'laser'])
+co = cut('l9cover_0.jpg', 'm', 3, 4, mode='grid', clean='edge')
+pack('cover9', co, 0.5, names=['crates', 'cratesHit', 'barrier', 'console', 'consoleDead', 'tube', 'tubeDead', 'gas', 'waste', 'wasteBoom', 'door', 'doorOpen'])
+black_grid('l9fxl_0.jpg', 4, 4, 'fxL9', ['laser', 'laserHit', 'smoke', 'smoke2', 'tracer', 'plasma', 'plasmaHit', 'fireball', 'rocket', 'rocketBoom', 'acid', 'acidHit', 'wave', 'seed', 'muzzle', 'spark'])
+pk = cut('l9pick_0.jpg', 'm', 2, 5, mode='grid', clean='edge')
+pack('pick9', pk, 0.4, anchor='mid', names=['pist', 'mini', 'plasma', 'rocket', 'seed', 'grenades', 'kefir', 'pies', 'ammo', 'card'])
+co2 = cut('l9capout_0.jpg', 'mf', 2, 2, clean=True)
+pack('capOut9', co2, CAP_W / co2[0].width, names=['sit', 'stand', 'step', 'empty'])
+# враги лаборатории (2)
+for sh, src, rows, cols, names, hk in (
+    ('eStump9', 'l9eStump_0.jpg', 2, 6, ['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'wall', 'ceil', 'beep', 'boom', 'hit', 'dead'], 0.62),
+    ('eFly9', 'l9eFly_0.jpg', 2, 6, ['h0', 'h1', 'h2', 'h3', 'h4', 'h5', 'dive', 'drill', 'bomb', 'laugh', 'hit', 'dead'], 1.0),
+    ('eSpit9', 'l9eSpit_0.jpg', 2, 6, ['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'inflate', 'spit', 'crouch', 'scream', 'hit', 'dead'], 1.02),
+    ('eCrawl9', 'l9eCrawl_0.jpg', 2, 6, ['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'drop', 'land', 'leap', 'slash', 'hit', 'dead'], 0.75)):
+    fr = cut(src, 'm', rows, cols, mode='grid', clean='edge')
+    pack(sh, fr, VH * hk / hgt(fr, 0), names=names)
+
+ew = cut('l9eWeld_0.jpg', 'm', 3, [8, 7, 8], clean=True)
+pack('eWeld9', ew[:8] + [ew[9], ew[10], ew[11], ew[12], ew[14], ew[22]], VH * 1.0 / hgt(ew, 0), names=['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'mask', 'flame', 'shield', 'laugh', 'hit', 'dead'])
+es = cut('l9eSuper_1.jpg', 'm', 3, [6, 4, 3], clean=True)
+pack('eSuper9', es, VH * 1.2 / hgt(es, 0), names=['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'spin', 'fire', 'taunt', 'stagger', 'stagger2', 'kneel', 'dead'])
+# лента конвейера: верхний ряд — 4 кадра движения (режем по промежуткам)
+bl = cut('l9conv_0.jpg', 'm', 3, [4, 4, 4], clean='edge')
+pack('belt9', bl[:4], 0.5, anchor='mid', names=['b0', 'b1', 'b2', 'b3'])
+
+# ---------- ПОГОНЯ v2: капсулы на магнитной подушке, банды, бронегрузовик, бесшовный тоннель ----------
+def have(n): return os.path.exists(os.path.join(SRC, n))
+if have('l9hcap_0.jpg'):
+    hc = cut(HCAP, 'mf', 2, 4, clean=True)
+    pack('hcap9', hc, CAP_W / hc[0].width, names=['run', 'fire', 'fireBack', 'fireUp', 'bankUp', 'bankDown', 'hit', 'wreck'])
+if have('l9hen_0.jpg'):
+    he = cut(HEN, 'mf', 3, 3, clean=True)
+    for i, nm in enumerate(['henA9', 'henB9', 'henC9']):
+        fr = he[i * 3:i * 3 + 3]; pack(nm, fr, CAP_W / fr[0].width, names=['run', 'fire', 'fireBack'])
+if have('l9hcop_0.jpg'):
+    hp = cut(HCOP, 'mf', 2, 2, clean=True)
+    pack('hcop9', hp, CAP_W * 1.9 / hp[0].width, names=['run', 'fire', 'dmg', 'boom'])
+if have('l9arch_0.jpg'):
+    ar = cut(ARCH, 'm', 1, 4, mode='grid', clean='edge')
+    pack('arch9', ar, 760 / max(f.height for f in ar), names=['rib', 'pipes', 'pillar', 'glass'])
+if have('l9hbar_0.jpg'):
+    hb = cut(HBAR, 'm', 2, 4, mode='grid', clean='edge')
+    pack('hbar9', hb, 0.62, names=['barrel', 'barrel2', 'barrelLeak', 'rubble', 'wreck', 'beam', 'slime', 'crate'])
+if have('l9tunA_0.jpg'):
+    im = Image.open(os.path.join(SRC, TUNA)).convert('RGB'); W, H = im.size
+    wall = seamless(im.crop((0, 0, W, int(H * 0.74)))); wall = wall.resize((round(wall.width * 500 / wall.height), 500), Image.LANCZOS); wall.save(os.path.join(OUT, 'tunWall.jpg'), quality=90)
+    flo = seamless(im.crop((0, int(H * 0.66), W, H))); flo = flo.resize((round(flo.width * 260 / flo.height), 260), Image.LANCZOS).convert('RGBA'); al = np.full((260, flo.width), 255, np.uint8); al[:64] = (np.linspace(0, 1, 64) ** 1.4 * 255)[:, None]; flo.putalpha(Image.fromarray(al)); flo.save(os.path.join(OUT, 'tunFloor.png'))   # верх пола плавно растворяется в стене — без шва
+    DATA['_bg']['tunWall'] = {'w': wall.width, 'h': 500}; DATA.setdefault('_bgp', {})['tunFloor'] = 1
+if have('l9tunB_0.jpg'):
+    a, m = key_flood(load(TUNB)); H = a.shape[0]
+    rgba = np.dstack([a, np.where(m, 0, 255)]).astype(np.uint8)[:int(H * 0.55)]
+    ce = seamless(Image.fromarray(rgba, 'RGBA')); ce = ce.resize((round(ce.width * 300 / ce.height), 300), Image.LANCZOS)
+    ce.save(os.path.join(OUT, 'tunCeil.png')); DATA.setdefault('_bgp', {})['tunCeil'] = 1
+
+open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
+
+if DBG:
+    for n in DATA:
+        if n.startswith('_') or DATA[n].get('add'): continue
+        im = Image.open(os.path.join(OUT, n + '.png'))
+        bgc = Image.new('RGB', im.size, (60, 70, 90)); bgc.paste(im, (0, 0), im)
+        bgc.save(os.path.join(SRC, '_dbg_' + n + '.jpg'), quality=88)

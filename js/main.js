@@ -218,6 +218,7 @@ const LEVELS = [
   { id: 6, name: 'ГРИБНОЙ ДОЖДЬ', sub: 'Лес, болото, дюны. Ванделорд', start: () => startLevel6() },
   { id: 7, name: 'ЗАВОДОУПРАВЛЕНИЕ', sub: 'Стелс под дождём. Главный зал', start: () => startLevel7() },
   { id: 8, name: 'ЗАКУЛИСЬЕ', sub: 'Тир. Зомби, кран, роботы', start: () => startLevel8() },
+  { id: 9, name: 'ПОДЗЕМКА', sub: 'Капсула, лаборатория, Семён', start: () => startLevel9() },
 ];
 // ТЕСТ: все уровни открыты. Вернуть открытие по прохождению — поставить OPEN_ALL = false
 const OPEN_ALL = true;
@@ -313,7 +314,7 @@ function update(dt) {
     case 'results': {
       const r = App.results;
       r.shown += dt;
-      if (r.shown > 1 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch'))) { Sound.play('confirm'); if (r.id === 1) startLevel2(); else if (r.id === 2) startLevel3(); else if (r.id === 3) startLevel4(); else if (r.id === 4) startLevel5(); else if (r.id === 5) startLevel6(); else if (r.id === 6) startLevel7(); else if (r.id === 7) startLevel8(); else { setState('soon'); Music.play('title'); } }
+      if (r.shown > 1 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch'))) { Sound.play('confirm'); if (r.id === 1) startLevel2(); else if (r.id === 2) startLevel3(); else if (r.id === 3) startLevel4(); else if (r.id === 4) startLevel5(); else if (r.id === 5) startLevel6(); else if (r.id === 6) startLevel7(); else if (r.id === 7) startLevel8(); else if (r.id === 8) startLevel9(); else { setState('soon'); Music.play('title'); } }
       break;
     }
     case 'soon':
@@ -575,6 +576,7 @@ function frame(now) {
   else if (q.has('l6eat')) startLevel6({ grown: true });
   else if (q.has('l6')) startLevel6();
   else if (q.has('l8')) startLevel8({ stage: q.get('l8') || 'A' });
+  else if (q.has('l9')) startLevel9({ part: q.get('l9') || 'tun', ck: +(q.get('ck') || 0) });
   else if (q.has('l7v4')) startLevel7({ stage: q.get('l7v4') || 'intro' });
   else if (q.has('l7wall')) startLevel7({ wall: true });
   else if (q.has('l7yard')) startLevel7({ yard: true });

@@ -2,7 +2,7 @@
 // __job2(имя) — прикрепляет референсы и вводит промпт; отправка — настоящий клик по стрелке (__sendBtn() даёт координаты).
 (() => {
   const sl = ms => new Promise(r => setTimeout(r, ms));
-  const dlgInp = () => [...document.querySelectorAll('input')].find(i => /Поиск объектов|Search assets/.test(i.placeholder));
+  const dlgInp = () => [...document.querySelectorAll('input')].find(i => /^Поиск|^Search/.test(i.placeholder));
   window.__plus = () => { const ed = document.querySelector('[contenteditable=true]'); let p = ed; for (let i = 0; i < 6; i++) { p = p.parentElement; const b = [...p.querySelectorAll('button')].find(b => b.textContent.trim() === 'add'); if (b) return b; } return null; };
   window.__q = async q => { const inp = dlgInp(); inp.focus(); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(inp, q); inp.dispatchEvent(new Event('input', { bubbles: true })); await sl(1200); };
   window.__pick = async name => { await window.__q(name); const b = [...document.querySelectorAll('button.asset-item')].find(b => b.querySelector('.asset-title')?.textContent.trim() === name); if (!b) return 'nf:' + name; b.click(); await sl(500);
