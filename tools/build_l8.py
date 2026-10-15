@@ -306,14 +306,29 @@ single('bossbg', 'l8bgBoss_1.jpg', 0.62)
 single('labbg', 'l8bgLab_0.jpg')
 panels('l8fxF_1.jpg', 2, 2, 'fall'); panels('l8cutMon_1.jpg', 2, 2, 'mon'); panels('l8cutTun_0.jpg', 2, 2, 'tun'); panels('l8cutCap_0.jpg', 1, 2, 'cap')
 
-MEGA_B, MEGA_C = 0, 0     # выбранные варианты листов мегаробота
+MEGA_B, MEGA_C = 0, 1     # выбранные варианты листов мегаробота
 RK = 1.55      # боссы крупнее исходника (гиганты)
 ro = cut('l8roo_0.jpg', 'm', 2, 4, clean=True)
 pack('roo8', ro, RK, names=['flyA', 'flyB', 'missile', 'gust', 'peck', 'standA', 'standB', 'dmg'])
 sp = cut('l8spi_0.jpg', 'm', 2, 4, mode='grid', clean='edge')
 pack('spi8', sp, RK, anchor='mid', names=['wallA', 'wallB', 'laser', 'jump', 'floorA', 'floorB', 'hatch', 'dmg'])
 vn = cut('l8van_0.jpg', 'm', 2, 3, mode='grid', clean='edge', fx=True)
-pack('van8', vn[:3], 1.5, names=['vanA', 'vanB', 'wreck']); pack('max8', vn[3:], 0.62, names=['sit', 'wind', 'throw'])
+pack('van8', vn[:3], 1.5, names=['vanA', 'vanB', 'wreck'])
+def nobeam(im):
+    """Убрать стальную балку из-под Максима. Чистка линий сетки съела пустые ряды над и под балкой (они режут ноги) —
+    балку стираем, щель над ней заполняем рядом сверху, всё ниже — рядом голеней под балкой."""
+    a = np.asarray(im).copy(); op = a[..., 3] > 100; H, W = op.shape
+    rows = np.where(op.mean(1) > 0.8)[0]                 # балка — единственное, что идёт во всю ширину
+    if not len(rows): return im
+    gs = rows.min()
+    while gs > 1 and not op[gs - 1].any(): gs -= 1     # пустые ряды над балкой
+    b = rows.max() + 1
+    while b < H - 1 and not op[b].any(): b += 1        # первый ряд голеней под балкой
+    up, dn = a[gs - 1].copy(), a[b].copy(); a[gs:b, :, 3] = 0
+    for y in range(gs, rows.min()): m = up[:, 3] > 100; a[y, m] = up[m]
+    for y in range(rows.min(), b): m = dn[:, 3] > 100; a[y, m] = dn[m]
+    return Image.fromarray(a)
+pack('max8', [nobeam(f) for f in vn[3:]], 0.62, names=['sit', 'wind', 'throw'])
 fe = cut('l8fxE_1.jpg', 'm', 3, 6, mode='grid', fx=True)
 pack('fxE8', fe, 0.6, anchor='mid', names=['feather', 'feather2', 'egg', 'egg2', 'potatoF', 'potato', 'mini', 'mini2', 'leap', 'miniDead', 'eggBoom', 'scrap', 'beam', 'burst', 'gust', 'ring', 'shield', 'bolt'])
 bt = cut('l8batt_0.jpg', 'm', 2, 3, clean=True)

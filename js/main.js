@@ -313,7 +313,7 @@ function update(dt) {
     case 'results': {
       const r = App.results;
       r.shown += dt;
-      if (r.shown > 1 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch'))) { Sound.play('confirm'); if (r.id === 1) startLevel2(); else if (r.id === 2) startLevel3(); else if (r.id === 3) startLevel4(); else if (r.id === 4) startLevel5(); else if (r.id === 5) startLevel6(); else if (r.id === 6) startLevel7(); else { setState('soon'); Music.play('title'); } }
+      if (r.shown > 1 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch'))) { Sound.play('confirm'); if (r.id === 1) startLevel2(); else if (r.id === 2) startLevel3(); else if (r.id === 3) startLevel4(); else if (r.id === 4) startLevel5(); else if (r.id === 5) startLevel6(); else if (r.id === 6) startLevel7(); else if (r.id === 7) startLevel8(); else { setState('soon'); Music.play('title'); } }
       break;
     }
     case 'soon':
@@ -575,7 +575,7 @@ function frame(now) {
   else if (q.has('l6eat')) startLevel6({ grown: true });
   else if (q.has('l6')) startLevel6();
   else if (q.has('l8')) startLevel8({ stage: q.get('l8') || 'A' });
-  else if (q.has('l7v4')) { App.level = new V4.Level(); setState('play'); App.paused = false; App.level.start({ stage: q.get('l7v4') || 'intro' }); }
+  else if (q.has('l7v4')) startLevel7({ stage: q.get('l7v4') || 'intro' });
   else if (q.has('l7wall')) startLevel7({ wall: true });
   else if (q.has('l7yard')) startLevel7({ yard: true });
   else if (q.has('l7sewer')) startLevel7({ sewer: true });

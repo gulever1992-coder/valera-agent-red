@@ -249,7 +249,7 @@ G.loadImage('assets/l8/card.jpg').then(im => { L8.card = im; });
     }
     reset() {
       const S = this.S = L8.STAGES[this.stage], bg = D()._bg[S.bg];
-      this.panW = bg.w / 2; this.exitT = 0; this.cam = 0; this.t = 0; this.done = false; this.dead = 0; this.fadeIn = 0.6;
+      this.panW = bg.w / 2; this.exitT = 0; this.endT = 0; this.cam = 0; this.t = 0; this.done = false; this.dead = 0; this.fadeIn = 0.6;
       this.pl = { x: 320, hp: 100, ammo: 30, res: 180, vog: 3, vest: 0, inv: 0, st: 'idle', stT: 0, dir: 1, fireT: 0, fireAnim: 0, rollCd: 0, reload: 0, stashT: 0, moving: false, stepT: 0 };
       if (this.carry) Object.assign(this.pl, this.carry, { hp: Math.max(this.carry.hp, 60), res: Math.max(this.carry.res, 90) });
       this.cx = 320; this.cy = 180;
@@ -262,7 +262,7 @@ G.loadImage('assets/l8/card.jpg').then(im => { L8.card = im; });
     say(s, t = 2) { this.msg = s; this.msgT = t; }
     later(t, fn) { this.timers.push([t, fn]); }
     // ---- события боя
-    kill(f) { this.stats.kills++; this.score += f.pts || 100; Sound.play('hit'); if (Math.random() < (f instanceof Zombie ? 0.22 : 0.5)) this.pickup(Math.random() < 0.45 ? 'kefir' : Math.random() < 0.75 ? 'mag' : 'vog', f.x, clamp(f.z || 0.2, 0.1, 0.8)); }
+    kill(f) { this.stats.kills++; this.score += f.pts || 100; Sound.play('hit'); if (Math.random() < (f instanceof Zombie ? 0.3 : 0.55)) this.pickup(Math.random() < 0.55 ? 'kefir' : Math.random() < 0.75 ? 'mag' : 'vog', f.x, clamp(f.z || 0.2, 0.1, 0.8)); }
     puff(x, y, s = 1, big) { this.fx.push({ sh: 'fx8', fr: [big ? FXN.puff2 : FXN.puff], x, y, s, t: 0, life: 0.18 }); }
     boom(x, y, s = 1) { this.fx.push({ sh: 'boom8', fr: [0, 1, 2, 3, 4], x, y, s, t: 0, life: 0.55, fade: 1 }); Sound.play('boom'); G.shake(4 * s, 0.25); }
     pickup(kind, x, z) { this.picks.push({ kind, x, z, t: 0, vy: -90, oy: 0 }); }
@@ -303,7 +303,7 @@ G.loadImage('assets/l8/card.jpg').then(im => { L8.card = im; });
     take(k) {
       const p = this.pl; k.dead = true; Sound.play('pickup'); this.score += 50;
       if (k.kind === 'flare') { this.flareT = 7; return; }
-      if (k.kind === 'mag') p.res = Math.min(400, p.res + 30); else if (k.kind === 'vog') p.vog = Math.min(6, p.vog + 1); else if (k.kind === 'kefir') { p.hp = Math.min(100, p.hp + 35); this.stats.food++; } else if (k.kind === 'vest') p.vest = 3;
+      if (k.kind === 'mag') p.res = Math.min(400, p.res + 30); else if (k.kind === 'vog') p.vog = Math.min(6, p.vog + 1); else if (k.kind === 'kefir') { p.hp = Math.min(100, p.hp + 50); this.stats.food++; } else if (k.kind === 'vest') p.vest = 3;
     }
     // ---- обновление
     update(dt) {
@@ -345,8 +345,13 @@ G.loadImage('assets/l8/card.jpg').then(im => { L8.card = im; });
       this.hazards(dt);
       for (const f of this.foes) f.update(dt);
       for (const o of this.props) o.update(dt);
-      for (const f of this.foes) if (!(f instanceof Zombie) && f.x < this.cam - 70) f.gone = true;   // остались за кадром
+      // остались за кадром: позади камеры — убираем; в конце локации — убираем всех, кто вне экрана
+      const atEnd = this.cam >= this.panW - 641 && this.ei >= this.events.length;
+      for (const f of this.foes) if (f.x < this.cam - 70 || (atEnd && f.clipY == null && (f.x < this.cam - 20 || f.x > this.cam + 660))) f.gone = true;
       this.foes = this.foes.filter(f => !f.gone);
+      // конец локации, а враги ещё живы: подсказка, метки, через 20 с недобитые разбегаются
+      this.left = atEnd && !this.S.arena ? this.foes.filter(f => !f.dead).length : 0;
+      if (this.left) { this.endT += dt; if (this.endT > 20) { for (const f of this.foes) if (!f.dead) { f.gone = true; this.puff(f.x, f.y - 20, 1); } this.say('ОСТАЛЬНЫЕ РАЗБЕЖАЛИСЬ!', 2); } } else this.endT = 0;
       this.updShots(dt); this.updFx(dt);
       for (const o of this.over) o.update && o.update(dt);
       if (this.S.update) this.S.update(this, dt);
@@ -491,6 +496,8 @@ G.loadImage('assets/l8/card.jpg').then(im => { L8.card = im; });
       L8.spr(c, 'fx8', FXN.mag, 18, 35, 0.34); G.text(p.st === 'reload' ? '--' : String(p.ammo).padStart(2, '0'), 30, 31, { size: 8, color: p.ammo <= 6 ? '#f66' : '#fff' }); G.text('/' + p.res, 48, 31, { size: 8, color: '#aaa' });
       L8.spr(c, 'fx8', FXN.vog, 104, 35, 0.34); G.text('x' + p.vog, 118, 31, { size: 8 });
       if (this.boss && !this.boss.gone) { const b = this.boss; c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(220, 6, 200, 16); c.fillStyle = '#501'; c.fillRect(223, 9, 194, 10); c.fillStyle = '#e33'; c.fillRect(223, 9, 194 * clamp(b.hp / b.max, 0, 1), 10); G.text(b.name, 320, 10, { align: 'center', size: 8 }); }
+      if (this.left && !this.done) { G.text('ДОБЕЙ ВРАГОВ: ' + this.left, 320, 62, { align: 'center', size: 8, color: (this.t * 3 | 0) % 2 ? '#ff6a4a' : '#ffd84a', outline: true });
+        if (this.endT > 6 && (this.t * 4 | 0) % 2) for (const f of this.foes) if (!f.dead) { const b = f.box(); L8.spr(c, 'fx8', FXN.warn, clamp(f.x - this.cam, 12, 628), Math.max(12, (b[3] > 0 ? b[1] : f.y - 60) - 10), 0.4); } }
       if (this.msgT > 0) G.text(this.msg, 320, this.bars ? 48 : 40, { align: 'center', size: 8, color: '#ffd84a', outline: true });
       if (p.ammo <= 0 && p.res <= 0) G.text('ПАТРОНЫ КОНЧИЛИСЬ!', 320, 320, { align: 'center', size: 8, color: '#f66', outline: true });
     }

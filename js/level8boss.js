@@ -155,11 +155,11 @@
       if (A.mash >= 6) { for (let i = 0; i < lv.cling; i++) lv.fx.push({ sh: 'fxE8', fr: [E('miniDead')], x: p.x + lv.cam + rnd(-30, 30), y: rnd(290, 340), s: 1, t: 0, life: 0.5, vx: rnd(-160, 160), vy: -160, g: 600, fade: 1 }); lv.cling = 0; A.mash = 0; Sound.play('hit'); lv.score += 100; }
     }
     // припасы
-    A.sup = (A.sup || 0) + dt; if (A.sup > 8) { A.sup = 0; lv.pickup(Math.random() < 0.5 ? 'kefir' : Math.random() < 0.75 ? 'mag' : 'vog', rnd(110, 530), 0.82); }
+    A.sup = (A.sup || 0) + dt; if (A.sup > (o.sup || 6)) { A.sup = 0; const r = Math.random(); lv.pickup(r < 0.45 ? 'kefir' : r < 0.8 ? 'mag' : 'vog', rnd(110, 530), 0.82); }
     if (!o.max) return;
     // Максим на балке кидает картошку
     A.mT = (A.mT || 0) + dt; const M = A.max;
-    if (M.st === 'sit' && A.mT > M.cd) { M.st = 'wind'; A.mT = 0; } else if (M.st === 'wind' && A.mT > 0.5) { M.st = 'throw'; A.mT = 0; Sound.play('throw'); potato(lv, M.x - 30, M.y - 40, P(lv), 1.0); } else if (M.st === 'throw' && A.mT > 0.45) { M.st = 'sit'; A.mT = 0; M.cd = rnd(3.8, 6); }
+    if (M.st === 'sit' && A.mT > M.cd) { M.st = 'wind'; A.mT = 0; } else if (M.st === 'wind' && A.mT > 0.5) { M.st = 'throw'; A.mT = 0; Sound.play('throw'); potato(lv, M.x - 24, M.y - 50, P(lv), 1.0); } else if (M.st === 'throw' && A.mT > 0.45) { M.st = 'sit'; A.mT = 0; M.cd = rnd(3.8, 6); }
     // Стас на фургоне: полоса-предупреждение, затем наезд из глубины
     A.vT = (A.vT || 0) + dt;
     const calm = A.roo && (A.roo.inv || A.spi.inv);
@@ -189,7 +189,7 @@
   L8.STAGES.boss = {
     bg: 'bossbg', title: null, arena: true,
     build(lv) {
-      lv.A = { max: { x: 255, y: 132, st: 'sit', cd: 5 }, vCd: 12, on: false }; lv.wind = 0; lv.cling = 0; lv.pl.res = Math.max(lv.pl.res, 240);
+      lv.A = { max: { x: 255, y: 140, st: 'sit', cd: 5 }, vCd: 12, on: false }; lv.wind = 0; lv.cling = 0; lv.pl.res = Math.max(lv.pl.res, 240);
       return [[0.3, () => {
         Scene.run(function* () {
           yield 0.4;
@@ -214,11 +214,12 @@
           lv.cutImg = 'fall1'; lv.cutVal = { t: 0, life: 4, drop: 1 }; G.shake(14, 0.9); Sound.play('crash'); yield 1.2;
           yield* Scene.say('valera', 'Пол!.. Да вы что, строили по ГОСТу?!');
           lv.cutImg = 'fall2'; G.shake(16, 1.0); Sound.play('boom'); yield 1.1;
+          lv.cutImg = 'fall3'; G.shake(6, 1.2); Sound.play('crumble'); yield 1.3;
           for (let i = 0; i < 10; i++) { lv.cutFade = i / 9; yield 0.06; }
         }, () => { lv.cutImg = null; lv.cutVal = null; lv.cutFade = 0; lv.bars = null; lv.carry = { hp: Math.max(lv.pl.hp, 70), ammo: 30, res: Math.max(lv.pl.res, 240), vog: Math.max(lv.pl.vog, 3), vest: lv.pl.vest }; lv.stage = 'mega'; lv.reset(); });
       }
     },
-    drawBack(lv, c) { const M = lv.A && lv.A.max; if (M && lv.A.on) L8.spr(c, 'max8', M.st === 'wind' ? 1 : M.st === 'throw' ? 2 : 0, M.x, M.y, 0.9); },
+    drawBack(lv, c) { const M = lv.A && lv.A.max; if (M && lv.A.on) L8.spr(c, 'max8', M.st === 'wind' ? 1 : M.st === 'throw' ? 2 : 0, M.x, M.y, 0.7); },
     drawMid(lv, c) { vanDraw(lv, c, false); },
     drawFront(lv, c) {
       vanDraw(lv, c, true); clingDraw(lv, c);
@@ -235,14 +236,14 @@
     get y() { return 1; } get s() { return this.k; }
     frame() { const o = this.side ? 3 : 0; return this.down ? o + 2 : this.hp < this.max * 0.5 ? o + 1 : o; }
     box() { if (this.down) return [0, 0, 0, 0]; const [w, h] = fsize('batt8', this.frame(), this.k); return [this.x - w * 0.4, this.py - h * 0.45, w * 0.8, h * 0.9]; }
-    hit(d) { if (this.down) return; this.hp -= d * 4; this.flashT = 0.07; if (this.hp <= 0) { this.down = true; this.lv.boom(this.x, this.py, 0.9); this.lv.score += 500; } }
+    hit(d) { if (this.down) return; this.hp -= d * 4; this.flashT = 0.07; if (this.hp <= 0) { this.down = true; this.lv.boom(this.x, this.py, 0.9); this.lv.score += 500; const x = clamp(this.x, 90, 550); this.lv.pickup('kefir', x - 22, 0.82); this.lv.pickup('mag', x, 0.82); this.lv.pickup('vog', x + 22, 0.82); } }
     update(dt) { this.t += dt; this.flashT -= dt; }
     draw(c, cam) { L8.spr(c, 'batt8', this.frame(), this.x - cam + (this.flashT > 0 ? rnd(-1.5, 1.5) : 0), this.py, this.k, { flip: this.side < 0 }); if (!this.down && (this.t * 3 | 0) % 2) L8.spr(c, 'fxE8', E('bolt'), this.x - cam, this.py - 34 * this.k, 0.35, { a: 0.7 }); }
   }
   class Mega extends Boss {
     constructor(lv) { super(lv, 320, 0); this.sh = 'mega8'; this.hp = this.max = 1100; this.name = 'МЕГАРОБОТ'; this.py = 326; this.k = 0.78; this.slots = []; this.cd = 2.5; this.pose = 0; this.poseT = 0; this.inv = true; this.rings = []; this.sweep = null; this.z = 0.05; this.side = 1; this.sideT = 0; this.set('idle'); }
     get y() { return 240; } get s() { return this.k; }
-    frame() { if (this.st === 'die') return this.stT > 2.4 ? 5 : 4; if (this.poseT > 0) return this.pose; return this.hp < this.max * 0.33 && (this.t * 2 | 0) % 2 ? 4 : 0; }
+    frame() { if (this.st === 'die') return this.stT > 1.8 ? 5 : 4; const low = this.hp < this.max * 0.33; if (this.poseT > 0) return low && this.pose !== 3 ? 4 : this.pose; return low ? 4 : 0; }
     box() { if (this.st === 'die') return [0, 0, 0, 0]; const [w, h] = fsize('mega8', 0, this.k); return [this.x - w * 0.3, this.py - h * 0.95, w * 0.6, h * 0.85]; }
     phase() { const r = this.hp / this.max; return r > 0.66 ? 1 : r > 0.33 ? 2 : 3; }
     setPose(p, t) { this.pose = p; this.poseT = t; }
@@ -265,7 +266,7 @@
       if (this.st === 'die') {
         if (Math.random() < 0.3) lv.boom(this.x + rnd(-110, 110), this.py - rnd(20, 250), rnd(0.5, 1.2));
         if (Math.random() < 0.35) lv.fx.push({ sh: 'fxE8', fr: [E('scrap')], x: this.x + rnd(-60, 60), y: this.py - rnd(80, 240), s: rnd(0.6, 1.3), t: 0, life: 1.1, vx: rnd(-260, 260), vy: rnd(-320, -120), g: 620, rot: 1, fade: 1 });
-        if (this.stT > 3.4 && !this.gone) { this.gone = true; G.flash(0.5, '#fff'); lv.boom(this.x, this.py - 120, 2.4); }
+        if (this.stT > 4.0 && !this.gone) { this.gone = true; G.flash(0.5, '#fff'); lv.boom(this.x, this.py - 120, 2.4); }
         return;
       }
       this.sideT += dt; if (this.sideT > 7) { this.sideT = 0; this.side = -this.side; }
@@ -329,7 +330,7 @@
     },
     update(lv, dt) {
       const A = lv.A; if (!A.on) return; const m = A.m;
-      arenaUpdate(lv, dt, {}); if (!m.dead) chaos(lv, dt, m.phase());
+      arenaUpdate(lv, dt, { sup: 3 }); if (!m.dead) chaos(lv, dt, m.phase());
       if (m.dead) { if (m.gone && !A.end) { A.end = 1; L8.finale(lv); } return; }
       if (A.open > 0) {            // щит снят: 30 секунд, потом батареи перезагружаются
         A.open -= dt; m.inv = false;
