@@ -87,8 +87,10 @@
       if (M.rideT <= 0) { M.rideT = rnd(1.6, 2.6); M.riders.push({ x: BELT[1] - 10, k: ['bum', 'drunk', 'thug', 'lady'][Math.random() * 4 | 0] }); }
       for (const r of M.riders) r.x -= 70 * dt; M.riders = M.riders.filter(r => r.x > BELT[0] + 30);
       // выход: дверь в конце верхнего этажа
-      const d = M.door; if (!d.open && P.x > d.x - 120 && Math.abs(P.y - d.y) < 10) { if (P.foes.some(f => !f.dead && f.x > 5200)) P.hintAt('Дверь заблокирована — зачисти этаж!', 2); else { d.open = 1; Sound.play('door'); } }
-      if (d.open && P.x > d.x - 30 && !M.leaving) { M.leaving = 1; lv.next(); }
+      const d = M.door; if (!d.open && P.x > d.x - 120 && Math.abs(P.y - d.y) < 10) { if (P.foes.some(f => !f.dead && f.x > 5200)) P.hintAt('Дверь заблокирована — зачисти этаж!', 2); else { d.open = 1; d.t = 0; Sound.play('door'); } }
+      if (d.open) d.t = (d.t || 0) + dt;
+      if (d.open && d.t > 1.4 && P.x > d.x - 30 && !M.leaving) { M.leaving = 1; lv.next(); }
+      if (d.open && d.t <= 1.4 && P.x > d.x - 46) P.x = d.x - 46;     // пока створки не разъехались — не пройти
     };
     M.take = (k, P, lv) => {
       k.dead = true; Sound.play('pickup'); lv.score += 100;
@@ -114,20 +116,42 @@
     M.blast = (x, y, r, dmg, P) => { for (const p of M.props) if (p.hp > 0 && Math.hypot(p.x - x, p.y - 30 - y) < r + 20) { p.hp = 0; M.breakProp(p, P); } for (const c of M.covers) if (c.hp > 0 && Math.hypot(c.x - x, c.y - 20 - y) < r + 10) c.hp -= dmg; };
 
     // ---------- отрисовка ----------
-    const TW = 645 * 1.3, TH = 360 * 1.3;
+    const TW = 645 * 1.55, TH = 360 * 1.55;
+    M._fade = {};
+    M.fadeTile = (a, b, flip) => {      // тайл-переход: слева кадр прошлого зала, вправо плавно проявляется кадр нового (с той же зеркальностью)
+      const key = a.src + '|' + b.src + '|' + flip; if (M._fade[key]) return M._fade[key];
+      const w = Math.round(TW * 2), h = Math.round(TH * 2), cv = document.createElement('canvas'); cv.width = w; cv.height = h; const g = cv.getContext('2d');
+      const put = (ctx, im) => { ctx.save(); if (flip) { ctx.translate(w, 0); ctx.scale(-1, 1); } ctx.drawImage(im, 0, 0, w, h); ctx.restore(); };
+      put(g, a); const t = document.createElement('canvas'); t.width = w; t.height = h; const tg = t.getContext('2d'); put(tg, b);
+      tg.globalCompositeOperation = 'destination-in'; const gr = tg.createLinearGradient(w * 0.15, 0, w * 0.85, 0); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,1)'); tg.fillStyle = gr; tg.fillRect(0, 0, w, h);
+      g.drawImage(t, 0, 0); return (M._fade[key] = cv);
+    };
     M.drawBack = (c, cx, cy) => {     // дальний план зала: параллакс 0.45 по x, 0.3 по y; стык залов закрыт колонной
-      const off = cx * 0.45, i0 = Math.floor(off / TW), oy = -40 - (cy + 60) * 0.3;
+      const off = cx * 0.45, i0 = Math.floor(off / TW), oy = clamp(-60 - (cy + 60) * 0.3, 360 - TH, 0);     // дальний план всегда закрывает кадр целиком — без чёрных полос
       for (let i = i0; i * TW - off < 640; i++) {
         const tw = j => (j * TW + TW / 2 - 320) / 0.45 + 320, wx = tw(i), z = M.zoneAt(wx), v = z[2], im = L9.img[v[((i % v.length) + v.length) % v.length]], x = Math.round(i * TW - off);
-        if (!im) continue; c.save(); if (i & 1) { c.translate(x + TW, oy); c.scale(-1, 1); c.drawImage(im, 0, 0, TW, TH); } else c.drawImage(im, x, oy, TW, TH); c.restore();
-        const zp = M.zoneAt(tw(i - 1)); if (zp !== z) { for (const dx of [-44, 44]) S(c, 'fgT9', 'pipe', x + dx, 380, 1.5); S(c, 'fgT9', 'pillar', x, 380, 1.5); S(c, 'fgT9', 'pillar', x, 102, 1.5, { flip: 1 }); for (const dx of [-44, 44]) S(c, 'fgT9', 'pipe', x + dx, 102, 1.5, { flip: 1 }); }     // стык залов закрыт колонной во всю высоту
+        if (!im) continue;
+        const zp = M.zoneAt(tw(i - 1)), imP = zp !== z ? L9.img[zp[2][0]] : null;
+        const src = imP ? M.fadeTile(imP, im, i & 1) : im;      // на стыке залов фон плавно перетекает из одного в другой — без шва и без заглушек
+        c.save(); if ((i & 1) && !imP) { c.translate(x + TW, oy); c.scale(-1, 1); c.drawImage(src, 0, 0, TW, TH); } else c.drawImage(src, x, oy, TW, TH); c.restore();
       }
       c.fillStyle = 'rgba(2,6,8,0.25)'; c.fillRect(0, 0, 640, 360);
+      // средний план: крупные объекты цеха (параллакс 0.62) — стоят за полом, основание прячется за плитой
+      const MIDN = ['tank', 'rack', 'crane', 'gen', 'crates'], mx = cx * 0.62, fy = 330 - cy + 12;
+      for (let i = Math.floor((mx - 200) / 410); i * 410 - mx < 840; i++) { const n = MIDN[((i * 3) % 5 + 5) % 5], sx = i * 410 + 130 - mx; S(c, 'mid9', n, sx, fy, 0.78, { a: 0.92 }); }
+      c.fillStyle = 'rgba(2,6,8,0.18)'; c.fillRect(0, 0, 640, 360);
     };
     M.drawMid = (c, P) => {
       const t = P.t;
       // капсулы-прессы с людьми (цикл: человек -> пресс -> жижа -> слив)
-      for (const [x, y] of M.vats) S(c, 'vat9', 'v' + (((t * 2.2 + x * 0.013) | 0) % 8), x, y + 2, 1);
+      // пресс-капсулы: один раз, когда Валера рядом — пресс выжимает «сок», дальше капсула стоит полной зелёной жижи
+      M.vatT = M.vatT || {};
+      for (const [x, y] of M.vats) {
+        const id = x + ':' + y; if (M.vatT[id] == null && Math.abs(P.x - x) < 240 && Math.abs(P.y - y) < 160) { M.vatT[id] = t; Sound.play('crane'); }
+        const e = M.vatT[id] == null ? -1 : t - M.vatT[id];
+        const fr = e < 0.5 ? 'p0' : e < 1.5 ? 'p2' : 'p3';     // кадры на одном основании: стоит -> выжимает -> полная жижи
+        S(c, 'vatP9', fr, x, y + 2, 0.9);
+      }
       // конвейер: лента прокруткой + наездники
       for (let x = BELT[0]; x < BELT[1]; x += 84) S(c, 'belt9', 'b' + ((t * 8 | 0) % 4), x + 42, 344, 1);
       for (const r of M.riders) S(c, 'conv9', r.k, r.x, 318, 1);
@@ -149,7 +173,7 @@
       for (const k of M.picks) { S(c, 'fxL9', 'spark', k.x, k.y - 14, 0.4 + Math.sin(k.t * 5) * 0.08, { add: 1 }); S(c, 'pick9', k.kind, k.x, k.y - 16 + Math.sin(k.t * 4) * 2, 1); }
       // шахта подъёмника: направляющие, дверь
       const L = M.lifts[0]; for (let y = L.y1 - 40; y < 400; y += 58) { S(c, 'plat9', 'column', L.x - 6, y, 1); S(c, 'plat9', 'column', L.x + L.w + 6, y, 1); }
-      S(c, 'cover9', M.door.open ? 'doorOpen' : 'door', M.door.x, M.door.y + 2, 1.3);
+      { const d = M.door, f = d.open ? Math.min(5, (d.t || 0) / 1.4 * 6 | 0) : 0; S(c, 'gate9', 'g' + f, d.x, d.y + 2, 0.62); }     // ворота выхода: открываются по кадрам
     };
     M.drawFront = (c, P) => {      // ближний план: тёмные трубы и колонны у нижнего края (параллакс 1.3)
       const k = 1.3, cx = P.cam.x;

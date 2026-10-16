@@ -7,7 +7,7 @@ import l9lib
 
 DATA = l9lib.DATA
 # выбранные варианты Flow (_0/_1)
-HCAP, HEN, HCOP, ARCH, HBAR, TUNA, TUNB = 'l9pod_1.jpg', 'l9penC_0.jpg', 'l9hcop2_0.jpg', 'l9arch_0.jpg', 'l9hbar_1.jpg', 'l9tunA_0.jpg', 'l9tunB_1.jpg'
+HCAP, HEN, HCOP, ARCH, HBAR, TUNA, TUNB = 'l9pod2_1.jpg', 'l9penC_0.jpg', 'l9hcop2_0.jpg', 'l9arch_0.jpg', 'l9hbar_1.jpg', 'l9tunA_0.jpg', 'l9tunB_1.jpg'
 
 # ---------- A. ТОННЕЛЬ ----------
 # капсула Валеры (l9capv_0: ряды 3/4/4)
@@ -84,15 +84,15 @@ for out, nm in (('cave1', 'l9tun4_0.jpg'), ('cave2', 'l9tun4_1.jpg')):
 
 # ---------- Валера сбоку (лаборатория) ----------
 VH = 168   # рост стоя, px холста (84 логических)
-r0 = cut('l9vrun_0.jpg', 'm', 2, 4, clean=True)
+r0 = cut('l9nvrun_1.jpg', 'm', 2, 4, clean=True)
 k = VH / hgt(r0, 0) * 1.0
 pack('vRun9', r0, k, names=['r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7'])
-pack('vRunUD9', cut('l9vrunud_0.jpg', 'm', 2, 4, clean=True), k, names=['u0', 'u1', 'u2', 'u3', 'd0', 'd1', 'd2', 'd3'])
-pack('vAim9', cut('l9vaim3_0.jpg', 'm', 2, 4, clean=True), k, names=['stand', 'fire', 'diag', 'up', 'down', 'crouch', 'crouchFire', 'crouchDiag'])
-pack('vJump9', cut('l9vjump2_0.jpg', 'm', 2, 4, clean=True), k, names=['take', 'rise', 'flip1', 'flip2', 'flip3', 'fallDown', 'fallDiag', 'land'])
-pack('vRoll9', cut('l9vroll2_0.jpg', 'm', 2, 4, clean=True), k, names=['roll0', 'roll1', 'roll2', 'roll3', 'butt0', 'butt1', 'butt2', 'butt3'])
-pack('vClimb9', cut('l9vclimb2_1.jpg', 'm', 2, 4, clean=True), k, names=['c0', 'c1', 'c2', 'c3', 'hit', 'stagger', 'fall', 'down'])
-pack('vRage9', cut('l9vrage2_0.jpg', 'm', 2, 4, clean=True), k, names=['stance', 'jab', 'hook', 'upper', 'head', 'hammer', 'kick', 'roar'])
+pack('vRunUD9', cut('l9nvrunud_0.jpg', 'm', 2, 4, clean=True), k, names=['u0', 'u1', 'u2', 'u3', 'd0', 'd1', 'd2', 'd3'])
+pack('vAim9', cut('l9nvaim_0.jpg', 'm', 2, 4, clean=True), k, names=['stand', 'fire', 'diag', 'up', 'down', 'crouch', 'crouchFire', 'crouchDiag'])
+pack('vJump9', cut('l9nvjump_0.jpg', 'm', 2, 4, clean=True), k, names=['take', 'rise', 'flip1', 'flip2', 'flip3', 'fallDown', 'fallDiag', 'land'])
+pack('vRoll9', cut('l9nvroll_0.jpg', 'm', 2, 4, clean=True), k, names=['roll0', 'roll1', 'roll2', 'roll3', 'butt0', 'butt1', 'butt2', 'butt3'])
+pack('vClimb9', cut('l9nvclimb_0.jpg', 'm', 2, 4, clean=True), k, names=['c0', 'c1', 'c2', 'c3', 'hit', 'stagger', 'fall', 'down'])
+pack('vRage9', cut('l9nvrage_0.jpg', 'm', 2, 4, clean=True), k, names=['stance', 'jab', 'hook', 'upper', 'head', 'hammer', 'kick', 'roar'])
 # ---------- враги лаборатории ----------
 eh = cut('l9eHat_1.jpg', 'm', 2, [8, 6], clean=True)
 pack('eHat9', eh, VH * 1.02 / hgt(eh, 0), names=['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'wind', 'throw', 'crouch', 'jump', 'hit', 'dead'])
@@ -152,7 +152,7 @@ if have(HCOP):
     hp = cut(HCOP, 'mf', 2, 2, clean=True)
     pack('hcop9', hp, CAP_W * 1.9 / hp[0].width, names=['run', 'fire', 'dmg', 'boom'])
 if have('l9arch_0.jpg'):
-    ar = cut(ARCH, 'm', 1, 4, mode='grid', clean='edge')
+    ar = cut(ARCH, 'm', 1, 4, mode='grid', clean='edge'); ar = [f.crop((8, 0, f.width - 8, f.height)) for f in ar]   # без просвечивающих полос по краям
     pack('arch9', ar, 760 / max(f.height for f in ar), names=['rib', 'pipes', 'pillar', 'glass'])
 if have('l9hbar_0.jpg'):
     hb = cut(HBAR, 'm', 2, 4, mode='grid', clean='edge')
@@ -171,9 +171,70 @@ if have('l9tunB_0.jpg'):
 # ---------- катсцена прибытия: причал лаборатории + капсула, из которой вылезает Валера ----------
 if have('l9dock_0.jpg'):
     bg('dock9', 'l9dock_0.jpg')
-if have('l9capout3_1.jpg'):     # стеклянная капсула (как в погоне): крышка-раковина откидывается, Валера садится, берёт автомат с мехруки, встаёт
-    cx = cut('l9capout3_1.jpg', 'mf', 2, 4, clean=True)
-    pack('capOut9b', cx, CAP_W / cx[7].width, names=['brake', 'open', 'sit', 'stand', 'empty', 'off', 'closing', 'closed'])
+    # правки того же кадра во Flow: створки ворот разъезжаются (3 фазы), на настенном мониторе — помехи / Икс.
+    # Вырезаем только область ворот/экрана с мягким краем и кладём поверх dock9 (координаты — исходник 1376x768)
+    def dock_ov(group, box, fe):
+        from scipy import ndimage
+        if not all(have(n) for _, n in group): return
+        rd = lambda n: Image.open(os.path.join(SRC, n)).convert('RGB').resize((1376, 768), Image.LANCZOS).crop(box)
+        base = np.asarray(rd('l9dock_0.jpg')).astype(np.int32); ims = [rd(n) for _, n in group]
+        df = np.zeros(base.shape[:2], bool)            # общая маска группы: всё, что изменилось хоть в одном кадре (иначе прошлый кадр просвечивает)
+        for im in ims: df |= np.abs(np.asarray(im).astype(np.int32) - base).max(2) > 48
+        df = ndimage.binary_opening(df, iterations=2); df = ndimage.binary_closing(df, iterations=6); df = ndimage.binary_fill_holes(df)
+        df = ndimage.binary_dilation(df, iterations=3)
+        w, h = ims[0].size; yy, xx = np.mgrid[0:h, 0:w]
+        d = np.minimum(np.minimum(xx, w - 1 - xx), np.minimum(yy, h - 1 - yy)).astype(np.float32)
+        al = (np.clip(d / fe, 0, 1) * np.clip(ndimage.gaussian_filter(df.astype(np.float32), 2.5) * 1.6, 0, 1) * 255).astype(np.uint8)
+        for (out, _), im in zip(group, ims):
+            im.putalpha(Image.fromarray(al)); im.save(os.path.join(OUT, out + '.png'))
+            DATA.setdefault('_bgp', {})[out] = 1; DATA.setdefault('dockOv', {})[out] = [box[0], box[1], w, h]
+    dock_ov((('dkG1', 'l9dg1_1.jpg'), ('dkG2', 'l9dg2_0.jpg'), ('dkG3', 'l9dg3_1.jpg')), (930, 130, 1310, 720), 22)
+    dock_ov((('dkX0', 'l9dx_0.jpg'), ('dkX1', 'l9dx_1.jpg'), ('dkN0', 'l9dn_0.jpg'), ('dkN1', 'l9dn_1.jpg')), (692, 164, 868, 296), 6)
+if have('l9capout4_0.jpg'):     # капсула из погони (разбитое стекло): Валера на коленях, встаёт, перешагивает край; пустая капсула гаснет
+    cx = cut('l9capout4_0.jpg', 'mf', 2, 4, clean=True)
+    pack('capOut9b', cx, CAP_W / cx[5].width, names=['brake', 'kneel', 'stand', 'step', 'empty', 'off', 'smoke', 'dim'])
+
+# ---------- погоня v3: мирные капсулы со спящими, техника киберзаводчан, тяжёлый БТР, поезд с капсулами ----------
+if have('l9sleep_0.jpg'):
+    sl = cut('l9sleep_0.jpg', 'mf', 2, 3, clean=True)
+    pack('sleep9', sl, CAP_W * 1.1 / sl[0].width, names=['okA', 'okB', 'okC', 'crA', 'crB', 'crC'])
+if have('l9cyb_1.jpg'):
+    cy = cut('l9cyb_1.jpg', 'mf', 3, 3, clean=True)
+    for i, (nm, kk) in enumerate((('cybA9', 0.95), ('cybB9', 1.3), ('cybC9', 1.1))):
+        fr = cy[i * 3:i * 3 + 3]
+        if i == 0 and have('l9hbike_1.jpg'): fr = cut('l9hbike_1.jpg', 'mf', 2, 2, clean=True)[:3]   # ховербайк без колёс
+        pack(nm, fr, CAP_W * kk / fr[0].width, names=['run', 'fire', 'fireBack'])
+if have('l9btr_1.jpg'):
+    bt = cut('l9btr_1.jpg', 'mf', 2, 2, clean=True)
+    pack('btr9', bt, CAP_W * 2.3 / bt[0].width, names=['run', 'fire', 'dmg', 'boom'])
+if have('l9train2_0.jpg'):
+    t2 = cut('l9train2_0.jpg', 'mf', 3, 1, clean=True)
+    pack('trn9', t2, TR_H / t2[1].height, names=['loco', 'wagon', 'tail'])
+if have('l9gate_1.jpg'):
+    gt = cut('l9gate_1.jpg', 'm', 2, 3, mode='grid', clean='edge')
+    pack('gate9', gt, 1.0, names=['g0', 'g1', 'g2', 'g3', 'g4', 'g5'])
+# ---------- лаборатория: тонкий металлический пол, мостки с торцами, пресс-капсула, объекты среднего плана ----------
+if have('l9floor2_1.jpg'):
+    fl2 = Image.open(os.path.join(SRC, 'l9floor2_1.jpg')).convert('RGB').crop((0, 304, 1376, 420))
+    fl2 = seamless(fl2); fl2 = fl2.resize((round(fl2.width * 44 / fl2.height), 44), Image.LANCZOS).convert('RGBA')
+    fl2.save(os.path.join(OUT, 'labFloor.png')); DATA.setdefault('_bgp', {})['labFloor'] = 1
+if have('l9walk2_0.jpg'):
+    wk = cut('l9walk2_0.jpg', 'm', 2, 2, mode='grid', clean='edge')
+    pl_ = wk[1]; W_, H_ = pl_.size                                         # целая короткая площадка: торцы с закруглёнными перилами с обеих сторон
+    eL = pl_.crop((0, 0, W_ // 2, H_)); eR = pl_.crop((W_ // 2, 0, W_, H_))
+    mc = seamless(pl_.crop((int(W_ * 0.3), 0, int(W_ * 0.7), H_)), 40)     # середина из центра площадки, бесшовная
+    al = np.asarray(mc)[..., 3] > 0; cov = al.mean(1)
+    runs_ = runs(cov > 0.85, 1, 3); deck = max(runs_, key=lambda r: r[1] - r[0])[0]   # верх настила = начало самой толстой сплошной полосы
+    kW = 150 / H_
+    pack('walk9', [eL, mc, eR, wk[3]], kW, anchor='mid', names=['endL', 'mid', 'endR', 'col'])
+    DATA['walk9']['deck'] = round(deck * kW)
+    print('walk9 deck row', deck, '->', DATA['walk9']['deck'])
+if have('l9vat2_1.jpg'):
+    vt = cut('l9vat2_1.jpg', 'm', 2, 4, clean=True)
+    pack('vatP9', vt, 230 / vt[0].height, names=['p0', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7'])
+if have('l9mid_1.jpg'):
+    md = cut('l9mid_1.jpg', 'm', 2, 3, mode='grid', clean='edge')
+    pack('mid9', md, 1.0, names=['tank', 'rack', 'crane', 'pipes', 'gen', 'crates'])
 
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 

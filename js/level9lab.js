@@ -215,13 +215,12 @@
     },
     drawWorld(c) {
       const M = P.M, x0 = P.cam.x - 100, x1 = P.cam.x + 740;
-      // сплошные блоки пола/стен — плитка 'block' (60x52)
+      // пол — тонкая металлическая плита (бесшовная полоса labFloor), под ней виден дальний план; торцы плиты на опорных колоннах
+      const fim = L9.img.labFloor, FH = 22;
       for (const r of M.solids) {
         if (r[0] > x1 || r[0] + r[2] < x0 || r[4] === 'hide') continue;
-        for (let x = r[0]; x < r[0] + r[2]; x += 58) for (let y = r[1]; y < Math.min(r[1] + r[3], P.cam.y + 380); y += 50) {
-          if (y + 50 < P.cam.y - 20) continue;
-          const w = Math.min(58, r[0] + r[2] - x); c.save(); c.beginPath(); c.rect(x, y, w, 52); c.clip(); S(c, 'plat9', 'block', x + 30, y + 26, 1); c.restore();
-        }
+        if (fim) { const fw = fim.width / fim.height * FH; c.save(); c.beginPath(); c.rect(r[0], r[1] - 4, r[2], FH + 4); c.clip(); for (let x = r[0] - ((r[0] % fw) + fw) % fw; x < r[0] + r[2]; x += fw) c.drawImage(fim, Math.floor(x), r[1] - 3, Math.ceil(fw) + 1, FH); c.restore(); }
+        for (let ex = r[0] + 10; ex < r[0] + r[2]; ex += (r[2] - 20) / Math.max(1, Math.round((r[2] - 20) / 150)) || 1e9) if (ex > M.x0 + 20 && ex < M.x1 - 20) for (let y = r[1] + FH - 4; y < Math.min(r[1] + 260, P.cam.y + 400); y += 64) S(c, 'walk9', 'col', ex, y + 32, 0.45);   // несущие балки под плитой (по краям и через ~150 px)
       }
       // лестницы (за мостками)
       // лестница ровно от пола до настила: ни выше мостка, ни ниже пола
@@ -230,8 +229,13 @@
       for (const w of M.walks) {
         if (w.gone || w[0] > x1 || w[0] + w[2] < x0) continue;
         // опорные колонны под концами мостка — до ближайшего пола ниже
-        for (const ex of [w[0] + 12, w[0] + w[2] - 12]) { const fy = LAB.floorBelow(M, ex, w[1] + 8, 420, false) ?? 330; c.save(); c.beginPath(); c.rect(ex - 16, w[1], 32, fy - w[1]); c.clip(); for (let y = w[1] + 18; y < fy + 40; y += 35) S(c, 'plat9', 'column', ex, y, 0.6); c.restore(); }
-        for (let x = w[0]; x < w[0] + w[2]; x += 82) { const ww = Math.min(82, w[0] + w[2] - x); c.save(); c.beginPath(); c.rect(x, w[1] - 30, ww, 60); c.clip(); S(c, 'plat9', 'walk', x + 42, w[1] + 15, 1); c.restore(); }
+        for (const ex of [w[0] + 14, w[0] + w[2] - 14]) { const fy = LAB.floorBelow(M, ex, w[1] + 8, 420, false) ?? 330; c.save(); c.beginPath(); c.rect(ex - 20, w[1] + 8, 40, fy - w[1] - 8); c.clip(); for (let y = w[1] + 8; y < fy + 70; y += 64) S(c, 'walk9', 'col', ex, y + 32, 0.45); c.restore(); }
+        // мосток: левый торец + середина плиткой + правый торец (из одного кадра Flow — перила и настил совпадают)
+        const D9 = L9D.walk9, dk = D9.deck * 0.5, cyw = w[1] - dk + 37.5, eLw = L9.size('walk9', 'endL')[0], eRw = L9.size('walk9', 'endR')[0], mw = L9.size('walk9', 'mid')[0] - 1;
+        const hl = Math.min(eLw, w[2] / 2), hr = Math.min(eRw, w[2] / 2);
+        c.save(); c.beginPath(); c.rect(w[0] + hl - 1, cyw - 40, w[2] - hl - hr + 2, 80); c.clip(); for (let x = w[0] + hl - 2; x < w[0] + w[2] - hr; x += mw) S(c, 'walk9', 'mid', x + mw / 2, cyw, 1); c.restore();
+        c.save(); c.beginPath(); c.rect(w[0], cyw - 40, hl, 80); c.clip(); S(c, 'walk9', 'endL', w[0] + eLw / 2, cyw, 1); c.restore();
+        c.save(); c.beginPath(); c.rect(w[0] + w[2] - hr, cyw - 40, hr, 80); c.clip(); S(c, 'walk9', 'endR', w[0] + w[2] - eRw / 2, cyw, 1); c.restore();
       }
       for (const l of M.lifts || []) S(c, 'plat9', 'lift', l.x + l.w / 2, l.y + 24, l.w / 53);
     },

@@ -12,10 +12,10 @@ window.__t9 = {
         if (q.dead) continue;
         if (q.type === 'train' && Math.abs(q.y - y) < 30) s += q.wt > 0 || (q.x < P.x + 200) ? 20 : 0;
         if (q.type === 'obst' && q.x > P.x - 20 && q.x < P.x + 420 && Math.abs(q.y - y) < 26) s += q.kind === 'slime' ? 2 : 6;
-        if (q.type === 'gang' && Math.abs(q.x - P.x) < 160 && Math.abs(q.y - y) < 24) s += 3;
+        if ((q.type === 'cyb' || q.type === 'sleep') && Math.abs(q.x - P.x) < 190 && Math.abs(q.y - y) < 26) s += q.type === 'sleep' ? 5 : 3;
         if (q.type === 'heal' && q.x > P.x && Math.abs(q.y - y) < 20) s -= 3;
       }
-      for (const e of P.eb) if (Math.abs(e.y - (y - 60)) < 34 && Math.sign(P.x - e.x) === Math.sign(e.vx)) s += 1.5;
+      for (const e of P.eb) if (e.bomb ? Math.abs(e.ty - y) < 22 && (s += 2, false) : Math.abs(e.y - (y - 60)) < 34 && Math.sign(P.x - e.x) === Math.sign(e.vx)) s += 1.5;
       return s + Math.abs(y - 300) * 0.004;
     };
     const dt = 1 / 60, max = (o.secs || 200) * 60;
@@ -26,8 +26,8 @@ window.__t9 = {
       else {
         if ((think -= dt) <= 0) { think = 0.15 + (1 - skill) * 0.4; if (Math.random() < skill) { let best = ty, bs = 1e9; for (let y = T.Y0; y <= T.Y1; y += 8) { const d = danger(y); if (d < bs) { bs = d; best = y; } } ty = best; } }
         if (ty < P.y - 4) I.down.up = true; else if (ty > P.y + 4) I.down.down = true;
-        const behind = P.o.some(q => !q.dead && (q.type === 'truck' || (q.type === 'gang' && q.x < P.x - 30)));
-        const ahead = P.o.some(q => !q.dead && (q.type === 'gang' && q.x > P.x + 30 || q.type === 'tv' || (q.type === 'obst' && q.kind.startsWith('barrel'))));
+        const behind = P.o.some(q => !q.dead && (q.type === 'btr' || (q.type === 'cyb' && q.x < P.x - 30)));
+        const ahead = P.o.some(q => !q.dead && (q.type === 'cyb' && q.x > P.x + 30 || q.type === 'tv' || (q.type === 'obst' && q.kind.startsWith('barrel'))));
         if (behind && (!ahead || (i >> 4) % 2)) I.down.throw = true; else I.down.punch = true;
         if (P.o.some(q => !q.dead && q.type === 'obst' && q.kind !== 'slime' && q.x > P.x + 40 && q.x < P.x + 110 && Math.abs(q.y - P.y) < 18) && Math.random() < skill) I.hit.jump = true;
       }
