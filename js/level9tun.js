@@ -58,7 +58,7 @@
       const back = I.held('throw'), fire = I.held('punch') || back;
       if (fire && P.fireT <= 0) {
         P.fireT = 0.1; P.fireA = 0.14; P.aim = back ? 'back' : I.held('up') ? 'up' : 'fwd'; Sound.play('shot'); lv.stats.shots++;
-        const k = sc(P.y), mx = P.x + (back ? -40 : 46) * k, my = P.y - P.z - 62 * k;
+        const k = sc(P.y), mx = P.x + (back ? -58 : P.aim === 'up' ? 44 : 66) * k, my = P.y - P.z - (P.aim === 'up' ? 138 : 122) * k;   // ствол на мехруке над стеклянной капсулой
         const a = back ? Math.PI : P.aim === 'up' ? -0.45 : 0;
         P.shots.push({ x: mx, y: my, vx: Math.cos(a) * 1100, vy: Math.sin(a) * 1100, t: 0, gy: P.y });
       }
@@ -79,10 +79,10 @@
       else if (what === 'tv') P.o.push({ type: 'tv', x: 700, y: 52, line: o.line, t: 0, hp: 2 });
       else if (what === 'truck') { P.truck = { type: 'truck', x: -320, y: 300, hp: o.hp, max: o.hp, leave: o.leave, final: o.final, t: 0, cd: 2, burst: 0 }; P.o.push(P.truck); Sound.play('warn'); P.lv.say(o.final ? 'БРОНЕГРУЗОВИК! УНИЧТОЖЬ ЕГО — СТРЕЛЯЙ НАЗАД {throw}' : 'СЗАДИ БРОНЕГРУЗОВИК! БЫСТРЕЕ!', 3); }
     },
-    ebul(x, y, tx, ty, sp = 420, dmg = 6) { const a = Math.atan2(ty - y, tx - x); P.eb.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, dmg }); },
+    ebul(x, y, tx, ty, sp = 420, dmg = 5) { const a = Math.atan2(ty - y, tx - x); P.eb.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, dmg }); },
     hitP(d) { if (P.inv > 0) return; P.lv.hurt(d); },
     updObjs(lv, dt) {
-      const k0 = sc(P.y), pb = [P.x - 62 * k0, P.y - P.z - 70 * k0, 124 * k0, 70 * k0];
+      const k0 = sc(P.y), pb = [P.x - 56 * k0, P.y - P.z - 92 * k0, 112 * k0, 62 * k0];
       for (const q of P.o) {
         q.t += dt; if (q.fl > 0) q.fl -= dt;
         if (q.type === 'obst' || q.type === 'heal' || q.type === 'tv') {
@@ -99,9 +99,9 @@
           q.x += clamp(tgtX - q.x, -260, 260) * dt * 1.4; if (q.hold <= 0 && (q.x < -180 || q.x > 780)) q.dead = true;
           q.ty += (rnd(-1, 1) * 30) * dt; q.y += clamp((q.hold > 0 ? P.y + Math.sin(q.t * 0.9) * 40 : q.ty) - q.y, -60, 60) * dt; q.y = clamp(q.y, Y0, Y1);
           q.cd -= dt; q.fireA -= dt;
-          if (q.cd <= 0 && q.x > -40 && q.x < 660) { q.cd = rnd(1.4, 2.2); q.fireA = 0.25; q.back = P.x < q.x; const k = sc(q.y); P.ebul(q.x + (q.back ? -40 : 40) * k, q.y - 60 * k, P.x, P.y - P.z - 40 * k0); Sound.play('shot', 0.7); }
+          if (q.cd <= 0 && q.x > -40 && q.x < 660) { q.cd = rnd(1.7, 2.6); q.fireA = 0.25; q.back = P.x < q.x; const k = sc(q.y); P.ebul(q.x + (q.back ? -58 : 62) * k, q.y - 118 * k, P.x + rnd(-30, 30), P.y - P.z - 60 * k0 + rnd(-34, 34)); /* мехрука палит неприцельно — от очереди можно уйти */ Sound.play('shot', 0.7); }
           // таран
-          if (Math.abs(q.x - P.x) < 120 * k0 && Math.abs(q.y - P.y) < 18 && P.z < 30 && (q.ram = (q.ram || 0) - dt) <= 0) { q.ram = 0.8; P.hitP(12); q.hp -= 2; q.y += Math.sign(q.y - P.y || 1) * 30; Sound.play('crash'); G.shake(4, 0.2); if (q.hp <= 0) P.killGang(q); }
+          if (Math.abs(q.x - P.x) < 96 * k0 && Math.abs(q.y - P.y) < 16 && P.z < 30 && (q.ram = (q.ram || 0) - dt) <= 0) { q.ram = 1.2; P.hitP(8); q.hp -= 2; q.y += Math.sign(q.y - P.y || 1) * 30; Sound.play('crash'); G.shake(4, 0.2); if (q.hp <= 0) P.killGang(q); }
         } else if (q.type === 'train') {     // поезд по полосе y: предупреждение 1.6 с, потом обгоняет на огромной скорости
           if (q.wt > 0) { q.wt -= dt; continue; }
           if (!q.go) { q.go = 1; Sound.play('crane'); }
@@ -110,12 +110,12 @@
           for (const g of P.o) if (g.type === 'gang' && !g.dead && Math.abs(g.y - q.y) < 22 && g.x > q.x && g.x < q.x + 1800) P.killGang(g);
         } else if (q.type === 'truck') {     // бронегрузовик сзади: подъезжает, очереди из турели; уходит по таймеру или взрывается
           q.leave = q.leave != null ? q.leave - dt : null;
-          const tx = q.leave != null && q.leave <= 0 ? -420 : clamp(P.x - 330, -60, 120);
+          const tx = q.leave != null && q.leave <= 0 ? -420 : clamp(P.x - 390, -120, 80);
           q.x += clamp(tx - q.x, -140, 140) * dt; q.y += clamp(P.y - q.y, -40, 40) * dt; q.y = clamp(q.y, Y0 + 6, Y1);
           if (q.leave != null && q.leave <= 0 && q.x < -380) { q.dead = true; P.truck = null; continue; }
           q.cd -= dt;
           if (q.cd <= 0) { q.burst = 4; q.cd = rnd(2.6, 3.4); }
-          if (q.burst > 0 && (q.bt = (q.bt || 0) - dt) <= 0) { q.bt = 0.12; q.burst--; q.fireA = 0.12; const k = sc(q.y); P.ebul(q.x + 80 * k, q.y - 120 * k, P.x + rnd(-45, 45), P.y - P.z - 40 * k0, 560, 5); Sound.play('shot', 0.8); }
+          if (q.burst > 0 && (q.bt = (q.bt || 0) - dt) <= 0) { q.bt = 0.12; q.burst--; q.fireA = 0.12; const k = sc(q.y); P.ebul(q.x + 80 * k, q.y - 120 * k, P.x + rnd(-45, 45), P.y - P.z - 60 * k0, 560, 5); Sound.play('shot', 0.8); }
           if (Math.abs(q.x + 120 - P.x) < 90 && Math.abs(q.y - P.y) < 22 && (q.ram = (q.ram || 0) - dt) <= 0) { q.ram = 1; P.hitP(20); P.x += 60; Sound.play('crash'); }
         }
       }
@@ -131,7 +131,7 @@
         s.t += dt; s.x += s.vx * dt; s.y += s.vy * dt;
         for (const q of P.o) {
           if (s.dead || q.dead || q.hp >= 99) continue;
-          const k = sc(q.y), box = q.type === 'gang' ? [q.x - 70 * k, q.y - 80 * k, 140 * k, 80 * k] : q.type === 'truck' ? [q.x - 20, q.y - 150 * k, 280 * k, 150 * k] : q.type === 'tv' ? [q.x - 28, q.y - 26, 56, 52] : [q.x - 20 * k, q.y - 56 * k, 40 * k, 56 * k];
+          const k = sc(q.y), box = q.type === 'gang' ? [q.x - 72 * k, q.y - 104 * k, 144 * k, 100 * k] : q.type === 'truck' ? [q.x - 20, q.y - 150 * k, 280 * k, 150 * k] : q.type === 'tv' ? [q.x - 28, q.y - 26, 56, 52] : [q.x - 20 * k, q.y - 56 * k, 40 * k, 56 * k];
           if (q.type !== 'tv' && Math.abs(q.y - s.gy) > 40 && q.type !== 'truck') continue;   // пуля летит на своей глубине
           if (s.x > box[0] && s.x < box[0] + box[2] && s.y > box[1] && s.y < box[1] + box[3]) {
             s.dead = true; q.hp--; q.fl = 0.07; lv.stats.hits++; P.fx.push({ sh: 'fxA9', fr: ['spark'], x: s.x, y: s.y, s: 0.5, t: 0, life: 0.1 });

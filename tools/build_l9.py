@@ -7,7 +7,7 @@ import l9lib
 
 DATA = l9lib.DATA
 # выбранные варианты Flow (_0/_1)
-HCAP, HEN, HCOP, ARCH, HBAR, TUNA, TUNB = 'l9hcap_1.jpg', 'l9hen_2.jpg', 'l9hcop_1.jpg', 'l9arch_0.jpg', 'l9hbar_1.jpg', 'l9tunA_0.jpg', 'l9tunB_1.jpg'
+HCAP, HEN, HCOP, ARCH, HBAR, TUNA, TUNB = 'l9pod_1.jpg', 'l9penC_0.jpg', 'l9hcop2_0.jpg', 'l9arch_0.jpg', 'l9hbar_1.jpg', 'l9tunA_0.jpg', 'l9tunB_1.jpg'
 
 # ---------- A. ТОННЕЛЬ ----------
 # капсула Валеры (l9capv_0: ряды 3/4/4)
@@ -104,7 +104,7 @@ pl = cut('l9plat_1.jpg', 'm', 3, 4, mode='grid', clean='edge')
 pack('plat9', pl, 0.5, anchor='mid', names=['walk', 'walkL', 'walkR', 'rail', 'ladder', 'ladderTop', 'block', 'stairs', 'lift', 'column', 'walkBroken', 'pipe'])
 va = cut('l9vat_1.jpg', 'm', 2, 4, clean=True)
 pack('vat9', va, 0.62, names=['v0', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'])
-tvs = cut('l9tv_0.jpg', 'm', 2, 4, clean=True)
+tvs = cut('l9tv2_0.jpg', 'm', 3, 4, clean=True)[:8]   # экраны, утопленные в стенную плиту — без кронштейнов
 pack('tv9', tvs, 0.42, anchor='mid', names=['off', 'noise', 'x0', 'x1', 'x2', 'x3', 'broken', 'smoke'])
 for out, nm in (('lab1a', 'l9lab1_0.jpg'), ('lab1b', 'l9lab1_1.jpg'), ('lab1c', 'l9lab1b_0.jpg'), ('lab1d', 'l9lab1b_1.jpg')):
     bg(out, nm)
@@ -141,14 +141,14 @@ pack('belt9', bl[:4], 0.5, anchor='mid', names=['b0', 'b1', 'b2', 'b3'])
 
 # ---------- ПОГОНЯ v2: капсулы на магнитной подушке, банды, бронегрузовик, бесшовный тоннель ----------
 def have(n): return os.path.exists(os.path.join(SRC, n))
-if have('l9hcap_0.jpg'):
+if have(HCAP):
     hc = cut(HCAP, 'mf', 2, 4, clean=True)
     pack('hcap9', hc, CAP_W / hc[0].width, names=['run', 'fire', 'fireBack', 'fireUp', 'bankUp', 'bankDown', 'hit', 'wreck'])
-if have('l9hen_0.jpg'):
+if have(HEN):
     he = cut(HEN, 'mf', 3, 3, clean=True)
     for i, nm in enumerate(['henA9', 'henB9', 'henC9']):
-        fr = he[i * 3:i * 3 + 3]; pack(nm, fr, CAP_W / fr[0].width, names=['run', 'fire', 'fireBack'])
-if have('l9hcop_0.jpg'):
+        fr = he[i * 3:i * 3 + 3]; pack(nm, fr, CAP_W * (1.15, 1.15, 0.92)[i] / fr[0].width, names=['run', 'fire', 'fireBack'])   # рост людей в капсулах = рост Валеры (в A и B их двое)
+if have(HCOP):
     hp = cut(HCOP, 'mf', 2, 2, clean=True)
     pack('hcop9', hp, CAP_W * 1.9 / hp[0].width, names=['run', 'fire', 'dmg', 'boom'])
 if have('l9arch_0.jpg'):
@@ -167,6 +167,13 @@ if have('l9tunB_0.jpg'):
     rgba = np.dstack([a, np.where(m, 0, 255)]).astype(np.uint8)[:int(H * 0.55)]
     ce = seamless(Image.fromarray(rgba, 'RGBA')); ce = ce.resize((round(ce.width * 300 / ce.height), 300), Image.LANCZOS)
     ce.save(os.path.join(OUT, 'tunCeil.png')); DATA.setdefault('_bgp', {})['tunCeil'] = 1
+
+# ---------- катсцена прибытия: причал лаборатории + капсула, из которой вылезает Валера ----------
+if have('l9dock_0.jpg'):
+    bg('dock9', 'l9dock_0.jpg')
+if have('l9capout3_1.jpg'):     # стеклянная капсула (как в погоне): крышка-раковина откидывается, Валера садится, берёт автомат с мехруки, встаёт
+    cx = cut('l9capout3_1.jpg', 'mf', 2, 4, clean=True)
+    pack('capOut9b', cx, CAP_W / cx[7].width, names=['brake', 'open', 'sit', 'stand', 'empty', 'off', 'closing', 'closed'])
 
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 

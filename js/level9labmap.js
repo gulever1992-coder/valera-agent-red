@@ -2,10 +2,10 @@
 // solids: [x, y, w, h]; walks: [x, y, w] (мостки, сквозь них можно спрыгнуть); ladders: [x, верх, низ].
 (() => {
   const S = L9.spr, clamp = L9.clamp, rnd = L9.rnd, F = () => L9.FOES;
-  const ZONES = [   // [x0, x1, фоны, подпись]
-    [0, 2300, ['lab1a', 'lab1b', 'lab1c', 'lab1d'], 'СКЛАД КАПСУЛ'],
-    [2300, 4500, ['lab2a', 'lab2b'], 'КОНВЕЙЕРНЫЙ ЗАЛ'],
-    [4500, 6200, ['lab1c', 'lab1d'], 'ГРУЗОВОЙ ПОДЪЁМНИК'],
+  const ZONES = [   // [x0, x1, фоны, подпись]; в зоне один кадр, чередуется со своим зеркалом — стыки бесшовные
+    [0, 2300, ['lab1a'], 'СКЛАД КАПСУЛ'],
+    [2300, 4500, ['lab2a'], 'КОНВЕЙЕРНЫЙ ЗАЛ'],
+    [4500, 6200, ['lab1c'], 'ГРУЗОВОЙ ПОДЪЁМНИК'],
   ];
   const BELT = [2380, 3560];               // конвейер на полу: тянет влево
   const LIFT_X = 4700, LIFT_TOP = -170;
@@ -15,15 +15,15 @@
       x0: 0, x1: 6200, y0: -420, y1: 400, killY: 430,
       solids: [
         [0, 330, 940, 80], [1060, 330, 1240, 80], [2300, 330, 1300, 80], [3720, 330, 1200, 80],
-        [4920, 330, 300, 80], [4880, LIFT_TOP, 1320, 40], [4600, LIFT_TOP - 260, 1600, 30, 'hide'],     // верхний этаж; потолок
-        [-40, -420, 40, 830, 'hide'], [6200, -420, 40, 830, 'hide'],
+        [4920, 330, 300, 80], [4840, LIFT_TOP, 1360, 40], [4600, LIFT_TOP - 260, 1600, 30, 'hide'],     // верхний этаж; потолок
+        [-40, -420, 40, 830, 'hide'], [6200, -420, 40, 830, 'hide'], [5210, -130, 40, 540, 'hide'],     // за нижним ярусом подъёмника — стена шахты
       ],
       walks: [
         [300, 230, 260], [760, 230, 420], [1240, 230, 460], [1520, 130, 420], [1960, 230, 300],
         [2420, 220, 360], [2860, 190, 260], [3230, 220, 420], [3560, 260, 160], [3820, 220, 300], [4180, 150, 240],
         [5300, LIFT_TOP - 100, 300], [5700, LIFT_TOP - 100, 280],
       ],
-      ladders: [[330, 230, 330], [1270, 230, 330], [1560, 130, 230], [1990, 230, 330], [2450, 220, 330], [3260, 220, 330], [3850, 220, 330], [4210, 150, 220], [5330, LIFT_TOP - 100, LIFT_TOP], [5730, LIFT_TOP - 100, LIFT_TOP]],
+      ladders: [[400, 230, 330], [1340, 230, 330], [1620, 130, 230], [2060, 230, 330], [2520, 220, 330], [3330, 220, 330], [3920, 220, 330], [4300, 150, 330], [5400, LIFT_TOP - 100, LIFT_TOP], [5800, LIFT_TOP - 100, LIFT_TOP]],     // не под торцами мостков; каждая от настила до пола
       lifts: [{ x: LIFT_X, w: 140, y: 330, y0: 330, y1: LIFT_TOP, on: 0 }],
       cks: [[140, 330], [2380, 330], [4560, 330], [5000, LIFT_TOP]],
       picks: [
@@ -73,8 +73,11 @@
         if (!L.w2 && L.y < 60) { L.w2 = 1; const c = new (F().Crawl)(M, L.x + 70, L.y - 260, { ceil: L.y - 260 }); P.foes.push(c); P.foes.push(new (F().Stump)(M, L.x + 120, L.y - 2)); }
         if (!L.w3 && L.y < -80) { L.w3 = 1; P.foes.push(new (F().Hat)(M, L.x + 20, L.y - 2)); }
         if (L.y <= L.y1) { L.on = 2; Sound.play('clank'); }
+        if (P.y > L.y + 60 && !P.climb && P.onG) { L.on = 3; lv.say('ПОДЪЁМНИК ВОЗВРАЩАЕТСЯ...', 1.6); }     // сбили с площадки — едет вниз за Валерой
         for (const f of P.foes) if (!f.dead && !f.air && f.x > L.x && f.x < L.x + L.w && f.y > L.y - 30 && f.y < L.y + 30) f.y = L.y;
       }
+      if (L.on === 2 && P.onG && P.y > 250 && P.x > 4300 && P.x < 5220) { L.on = 3; Sound.play('crane'); }     // Валера внизу, а подъёмник наверху — спускается
+      if (L.on === 3) { L.y = Math.min(L.y0, L.y + 140 * dt); if (L.y >= L.y0) L.on = 0; }
       // подборы
       for (const k of M.picks) { k.t += dt; if (!k.dead && Math.abs(P.x - k.x) < 22 && Math.abs(P.y - k.y) < 40) M.take(k, P, lv); }
       M.picks = M.picks.filter(k => !k.dead);
@@ -115,9 +118,9 @@
     M.drawBack = (c, cx, cy) => {     // дальний план зала: параллакс 0.45 по x, 0.3 по y; стык залов закрыт колонной
       const off = cx * 0.45, i0 = Math.floor(off / TW), oy = -40 - (cy + 60) * 0.3;
       for (let i = i0; i * TW - off < 640; i++) {
-        const wx = (i * TW + TW / 2) / 0.45, z = M.zoneAt(wx), v = z[2], im = L9.img[v[i % v.length]], x = Math.round(i * TW - off);
-        c.save(); if (i % 2) { c.translate(x + TW, oy); c.scale(-1, 1); c.drawImage(im, 0, 0, TW, TH); } else c.drawImage(im, x, oy, TW, TH); c.restore();
-        const zp = M.zoneAt(((i - 1) * TW + TW / 2) / 0.45); if (zp !== z) S(c, 'fgT9', 'pillar', x, 380, 1.5, { a: 0.95 });
+        const tw = j => (j * TW + TW / 2 - 320) / 0.45 + 320, wx = tw(i), z = M.zoneAt(wx), v = z[2], im = L9.img[v[((i % v.length) + v.length) % v.length]], x = Math.round(i * TW - off);
+        if (!im) continue; c.save(); if (i & 1) { c.translate(x + TW, oy); c.scale(-1, 1); c.drawImage(im, 0, 0, TW, TH); } else c.drawImage(im, x, oy, TW, TH); c.restore();
+        const zp = M.zoneAt(tw(i - 1)); if (zp !== z) { for (const dx of [-44, 44]) S(c, 'fgT9', 'pipe', x + dx, 380, 1.5); S(c, 'fgT9', 'pillar', x, 380, 1.5); S(c, 'fgT9', 'pillar', x, 102, 1.5, { flip: 1 }); for (const dx of [-44, 44]) S(c, 'fgT9', 'pipe', x + dx, 102, 1.5, { flip: 1 }); }     // стык залов закрыт колонной во всю высоту
       }
       c.fillStyle = 'rgba(2,6,8,0.25)'; c.fillRect(0, 0, 640, 360);
     };
@@ -131,7 +134,7 @@
       // крюки и манипуляторы над лентой
       for (let x = BELT[0] + 120; x < BELT[1]; x += 300) { S(c, 'conv9', 'hook', x + Math.sin(t + x) * 6, 120, 1, { rot: Math.sin(t * 1.5 + x) * 0.08 }); S(c, 'conv9', (t * 1.2 + x | 0) % 2 ? 'arm0' : 'arm1', x + 140, 300, 1); }
       // ямы с жижей
-      for (const p of M.pits) for (let x = p[0]; x < p[1]; x += 30) S(c, 'prop9', 'slime', x + 15, 352 + Math.sin(t * 3 + x) * 2, 0.7);
+      for (const p of M.pits) for (let x = p[0]; x < p[1]; x += 30) for (let r = 0; r < 3; r++) S(c, 'prop9', 'slime', x + 15 + r * 9, 352 + r * 26 + Math.sin(t * 3 + x + r) * 2, 0.7 + r * 0.15);   // жижа до дна — без голой ямы
       // ТВ с Иксом
       for (const tv of M.tvs) {
         const on = Math.abs(P.x - tv.x) < 300;

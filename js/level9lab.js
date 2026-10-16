@@ -224,10 +224,13 @@
         }
       }
       // лестницы (за мостками)
-      for (const l of M.ladders) { if (l[0] < x0 || l[0] > x1) continue; for (let y = l[1] + 30; y < l[2] + 30; y += 58) S(c, 'plat9', 'ladder', l[0], y, 1); S(c, 'plat9', 'ladderTop', l[0], l[1] - 8, 1); }
-      // мостки: середина плиткой 84, края — уголки
+      // лестница ровно от пола до настила: ни выше мостка, ни ниже пола
+      for (const l of M.ladders) { if (l[0] < x0 || l[0] > x1) continue; c.save(); c.beginPath(); c.rect(l[0] - 24, l[1] - 2, 48, l[2] - l[1] + 2); c.clip(); for (let y = l[1] + 28; y < l[2] + 30; y += 58) S(c, 'plat9', 'ladder', l[0], y, 1); c.restore(); }
+      // мостки: середина плиткой 82, по краям — законченные торцы с опорами (walkL / walkR)
       for (const w of M.walks) {
         if (w.gone || w[0] > x1 || w[0] + w[2] < x0) continue;
+        // опорные колонны под концами мостка — до ближайшего пола ниже
+        for (const ex of [w[0] + 12, w[0] + w[2] - 12]) { const fy = LAB.floorBelow(M, ex, w[1] + 8, 420, false) ?? 330; c.save(); c.beginPath(); c.rect(ex - 16, w[1], 32, fy - w[1]); c.clip(); for (let y = w[1] + 18; y < fy + 40; y += 35) S(c, 'plat9', 'column', ex, y, 0.6); c.restore(); }
         for (let x = w[0]; x < w[0] + w[2]; x += 82) { const ww = Math.min(82, w[0] + w[2] - x); c.save(); c.beginPath(); c.rect(x, w[1] - 30, ww, 60); c.clip(); S(c, 'plat9', 'walk', x + 42, w[1] + 15, 1); c.restore(); }
       }
       for (const l of M.lifts || []) S(c, 'plat9', 'lift', l.x + l.w / 2, l.y + 24, l.w / 53);

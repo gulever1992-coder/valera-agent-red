@@ -92,15 +92,15 @@
 
   // Сварщик: щит спереди (стрелять сверху, сзади, гранатой, прикладом), в упор — пламя горелки
   class Weld extends Foe {
-    constructor(M, x, y, o) { super(M, x, y, Object.assign({ sh: 'eWeld9', maxHp: 8, touch: 10, w: 20, pts: 350 }, o)); this.cd = 0.5; }
+    constructor(M, x, y, o) { super(M, x, y, Object.assign({ sh: 'eWeld9', maxHp: 8, touch: 0, w: 20, pts: 350 }, o)); this.cd = 0.5; }
     blocks(b) { return this.st !== 'flame' && this.st !== 'mask' && Math.sign(b.vx) === -this.dir && Math.abs(b.vy) < Math.abs(b.vx) * 0.5 && b.w !== 'rocket' && b.w !== 'plasma'; }
     ai(dt, P) {
       const dx = P.x - this.x; this.cd -= dt;
       if (!this.seen(P)) { this.vx = 0; this.phys(dt); return; }
-      if (this.st === 'mask') { this.vx = 0; if (this.stT > 0.35) { this.set('flame'); Sound.play('steam'); } }
-      else if (this.st === 'flame') { this.vx = 0; if ((this.stT * 10 | 0) % 3 === 0 && Math.abs(dx) < 80 && Math.sign(dx) === this.dir && Math.abs(P.y - this.y) < 40) P.hurt(18, this.x); if (this.stT > 0.8) { this.set('laugh'); } }
+      if (this.st === 'mask') { this.vx = 0; if (this.stT > 0.5) { this.set('flame'); Sound.play('steam'); } }
+      else if (this.st === 'flame') { this.vx = 0; if ((this.stT * 10 | 0) % 3 === 0 && Math.abs(dx) < 80 && Math.sign(dx) === this.dir && Math.abs(P.y - this.y) < 40) P.hurt(12, this.x); if (this.stT > 0.8) { this.set('laugh'); } }
       else if (this.st === 'laugh') { if (this.stT > 0.6) this.set('walk'); }
-      else { this.face(P); this.set('walk'); this.vx = Math.sign(dx) * 70; if (Math.abs(dx) < 75 && Math.abs(P.y - this.y) < 40 && this.cd <= 0) { this.set('mask'); this.cd = 1.8; } }
+      else { this.face(P); this.set('walk'); this.vx = Math.sign(dx) * 70; if (Math.abs(dx) < 75 && Math.abs(P.y - this.y) < 40 && this.cd <= 0) { this.set('mask'); this.cd = 2.4; } }
       this.phys(dt);
     }
     frame() { return this.dead ? 'dead' : this.fl > 0 ? (this.st === 'walk' ? 'shield' : 'hit') : ({ mask: 'mask', flame: 'flame', laugh: 'laugh' })[this.st] || (this.vx ? this.walkFr(8, 10) : 'shield'); }

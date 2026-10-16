@@ -37,7 +37,7 @@ WHO.mrx = WHO.mrx || { name: 'ГОСПОДИН ИКС', color: '#ff4040', voice:
   L9.size = (sh, i) => { const f = D()[sh].f[L9.fi(sh, i)]; return [f[2] * 0.5, f[3] * 0.5]; };
   L9.rnd = (a, b) => a + Math.random() * (b - a);
   L9.clamp = (v, a, b) => v < a ? a : v > b ? b : v;
-  L9.ORDER = ['tun'];                // порядок частей (дополняется по мере сборки)
+  L9.ORDER = ['tun', 'arrive', 'lab'];                // порядок частей (дополняется по мере сборки)
 
   L9.Level = class {
     constructor() { this.id = 9; this.canPause = true; this.stats = { time: 0, dmg: 0, kills: 0, deflect: 0, secrets: 0, food: 0, deaths: 0, shots: 0, hits: 0 }; this.score = 0; }
