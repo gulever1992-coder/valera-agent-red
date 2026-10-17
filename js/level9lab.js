@@ -200,6 +200,7 @@
       c.fillStyle = '#04070a'; c.fillRect(0, 0, 640, 360);
       M.drawBack(c, cx, cy, P);
       c.save(); c.translate(-cx, -cy);
+      P.drawFloor(c);
       M.drawMid && M.drawMid(c, P);
       P.drawWorld(c);
       for (const f of P.foes) if (f.behind) f.draw(c);
@@ -213,7 +214,7 @@
       M.drawOver && M.drawOver(c, cx, cy, P);
       if (P.hintT > 0 && P.hint) G.text(Game.fmtHint(P.hint), 320, 46, { align: 'center', size: 8, color: '#9cf', outline: true });
     },
-    drawWorld(c) {
+    drawFloor(c) {     // пол, опоры под ним, лента и цистерны — раньше всех предметов: всё стоит ПОВЕРХ пола
       const M = P.M, x0 = P.cam.x - 100, x1 = P.cam.x + 740;
       // пол — тонкая металлическая плита (бесшовная полоса labFloor), под ней виден дальний план; торцы плиты на опорных колоннах
       const fim = L9.img.labFloor, FH = 34;
@@ -228,6 +229,9 @@
         for (let ex = r[0] + 14; ex < r[0] + r[2]; ex += (r[2] - 28) / Math.max(1, Math.round((r[2] - 28) / 150)) || 1e9) if (ex > M.x0 + 20 && ex < M.x1 - 20) { const y0 = r[1] + FH - 6, fb = LAB.floorBelow(M, ex, r[1] + r[3] + 2, 900, false), len = fb != null ? fb + 2 - y0 : th * 0.38; S(c, 'col9', 'thick', ex, y0 + len / 2, 0.38, { sy: len / (th * 0.38) }); }   // цельные опорные колонны под плитой (капитель под полом, уходят вниз)
       }
       M.drawOnFloor && M.drawOnFloor(c, P);
+    },
+    drawWorld(c) {
+      const M = P.M, x0 = P.cam.x - 100, x1 = P.cam.x + 740;
       // лестницы (за мостками)
       // лестница ровно от пола до настила: ни выше мостка, ни ниже пола
       for (const l of M.ladders) { if (l[0] < x0 || l[0] > x1) continue; c.save(); c.beginPath(); c.rect(l[0] - 24, l[1] - 2, 48, l[2] - l[1] + 2); c.clip(); for (let y = l[1] + 28; y < l[2] + 30; y += 58) S(c, 'plat9', 'ladder', l[0], y, 1); c.restore(); }
@@ -235,8 +239,7 @@
       for (const w of M.walks) {
         if (w.gone || w[0] > x1 || w[0] + w[2] < x0) continue;
         // опорные колонны под концами мостка — до ближайшего пола ниже
-        const [, cth] = L9.size('col9', 'thin');
-        for (const ex of [w[0] + 14, w[0] + w[2] - 14]) { const fy = LAB.floorBelow(M, ex, w[1] + 8, 420, true) ?? 330; /* до ближайшего настила ниже (пол или нижний мосток), не сквозь мосток */ c.save(); c.beginPath(); c.rect(ex - 20, w[1] + 4, 40, fy - w[1] - 2); c.clip(); S(c, 'col9', 'thin', ex, fy + 2 - cth * 0.65 / 2, 0.65); c.restore(); }   // одна цельная колонна: опорная плита на полу, верх уходит под настил
+        for (const ex of [w[0] + 14, w[0] + w[2] - 14]) { const fy = LAB.floorBelow(M, ex, w[1] + 8, 420, true) ?? 330; LAB.post(c, ex, w[1] + 4, fy + 1); }   // одна цельная опора: оголовок под настилом, плита на полу
         // мосток: левый торец + середина плиткой + правый торец (из одного кадра Flow — перила и настил совпадают)
         const D9 = L9D.walk9, dk = D9.deck * 0.5, cyw = w[1] - dk + 37.5, eLw = L9.size('walk9', 'endL')[0], eRw = L9.size('walk9', 'endR')[0], mw = L9.size('walk9', 'mid')[0] - 1;
         const hl = Math.min(eLw, w[2] / 2), hr = Math.min(eRw, w[2] / 2);
@@ -275,6 +278,16 @@
       c.fillStyle = 'rgba(0,0,0,0.55)'; c.fillRect(6, 43, 60, 14); G.text('ГРАНАТЫ ' + P.gren, 10, 46, { size: 8 });
       if (P.M.drawHud) P.M.drawHud(c, P, lv);
     },
+  };
+  // цельная опора мостка (двутавр walk9:col): оголовок и база как нарисованы, ровная середина растягивается на нужную высоту
+  LAB.post = (c, x, y0, y1) => {
+    const d = L9D.walk9, im = L9.img.walk9; if (!d || !im) return; const f = d.f[L9.N.walk9.col], k = 0.5 * 0.45, w = f[2] * k, cap = f[3] * 0.16, base = f[3] * 0.16, ch = cap * k, bh = base * k, x0 = x - w / 2;
+    if (y1 - y0 < ch + bh) return;
+    c.imageSmoothingEnabled = true;
+    c.drawImage(im, f[0], f[1], f[2], cap, x0, y0, w, ch);
+    c.drawImage(im, f[0], f[1] + cap, f[2], f[3] - cap - base, x0, y0 + ch - 0.5, w, y1 - y0 - ch - bh + 1);
+    c.drawImage(im, f[0], f[1] + f[3] - base, f[2], base, x0, y1 - bh, w, bh);
+    c.imageSmoothingEnabled = false;
   };
   // верх сплошного блока ровно под ногами (с мостка можно спрыгнуть, со сплошного пола — нет)
   LAB.solidTop = (M, x, y) => M.solids.some(r => x >= r[0] && x < r[0] + r[2] && Math.abs(r[1] - y) < 2);

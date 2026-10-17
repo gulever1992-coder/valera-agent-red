@@ -37,8 +37,8 @@
       vats: [[180, 330], [460, 330], [640, 330], [1130, 330], [1420, 330], [1840, 330], [2160, 330], [5100, LIFT_TOP], [5500, LIFT_TOP], [6000, LIFT_TOP]],
       tvs: [{ x: 2560, y: 120, line: 'Ваш Выборгск прогнил! Все блага должны достаться столице! Должны быть люди и черви! Я выжму все соки, все деньги из всех вас!' },
         { x: 4400, y: 60, line: 'Знаете, Валера, как-то раз я набрался храбрости и зашёл в чёрную комнату...' }],
-      covers: [{ x: 1080, y: 330, kind: 'crates' }, { x: 1760, y: 330, kind: 'barrier' }, { x: 3000, y: 330, kind: 'crates' }, { x: 4050, y: 330, kind: 'barrier' }, { x: 5600, y: LIFT_TOP, kind: 'crates' }],
-      props: [{ x: 820, y: 330, kind: 'console' }, { x: 1600, y: 330, kind: 'tube' }, { x: 2700, y: 330, kind: 'waste' }, { x: 3400, y: 330, kind: 'gas' }, { x: 3950, y: 330, kind: 'tube' }, { x: 5200, y: LIFT_TOP, kind: 'console' }, { x: 5900, y: LIFT_TOP, kind: 'waste' }],
+      covers: [{ x: 1080, y: 330, kind: 'crates' }, { x: 1760, y: 330, kind: 'barrier' }, { x: 3562, y: 330, kind: 'crates' }, { x: 4050, y: 330, kind: 'barrier' }, { x: 5600, y: LIFT_TOP, kind: 'crates' }],
+      props: [{ x: 820, y: 330, kind: 'console' }, { x: 1600, y: 330, kind: 'tube' }, { x: 2200, y: 330, kind: 'waste' }, { x: 3760, y: 330, kind: 'gas' }, { x: 3950, y: 330, kind: 'tube' }, { x: 5200, y: LIFT_TOP, kind: 'console' }, { x: 5900, y: LIFT_TOP, kind: 'waste' }],
       riders: [], acid: [], door: { x: 6140, y: LIFT_TOP, open: 0 },
     };
     // ---------- враги по зонам ----------
