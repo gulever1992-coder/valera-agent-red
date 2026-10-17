@@ -41,7 +41,8 @@
       const sh = this.sh, f = this.frame(), fl = this.dir * (FACE_R[sh] || 1) < 0;
       if (this.dead && this.stT > 1.6 && (this.t * 12 | 0) % 2) return;
       if (!this.air) S(c, 'props8', 'shadow', this.x, this.y + 1, (this.w || 26) / 52, { a: 0.4 });
-      S(c, sh, f, this.x, this.y + (this.oy || 0), this.k || 1, { flip: fl, a: this.fl > 0 ? 0.55 : 1 });
+      S(c, sh, f, this.x, this.y + (this.oy || 0), this.k || 1, { flip: fl });
+      if (this.fl > 0) S(c, sh, f, this.x, this.y + (this.oy || 0), this.k || 1, { flip: fl, add: 1, a: 0.45 });     // попадание — светлая вспышка поверх, тело не просвечивает
       this.drawFx && this.drawFx(c);
     }
     walkFr(n = 6, sp = 9) { return 'w' + ((this.t * sp | 0) % n); }
@@ -87,7 +88,7 @@
       else { this.face(P); this.set('walk'); this.vx = Math.sign(dx) * 52; if (Math.abs(dx) < 110 && Math.abs(P.y - this.y) < 40 && this.cd <= 0) { this.set('raise'); this.cd = 2.2; } else if (this.cd < -4) { this.set('roar'); Sound.play('shout'); this.cd = 0.5; } }
       this.phys(dt);
     }
-    frame() { return this.dead ? 'dead' : this.fl > 0 && this.st === 'walk' ? 'hit' : ({ raise: 'raise', slam: 'slam', block: 'block', roar: 'roar' })[this.st] || this.walkFr(6, 7); }
+    frame() { return this.dead ? 'dead' : this.fl > 0 && this.st === 'walk' ? 'hit' : ({ raise: 'raise', slam: 'slam', block: 'block', roar: 'roar' })[this.st] || this.walkFr(8, 9); }
   }
 
   // Сварщик: щит спереди (стрелять сверху, сзади, гранатой, прикладом), в упор — пламя горелки
@@ -171,7 +172,7 @@
       if (Math.abs(dx) < 120 && Math.abs(P.y - this.y) < 40 && this.onG && (this.cd = (this.cd || 0) - dt) <= 0) { this.set('leap'); this.vy = -380; this.vx = this.dir * 230; this.onG = false; this.cd = 1.6; }
       this.phys(dt);
     }
-    draw(c) { if (this.st === 'ceil') { S(c, this.sh, 'c' + ((this.t * 10 | 0) % 6), this.x, this.ceil + 64, 1, { flip: this.dir < 0, a: this.fl > 0 ? 0.55 : 1 }); return; } super.draw(c); }
+    draw(c) { if (this.st === 'ceil') { S(c, this.sh, 'c' + ((this.t * 10 | 0) % 6), this.x, this.ceil + 64, 1, { flip: this.dir < 0 }); if (this.fl > 0) S(c, this.sh, 'c' + ((this.t * 10 | 0) % 6), this.x, this.ceil + 64, 1, { flip: this.dir < 0, add: 1, a: 0.45 }); return; } super.draw(c); }
     box() { return this.st === 'ceil' ? [this.x - 22, this.ceil, 44, 60] : super.box(); }
     frame() { return this.dead ? 'dead' : this.fl > 0 ? 'hit' : ({ drop: 'drop', land: 'land', leap: 'leap', slash: 'slash' })[this.st] || 'leap'; }
   }
@@ -184,9 +185,9 @@
     ai(dt, P) {
       const dx = P.x - this.x; this.cd -= dt;
       if (!this.seen(P)) { this.vx = 0; this.phys(dt); return; }
-      if (this.st === 'spin') { this.vx = 0; if (this.stT > 0.8) { this.set('fire'); } }
-      else if (this.st === 'fire') { this.vx = 0; this.fT = (this.fT || 0) - dt; if (this.fT <= 0) { this.fT = 0.09; Sound.play('shot', 0.6); this.ebul(this.x + this.dir * 70, this.y - 62 + rnd(-3, 3), this.dir * 520, rnd(-12, 12), { fr: 'fireball', s: 0.22, dmg: 8 }); } if (this.stT > 1.6) { this.set('taunt'); } }
-      else if (this.st === 'taunt') { if (this.stT > 0.9) this.set('walk'); }
+      if (this.st === 'spin') { this.vx = 0; this.face(P); if (this.stT > 0.8) { this.set('fire'); } }
+      else if (this.st === 'fire') { this.vx = 0; if (Math.sign(dx) !== this.dir && Math.abs(dx) > 30) { this.face(P); this.set('spin'); this.stT = 0.4; } this.fT = (this.fT || 0) - dt; if (this.fT <= 0) { this.fT = 0.09; Sound.play('shot', 0.6); this.ebul(this.x + this.dir * 70, this.y - 62 + rnd(-3, 3), this.dir * 520, rnd(-12, 12), { fr: 'fireball', s: 0.22, dmg: 8 }); } if (this.stT > 1.6) { this.set('taunt'); } }
+      else if (this.st === 'taunt') { this.face(P); if (this.stT > 0.9) this.set('walk'); }
       else { this.face(P); this.set('walk'); this.vx = Math.abs(dx) > 160 ? Math.sign(dx) * 40 : 0; if (this.cd <= 0 && Math.abs(dx) < 420 && Math.abs(P.y - this.y) < 60) { this.set('spin'); this.cd = rnd(2.4, 3.2); Sound.play('crane'); } }
       this.phys(dt);
     }
@@ -201,7 +202,7 @@
     ai(dt, P) { this.cd -= dt; this.fireT = (this.fireT || 0) - dt; if (this.cd <= 0 && this.seen(P)) { this.cd = 2; this.fireT = 0.2; const a = Math.atan2(P.y - 45 - this.y, P.x - this.x); this.ebul(this.x, this.y, Math.cos(a) * 300, Math.sin(a) * 300, { fr: 'fireball', s: 0.3, dmg: 10 }); Sound.play('shot'); } }
     update(dt, P, lv) { this.t += dt; this.stT += dt; this.fl -= dt; if (this.dead) return; this.ai(dt, P); }
     die(dir, kind) { super.die(dir, kind); this.fx('fxA9', ['boom0', 'boom1', 'boom2', 'boom3'], this.x, this.y, 0.7, 0.5); Sound.play('boom'); }
-    draw(c) { S(c, 'mech9', this.dead ? 'turDead' : this.fireT > 0 ? 'turFire' : 'tur', this.x, this.y, 1, { flip: this.dir > 0, a: this.fl > 0 ? 0.55 : 1 }); }
+    draw(c) { S(c, 'mech9', this.dead ? 'turDead' : this.fireT > 0 ? 'turFire' : 'tur', this.x, this.y, 1, { flip: this.dir > 0 }); if (this.fl > 0) S(c, 'mech9', this.fireT > 0 ? 'turFire' : 'tur', this.x, this.y, 1, { flip: this.dir > 0, add: 1, a: 0.45 }); }
   }
 
   L9.FOES = { Foe, Hat, Arm, Weld, Stump, Fly, Spit, Crawl, Super, Turret };

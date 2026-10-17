@@ -7,6 +7,7 @@ ROOT = os.path.join(os.path.dirname(__file__), '..')
 SRC = os.path.join(ROOT, 'art_src', 'l9')
 OUT = os.path.join(ROOT, 'assets', 'l9')
 DBG = '--debug' in sys.argv
+THIN_LINES = True
 os.makedirs(OUT, exist_ok=True)
 
 def load(name):
@@ -32,11 +33,12 @@ def key(a, bg, fx=False, grid=True):
     for i in np.where(cols)[0]:
         m[:, max(0, i - 2):i + 3] |= dark[:, max(0, i - 2):i + 3]
     m[:5, :] = True; m[-5:, :] = True; m[:, :5] = True; m[:, -5:] = True
-    fr, fc = (~m).mean(1), (~m).mean(0)     # сплошные ТОНКИЕ линии-разделители любого цвета (соседние строки/столбцы — не сплошные)
-    for i in range(8, m.shape[0] - 8):
-        if fr[i] > 0.9 and min(fr[i - 7], fr[i + 7]) < 0.7: m[i, :] = True
-    for i in range(8, m.shape[1] - 8):
-        if fc[i] > 0.9 and min(fc[i - 7], fc[i + 7]) < 0.7: m[:, i] = True
+    if THIN_LINES:     # сплошные ТОНКИЕ линии-разделители любого цвета — только для листов тоннеля; в лаборатории вырезали стойки колонн и настил мостков
+        fr, fc = (~m).mean(1), (~m).mean(0)
+        for i in range(8, m.shape[0] - 8):
+            if fr[i] > 0.9 and min(fr[i - 7], fr[i + 7]) < 0.7: m[i, :] = True
+        for i in range(8, m.shape[1] - 8):
+            if fc[i] > 0.9 and min(fc[i - 7], fc[i + 7]) < 0.7: m[:, i] = True
     return m
 
 

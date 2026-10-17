@@ -83,6 +83,7 @@ for out, nm in (('cave1', 'l9tun4_0.jpg'), ('cave2', 'l9tun4_1.jpg')):
     bg(out, nm)
 
 # ---------- Валера сбоку (лаборатория) ----------
+l9lib.THIN_LINES = False      # дальше (лаборатория) без поиска тонких линий: они съедали колонны, настил, руки и ноги
 VH = 168   # рост стоя, px холста (84 логических)
 r0 = cut('l9nvrun_1.jpg', 'm', 2, 4, clean=True)
 k = VH / hgt(r0, 0) * 1.0
@@ -157,8 +158,10 @@ if have(HCOP):
     hp = cut(HCOP, 'mf', 2, 2, clean=True)
     pack('hcop9', hp, CAP_W * 1.9 / hp[0].width, names=['run', 'fire', 'dmg', 'boom'])
 if have('l9arch_0.jpg'):
+    l9lib.THIN_LINES = True
     ar = cut(ARCH, 'm', 1, 4, mode='grid', clean='edge'); ar = [f.crop((8, 0, f.width - 8, f.height)) for f in ar]   # без просвечивающих полос по краям
     pack('arch9', ar, 760 / max(f.height for f in ar), names=['rib', 'pipes', 'pillar', 'glass'])
+    l9lib.THIN_LINES = False
 if have('l9hbar_0.jpg'):
     hb = cut(HBAR, 'm', 2, 4, mode='grid', clean='edge')
     pack('hbar9', hb, 0.62, names=['barrel', 'barrel2', 'barrelLeak', 'rubble', 'wreck', 'beam', 'slime', 'crate'])
@@ -272,11 +275,13 @@ def save_px(out, im, h):
     if im.mode == 'RGBA':
         arr = np.asarray(im).copy(); arr[arr[..., 3] < 60, 3] = 0
         ft = int(h * 0.14); arr[:ft, :, 3] = (arr[:ft, :, 3] * np.linspace(0, 1, ft)[:, None] ** 1.5).astype(np.uint8)   # верх слоя растворяется — без среза высоких труб у края кадра
+        if out == 'px3': fb = int(h * 0.12); arr[-fb:, :, 3] = (arr[-fb:, :, 3] * np.linspace(1, 0, fb)[:, None]).astype(np.uint8)   # низ ближнего ряда тоже растворяется: второй ряд у лифта ложится на средний план без ступеньки
         im = Image.fromarray(arr)
         im.save(os.path.join(OUT, out + '.png')); DATA.setdefault('_bgp', {})[out] = 1
     else:
         im.save(os.path.join(OUT, out + '.jpg'), quality=90); DATA['_bg'][out] = {'w': im.width, 'h': h}
-    DATA.setdefault('_px', {})[out] = [im.width, h]
+    bot = np.asarray(im.convert('RGB'))[-6:].reshape(-1, 3).mean(0).astype(int).tolist()     # цвет низа слоя — им заливаем всё ниже, чтобы не было ступеньки
+    DATA.setdefault('_px', {})[out] = [im.width, h, '#%02x%02x%02x' % tuple(bot)]
 if have('l9px1_1.jpg'):     # дальний план: свод пещеры, туман, силуэты башен
     save_px('px1', seamless(Image.open(os.path.join(SRC, 'l9px1_1.jpg')).convert('RGB')), 470)
 if have('l9px2_1.jpg'):     # средний план: резервуары, фермы, стеллажи капсул (два кадра в одну бесшовную петлю)
@@ -304,8 +309,8 @@ if have('l9chain_1.jpg'):   # цепи: крюк и блок с крюком; з
 if have('l9tank_0.jpg'):    # цистерна с кислотой вместо луж: 3 кадра поверхности
     tk = cut('l9tank_0.jpg', 'm', 3, 1, clean=True)
     pack('tank9', tk, 1.0, anchor='mid', names=['t0', 't1', 't2'])
-if have('l9belt_1.jpg'):    # лента конвейера: середина бесшовная (крутим смещением), торцы — из того же кадра
-    bt = cut('l9belt_1.jpg', 'm', 4, 1, clean=True)[0]; W_ = bt.width
+if have('l9belt_0.jpg'):    # лента конвейера (тёмная резина с потёками жижи): середина бесшовная (крутим смещением), торцы — из того же кадра
+    bt = cut('l9belt_0.jpg', 'm', 4, 1, clean=True)[1]; W_ = bt.width
     mid = seamless(bt.crop((int(W_ * 0.2), 0, int(W_ * 0.8), bt.height)), 60)
     pack('belt9b', [bt.crop((0, 0, int(W_ * 0.12), bt.height)), mid, bt.crop((int(W_ * 0.88), 0, W_, bt.height))], 0.3, anchor='mid', names=['endL', 'mid', 'endR'])
 if have('l9bodies_0.jpg'):  # лежачие тела для ленты (без ленты)
@@ -328,6 +333,34 @@ for w in ('pist', 'mini', 'plasma', 'rocket', 'seed'):
             if v + w in WSKIP: continue              # фигуры слиплись (ствол/вспышка до соседа) — остаётся лист с автоматом, пока не перерисован
             fr = cut(f, 'm', 2, 4, clean=True)
         pack(sh + '_' + w, fr, WNORM[v + w] / fr[0].height if v + w in WNORM else VH / hgt(r0, 0), names=nm)
+
+# ---------- 2026-10-17 (2): враги с целыми кадрами, пол с законченным низом, рука-разгрузчик ----------
+if have('l9eHat2_1.jpg'):
+    eh = cut('l9eHat2_1.jpg', 'm', 2, [8, 6], clean='edge')     # по промежуткам: бутылка в присяде остаётся в руке, а не прилипает к соседнему кадру
+    pack('eHat9', eh, VH * 1.02 / hgt(eh, 0), names=['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'wind', 'throw', 'crouch', 'jump', 'hit', 'dead'])
+if have('l9eArm2_0.jpg'):
+    ea = cut_blobs('l9eArm2_0.jpg', 'm', 2, grow=6)
+    pack('eArm9', ea, VH * 1.18 / hgt(ea, 0), names=['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'raise', 'slam', 'block', 'roar', 'hit', 'dead'])
+if have('l9eStump2_0.jpg'):
+    es_ = cut_blobs('l9eStump2_0.jpg', 'm', 2, grow=10)
+    if len(es_) == 12: pack('eStump9', es_, VH * 0.62 / hgt(es_, 0), names=['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'wall', 'ceil', 'beep', 'boom', 'hit', 'dead'])
+if have('l9floor3_0.jpg'):     # пол: верхняя плита + балка с законченным нижним поясом
+    fa = rgba_m('l9floor3_0.jpg'); al = np.asarray(fa)[..., 3] > 0; rows = np.where(al.mean(1) > 0.9)[0]
+    band = fa.crop((0, int(rows.min()), fa.width, int(rows.max()) + 1)).convert('RGB')
+    band = seamless(band, 160); band = band.resize((round(band.width * 96 / band.height), 96), Image.LANCZOS)
+    band.save(os.path.join(OUT, 'labFloor.png')); DATA.setdefault('_bgp', {})['labFloor'] = 1
+    print('labFloor band rows', rows.min(), rows.max())
+if have('l9unload_0.jpg'):     # рука-разгрузчик: 4 кадра сеткой по столбцам, в кадре только рука (связанная с верхом), тело рисуем своё
+    from scipy import ndimage
+    ua = rgba_m('l9unload_0.jpg'); W_, H_ = ua.size; fr_ = []
+    for i in range(4):
+        sub = np.asarray(ua.crop((W_ * i // 4, 0, W_ * (i + 1) // 4, H_))).copy(); s_ = sub[..., 3] > 0
+        lab, n = ndimage.label(s_); top = set(lab[0:12].ravel()) - {0}
+        keep = np.isin(lab, list(top)); sub[~keep, 3] = 0
+        if i == 1:     # кадр с телом: оставляем только руку выше захвата (тело — наш спрайт)
+            pass
+        fr_.append(trim(Image.fromarray(sub)))
+    pack('unload9', [fr_[0], fr_[2], fr_[3]], 0.5, names=['closed', 'release', 'open'])
 
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 

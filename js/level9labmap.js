@@ -7,20 +7,22 @@
     [2300, 4500, 'КОНВЕЙЕРНЫЙ ЗАЛ'],
     [4500, 6200, 'ГРУЗОВОЙ ПОДЪЁМНИК'],
   ];
-  const BELT = [2380, 3520];               // конвейер на полу: тянет влево
+  const BELT = [2380, 3520];               // конвейер вместо пола: тянет влево
+  const ARM_X = 3175, UNL = 2.6;           // (там, где над лентой нет мостков)
+  const HOOKS = [2820, 3780];            // крюки только там, где цепь не проходит сквозь мостки;           // рука-разгрузчик над правым краем ленты, цикл выгрузки
   const LIFT_X = 4700, LIFT_TOP = -170;
 
   L9.MAPS.lab = () => {
     const M = {
       x0: 0, x1: 6200, y0: -420, y1: 400, killY: 430,
       solids: [
-        [0, 330, 940, 80], [1060, 330, 1240, 80], [2300, 330, 1300, 80], [3720, 330, 1200, 80],
+        [0, 330, 940, 80], [1060, 330, 1190, 80], [2370, 330, 1230, 80], [3720, 330, 1200, 80],
         [4920, 330, 300, 80], [4840, LIFT_TOP, 1360, 40], [4600, LIFT_TOP - 260, 1600, 30, 'hide'],     // верхний этаж; потолок
         [-40, -420, 40, 830, 'hide'], [6200, -420, 40, 830, 'hide'], [5210, -130, 40, 540, 'hide'],     // за нижним ярусом подъёмника — стена шахты
       ],
       walks: [
         [300, 230, 260], [760, 230, 420], [1240, 230, 460], [1520, 130, 420], [1960, 230, 300],
-        [2420, 220, 360], [2860, 190, 260], [3230, 220, 420], [3540, 260, 200], [3820, 220, 300], [4180, 150, 240],
+        [2420, 220, 360], [2860, 190, 260], [3230, 220, 360], [3820, 220, 300], [4180, 150, 240],
         [5300, LIFT_TOP - 100, 300], [5700, LIFT_TOP - 100, 280],
       ],
       ladders: [[400, 230, 330], [1340, 230, 330], [1620, 130, 230], [2060, 230, 330], [2520, 220, 330], [3330, 220, 330], [3920, 220, 330], [4300, 150, 330], [5400, LIFT_TOP - 100, LIFT_TOP], [5800, LIFT_TOP - 100, LIFT_TOP]],     // не под торцами мостков; каждая от настила до пола
@@ -30,7 +32,8 @@
         { kind: 'pist', x: 1700, y: 130 }, { kind: 'kefir', x: 2100, y: 330 }, { kind: 'grenades', x: 2950, y: 190 },
         { kind: 'rocket', x: 4300, y: 150 }, { kind: 'kefir', x: 3900, y: 220 }, { kind: 'pies', x: 4640, y: 330 }, { kind: 'plasma', x: 5800, y: LIFT_TOP - 100 },
       ],
-      pits: [[940, 1060], [3600, 3720]],     // ямы — в них утоплены цистерны с кислотой
+      pits: [[940, 1060], [2250, 2370], [3600, 3720]],     // ямы — в них утоплены цистерны с кислотой (средняя — чан в конце конвейера)
+      noFloor: [[BELT[0], BELT[1]]],     // здесь вместо плиты пола — лента конвейера
       vats: [[180, 330], [460, 330], [640, 330], [1130, 330], [1420, 330], [1840, 330], [2160, 330], [5100, LIFT_TOP], [5500, LIFT_TOP], [6000, LIFT_TOP]],
       tvs: [{ x: 2560, y: 120, line: 'Ваш Выборгск прогнил! Все блага должны достаться столице! Должны быть люди и черви! Я выжму все соки, все деньги из всех вас!' },
         { x: 4400, y: 60, line: 'Знаете, Валера, как-то раз я набрался храбрости и зашёл в чёрную комнату...' }],
@@ -83,9 +86,16 @@
       M.picks = M.picks.filter(k => !k.dead);
       for (const a of M.acid) a.t += dt; M.acid = M.acid.filter(a => a.t < a.life);
       // наездники конвейера (бомжи едут влево к капсулам) — живой фон на ленте
-      M.rideT = (M.rideT || 0) - dt;
-      if (M.rideT <= 0) { M.rideT = rnd(1.6, 2.6); M.rideN = (M.rideN || 0) + 1; M.riders.push({ x: BELT[1] - 40, k: ['bum', 'drunk', 'thug', 'lady'][M.rideN % 4] }); }
-      for (const r of M.riders) r.x -= 70 * dt; M.riders = M.riders.filter(r => r.x > BELT[0] + 50);
+      // конвейер: рука с потолка кладёт тело на ленту (цикл UNL сек), лента везёт влево, в конце тело падает в чан с жижей
+      M.unlT = (M.unlT || 0) + dt; const ut = M.unlT % UNL;
+      if (ut < M.unlPrev) { M.rideN = (M.rideN || 0) + 1; }
+      if (M.unlPrev < UNL * 0.55 && ut >= UNL * 0.55) M.riders.push({ x: ARM_X, y: 330, k: ['bum', 'drunk', 'thug', 'lady'][M.rideN % 4] });
+      M.unlPrev = ut;
+      for (const r of M.riders) {
+        if (!r.fall) { r.x -= 70 * dt; if (r.x < BELT[0] + 8) { r.fall = 1; r.vx = -60; r.vy = -40; r.rot = 0; } }
+        else { r.x += r.vx * dt; r.vy += 900 * dt; r.y += r.vy * dt; r.rot -= 2.5 * dt; if (r.y > 352 && !r.spl) { r.spl = 1; Sound.play('splash', 0.35); P.fx.push({ sh: 'fxL9', fr: ['acidHit'], x: r.x, y: 340, s: 0.7, t: 0, life: 0.5, fade: 1 }); } }
+      }
+      M.riders = M.riders.filter(r => r.y < 420);
       // выход: дверь в конце верхнего этажа
       const d = M.door; if (!d.open && P.x > d.x - 120 && Math.abs(P.y - d.y) < 10) { if (P.foes.some(f => !f.dead && f.x > 5200)) P.hintAt('Дверь заблокирована — зачисти этаж!', 2); else { d.open = 1; d.t = 0; Sound.play('door'); } }
       if (d.open) d.t = (d.t || 0) + dt;
@@ -122,7 +132,7 @@
       const im = L9.img[n], d = PX()[n]; if (!im || !d) return;
       const w = d[0] * h / d[1], top = Math.round(bottom - h);
       for (let x = -((off * kx % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), top, Math.ceil(w) + 1, h);
-      if (bottom < 360 && !noFill) { c.fillStyle = '#04080b'; c.fillRect(0, Math.round(bottom) - 1, 640, 362 - bottom); }
+      if (bottom < 360 && !noFill) { c.fillStyle = d[2] || '#04080b'; c.fillRect(0, Math.round(bottom) - 1, 640, 362 - bottom); }
     };
     M.drawBack = (c, cx, cy) => {
       const fy = 330 - cy;                             // экранная высота пола первого этажа
@@ -131,16 +141,31 @@
       layer(c, 'px2', 250, 0.32, cx, 268 + (fy - 260) * 0.3);
       c.fillStyle = 'rgba(2,6,10,0.22)'; c.fillRect(0, 0, 640, 360);
       layer(c, 'px3', 215, 0.6, cx, 300 + (fy - 260) * 0.62);
-      if (cx > 4000) { const b2 = 300 + (fy - 500 - 260) * 0.62; if (b2 > 120) layer(c, 'px3', 215, 0.6, cx + 300, b2); }     // у подъёмника второй ряд машин — на уровне верхнего этажа
+      if (cx > 3500 && cy < -60) { c.globalAlpha = clamp((cx - 3500) / 600, 0, 1) * clamp((-cy - 60) / 220, 0, 1); layer(c, 'px3', 215, 0.6, cx + 300, 300 + (fy - 500 - 260) * 0.62, true); c.globalAlpha = 1; }     // у подъёмника второй ряд машин на уровне верхнего этажа: проявляется плавно, без скачка
       c.fillStyle = 'rgba(2,6,10,0.12)'; c.fillRect(0, 0, 640, 360);
+    };
+    // рука-разгрузчик с потолка: опускает тело на ленту, раскрывает клешню, поднимается за следующим (цикл UNL)
+    M.drawUnloader = (c, P) => {
+      const im = L9.img.unload9, D = L9D.unload9; if (!im || !D) return;
+      const u = (M.unlT || 0) % UNL / UNL, low = 300, high = 150;
+      const clawY = u < 0.35 ? high + (low - high) * (u / 0.35) : u < 0.7 ? low : high + (low - high) * (1 - (u - 0.7) / 0.3);
+      const fr = u < 0.55 ? 'closed' : u < 0.62 ? 'release' : 'open', f = D.f[L9.N.unload9[fr]], k = 0.5, w = f[2] * k, h = f[3] * k, cut = 0.5, top = Math.min(P.cam.y - 20, clawY - h);
+      const x = ARM_X - f[4] * k;
+      c.imageSmoothingEnabled = true;
+      const skip = f[3] * 0.12;      // без рельса сверху: цилиндр и шток тянутся вверх за край экрана
+      c.drawImage(im, f[0], f[1] + skip, f[2], f[3] * cut - skip, x, top, w, clawY - h * (1 - cut) - top + 1);
+      c.drawImage(im, f[0], f[1] + f[3] * cut, f[2], f[3] * (1 - cut), x, clawY - h * (1 - cut), w, h * (1 - cut));   // клешня как нарисована
+      c.imageSmoothingEnabled = false;
+      if (u < 0.55) S(c, 'body9', ['bum', 'drunk', 'thug', 'lady'][(M.rideN || 0) % 4], ARM_X, clawY + 30, 0.85);     // несёт тело (за шиворот)
     };
     M.drawOnFloor = (c, P) => {     // поверх плиты пола: лента конвейера с телами, цистерны в ямах
       const t = P.t;
       // лента конвейера: бесшовная середина крутится влево, по краям торцы с барабанами; на ней лежат тела
-      { const BK = 1.4, [ew] = L9.size('belt9b', 'endL'), [mw, mh] = L9.size('belt9b', 'mid'), y = 328 + mh * BK / 2, x0 = BELT[0] + ew * BK, x1 = BELT[1] - ew * BK, sh = (t * 70) % (mw * BK);
+      { const BK = 1.8, [ew] = L9.size('belt9b', 'endL'), [mw, mh] = L9.size('belt9b', 'mid'), y = 327 + mh * BK / 2, x0 = BELT[0] + ew * BK, x1 = BELT[1] - ew * BK, sh = (t * 70) % (mw * BK);
         c.save(); c.beginPath(); c.rect(x0, y - 30, x1 - x0, 60); c.clip(); for (let x = x0 - sh; x < x1; x += mw * BK - 1) S(c, 'belt9b', 'mid', x + mw * BK / 2, y, BK); c.restore();
         S(c, 'belt9b', 'endL', BELT[0] + ew * BK / 2, y, BK); S(c, 'belt9b', 'endR', BELT[1] - ew * BK / 2, y, BK); }
-      for (const r of M.riders) S(c, 'body9', r.k, r.x, 331, 0.85);
+      for (const r of M.riders) if (!r.held) S(c, 'body9', r.k, r.x, r.y + 1, 0.85, { rot: r.rot || 0 });
+      M.drawUnloader && M.drawUnloader(c, P);
       // ямы: утопленные цистерны с кислотой (кадры поверхности 0-1-2-1)
       for (const p of M.pits) {      // верх (кромка и кислота) — как нарисован, стенки ниже растянуты до дна ямы
         const fi = [0, 1, 2, 1][(t * 3 | 0) % 4], f = L9D.tank9.f[fi], im = L9.img.tank9, w = p[1] - p[0] + 10, k = w / f[2], h = f[3] * k, cut = 0.62, x = p[0] - 5, y = 323;
@@ -163,7 +188,7 @@
       }
       // цепи с крюками над лентой: от крюка вверх до потолка звеньями ровно по шагу цепи (без обрыва)
       const CK = 1.3, [, chH] = L9.size('chain9', 'hook'), [, lkH] = L9.size('chain9', 'link');
-      for (let x = BELT[0] + 120, i = 0; x < BELT[1]; x += 300, i++) {
+      for (let i = 0; i < HOOKS.length; i++) { const x = HOOKS[i];
         const fr = 'hook', hb = 150 + (i % 3) * 14, top = hb - chH * CK;
         S(c, 'chain9', fr, x, hb - chH * CK / 2, CK);
         for (let y = top; y > P.cam.y - lkH * CK; y -= lkH * CK) S(c, 'chain9', 'link', x, y - lkH * CK / 2, CK);
