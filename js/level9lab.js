@@ -6,7 +6,7 @@
   // оружие: скорострельность, урон, скорость пули, патроны (null — бесконечно), эффект
   const WEAP = {
     rifle: { name: 'АВТОМАТ', rate: 0.13, dmg: 1, sp: 640, ammo: null, fx: 'tracer' },
-    pist: { name: 'ПИСТОЛЕТЫ', rate: 0.09, dmg: 1, sp: 760, ammo: 140, fx: 'tracer', dual: 1 },
+    pist: { name: 'ПИСТОЛЕТ', rate: 0.09, dmg: 1, sp: 760, ammo: 140, fx: 'tracer' },
     mini: { name: 'МИНИГАН', rate: 0.055, dmg: 0.8, sp: 700, ammo: 320, fx: 'tracer', spread: 0.09 },
     plasma: { name: 'ПЛАЗМОГАН', rate: 0.32, dmg: 3.5, sp: 460, ammo: 40, fx: 'plasma', pierce: 1 },
     rocket: { name: 'РАКЕТНИЦА', rate: 0.75, dmg: 6, sp: 380, ammo: 12, fx: 'rocket', blast: 46 },
@@ -220,8 +220,10 @@
       for (const r of M.solids) {
         if (r[0] > x1 || r[0] + r[2] < x0 || r[4] === 'hide') continue;
         if (fim) { const fw = fim.width / fim.height * FH; c.save(); c.beginPath(); c.rect(r[0], r[1] - 4, r[2], FH + 4); c.clip(); for (let x = r[0] - ((r[0] % fw) + fw) % fw; x < r[0] + r[2]; x += fw) c.drawImage(fim, Math.floor(x), r[1] - 3, Math.ceil(fw) + 1, FH); c.restore(); }
-        for (let ex = r[0] + 10; ex < r[0] + r[2]; ex += (r[2] - 20) / Math.max(1, Math.round((r[2] - 20) / 150)) || 1e9) if (ex > M.x0 + 20 && ex < M.x1 - 20) for (let y = r[1] + FH - 4; y < Math.min(r[1] + 260, P.cam.y + 400); y += 64) S(c, 'walk9', 'col', ex, y + 32, 0.45);   // несущие балки под плитой (по краям и через ~150 px)
+        const [, th] = L9.size('col9', 'thick');
+        for (let ex = r[0] + 14; ex < r[0] + r[2]; ex += (r[2] - 28) / Math.max(1, Math.round((r[2] - 28) / 150)) || 1e9) if (ex > M.x0 + 20 && ex < M.x1 - 20) { const y0 = r[1] + FH - 6, fb = LAB.floorBelow(M, ex, r[1] + r[3] + 2, 900, false), len = fb != null ? fb + 2 - y0 : th * 0.38; S(c, 'col9', 'thick', ex, y0 + len / 2, 0.38, { sy: len / (th * 0.38) }); }   // цельные опорные колонны под плитой (капитель под полом, уходят вниз)
       }
+      M.drawOnFloor && M.drawOnFloor(c, P);
       // лестницы (за мостками)
       // лестница ровно от пола до настила: ни выше мостка, ни ниже пола
       for (const l of M.ladders) { if (l[0] < x0 || l[0] > x1) continue; c.save(); c.beginPath(); c.rect(l[0] - 24, l[1] - 2, 48, l[2] - l[1] + 2); c.clip(); for (let y = l[1] + 28; y < l[2] + 30; y += 58) S(c, 'plat9', 'ladder', l[0], y, 1); c.restore(); }
@@ -229,7 +231,8 @@
       for (const w of M.walks) {
         if (w.gone || w[0] > x1 || w[0] + w[2] < x0) continue;
         // опорные колонны под концами мостка — до ближайшего пола ниже
-        for (const ex of [w[0] + 14, w[0] + w[2] - 14]) { const fy = LAB.floorBelow(M, ex, w[1] + 8, 420, false) ?? 330; c.save(); c.beginPath(); c.rect(ex - 20, w[1] + 8, 40, fy - w[1] - 8); c.clip(); for (let y = w[1] + 8; y < fy + 70; y += 64) S(c, 'walk9', 'col', ex, y + 32, 0.45); c.restore(); }
+        const [, cth] = L9.size('col9', 'thin');
+        for (const ex of [w[0] + 14, w[0] + w[2] - 14]) { const fy = LAB.floorBelow(M, ex, w[1] + 8, 420, false) ?? 330; c.save(); c.beginPath(); c.rect(ex - 20, w[1] + 4, 40, fy - w[1] - 2); c.clip(); S(c, 'col9', 'thin', ex, fy + 2 - cth * 0.65 / 2, 0.65); c.restore(); }   // одна цельная колонна: опорная плита на полу, верх уходит под настил
         // мосток: левый торец + середина плиткой + правый торец (из одного кадра Flow — перила и настил совпадают)
         const D9 = L9D.walk9, dk = D9.deck * 0.5, cyw = w[1] - dk + 37.5, eLw = L9.size('walk9', 'endL')[0], eRw = L9.size('walk9', 'endR')[0], mw = L9.size('walk9', 'mid')[0] - 1;
         const hl = Math.min(eLw, w[2] / 2), hr = Math.min(eRw, w[2] / 2);
@@ -237,7 +240,7 @@
         c.save(); c.beginPath(); c.rect(w[0], cyw - 40, hl, 80); c.clip(); S(c, 'walk9', 'endL', w[0] + eLw / 2, cyw, 1); c.restore();
         c.save(); c.beginPath(); c.rect(w[0] + w[2] - hr, cyw - 40, hr, 80); c.clip(); S(c, 'walk9', 'endR', w[0] + w[2] - eRw / 2, cyw, 1); c.restore();
       }
-      for (const l of M.lifts || []) S(c, 'plat9', 'lift', l.x + l.w / 2, l.y + 24, l.w / 53);
+      for (const l of M.lifts || []) M.drawCar ? M.drawCar(c, l) : S(c, 'plat9', 'lift', l.x + l.w / 2, l.y + 24, l.w / 53);
     },
     drawValera(c) {
       if (P.lv.dead && P.lv.dead > 0.3) { S(c, 'vClimb9', 'down', P.x, P.y, 1, { flip: P.dir < 0 }); return; }
@@ -252,6 +255,7 @@
       else if (P.st === 'crouch') fr = P.aim === 'cdiag' ? 'crouchDiag' : P.fireA > 0 ? 'crouchFire' : 'crouch';
       else if (P.st === 'run') { if (P.aim === 'diag') { sh = 'vRunUD9'; fr = 'u' + run4; } else if (P.aim === 'down') { sh = 'vRunUD9'; fr = 'd' + run4; } else { sh = 'vRun9'; fr = 'r' + run8; } }
       else fr = P.aim === 'diag' ? 'diag' : P.aim === 'up' ? 'up' : P.aim === 'down' ? 'down' : P.fireA > 0 ? 'fire' : 'stand';
+      if (P.weap !== 'rifle' && L9D[sh + '_' + P.weap]) sh += '_' + P.weap;     // в руках то оружие, которое подобрал
       S(c, sh, fr, P.x, P.y + 1, 1, { flip: fl });
     },
     drawBullet(c, b) {

@@ -126,10 +126,15 @@ pack('capOut9', co2, CAP_W / co2[0].width, names=['sit', 'stand', 'step', 'empty
 for sh, src, rows, cols, names, hk in (
     ('eStump9', 'l9eStump_0.jpg', 2, 6, ['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'wall', 'ceil', 'beep', 'boom', 'hit', 'dead'], 0.62),
     ('eFly9', 'l9eFly_0.jpg', 2, 6, ['h0', 'h1', 'h2', 'h3', 'h4', 'h5', 'dive', 'drill', 'bomb', 'laugh', 'hit', 'dead'], 1.0),
-    ('eSpit9', 'l9eSpit_0.jpg', 2, 6, ['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'inflate', 'spit', 'crouch', 'scream', 'hit', 'dead'], 1.02),
-    ('eCrawl9', 'l9eCrawl_0.jpg', 2, 6, ['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'drop', 'land', 'leap', 'slash', 'hit', 'dead'], 0.75)):
+    ):
     fr = cut(src, 'm', rows, cols, mode='grid', clean='edge')
     pack(sh, fr, VH * hk / hgt(fr, 0), names=names)
+# плевун и ползун стоят на листе неровно — режем по промежуткам между фигурами (сетка резала плевок, руки и труп)
+fr = cut_blobs('l9eSpit_0.jpg', 'm', 2)
+pack('eSpit9', fr, VH * 1.02 / hgt(fr, 0), names=['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'inflate', 'spit', 'crouch', 'scream', 'hit', 'dead'])
+fr = cut('l9eCrawl_0.jpg', 'm', 2, [5, 6], clean=True)
+fr = fr[:5] + [fr[0]] + fr[5:]          # в ряду ползания 5 кадров, шестой — повтор первого
+pack('eCrawl9', fr, VH * 0.75 / hgt(fr, 0), names=['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'drop', 'land', 'leap', 'slash', 'hit', 'dead'])
 
 ew = cut('l9eWeld_0.jpg', 'm', 3, [8, 7, 8], clean=True)
 pack('eWeld9', ew[:8] + [ew[9], ew[10], ew[11], ew[12], ew[14], ew[22]], VH * 1.0 / hgt(ew, 0), names=['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'mask', 'flame', 'shield', 'laugh', 'hit', 'dead'])
@@ -235,6 +240,94 @@ if have('l9vat2_1.jpg'):
 if have('l9mid_1.jpg'):
     md = cut('l9mid_1.jpg', 'm', 2, 3, mode='grid', clean='edge')
     pack('mid9', md, 1.0, names=['tank', 'rack', 'crane', 'pipes', 'gen', 'crates'])
+
+# ---------- лаборатория v4: многослойный параллакс, цельные колонны, лифт с лебёдкой, цепи, цистерна, конвейер, оружие в руках ----------
+def rgba_m(name, box=None):
+    """Кадр Flow на пурпуре -> RGBA (без поиска линий сетки: тёмные колонны и цепи не трогаем)."""
+    a = load(name)
+    if box: a = a[box[1]:box[3], box[0]:box[2]]
+    m = key(a, 'm', grid=False)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    m |= (r > 50) & (b > 50) & (g < np.minimum(r, b) * 0.55)          # тёмный пурпур в тенях и на краях
+    pur = ~m & (r > g * 1.2) & (b > g * 1.2)                           # отсветы фона на металле -> в холодный серо-бирюзовый
+    if pur.any():
+        a = a.copy(); L = (r * 0.3 + g * 0.59 + b * 0.11)[pur]
+        a[pur, 0] = (L * 0.55).astype(np.int32); a[pur, 1] = (L * 0.95).astype(np.int32); a[pur, 2] = (L * 0.95).astype(np.int32)
+    return Image.fromarray(defringe(np.dstack([a, np.where(m, 0, 255)]).astype(np.uint8), 'm'))
+def trim(im):
+    al = np.asarray(im)[..., 3] > 0; ys, xs = np.where(al)
+    return im.crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1))
+def loop2(a, b, B):
+    """Две картинки одной высоты -> одна полоса A+B, у которой оба стыка (A|B и B|A) плавно перетекают."""
+    a = np.asarray(a).astype(np.float32); b = np.asarray(b).astype(np.float32)
+    if a.shape[2] == 4:                                  # смешиваем с премультипликацией — иначе цвет прозрачного пурпура проступает на стыке
+        for x in (a, b): x[..., :3] *= x[..., 3:] / 255
+    k = (np.arange(B) / B)[None, :, None]
+    ab = a[:, -B:] * (1 - k) + b[:, :B] * k; ba = b[:, -B:] * (1 - k) + a[:, :B] * k
+    out = np.concatenate([ba, a[:, B:-B], ab, b[:, B:-B]], 1)
+    if out.shape[2] == 4: out[..., :3] /= np.maximum(out[..., 3:], 1) / 255
+    return Image.fromarray(out.clip(0, 255).astype(np.uint8))
+def save_px(out, im, h):
+    im = im.resize((round(im.width * h / im.height), h), Image.LANCZOS)
+    if im.mode == 'RGBA':
+        arr = np.asarray(im).copy(); arr[arr[..., 3] < 60, 3] = 0
+        ft = int(h * 0.14); arr[:ft, :, 3] = (arr[:ft, :, 3] * np.linspace(0, 1, ft)[:, None] ** 1.5).astype(np.uint8)   # верх слоя растворяется — без среза высоких труб у края кадра
+        im = Image.fromarray(arr)
+        im.save(os.path.join(OUT, out + '.png')); DATA.setdefault('_bgp', {})[out] = 1
+    else:
+        im.save(os.path.join(OUT, out + '.jpg'), quality=90); DATA['_bg'][out] = {'w': im.width, 'h': h}
+    DATA.setdefault('_px', {})[out] = [im.width, h]
+if have('l9px1_1.jpg'):     # дальний план: свод пещеры, туман, силуэты башен
+    save_px('px1', seamless(Image.open(os.path.join(SRC, 'l9px1_1.jpg')).convert('RGB')), 470)
+if have('l9px2_1.jpg'):     # средний план: резервуары, фермы, стеллажи капсул (два кадра в одну бесшовную петлю)
+    save_px('px2', loop2(rgba_m('l9px2_1.jpg'), rgba_m('l9px2_0.jpg'), 160), 330)
+if have('l9px3_1.jpg'):     # ближний задний план: прессы, колбы, манипуляторы
+    save_px('px3', loop2(rgba_m('l9px3_1.jpg'), rgba_m('l9px3_0.jpg'), 160), 300)
+if have('l9col_0.jpg'):     # цельные колонны во всю высоту: тонкая (мостки), толстая (под полом), направляющая ферма
+    cl = cut('l9col_0.jpg', 'm', 1, 3, clean=True)
+    pack('col9', cl, 1.0, anchor='mid', names=['thin', 'thick', 'rail'])
+if have('l9lift_1.jpg'):    # грузовой лифт: лебёдка наверху, тросы, кабина с траверсой, стойки шахты
+    lw = rgba_m('l9lift_1.jpg'); LK = 0.232
+    parts = [trim(lw.crop((0, 0, 768, 340))), lw.crop((330, 420, 460, 820)), trim(lw.crop((30, 880, 740, 1300))), lw.crop((90, 420, 180, 860))]
+    pack('lift9', parts, LK, anchor='mid', names=['winch', 'cable', 'car', 'post'])
+    DATA['lift9']['carDeck'] = round((1200 - 880) * LK)      # верх настила кабины от верха кадра кабины
+if have('l9chain_1.jpg'):   # цепи: крюк и блок с крюком; звенья для продолжения вверх — ровно по периоду звена
+    ch = rgba_m('l9chain_1.jpg')
+    hk, bl_ = trim(ch.crop((0, 0, 330, 1376))), trim(ch.crop((400, 0, 768, 1376)))
+    def link(im, x0, x1):
+        al = (np.asarray(im)[:700, x0:x1, 3] > 0).mean(1).astype(np.float32); al -= al.mean()
+        best = max(range(40, 300), key=lambda p: float((al[:-p] * al[p:]).mean()))
+        return im.crop((x0, 0, x1, best * 2)), best * 2
+    lh, ph = link(hk, 0, hk.width)
+    pack('chain9', [hk, bl_, lh], 0.26, anchor='mid', names=['hook', 'block', 'link'])
+    print('chain link period', ph)
+if have('l9tank_0.jpg'):    # цистерна с кислотой вместо луж: 3 кадра поверхности
+    tk = cut('l9tank_0.jpg', 'm', 3, 1, clean=True)
+    pack('tank9', tk, 1.0, anchor='mid', names=['t0', 't1', 't2'])
+if have('l9belt_1.jpg'):    # лента конвейера: середина бесшовная (крутим смещением), торцы — из того же кадра
+    bt = cut('l9belt_1.jpg', 'm', 4, 1, clean=True)[0]; W_ = bt.width
+    mid = seamless(bt.crop((int(W_ * 0.2), 0, int(W_ * 0.8), bt.height)), 60)
+    pack('belt9b', [bt.crop((0, 0, int(W_ * 0.12), bt.height)), mid, bt.crop((int(W_ * 0.88), 0, W_, bt.height))], 0.3, anchor='mid', names=['endL', 'mid', 'endR'])
+if have('l9bodies_0.jpg'):  # лежачие тела для ленты (без ленты)
+    bd = cut('l9bodies_0.jpg', 'm', 2, 2, mode='grid', clean=True)
+    pack('body9', bd, 0.3, names=['bum', 'drunk', 'thug', 'lady'])
+# Валера с подобранным оружием: те же листы, что с автоматом, тот же масштаб
+WSEL = {'aimmini': 1, 'runmini': 3, 'jumpmini': 2}
+WSKIP = set()
+WNORM = {'runmini': 168, 'jumpmini': 135}     # перерисованы мельче — подгоняем рост по первому кадру
+for w in ('pist', 'mini', 'plasma', 'rocket', 'seed'):
+    for sh, v, nm in (('vAim9', 'aim', ['stand', 'fire', 'diag', 'up', 'down', 'crouch', 'crouchFire', 'crouchDiag']), ('vRun9', 'run', ['r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7']),
+                      ('vRunUD9', 'runud', ['u0', 'u1', 'u2', 'u3', 'd0', 'd1', 'd2', 'd3']), ('vJump9', 'jump', ['take', 'rise', 'flip1', 'flip2', 'flip3', 'fallDown', 'fallDiag', 'land'])):
+        f = 'l9w%s%s_%d.jpg' % (v, w, WSEL.get(v + w, 0))
+        if not have(f): continue
+        fr = None
+        for g in (10, 4):                            # оружие и вспышки длинные — режем по фигурам; если число не сошлось — по промежуткам
+            fr = cut_blobs(f, 'm', 2, grow=g)
+            if len(fr) == 8: break
+        if len(fr) != 8:
+            if v + w in WSKIP: continue              # фигуры слиплись (ствол/вспышка до соседа) — остаётся лист с автоматом, пока не перерисован
+            fr = cut(f, 'm', 2, 4, clean=True)
+        pack(sh + '_' + w, fr, WNORM[v + w] / fr[0].height if v + w in WNORM else VH / hgt(r0, 0), names=nm)
 
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 

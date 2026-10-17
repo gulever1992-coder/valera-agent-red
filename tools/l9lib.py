@@ -13,7 +13,7 @@ def load(name):
     return np.asarray(Image.open(os.path.join(SRC, name)).convert('RGB')).astype(np.int32)
 
 
-def key(a, bg, fx=False):
+def key(a, bg, fx=False, grid=True):
     """Маска фона: пурпур ('m') или зелёный ('g'); чёрные линии сетки тоже фон."""
     r, g, b = a[..., 0], a[..., 1], a[..., 2]
     if bg == 'g':
@@ -22,6 +22,7 @@ def key(a, bg, fx=False):
         m = (r > 90) & (b > 90) & (g < np.minimum(r, b) * 0.5)
         if fx:   # свечение, смешанное с пурпуром
             m |= (b > r * 0.62) & (g < b * 0.62) & (b > 70)
+    if not grid: return m
     dark = (r < 40) & (g < 40) & (b < 40)
     rows = dark.mean(1) > 0.85
     cols = dark.mean(0) > 0.85
@@ -164,6 +165,9 @@ def pack(sheet, frames, scale, anchor='feet', names=None):
     for f in fr:
         if f is None: meta.append(None); continue
         arr = np.asarray(f).copy(); arr[arr[..., 3] < 110, 3] = 0; arr[arr[..., 3] >= 110, 3] = 255
+        if sheet[0] == 'v':      # у Валеры нет пурпура: кайма фона на стволе -> серый металл
+            r_, g_, b_ = arr[..., 0].astype(int), arr[..., 1].astype(int), arr[..., 2].astype(int); pu = (r_ > g_ * 1.25) & (b_ > g_ * 1.25) & (b_ > 40)
+            L_ = (r_ * 0.3 + g_ * 0.59 + b_ * 0.11) * 0.8; arr[pu, 0] = L_[pu]; arr[pu, 1] = L_[pu]; arr[pu, 2] = (L_[pu] * 1.05).clip(0, 255)
         f = Image.fromarray(arr); sh.paste(f, (x, 1))
         ax = anchor_x(f) if anchor == 'feet' else f.width // 2
         ay = f.height if anchor == 'feet' else f.height // 2
@@ -184,3 +188,23 @@ def seamless(im, B=None):
     k = (np.arange(B) / B)[None, :, None]
     out[:, :B] = a[:, W - B:W] * (1 - k) + a[:, :B] * k
     return Image.fromarray(out.clip(0, 255).astype(np.uint8))
+
+
+def cut_blobs(name, bg, rows, grow=6, min_k=0.03):
+    """Кадры = связные фигуры (с ростом grow px, чтобы капли и плевки держались своей фигуры); порядок — по рядам слева направо.
+    Нужно, когда фигуры на листе перекрывают друг друга по x (плевок над соседним кадром)."""
+    from scipy import ndimage
+    a = load(name); m = key(a, bg)
+    rgba = defringe(np.dstack([a, np.where(m, 0, 255)]).astype(np.uint8), bg)
+    s = rgba[..., 3] > 0
+    lab, n = ndimage.label(ndimage.binary_dilation(s, iterations=grow))
+    sz = ndimage.sum(s, lab, range(1, n + 1)); objs = ndimage.find_objects(lab)
+    blobs = [(objs[i], i + 1) for i in range(n) if sz[i] >= sz.max() * min_k]
+    H = a.shape[0]; out = []
+    for j in range(rows):
+        row = [b for b in blobs if j * H // rows <= (b[0][0].start + b[0][0].stop) // 2 < (j + 1) * H // rows]
+        for (sl, li) in sorted(row, key=lambda b: b[0][1].start):
+            sub = rgba[sl].copy(); sub[(lab[sl] != li) | ~s[sl], 3] = 0
+            ys, xs = np.where(sub[..., 3] > 0)
+            out.append(Image.fromarray(sub[ys.min():ys.max() + 1, xs.min():xs.max() + 1]))
+    return out
