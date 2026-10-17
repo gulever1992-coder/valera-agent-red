@@ -21,15 +21,15 @@
         [-40, -420, 40, 830, 'hide'], [6200, -420, 40, 830, 'hide'], [5210, -130, 40, 540, 'hide'],     // за нижним ярусом подъёмника — стена шахты
       ],
       walks: [
-        [300, 230, 260], [760, 230, 420], [1240, 230, 460], [1520, 130, 420], [1960, 230, 300],
+        [300, 230, 260], [760, 230, 420], [1240, 230, 460], [1730, 130, 210], [1960, 230, 300],
         [2420, 220, 360], [2860, 190, 260], [3230, 220, 360], [3820, 220, 300], [4180, 150, 240],
         [5300, LIFT_TOP - 100, 300], [5700, LIFT_TOP - 100, 280],
       ],
-      ladders: [[400, 230, 330], [1340, 230, 330], [1620, 130, 230], [2060, 230, 330], [2520, 220, 330], [3330, 220, 330], [3920, 220, 330], [4300, 150, 330], [5400, LIFT_TOP - 100, LIFT_TOP], [5800, LIFT_TOP - 100, LIFT_TOP]],     // не под торцами мостков; каждая от настила до пола
+      ladders: [[400, 230, 330], [1340, 230, 330], [1800, 130, 330], [2060, 230, 330], [2520, 220, 330], [3330, 220, 330], [3920, 220, 330], [4300, 150, 330], [5400, LIFT_TOP - 100, LIFT_TOP], [5800, LIFT_TOP - 100, LIFT_TOP]],     // не под торцами мостков; каждая от настила до пола
       lifts: [{ x: LIFT_X, w: 140, y: 330, y0: 330, y1: LIFT_TOP, on: 0 }],
       cks: [[140, 330], [2380, 330], [4560, 330], [5000, LIFT_TOP]],
       picks: [
-        { kind: 'pist', x: 1700, y: 130 }, { kind: 'kefir', x: 2100, y: 330 }, { kind: 'grenades', x: 2950, y: 190 },
+        { kind: 'pist', x: 1830, y: 130 }, { kind: 'kefir', x: 2100, y: 330 }, { kind: 'grenades', x: 2950, y: 190 },
         { kind: 'rocket', x: 4300, y: 150 }, { kind: 'kefir', x: 3900, y: 220 }, { kind: 'pies', x: 4640, y: 330 }, { kind: 'plasma', x: 5800, y: LIFT_TOP - 100 },
       ],
       pits: [[955, 1045], [2280, 2370], [3615, 3705]],     // по 90 px — перепрыгиваются с разбега     // ямы — в них утоплены цистерны с кислотой (средняя — чан в конце конвейера)
@@ -43,7 +43,7 @@
     };
     // ---------- враги по зонам ----------
     M.spawnList = [
-      ['Hat', 760, 330], ['Hat', 1000, 230], ['Arm', 1500, 330], ['Turret', 2270, 260, { dir: -1 }], ['Hat', 1700, 130], ['Stump', 2050, 330],
+      ['Hat', 760, 330], ['Hat', 1000, 230], ['Arm', 1500, 330], ['Turret', 2270, 260, { dir: -1 }], ['Hat', 1860, 130], ['Stump', 2050, 330],
       ['Spit', 2700, 220], ['Stump', 2600, 330], ['Stump', 2900, 330], ['Weld', 3300, 330], ['Fly', 3500, 120], ['Crawl', 3900, 60, { ceil: 60 }], ['Hat', 4250, 150], ['Weld', 4100, 330],
       ['Super', 5550, LIFT_TOP], ['Spit', 5800, LIFT_TOP - 100], ['Arm', 6000, LIFT_TOP],
     ];
@@ -92,8 +92,8 @@
       if (M.unlPrev < UNL * 0.55 && ut >= UNL * 0.55) M.riders.push({ x: ARM_X, y: 330, k: ['bum', 'drunk', 'thug', 'lady'][M.rideN % 4] });
       M.unlPrev = ut;
       for (const r of M.riders) {
-        if (!r.fall) { r.x -= 70 * dt; if (r.x < BELT[0] + 8) { r.fall = 1; r.vx = -(r.x - 2325) / 0.33; r.vy = -40; r.rot = 0; }     /* падает точно в середину чана в конце ленты */ }
-        else { r.x += r.vx * dt; r.vy += 900 * dt; r.y += r.vy * dt; r.rot -= 2.5 * dt; if (r.y > 352 && !r.spl) { r.spl = 1; Sound.play('splash', 0.35); P.fx.push({ sh: 'fxL9', fr: ['acidHit'], x: r.x, y: 340, s: 0.7, t: 0, life: 0.5, fade: 1 }); } }
+        if (!r.fall) { r.x -= 70 * dt; if (r.x < BELT[0] + 8) { r.fall = 1; r.vx = -(r.x - 2325) / 0.42; r.vy = -160; r.rot = 0; }     /* падает точно в середину чана в конце ленты */ }
+        else { if (r.y > 340) r.vx *= 0.8; r.x += r.vx * dt; r.vy += 900 * dt; r.y += r.vy * dt; r.rot = Math.max(-1.4, r.rot - 3 * dt); if (r.y > 336 && !r.spl) { r.spl = 1; Sound.play('splash', 0.35); P.fx.push({ sh: 'fxL9', fr: ['acidHit'], x: r.x, y: 334, s: 0.7, t: 0, life: 0.5, fade: 1 }); } }
       }
       M.riders = M.riders.filter(r => r.y < 420);
       // выход: дверь в конце верхнего этажа
@@ -164,7 +164,10 @@
       { const BK = 1.8, [ew] = L9.size('belt9b', 'endL'), [mw, mh] = L9.size('belt9b', 'mid'), y = 316 + mh * BK / 2, x0 = BELT[0] + ew * BK * 0.45, x1 = BELT[1] - ew * BK * 0.45, sh = (t * 70) % (mw * BK - 1);
         c.save(); c.beginPath(); c.rect(x0, y - 40, x1 - x0, 80); c.clip(); for (let x = x0 - sh; x < x1; x += mw * BK - 1) S(c, 'belt9b', 'mid', x + mw * BK / 2, y, BK); c.restore();     /* лента одним куском едет по всей длине */
         S(c, 'belt9b', 'endL', BELT[0] + ew * BK / 2, y, BK); S(c, 'belt9b', 'endR', BELT[1] - ew * BK / 2, y, BK); }
-      for (const r of M.riders) if (!r.held) S(c, 'body9', r.k, r.x, r.y + 1, 0.85, { rot: r.rot || 0 });
+      for (const r of M.riders) {     // упавшее тело уходит под поверхность жижи (рисуем только то, что выше неё)
+        if (r.fall && r.y > 326) { c.save(); c.beginPath(); c.rect(r.x - 80, r.y - 120, 160, 336 - (r.y - 120)); c.clip(); S(c, 'body9', r.k, r.x, r.y + 1, 0.85, { rot: r.rot || 0 }); c.restore(); }
+        else S(c, 'body9', r.k, r.x, r.y + 1, 0.85, { rot: r.rot || 0 });
+      }
       M.drawUnloader && M.drawUnloader(c, P);
       // ямы: утопленные цистерны с кислотой (кадры поверхности 0-1-2-1)
       for (const p of M.pits) {      // глубокий чан целиком (без растяжки): кромка на уровне пола, стенки уходят вниз; кипение — пузыри поверх

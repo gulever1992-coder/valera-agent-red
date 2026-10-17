@@ -403,19 +403,36 @@ if have('l9walk4_0.jpg'):
         al = sub[..., 3] > 0; cov = al.mean(1); cov[int(len(cov) * 0.8):] = 0; rr = runs(cov > 0.8, 1, 3); band = max(rr, key=lambda r: r[1] - r[0])     # низ кадра (лесенка под проёмом) не считаем
         if gap: sub = sub.copy(); sub[band[1] + 2:, :, 3] = 0                                        # обрывок лесенки под проёмом не нужен — лестницы свои
         r, g, b = sub[..., 0].astype(int), sub[..., 1].astype(int), sub[..., 2].astype(int)
-        yel = al & (r > 110) & (g > 85) & (b < g * 0.62)
+        yel = al & (r > 90) & (g > 70) & (b < g * 0.7) & (r > b * 1.4)
         front = ndimage.binary_dilation(yel, iterations=2) & al; front[band[1] + 2:, :] = False
+        paint = ndimage.binary_dilation(yel, iterations=2) & al                                          # всё жёлтое (и в слое настила — ножки стоек) -> серый как у задних перил
+        back = al & ~paint & (np.abs(r - g) < 30) & (np.abs(g - b) < 40); ref = sub[back][:, :3].astype(float).mean(0) if back.any() else np.array([90, 100, 105.])
+        L_ = (r * 0.3 + g * 0.59 + b * 0.11).astype(float); Lm = L_[paint].mean() if paint.any() else 1
+        sub = sub.copy()
+        for ch in range(3): sub[..., ch] = np.where(paint, np.clip(L_ / Lm * ref[ch], 0, 255), sub[..., ch])
         F = sub.copy(); F[~front, 3] = 0; B = sub.copy(); B[front, 3] = 0
         return Image.fromarray(B), Image.fromarray(F), band
     parts, geo = [], {}
     for nm in ['mid', 'endL', 'endR', 'gap']:
         sub = cells[nm]
-        if nm == 'mid':     # середина — центральный кусок, сделанный бесшовным (тянется на любую длину без стыков)
-            W_ = sub.shape[1]; sub = np.asarray(seamless(Image.fromarray(sub[:, int(W_ * 0.15):int(W_ * 0.85)]), 50))
+        if nm == 'mid':     # середина — кусок ровно от стойки до стойки (повторяется сам, без смешивания), цвет выровнен по длине
+            W_ = sub.shape[1]; al_ = sub[..., 3] > 0; r0, g0, b0 = sub[..., 0].astype(int), sub[..., 1].astype(int), sub[..., 2].astype(int)
+            yel_ = al_ & (r0 > 90) & (g0 > 70) & (b0 < g0 * 0.7) & (r0 > b0 * 1.4); colc = yel_.sum(0).astype(float)
+            pk = [x for x in range(2, W_ - 2) if colc[x] > colc.max() * 0.5 and colc[x] >= colc[x - 2:x + 3].max()]
+            posts = []
+            for x in pk:
+                if not posts or x - posts[-1] > 8: posts.append(x)
+            cand = [(b_ - a_, a_, b_) for a_ in posts for b_ in posts if a_ > W_ * 0.08 and b_ < W_ * 0.92 and b_ > a_]
+            _, pa, pb = max(cand); sub = sub[:, pa:pb].copy()
+            alm = sub[..., 3] > 0; w5 = max(4, sub.shape[1] // 10)
+            for ch in range(3):
+                L0 = sub[:, :w5, ch][alm[:, :w5]].mean(); L1 = sub[:, -w5:, ch][alm[:, -w5:]].mean(); ramp = np.linspace(0, L0 - L1, sub.shape[1])[None, :]
+                sub[..., ch] = np.clip(sub[..., ch].astype(float) + ramp - (L0 - L1) / 2, 0, 255).astype(np.uint8)
+            print('walk mid posts', posts, '->', pa, pb)
         B, F, band = split(sub, nm == 'gap')
         geo[nm] = (band[0], band[0] + (band[1] - band[0]) * 0.42, sub.shape[0])
         parts += [B, F]
-    kW = 40 / geo['mid'][0]                        # высота перил над настилом ≈ 20 логических px
+    kW = 84 / geo['mid'][0]                        # крупнее: передние перила ≈ до пояса Валеры
     names = []
     for nm in ['mid', 'endL', 'endR', 'gap']: names += [nm + 'B', nm + 'F']
     pack('walk9n', parts, kW, anchor='mid', names=names)

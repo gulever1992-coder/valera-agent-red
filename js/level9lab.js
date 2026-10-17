@@ -240,7 +240,7 @@
       for (const w of M.walks) {
         if (w.gone || w[0] > x1 || w[0] + w[2] < x0) continue;
         const g = L9D.walk9n && L9D.walk9n.geo; if (!g) continue;
-        for (const ex of [w[0] + 12, w[0] + w[2] - 12]) { const fy = LAB.floorBelow(M, ex, w[1] + 8, 420, true) ?? 330; LAB.post(c, ex, w[1] + g.mid[2] - g.mid[1] - 3, fy + 1); }   /* опора: от низа балки настила до пола */
+        for (const ex of [w[0] + 44, w[0] + w[2] - 44]) {     /* под углами настила, где перила загибаются вниз */ const fy = LAB.floorBelow(M, ex, w[1] + 8, 420, true) ?? 330; LAB.post(c, ex, w[1] + g.mid[2] - g.mid[1] - 3, fy + 1); }   /* опора: от низа балки настила до пола */
         LAB.walkLayer(c, M, w, 'B');
       }
       for (const l of M.lifts || []) M.drawCar ? M.drawCar(c, l) : S(c, 'plat9', 'lift', l.x + l.w / 2, l.y + 24, l.w / 53);
@@ -288,7 +288,7 @@
     const gaps = M.ladders.filter(l => Math.abs(l[1] - w[1]) < 3 && l[0] > w[0] + hl + gw / 2 && l[0] < w[0] + w[2] - hr - gw / 2).map(l => l[0]);
     c.save(); c.beginPath(); c.rect(w[0] + hl - 1, top - 40, w[2] - hl - hr + 2, 140);
     for (const lx of gaps) { c.rect(lx + gw / 2, top - 40, -gw, 140); }     /* вырез под проём (обратный обход — дырка) */
-    c.clip('evenodd'); for (let x = w[0] + hl - 2; x < w[0] + w[2] - hr; x += mw - 1) S(c, 'walk9n', 'mid' + L, x + mw / 2, yOf('mid'), 1); c.restore();
+    c.clip('evenodd'); for (let x = w[0] + hl - 2; x < w[0] + w[2] - hr; x += mw - 0.25) S(c, 'walk9n', 'mid' + L, x + mw / 2, yOf('mid'), 1); c.restore();
     for (const lx of gaps) S(c, 'walk9n', 'gap' + L, lx, yOf('gap'), 1);
     c.save(); c.beginPath(); c.rect(w[0] - 2, top - 40, hl + 2, 140); c.clip(); S(c, 'walk9n', 'endL' + L, w[0] + eLw / 2, yOf('endL'), 1); c.restore();
     c.save(); c.beginPath(); c.rect(w[0] + w[2] - hr, top - 40, hr + 2, 140); c.clip(); S(c, 'walk9n', 'endR' + L, w[0] + w[2] - eRw / 2, yOf('endR'), 1); c.restore();
