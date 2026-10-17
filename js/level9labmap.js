@@ -161,7 +161,7 @@
     M.drawOnFloor = (c, P) => {     // поверх плиты пола: лента конвейера с телами, цистерны в ямах
       const t = P.t;
       // лента конвейера: бесшовная середина крутится влево, по краям торцы с барабанами; на ней лежат тела
-      { const BK = 1.8, [ew] = L9.size('belt9b', 'endL'), [mw, mh] = L9.size('belt9b', 'mid'), y = 327 + mh * BK / 2, x0 = BELT[0] + ew * BK, x1 = BELT[1] - ew * BK, sh = (t * 70) % (mw * BK);
+      { const BK = 1.8, [ew] = L9.size('belt9b', 'endL'), [mw, mh] = L9.size('belt9b', 'mid'), y = 316 + mh * BK / 2, x0 = BELT[0] + ew * BK, x1 = BELT[1] - ew * BK, sh = (t * 70) % (mw * BK);
         c.save(); c.beginPath(); c.rect(x0, y - 30, x1 - x0, 60); c.clip(); for (let x = x0 - sh; x < x1; x += mw * BK - 1) S(c, 'belt9b', 'mid', x + mw * BK / 2, y, BK); c.restore();
         S(c, 'belt9b', 'endL', BELT[0] + ew * BK / 2, y, BK); S(c, 'belt9b', 'endR', BELT[1] - ew * BK / 2, y, BK); }
       for (const r of M.riders) if (!r.held) S(c, 'body9', r.k, r.x, r.y + 1, 0.85, { rot: r.rot || 0 });

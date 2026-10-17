@@ -206,6 +206,7 @@
       for (const f of P.foes) if (f.behind) f.draw(c);
       for (const f of P.foes) if (!f.behind) f.draw(c);
       P.drawValera(c);
+      P.drawRails(c);
       for (const b of P.bul) P.drawBullet(c, b);
       for (const e of P.ebul) { if (e.draw) e.draw(c, e); else S(c, 'fxL9', e.fr || 'fireball', e.x, e.y, e.s || 0.4, { rot: Math.atan2(e.vy, e.vx) }); }
       for (const f of P.fx) { const i = Math.min(f.fr.length - 1, f.t / f.life * f.fr.length | 0); S(c, f.sh, f.fr[i], f.x, f.y, f.s, { rot: f.rot || 0, add: f.add, a: f.fade ? clamp((f.life - f.t) / (f.life * 0.4), 0, 1) : 1 }); }
@@ -222,9 +223,9 @@
         if (r[0] > x1 || r[0] + r[2] < x0 || r[4] === 'hide') continue;
         if (fim) {      // плита пола; там, где лента конвейера, пола нет — лента лежит вместо него
           const fw = fim.width / fim.height * FH; c.save(); c.beginPath();
-          let a = r[0]; for (const [n0, n1] of (M.noFloor || []).filter(n => r[1] === 330 && n[1] > r[0] && n[0] < r[0] + r[2]).sort((p, q) => p[0] - q[0])) { if (n0 > a) c.rect(a, r[1] - 4, n0 - a, FH + 4); a = Math.max(a, n1); }
-          if (a < r[0] + r[2]) c.rect(a, r[1] - 4, r[0] + r[2] - a, FH + 4);
-          c.clip(); for (let x = r[0] - ((r[0] % fw) + fw) % fw; x < r[0] + r[2]; x += fw) c.drawImage(fim, Math.floor(x), r[1] - 3, Math.ceil(fw) + 1, FH); c.restore(); }
+          let a = r[0]; for (const [n0, n1] of (M.noFloor || []).filter(n => r[1] === 330 && n[1] > r[0] && n[0] < r[0] + r[2]).sort((p, q) => p[0] - q[0])) { if (n0 > a) c.rect(a, r[1] - 8, n0 - a, FH + 4); a = Math.max(a, n1); }
+          if (a < r[0] + r[2]) c.rect(a, r[1] - 8, r[0] + r[2] - a, FH + 4);
+          c.clip(); for (let x = r[0] - ((r[0] % fw) + fw) % fw; x < r[0] + r[2]; x += fw) c.drawImage(fim, Math.floor(x), r[1] - 7, Math.ceil(fw) + 1, FH); c.restore(); }
         const [, th] = L9.size('col9', 'thick');
         for (let ex = r[0] + 14; ex < r[0] + r[2]; ex += (r[2] - 28) / Math.max(1, Math.round((r[2] - 28) / 150)) || 1e9) if (ex > M.x0 + 20 && ex < M.x1 - 20) { const y0 = r[1] + FH - 6, fb = LAB.floorBelow(M, ex, r[1] + r[3] + 2, 900, false), len = fb != null ? fb + 2 - y0 : th * 0.38; S(c, 'col9', 'thick', ex, y0 + len / 2, 0.38, { sy: len / (th * 0.38) }); }   // цельные опорные колонны под плитой (капитель под полом, уходят вниз)
       }
@@ -235,19 +236,18 @@
       // лестницы (за мостками)
       // лестница ровно от пола до настила: ни выше мостка, ни ниже пола
       for (const l of M.ladders) { if (l[0] < x0 || l[0] > x1) continue; c.save(); c.beginPath(); c.rect(l[0] - 24, l[1] - 2, 48, l[2] - l[1] + 2); c.clip(); for (let y = l[1] + 28; y < l[2] + 30; y += 58) S(c, 'plat9', 'ladder', l[0], y, 1); c.restore(); }
-      // мостки: середина плиткой 82, по краям — законченные торцы с опорами (walkL / walkR)
+      // мостки v3: настил (слой B) за Валерой; перила (слой F) рисуются после Валеры в drawRails
       for (const w of M.walks) {
         if (w.gone || w[0] > x1 || w[0] + w[2] < x0) continue;
-        // опорные колонны под концами мостка — до ближайшего пола ниже
-        for (const ex of [w[0] + 14, w[0] + w[2] - 14]) { const fy = LAB.floorBelow(M, ex, w[1] + 8, 420, true) ?? 330; LAB.post(c, ex, w[1] + 4, fy + 1); }   // одна цельная опора: оголовок под настилом, плита на полу
-        // мосток: левый торец + середина плиткой + правый торец (из одного кадра Flow — перила и настил совпадают)
-        const D9 = L9D.walk9, dk = D9.deck * 0.5, cyw = w[1] - dk + 37.5, eLw = L9.size('walk9', 'endL')[0], eRw = L9.size('walk9', 'endR')[0], mw = L9.size('walk9', 'mid')[0] - 1;
-        const hl = Math.min(eLw, w[2] / 2), hr = Math.min(eRw, w[2] / 2);
-        c.save(); c.beginPath(); c.rect(w[0] + hl - 1, cyw - 40, w[2] - hl - hr + 2, 80); c.clip(); for (let x = w[0] + hl - 2; x < w[0] + w[2] - hr; x += mw) S(c, 'walk9', 'mid', x + mw / 2, cyw, 1); c.restore();
-        c.save(); c.beginPath(); c.rect(w[0], cyw - 40, hl, 80); c.clip(); S(c, 'walk9', 'endL', w[0] + eLw / 2, cyw, 1); c.restore();
-        c.save(); c.beginPath(); c.rect(w[0] + w[2] - hr, cyw - 40, hr, 80); c.clip(); S(c, 'walk9', 'endR', w[0] + w[2] - eRw / 2, cyw, 1); c.restore();
+        const g = L9D.walk9n && L9D.walk9n.geo; if (!g) continue;
+        for (const ex of [w[0] + 12, w[0] + w[2] - 12]) { const fy = LAB.floorBelow(M, ex, w[1] + 8, 420, true) ?? 330; LAB.post(c, ex, w[1] + g.mid[2] - g.mid[1] - 3, fy + 1); }   /* опора: от низа балки настила до пола */
+        LAB.walkLayer(c, M, w, 'B');
       }
       for (const l of M.lifts || []) M.drawCar ? M.drawCar(c, l) : S(c, 'plat9', 'lift', l.x + l.w / 2, l.y + 24, l.w / 53);
+    },
+    drawRails(c) {     // передние перила мостков — перед Валерой и врагами
+      const M = P.M, x0 = P.cam.x - 100, x1 = P.cam.x + 740; if (!(L9D.walk9n && L9D.walk9n.geo)) return;
+      for (const w of M.walks) if (!w.gone && w[0] < x1 && w[0] + w[2] > x0) LAB.walkLayer(c, M, w, 'F');
     },
     drawValera(c) {
       if (P.lv.dead && P.lv.dead > 0.3) { S(c, 'vClimb9', 'down', P.x, P.y, 1, { flip: P.dir < 0 }); return; }
@@ -278,6 +278,20 @@
       c.fillStyle = 'rgba(0,0,0,0.55)'; c.fillRect(6, 43, 60, 14); G.text('ГРАНАТЫ ' + P.gren, 10, 46, { size: 8 });
       if (P.M.drawHud) P.M.drawHud(c, P, lv);
     },
+  };
+  // один слой мостка: торцы + середина плиткой + проём под лестницу; B — настил, F — перила. Ноги Валеры (w[1]) — на решётке
+  LAB.walkLayer = (c, M, w, L) => {
+    const g = L9D.walk9n.geo, fs = n => L9.size('walk9n', n + L), top = w[1] - g.mid[1];
+    const yOf = n => { const t = w[1] - g[n][1]; return L === 'B' ? t + g[n][0] + fs(n)[1] / 2 : t + fs(n)[1] / 2; };
+    const [eLw] = fs('endL'), [eRw] = fs('endR'), [mw] = fs('mid'), [gw] = fs('gap');
+    const hl = Math.min(eLw, w[2] / 2), hr = Math.min(eRw, w[2] / 2);
+    const gaps = M.ladders.filter(l => Math.abs(l[1] - w[1]) < 3 && l[0] > w[0] + hl + gw / 2 && l[0] < w[0] + w[2] - hr - gw / 2).map(l => l[0]);
+    c.save(); c.beginPath(); c.rect(w[0] + hl - 1, top - 40, w[2] - hl - hr + 2, 140);
+    for (const lx of gaps) { c.rect(lx + gw / 2, top - 40, -gw, 140); }     /* вырез под проём (обратный обход — дырка) */
+    c.clip('evenodd'); for (let x = w[0] + hl - 2; x < w[0] + w[2] - hr; x += mw - 1) S(c, 'walk9n', 'mid' + L, x + mw / 2, yOf('mid'), 1); c.restore();
+    for (const lx of gaps) S(c, 'walk9n', 'gap' + L, lx, yOf('gap'), 1);
+    c.save(); c.beginPath(); c.rect(w[0] - 2, top - 40, hl + 2, 140); c.clip(); S(c, 'walk9n', 'endL' + L, w[0] + eLw / 2, yOf('endL'), 1); c.restore();
+    c.save(); c.beginPath(); c.rect(w[0] + w[2] - hr, top - 40, hr + 2, 140); c.clip(); S(c, 'walk9n', 'endR' + L, w[0] + w[2] - eRw / 2, yOf('endR'), 1); c.restore();
   };
   // цельная опора мостка (двутавр walk9:col): оголовок и база как нарисованы, ровная середина растягивается на нужную высоту
   LAB.post = (c, x, y0, y1) => {

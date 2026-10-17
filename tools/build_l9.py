@@ -362,6 +362,25 @@ if have('l9unload_0.jpg'):     # рука-разгрузчик: 4 кадра с�
         fr_.append(trim(Image.fromarray(sub)))
     pack('unload9', [fr_[0], fr_[2], fr_[3]], 0.5, names=['closed', 'release', 'open'])
 
+# ---------- мостки v3: перила только спереди, два слоя (настил за Валерой, перила перед ним) ----------
+if have('l9walk3_0.jpg'):
+    wa = rgba_m('l9walk3_0.jpg'); W_, H_ = wa.size; parts, info = [], {}
+    for j, nm in enumerate(['mid', 'endL', 'endR', 'gap']):
+        cx_, cy_ = j % 2, j // 2
+        cell = wa.crop((W_ * cx_ // 2 + 2, H_ * cy_ // 2 + 2, W_ * (cx_ + 1) // 2 - 2, H_ * (cy_ + 1) // 2 - 2))
+        al = np.asarray(cell)[..., 3] > 0; ys = np.where(al.any(1))[0]; xs = np.where(al.any(0))[0]
+        cell = cell.crop((int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1)); al = np.asarray(cell)[..., 3] > 0
+        cov = al.mean(1); rr = runs(cov > 0.85, 1, 4); band = max(rr, key=lambda r: r[1] - r[0])     # настил — самая толстая сплошная полоса
+        deck = band[0]; grate = band[0] + int((band[1] - band[0]) * 0.32)       # ноги — на решётке, ближе к её дальнему краю
+        info[nm] = (deck, grate, cell.height)
+        parts += [cell.crop((0, deck, cell.width, cell.height)), cell.crop((0, 0, cell.width, deck))]
+    kW = 48 / info['mid'][0]                       # перила над настилом ≈ 24 логических px (ниже пояса Валеры)
+    names = []
+    for nm in ['mid', 'endL', 'endR', 'gap']: names += [nm + 'B', nm + 'F']
+    pack('walk9n', parts, kW, anchor='mid', names=names)
+    DATA['walk9n']['geo'] = {nm: [round(v[0] * kW / 2, 2), round(v[1] * kW / 2, 2), round(v[2] * kW / 2, 2)] for nm, v in info.items()}   # логич.: верх настила, ноги, высота кадра
+    print('walk9n geo', DATA['walk9n']['geo'])
+
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 
 if DBG:
