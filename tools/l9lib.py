@@ -167,7 +167,7 @@ def pack(sheet, frames, scale, anchor='feet', names=None):
     for f in fr:
         if f is None: meta.append(None); continue
         arr = np.asarray(f).copy(); arr[arr[..., 3] < 110, 3] = 0; arr[arr[..., 3] >= 110, 3] = 255
-        if sheet[0] == 'v' or sheet == 'walk9n':      # у Валеры и мостков нет пурпура: кайма фона на стволе -> серый металл
+        if sheet[0] == 'v' or sheet in ('walk9n', 'cw9'):      # у Валеры и мостков нет пурпура: кайма фона на стволе -> серый металл
             r_, g_, b_ = arr[..., 0].astype(int), arr[..., 1].astype(int), arr[..., 2].astype(int); pu = (r_ > g_ * 1.25) & (b_ > g_ * 1.25) & (b_ > 40)
             L_ = (r_ * 0.3 + g_ * 0.59 + b_ * 0.11) * 0.8; arr[pu, 0] = L_[pu]; arr[pu, 1] = L_[pu]; arr[pu, 2] = (L_[pu] * 1.05).clip(0, 255)
         f = Image.fromarray(arr); sh.paste(f, (x, 1))

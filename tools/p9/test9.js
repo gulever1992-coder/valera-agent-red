@@ -69,7 +69,7 @@ window.__t9 = {
         if (mv) { const back = L.on !== 1 && P.y > 250 && P.x > L.x + L.w + 20 && P.x < 5230; I.down.right = !back; I.down.left = back; }   // подъёмник ушёл — вернуться к шахте
         // ямы и стены
         jumpCd -= dt;
-        const pitAhead = M.pits.some(p => p[0] !== 4610 && P.x > p[0] - 46 && P.x < p[0] - 6) || (L.on === 2 && P.y > 300 && P.x > 4560 && P.x < 4610);
+        const pitAhead = M.pits.some(p => p[0] !== 4610 && P.x > p[0] - 26 && P.x < p[0] - 4) || (L.on === 2 && P.y > 300 && P.x > 4560 && P.x < 4610);
         if (mv && P.onG && jumpCd <= 0 && pitAhead) { I.hit.jump = true; jumpCd = 0.5; }
         if (P.x <= lastX + 0.2 && mv && !onLift) stuckT += dt; else stuckT = 0;
         if (stuckT > 0.6 && P.onG && jumpCd <= 0) { I.hit.jump = true; jumpCd = 0.6; log.stuck++; stuckT = 0; }

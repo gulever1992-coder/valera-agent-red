@@ -438,6 +438,43 @@ if have('l9walk4_0.jpg'):
     pack('walk9n', parts, kW, anchor='mid', names=names)
     DATA['walk9n']['geo'] = {nm: [round(v[0] * kW / 2, 2), round(v[1] * kW / 2, 2), round(v[2] * kW / 2, 2)] for nm, v in geo.items()}
     print('walk9n v4 geo', DATA['walk9n']['geo'])
+# ---------- мостки v5 (l9cw_1): сразу с опорами и лестницей; куски режутся посреди пролётов, стыки выровнены общей полосой ----------
+if have('l9cw_1.jpg'):
+    from scipy import ndimage
+    a5 = load('l9cw_1.jpg').copy(); r_, g_, b_ = [a5[..., i].astype(int) for i in range(3)]
+    m5 = key(a5, 'm', grid=False) | ((r_ > 50) & (b_ > 50) & (g_ < np.minimum(r_, b_) * 0.6))
+    al5 = ~m5
+    Y0, Y1, FEET, FLOOR = 56, 752, 232, 738          # кадр по высоте; линия ног на решётке; низ опорных плит (пол)
+    CUTS = [16, 360, 717, 1080, 1360]                # endL | mid | lad | endR — посреди пролётов, между стойками перил
+    B_ = 10; ref = a5[:, CUTS[1] - B_:CUTS[1] + B_].astype(float); refA = al5[:, CUTS[1] - B_:CUTS[1] + B_]
+    for c in CUTS[2:4]:                              # общая полоса на каждом стыке -> любые куски стыкуются без шва
+        for i in range(-B_ - 14, B_ + 14):
+            t = 1.0 if abs(i) < B_ else max(0.0, 1 - (abs(i) - B_ + 1) / 14)
+            j = min(max(i + B_, 0), 2 * B_ - 1)
+            a5[:, c + i] = (a5[:, c + i] * (1 - t) + ref[:, j] * t).astype(np.uint8)
+            if t > 0.5: al5[:, c + i] = refA[:, j]
+    yel = al5 & (r_ > 90) & (g_ > 70) & (b_ < g_ * 0.7) & (r_ > b_ * 1.4); yel[FEET + 52:] = False
+    front = ndimage.binary_dilation(yel, iterations=2) & al5
+    back = al5 & ~front & (np.abs(r_ - g_) < 30) & (np.abs(g_ - b_) < 40); back[FEET - 60:] = False
+    refc = a5[back][:, :3].astype(float).mean(0); L_ = (r_ * 0.3 + g_ * 0.59 + b_ * 0.11).astype(float); Lm = L_[front].mean()
+    for ch in range(3): a5[..., ch] = np.where(front, np.clip(L_ / Lm * refc[ch] * 0.95, 0, 255), a5[..., ch])     # передние перила — тот же серый, что задние
+    rgba5 = np.dstack([a5, np.where(al5, 255, 0)]).astype(np.uint8)
+    rgba5 = defringe(rgba5, 'm')
+    parts, names, cw = [], [], {}
+    kC = 2 * 130 / (FLOOR - FEET)                    # ноги на решётке ровно в 130 логич. px над полом
+    for nm, x0, x1 in zip(['endL', 'mid', 'lad', 'endR'], CUTS[:-1], CUTS[1:]):
+        sub = rgba5[Y0:Y1, x0:x1]; fr = front[Y0:Y1, x0:x1]
+        Bp = sub.copy(); Bp[fr, 3] = 0; Fp = sub.copy(); Fp[~fr, 3] = 0
+        parts += [Image.fromarray(Bp), Image.fromarray(Fp)]; names += [nm + 'B', nm + 'F']
+        cw[nm] = round((x1 - x0) * kC / 2, 2)
+    hang = rgba5[430:650, 105:183]                   # кусок ствола опоры — подвес к потолку для мостков над лентой
+    parts.append(Image.fromarray(hang)); names.append('hang')
+    pack('cw9', parts, kC, anchor='mid', names=names)
+    k2 = kC / 2
+    DATA['cw9']['geo'] = {'w': cw, 'feet': round((FEET - Y0) * k2, 2), 'h': round((Y1 - Y0) * k2, 2), 'deckBot': round((345 - Y0) * k2, 2),
+                          'legStr': [round((430 - Y0) * k2, 2), round((650 - Y0) * k2, 2)], 'lad': round((990 - CUTS[2]) * k2, 2),
+                          'legs': {'endL': round((143 - CUTS[0]) * k2, 2), 'mid': round((501 - CUTS[1]) * k2, 2), 'lad': round((857 - CUTS[2]) * k2, 2), 'endR': round((1226 - CUTS[3]) * k2, 2)}}
+    print('cw9 geo', DATA['cw9']['geo'])
 if have('l9vatdeep_1.jpg'):     # глубокий чан целиком (без растяжки), один кадр — кипение пузырями в коде
     vd = trim(rgba_m('l9vatdeep_1.jpg'))
     pack('vatD9', [vd], 0.5, anchor='mid', names=['v'])

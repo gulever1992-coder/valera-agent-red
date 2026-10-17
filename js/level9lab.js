@@ -233,21 +233,13 @@
     },
     drawWorld(c) {
       const M = P.M, x0 = P.cam.x - 100, x1 = P.cam.x + 740;
-      // лестницы (за мостками)
-      // лестница ровно от пола до настила: ни выше мостка, ни ниже пола
-      for (const l of M.ladders) { if (l[0] < x0 || l[0] > x1) continue; c.save(); c.beginPath(); c.rect(l[0] - 24, l[1] - 2, 48, l[2] - l[1] + 2); c.clip(); for (let y = l[1] + 28; y < l[2] + 30; y += 58) S(c, 'plat9', 'ladder', l[0], y, 1); c.restore(); }
-      // мостки v3: настил (слой B) за Валерой; перила (слой F) рисуются после Валеры в drawRails
-      for (const w of M.walks) {
-        if (w.gone || w[0] > x1 || w[0] + w[2] < x0) continue;
-        const g = L9D.walk9n && L9D.walk9n.geo; if (!g) continue;
-        for (const ex of [w[0] + 44, w[0] + w[2] - 44]) {     /* под углами настила, где перила загибаются вниз */ const fy = LAB.floorBelow(M, ex, w[1] + 8, 420, true) ?? 330; LAB.post(c, ex, w[1] + g.mid[2] - g.mid[1] - 3, fy + 1); }   /* опора: от низа балки настила до пола */
-        LAB.walkLayer(c, M, w, 'B');
-      }
+      // мостки v5 (cw9): опоры, лестница и настил — один рисунок; передние перила (F) — после Валеры в drawRails
+      LAB.camY = P.cam.y; for (const w of M.walks) if (!w.gone && w[0] < x1 && w[0] + w[2] > x0) LAB.cwLayer(c, M, w, 'B');
       for (const l of M.lifts || []) M.drawCar ? M.drawCar(c, l) : S(c, 'plat9', 'lift', l.x + l.w / 2, l.y + 24, l.w / 53);
     },
     drawRails(c) {     // передние перила мостков — перед Валерой и врагами
-      const M = P.M, x0 = P.cam.x - 100, x1 = P.cam.x + 740; if (!(L9D.walk9n && L9D.walk9n.geo)) return;
-      for (const w of M.walks) if (!w.gone && w[0] < x1 && w[0] + w[2] > x0) LAB.walkLayer(c, M, w, 'F');
+      const M = P.M, x0 = P.cam.x - 100, x1 = P.cam.x + 740;
+      for (const w of M.walks) if (!w.gone && w[0] < x1 && w[0] + w[2] > x0) LAB.cwLayer(c, M, w, 'F');
     },
     drawValera(c) {
       if (P.lv.dead && P.lv.dead > 0.3) { S(c, 'vClimb9', 'down', P.x, P.y, 1, { flip: P.dir < 0 }); return; }
@@ -279,28 +271,35 @@
       if (P.M.drawHud) P.M.drawHud(c, P, lv);
     },
   };
-  // один слой мостка: торцы + середина плиткой + проём под лестницу; B — настил, F — перила. Ноги Валеры (w[1]) — на решётке
-  LAB.walkLayer = (c, M, w, L) => {
-    const g = L9D.walk9n.geo, fs = n => L9.size('walk9n', n + L), top = w[1] - g.mid[1];
-    const yOf = n => w[1] - g[n][1] + fs(n)[1] / 2;     /* оба слоя — кадр целиком; ноги (g[n][1]) на w[1] */
-    const [eLw] = fs('endL'), [eRw] = fs('endR'), [mw] = fs('mid'), [gw] = fs('gap');
-    const hl = Math.min(eLw, w[2] / 2), hr = Math.min(eRw, w[2] / 2);
-    const gaps = M.ladders.filter(l => Math.abs(l[1] - w[1]) < 3 && l[0] > w[0] + hl + gw / 2 && l[0] < w[0] + w[2] - hr - gw / 2).map(l => l[0]);
-    c.save(); c.beginPath(); c.rect(w[0] + hl - 1, top - 40, w[2] - hl - hr + 2, 140);
-    for (const lx of gaps) { c.rect(lx + gw / 2, top - 40, -gw, 140); }     /* вырез под проём (обратный обход — дырка) */
-    c.clip('evenodd'); for (let x = w[0] + hl - 2; x < w[0] + w[2] - hr; x += mw - 0.25) S(c, 'walk9n', 'mid' + L, x + mw / 2, yOf('mid'), 1); c.restore();
-    for (const lx of gaps) S(c, 'walk9n', 'gap' + L, lx, yOf('gap'), 1);
-    c.save(); c.beginPath(); c.rect(w[0] - 2, top - 40, hl + 2, 140); c.clip(); S(c, 'walk9n', 'endL' + L, w[0] + eLw / 2, yOf('endL'), 1); c.restore();
-    c.save(); c.beginPath(); c.rect(w[0] + w[2] - hr, top - 40, hr + 2, 140); c.clip(); S(c, 'walk9n', 'endR' + L, w[0] + w[2] - eRw / 2, yOf('endR'), 1); c.restore();
+  // раскладка мостка: [x, y, пролётов, индекс пролёта с лестницей] -> куски cw9 и лестница
+  LAB.cwBuild = (x, y, n, lad) => {
+    const g = L9D.cw9.geo, W = g.w, parts = [['endL', x]]; let cx = x + W.endL, lx = null;
+    for (let i = 0; i < n; i++) { const nm = i === lad ? 'lad' : 'mid'; if (nm === 'lad') lx = cx + g.lad; parts.push([nm, cx]); cx += W[nm]; }
+    parts.push(['endR', cx]); cx += W.endR;
+    const w = [x, y, Math.round(cx - x)]; w.parts = parts; return { w, lad: lx != null ? [Math.round(lx), y, null] : null };
   };
-  // цельная опора мостка (двутавр walk9:col): оголовок и база как нарисованы, ровная середина растягивается на нужную высоту
-  LAB.post = (c, x, y0, y1) => {
-    const d = L9D.walk9, im = L9.img.walk9; if (!d || !im) return; const f = d.f[L9.N.walk9.col], k = 0.5 * 0.45, w = f[2] * k, cap = f[3] * 0.16, base = f[3] * 0.16, ch = cap * k, bh = base * k, x0 = x - w / 2;
-    if (y1 - y0 < ch + bh) return;
+  // один слой мостка: B — настил, задние перила, опоры, лестница; F — передние перила. Опора над чаном/лентой — подвес к потолку
+  LAB.cwLayer = (c, M, w, L) => {
+    const d = L9D.cw9, g = d.geo, im = L9.img.cw9; if (!im || !w.parts) return;
+    const top = w[1] - g.feet;
     c.imageSmoothingEnabled = true;
-    c.drawImage(im, f[0], f[1], f[2], cap, x0, y0, w, ch);
-    c.drawImage(im, f[0], f[1] + cap, f[2], f[3] - cap - base, x0, y0 + ch - 0.5, w, y1 - y0 - ch - bh + 1);
-    c.drawImage(im, f[0], f[1] + f[3] - base, f[2], base, x0, y1 - bh, w, bh);
+    for (const [nm, px] of w.parts) {
+      const f = d.f[L9.N.cw9[nm + L]], dw = f[2] * 0.5, x = Math.floor(px) - 0.5, lgx = px + g.legs[nm];
+      const fy = LAB.floorBelow(M, lgx, w[1] + 8, 900, false), solid = fy != null && !(M.noFloor || []).some(n => lgx > n[0] - 12 && lgx < n[1] + 12) && !(M.pits || []).some(p => lgx > p[0] - 12 && lgx < p[1] + 12);
+      const sy = k => f[1] + k * 2;      // логич. y внутри кадра -> пиксели листа
+      if (L === 'F') { c.drawImage(im, f[0], f[1], f[2], f[3], x, top, dw + 1, f[3] * 0.5); continue; }
+      if (!solid) {      // подвес: ствол опоры от настила вверх за край экрана, ног нет
+        const hf = d.f[L9.N.cw9.hang], hw = hf[2] * 0.5 * 0.55, hh = hf[3] * 0.5;
+        for (let yy = top + g.deckBot - 20 - hh; yy > (LAB.camY ?? M.y0) - 20 - hh; yy -= hh - 1) c.drawImage(im, hf[0], hf[1], hf[2], hf[3], lgx - hw / 2, yy, hw, hh);
+        c.drawImage(im, f[0], f[1], f[2], g.deckBot * 2, x, top, dw + 1, g.deckBot); continue;
+      }
+      const floorY = fy - top, [s0, s1] = g.legStr, flo = 175.3;      // низ плит в кадре (логич.)
+      if (Math.abs(floorY - flo) < 1) { c.drawImage(im, f[0], f[1], f[2], f[3], x, top, dw + 1, f[3] * 0.5); continue; }
+      const mid = s1 - s0 + (floorY - flo); if (mid < 4) { c.drawImage(im, f[0], f[1], f[2], f[3], x, top, dw + 1, f[3] * 0.5); continue; }
+      c.drawImage(im, f[0], sy(0), f[2], s0 * 2, x, top, dw + 1, s0);
+      c.drawImage(im, f[0], sy(s0), f[2], (s1 - s0) * 2, x, top + s0 - 0.5, dw + 1, mid + 1);
+      c.drawImage(im, f[0], sy(s1), f[2], f[3] - s1 * 2, x, top + s0 + mid, dw + 1, f[3] * 0.5 - s1);
+    }
     c.imageSmoothingEnabled = false;
   };
   // верх сплошного блока ровно под ногами (с мостка можно спрыгнуть, со сплошного пола — нет)
