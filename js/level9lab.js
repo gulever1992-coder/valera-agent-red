@@ -282,7 +282,7 @@
   // один слой мостка: торцы + середина плиткой + проём под лестницу; B — настил, F — перила. Ноги Валеры (w[1]) — на решётке
   LAB.walkLayer = (c, M, w, L) => {
     const g = L9D.walk9n.geo, fs = n => L9.size('walk9n', n + L), top = w[1] - g.mid[1];
-    const yOf = n => { const t = w[1] - g[n][1]; return L === 'B' ? t + g[n][0] + fs(n)[1] / 2 : t + fs(n)[1] / 2; };
+    const yOf = n => w[1] - g[n][1] + fs(n)[1] / 2;     /* оба слоя — кадр целиком; ноги (g[n][1]) на w[1] */
     const [eLw] = fs('endL'), [eRw] = fs('endR'), [mw] = fs('mid'), [gw] = fs('gap');
     const hl = Math.min(eLw, w[2] / 2), hr = Math.min(eRw, w[2] / 2);
     const gaps = M.ladders.filter(l => Math.abs(l[1] - w[1]) < 3 && l[0] > w[0] + hl + gw / 2 && l[0] < w[0] + w[2] - hr - gw / 2).map(l => l[0]);

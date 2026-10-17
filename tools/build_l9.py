@@ -310,9 +310,14 @@ if have('l9tank_0.jpg'):    # цистерна с кислотой вместо 
     tk = cut('l9tank_0.jpg', 'm', 3, 1, clean=True)
     pack('tank9', tk, 1.0, anchor='mid', names=['t0', 't1', 't2'])
 if have('l9belt_0.jpg'):    # лента конвейера (тёмная резина с потёками жижи): середина бесшовная (крутим смещением), торцы — из того же кадра
-    bt = cut('l9belt_0.jpg', 'm', 4, 1, clean=True)[1]; W_ = bt.width
-    mid = seamless(bt.crop((int(W_ * 0.2), 0, int(W_ * 0.8), bt.height)), 60)
-    pack('belt9b', [bt.crop((0, 0, int(W_ * 0.12), bt.height)), mid, bt.crop((int(W_ * 0.88), 0, W_, bt.height))], 0.3, anchor='mid', names=['endL', 'mid', 'endR'])
+    bt = cut('l9belt_0.jpg', 'm', 4, 1, clean=True)[1]; W_, H_ = bt.size
+    mid = seamless(bt.crop((int(W_ * 0.2), 0, int(W_ * 0.8), H_)), 60)        # вся длина ленты — из этого куска, крутится целиком
+    dw = int(H_ * 0.95); m_ = np.asarray(mid).astype(np.float32); ma = m_[..., 3] > 0
+    def drum(box):     # концевой барабан: только скругление, цвет подогнан под середину ленты
+        d = np.asarray(bt.crop(box)).astype(np.float32); da = d[..., 3] > 0
+        for ch in range(3): d[..., ch][da] += m_[..., ch][ma].mean() - d[..., ch][da].mean()
+        return Image.fromarray(d.clip(0, 255).astype(np.uint8))
+    pack('belt9b', [drum((0, 0, dw, H_)), mid, drum((W_ - dw, 0, W_, H_))], 0.3, anchor='mid', names=['endL', 'mid', 'endR'])
 if have('l9bodies_0.jpg'):  # лежачие тела для ленты (без ленты)
     bd = cut('l9bodies_0.jpg', 'm', 2, 2, mode='grid', clean=True)
     pack('body9', bd, 0.3, names=['bum', 'drunk', 'thug', 'lady'])
@@ -380,6 +385,45 @@ if have('l9walk3_0.jpg'):
     pack('walk9n', parts, kW, anchor='mid', names=names)
     DATA['walk9n']['geo'] = {nm: [round(v[0] * kW / 2, 2), round(v[1] * kW / 2, 2), round(v[2] * kW / 2, 2)] for nm, v in info.items()}   # логич.: верх настила, ноги, высота кадра
     print('walk9n geo', DATA['walk9n']['geo'])
+
+# ---------- мостки v4: задние перила (серые) за Валерой, передние (жёлтые) перед ним; середина бесшовная ----------
+if have('l9walk4_0.jpg'):
+    from scipy import ndimage
+    a4 = load('l9walk4_0.jpg'); r_, g_, b_ = a4[..., 0], a4[..., 1], a4[..., 2]
+    m4 = key(a4, 'm', grid=False) | (r_ > 200) & (g_ > 200) & (b_ > 200)                         # пурпур и белые разделители ячеек
+    m4 |= (r_ > 50) & (b_ > 50) & (g_ < np.minimum(r_, b_) * 0.6)                                   # пурпур в дырках решётки
+    rgba4 = np.dstack([a4, np.where(m4, 0, 255)]).astype(np.uint8)
+    lab, n = ndimage.label(ndimage.binary_dilation(rgba4[..., 3] > 0, iterations=4)); objs = ndimage.find_objects(lab)
+    sz = ndimage.sum(rgba4[..., 3] > 0, lab, range(1, n + 1)); big = sorted([i for i in range(n) if sz[i] > sz.max() * 0.2], key=lambda i: (objs[i][0].start > a4.shape[0] // 2, objs[i][1].start))
+    order = {0: 'mid', 1: 'endR', 2: 'endL', 3: 'gap'}                                              # верх: середина, правый торец; низ: левый торец, проём
+    cells = {}
+    for k, i in enumerate(big[:4]):
+        sub = rgba4[objs[i]].copy(); sub[lab[objs[i]] != i + 1, 3] = 0; cells[order[k]] = sub
+    def split(sub, gap=False):
+        al = sub[..., 3] > 0; cov = al.mean(1); cov[int(len(cov) * 0.8):] = 0; rr = runs(cov > 0.8, 1, 3); band = max(rr, key=lambda r: r[1] - r[0])     # низ кадра (лесенка под проёмом) не считаем
+        if gap: sub = sub.copy(); sub[band[1] + 2:, :, 3] = 0                                        # обрывок лесенки под проёмом не нужен — лестницы свои
+        r, g, b = sub[..., 0].astype(int), sub[..., 1].astype(int), sub[..., 2].astype(int)
+        yel = al & (r > 110) & (g > 85) & (b < g * 0.62)
+        front = ndimage.binary_dilation(yel, iterations=2) & al; front[band[1] + 2:, :] = False
+        F = sub.copy(); F[~front, 3] = 0; B = sub.copy(); B[front, 3] = 0
+        return Image.fromarray(B), Image.fromarray(F), band
+    parts, geo = [], {}
+    for nm in ['mid', 'endL', 'endR', 'gap']:
+        sub = cells[nm]
+        if nm == 'mid':     # середина — центральный кусок, сделанный бесшовным (тянется на любую длину без стыков)
+            W_ = sub.shape[1]; sub = np.asarray(seamless(Image.fromarray(sub[:, int(W_ * 0.15):int(W_ * 0.85)]), 50))
+        B, F, band = split(sub, nm == 'gap')
+        geo[nm] = (band[0], band[0] + (band[1] - band[0]) * 0.42, sub.shape[0])
+        parts += [B, F]
+    kW = 40 / geo['mid'][0]                        # высота перил над настилом ≈ 20 логических px
+    names = []
+    for nm in ['mid', 'endL', 'endR', 'gap']: names += [nm + 'B', nm + 'F']
+    pack('walk9n', parts, kW, anchor='mid', names=names)
+    DATA['walk9n']['geo'] = {nm: [round(v[0] * kW / 2, 2), round(v[1] * kW / 2, 2), round(v[2] * kW / 2, 2)] for nm, v in geo.items()}
+    print('walk9n v4 geo', DATA['walk9n']['geo'])
+if have('l9vatdeep_1.jpg'):     # глубокий чан целиком (без растяжки), один кадр — кипение пузырями в коде
+    vd = trim(rgba_m('l9vatdeep_1.jpg'))
+    pack('vatD9', [vd], 0.5, anchor='mid', names=['v'])
 
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 
