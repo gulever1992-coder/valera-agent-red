@@ -67,9 +67,17 @@ window.__t9 = {
           if (!mv && !(dy < -50)) { I.down.left = false; I.down.right = false; }
         }
         if (mv) { const back = L.on !== 1 && P.y > 250 && P.x > L.x + L.w + 20 && P.x < 5230; I.down.right = !back; I.down.left = back; }   // подъёмник ушёл — вернуться к шахте
+        // арена: искать оставшихся врагов по всему цеху (на мостки — по ближайшей лестнице)
+        if (M.ar && !M.ar.done && !f && !P.climb) { const g = P.foes.filter(e => !e.dead && e.x > 10330).sort((a, b) => Math.abs(a.x - P.x) - Math.abs(b.x - P.x))[0];
+          if (g) { let tx = g.x; if (g.y < 260 && P.y > 300) { const l = M.ladders.filter(l => l[0] > 10330).sort((a, b) => Math.abs(a[0] - g.x) - Math.abs(b[0] - g.x))[0]; if (l) tx = l[0]; if (Math.abs(tx - P.x) < 6) I.down.up = true; }
+            I.down.right = tx > P.x + 5; I.down.left = tx < P.x - 5; } }
+        // широкий чан (не перепрыгнуть): к лестнице перед ним и наверх, на мост
+        const wp = M.pits.find(p => p[1] - p[0] > 120 && P.y > 300 && P.x < p[0] && P.x > p[0] - 260);
+        if (wp && !P.climb) { const lad = M.ladders.find(l => l[0] < wp[0] && l[0] > P.x - 40 && l[2] === 330); if (lad) { const d = lad[0] - P.x; if (Math.abs(d) > 5) { I.down.right = d > 0; I.down.left = d < 0; } else { I.down.left = I.down.right = false; I.down.up = true; } } }
+        if (P.climb) { I.down.up = true; I.down.left = I.down.right = false; }
         // ямы и стены
         jumpCd -= dt;
-        const pitAhead = M.pits.some(p => p[0] !== 4610 && P.x > p[0] - 26 && P.x < p[0] - 4) || (L.on === 2 && P.y > 300 && P.x > 4560 && P.x < 4610);
+        const pitAhead = M.pits.some(p => p[0] !== 4610 && p[1] - p[0] <= 120 && P.x > p[0] - 26 && P.x < p[0] - 4) || (L.on === 2 && P.y > 300 && P.x > 4560 && P.x < 4610);
         if (mv && P.onG && jumpCd <= 0 && pitAhead) { I.hit.jump = true; jumpCd = 0.5; }
         if (P.x <= lastX + 0.2 && mv && !onLift) stuckT += dt; else stuckT = 0;
         if (stuckT > 0.6 && P.onG && jumpCd <= 0) { I.hit.jump = true; jumpCd = 0.6; log.stuck++; stuckT = 0; }

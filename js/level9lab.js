@@ -273,10 +273,10 @@
   };
   // раскладка мостка: [x, y, пролётов, индекс пролёта с лестницей] -> куски cw9 и лестница
   LAB.cwBuild = (x, y, n, lad) => {
-    const g = L9D.cw9.geo, W = g.w, parts = [['endL', x]]; let cx = x + W.endL, lx = null;
-    for (let i = 0; i < n; i++) { const nm = i === lad ? 'lad' : 'mid'; if (nm === 'lad') lx = cx + g.lad; parts.push([nm, cx]); cx += W[nm]; }
+    const g = L9D.cw9.geo, W = g.w, parts = [['endL', x]], ls = [].concat(lad ?? []), lads = []; let cx = x + W.endL;
+    for (let i = 0; i < n; i++) { const nm = ls.includes(i) ? 'lad' : 'mid'; if (nm === 'lad') lads.push([Math.round(cx + g.lad), y, null]); parts.push([nm, cx]); cx += W[nm]; }
     parts.push(['endR', cx]); cx += W.endR;
-    const w = [x, y, Math.round(cx - x)]; w.parts = parts; return { w, lad: lx != null ? [Math.round(lx), y, null] : null };
+    const w = [x, y, Math.round(cx - x)]; w.parts = parts; return { w, lads };
   };
   // один слой мостка: B — настил, задние перила, опоры, лестница; F — передние перила. Опора над чаном/лентой — подвес к потолку
   LAB.cwLayer = (c, M, w, L) => {
