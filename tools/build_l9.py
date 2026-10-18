@@ -338,7 +338,10 @@ if have('l9belt_0.jpg'):    # лента конвейера (тёмная рез
     dw = int(H_ * 0.95); m_ = np.asarray(mid).astype(np.float32); ma = m_[..., 3] > 0
     def drum(box):     # концевой барабан: только скругление, цвет подогнан под середину ленты
         d = np.asarray(bt.crop(box)).astype(np.float32); da = d[..., 3] > 0
-        for ch in range(3): d[..., ch][da] += m_[..., ch][ma].mean() - d[..., ch][da].mean()
+        for y in range(d.shape[0]):     # цвет подгоняем построчно (резина, борт, ролики — каждый пояс под свой цвет середины)
+            r_d, r_m = da[y], ma[y]
+            if r_d.sum() > 2 and r_m.sum() > 2:
+                for ch in range(3): d[y, r_d, ch] += m_[y, r_m, ch].mean() - d[y, r_d, ch].mean()
         return Image.fromarray(d.clip(0, 255).astype(np.uint8))
     pack('belt9b', [drum((0, 0, dw, H_)), mid, drum((W_ - dw, 0, W_, H_))], 0.3, anchor='mid', names=['endL', 'mid', 'endR'])
 if have('l9bodies_0.jpg'):  # лежачие тела для ленты (без ленты)
@@ -383,6 +386,9 @@ if FLOOR_PICK and have(FLOOR_PICK):
     band = Image.open(os.path.join(SRC, FLOOR_PICK)).convert('RGB').crop((0, 220, 1376, 385))
     band = seamless(band, 160); band = band.resize((round(band.width * 96 / band.height), 96), Image.LANCZOS)
     band.save(os.path.join(OUT, 'labFloor.png')); DATA.setdefault('_bgp', {})['labFloor'] = 1
+if have('l9flE_0.jpg'):     # законченные торцы плиты пола (Flow): скруглённый угол, уголок на болтах; внутренний край — ровный срез
+    _e = [trim(rgba_m('l9flE_0.jpg', b)) for b in ((40, 150, 600, 620), (800, 150, 1340, 620))]
+    pack('flE9', _e, 96 / _e[0].height, anchor='mid', names=['endL', 'endR'])
 if have('l9unload_0.jpg'):     # рука-разгрузчик: 4 кадра сеткой по столбцам, в кадре только рука (связанная с верхом), тело рисуем своё
     from scipy import ndimage
     ua = rgba_m('l9unload_0.jpg'); W_, H_ = ua.size; fr_ = []

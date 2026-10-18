@@ -308,9 +308,9 @@
     M.drawOnFloor = (c, P) => {     // поверх плиты пола: лента конвейера с телами, цистерны в ямах
       const t = P.t;
       // лента конвейера: бесшовная середина крутится влево, по краям торцы с барабанами; на ней лежат тела
-      for (const B of BELTS) { if (B.x1 < P.cam.x - 100 || B.x0 > P.cam.x + 740) continue; const BELT = [B.x0, B.x1]; const BK = 1.8, [ew] = L9.size('belt9b', 'endL'), [mw, mh] = L9.size('belt9b', 'mid'), y = 316 + mh * BK / 2, x0 = BELT[0] + ew * BK * 0.45, x1 = BELT[1] - ew * BK * 0.45, PER = mw * BK - 1, sh = ((t * -B.v) % PER + PER) % PER;
-        c.save(); c.beginPath(); c.rect(x0, y - 40, x1 - x0, 80); c.clip(); for (let x = x0 - sh; x < x1; x += mw * BK - 1) S(c, 'belt9b', 'mid', x + mw * BK / 2, y, BK); c.restore();     /* лента одним куском едет по всей длине */
-        S(c, 'belt9b', 'endL', BELT[0] + ew * BK / 2, y, BK); S(c, 'belt9b', 'endR', BELT[1] - ew * BK / 2, y, BK); }
+      for (const B of BELTS) { if (B.x1 < P.cam.x - 100 || B.x0 > P.cam.x + 740) continue; const BELT = [B.x0, B.x1]; const BK = 1.8, [ew] = L9.size('belt9b', 'endL'), [mw, mh] = L9.size('belt9b', 'mid'), y = 316 + mh * BK / 2, x0 = BELT[0] + ew * BK * 0.2, x1 = BELT[1] - ew * BK * 0.2, PER = mw * BK - 1, sh = ((t * -B.v) % PER + PER) % PER;
+        S(c, 'belt9b', 'endL', BELT[0] + ew * BK / 2, y, BK); S(c, 'belt9b', 'endR', BELT[1] - ew * BK / 2, y, BK);     /* барабаны под лентой: видно только скругление у края */
+        c.save(); c.beginPath(); c.rect(x0, y - 40, x1 - x0, 80); c.clip(); for (let x = x0 - sh; x < x1; x += mw * BK - 1) S(c, 'belt9b', 'mid', x + mw * BK / 2, y, BK); c.restore(); }     /* лента одним куском едет почти до края */
       for (const r of M.riders) {     // упавшее тело уходит под поверхность жижи (рисуем только то, что выше неё)
         if (r.fall && r.y > 326) { c.save(); c.beginPath(); c.rect(r.x - 80, r.y - 120, 160, 336 - (r.y - 120)); c.clip(); S(c, 'body9', r.k, r.x, r.y + 1, 0.85, { rot: r.rot || 0 }); c.restore(); }
         else S(c, 'body9', r.k, r.x, r.y + 1, 0.85, { rot: r.rot || 0 });

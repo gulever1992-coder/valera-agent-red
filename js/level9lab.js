@@ -227,9 +227,12 @@
         if (r[0] > x1 || r[0] + r[2] < x0 || r[4] === 'hide') continue;
         if (fim) {      // плита пола; там, где лента конвейера, пола нет — лента лежит вместо него
           const fw = fim.width / fim.height * FH; c.save(); c.beginPath();
-          let a = r[0]; for (const [n0, n1] of (M.noFloor || []).filter(n => r[1] === 330 && n[1] > r[0] && n[0] < r[0] + r[2]).sort((p, q) => p[0] - q[0])) { if (n0 > a) c.rect(a, r[1] - 8, n0 - a, FH + 4); a = Math.max(a, n1); }
-          if (a < r[0] + r[2]) c.rect(a, r[1] - 8, r[0] + r[2] - a, FH + 4);
-          c.clip(); for (let x = r[0] - ((r[0] % fw) + fw) % fw; x < r[0] + r[2]; x += fw) c.drawImage(fim, Math.floor(x), r[1] - 7, Math.ceil(fw) + 1, FH); c.restore(); }
+          const seg = []; let a = r[0]; for (const [n0, n1] of (M.noFloor || []).filter(n => r[1] === 330 && n[1] > r[0] && n[0] < r[0] + r[2]).sort((p, q) => p[0] - q[0])) { if (n0 > a) seg.push([a, n0]); a = Math.max(a, n1); }
+          if (a < r[0] + r[2]) seg.push([a, r[0] + r[2]]);
+          for (const [s0, s1] of seg) c.rect(s0, r[1] - 8, s1 - s0, FH + 4);
+          c.clip(); for (let x = r[0] - ((r[0] % fw) + fw) % fw; x < r[0] + r[2]; x += fw) c.drawImage(fim, Math.floor(x), r[1] - 7, Math.ceil(fw) + 1, FH); c.restore();
+          if (L9.img.flE9 && r[3] >= 40) for (const [s0, s1] of seg) { const [ew] = L9.size('flE9', 'endL'), k = FH / 48, w = ew * k;     // законченные торцы плиты (скруглённый угол, уголок на болтах)
+            if (s1 - s0 > w * 2) { S(c, 'flE9', 'endL', s0 - 3 + w / 2, r[1] - 7 + FH / 2, k); S(c, 'flE9', 'endR', s1 + 3 - w / 2, r[1] - 7 + FH / 2, k); } } }
       }
       LAB.drawPillars(c, M, x0, x1, FH);
       M.drawOnFloor && M.drawOnFloor(c, P);
@@ -317,9 +320,9 @@
       const fy = LAB.floorBelow(M, lgx, w[1] + 8, 900, false), solid = fy != null && !(M.noFloor || []).some(n => lgx > n[0] - 12 && lgx < n[1] + 12) && !(M.pits || []).some(p => lgx > p[0] - 12 && lgx < p[1] + 12);
       const sy = k => f[1] + k * 2;      // логич. y внутри кадра -> пиксели листа
       if (L === 'F') { c.drawImage(im, f[0], f[1], f[2], f[3], x, top, dw + 1, f[3] * 0.5); continue; }
-      if (!solid) {      // подвес: ствол опоры от настила вверх за край экрана, ног нет
+      if (!solid) {      // подвес над чаном: ствол опоры от настила вверх за край экрана, ног нет; над конвейером подвеса нет — настил держат соседние ноги
         const hf = d.f[L9.N.cw9.hang], hw = hf[2] * 0.5 * 0.55, hh = hf[3] * 0.5;
-        for (let yy = top + g.deckBot - 20 - hh; yy > (LAB.camY ?? M.y0) - 20 - hh; yy -= hh - 1) c.drawImage(im, hf[0], hf[1], hf[2], hf[3], lgx - hw / 2, yy, hw, hh);
+        if (!(M.noFloor || []).some(n => lgx > n[0] - 12 && lgx < n[1] + 12)) for (let yy = top + g.deckBot - 20 - hh; yy > (LAB.camY ?? M.y0) - 20 - hh; yy -= hh - 1) c.drawImage(im, hf[0], hf[1], hf[2], hf[3], lgx - hw / 2, yy, hw, hh);
         c.drawImage(im, f[0], f[1], f[2], g.deckBot * 2, x, top, dw + 1, g.deckBot); continue;
       }
       const floorY = fy - top, [s0, s1] = g.legStr, flo = 175.3;      // низ плит в кадре (логич.)
