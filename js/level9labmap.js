@@ -72,7 +72,7 @@
         { x: 16500, y: DY - 270, line: 'Реактор, Валера! Сердце моей империи. Дёрнете рычаги — и дверь откроется. Если доживёте.' }],
       covers: [{ x: 1300, y: 330, kind: 'crates' }, { x: 1610, y: 330, kind: 'barrier' }, { x: 3562, y: 330, kind: 'crates' }, { x: 4130, y: 330, kind: 'barrier' }, { x: 5640, y: LIFT_TOP, kind: 'crates' },
         { x: 6910, y: 330, kind: 'crates' }, { x: 8300, y: 330, kind: 'barrier' }, { x: 11000, y: 330, kind: 'crates' }, { x: 11720, y: 330, kind: 'barrier' }, { x: 15960, y: DY, kind: 'crates' }, { x: 17280, y: DY, kind: 'barrier' }],
-      props: [{ x: 820, y: 330, kind: 'console' }, { x: 1600, y: 330, kind: 'tube' }, { x: 2000, y: 330, kind: 'waste' }, { x: 3760, y: 330, kind: 'gas' }, { x: 3950, y: 330, kind: 'tube' }, { x: 5200, y: LIFT_TOP, kind: 'console' }, { x: 5950, y: LIFT_TOP, kind: 'waste' },
+      props: [{ x: 820, y: 330, kind: 'console' }, { x: 1470, y: 330, kind: 'console' }, { x: 2000, y: 330, kind: 'waste' }, { x: 3760, y: 330, kind: 'gas' }, { x: 3950, y: 330, kind: 'waste' }, { x: 5200, y: LIFT_TOP, kind: 'console' }, { x: 5950, y: LIFT_TOP, kind: 'waste' },
         { x: 6930, y: LIFT_TOP, kind: 'gas' }, { x: 7860, y: 330, kind: 'gas' }, { x: 10700, y: 330, kind: 'waste' }, { x: 16580, y: DY, kind: 'console' }, { x: 17700, y: DY, kind: 'gas' }],
       riders: [], acid: [], drops: [],
       traps: {     // ловушки (level9traps.js) — по зонам: в каждой своё
@@ -234,19 +234,21 @@
       c.fillStyle = 'rgba(2,6,10,0.22)'; c.fillRect(0, 0, 640, 360);
       // фоны зон: шахта с ярусами у подъёмника, наклонный тоннель, зал реактора — плавно сменяют общий план; по вертикали свой параллакс
       const ramp = (v, a0, a1) => clamp((v - a0) / (a1 - a0), 0, 1), mid = cx + 320;
-      const wA = ramp(mid, 4300, 4700) * (1 - ramp(mid, 6700, 7100)), wB = ramp(mid, 12200, 12700) * (1 - ramp(mid, 15500, 15900)), wC = ramp(mid, 15500, 15900);
-      const zoneBg = (n, wgt, kx, yy) => { const im = L9.img[n], d = PX()[n]; if (!im || !d || wgt <= 0) return; const h = d[1], w = d[0], y = clamp(yy, 360 - h, 0);
-        c.globalAlpha = wgt; for (let x = -((cx * kx % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); c.globalAlpha = 1; };
-      zoneBg('bgA', wA, 0.18, -(cy + 420) * 0.5); zoneBg('bgB', wB, 0.16, -(cy - 100) * 0.2); zoneBg('bgC', wC, 0.14, -(cy - 700) * 0.3);
+      const aI = ramp(mid, 4300, 4700), aO = ramp(mid, 6700, 7100), bI = ramp(mid, 12200, 12700), bO = ramp(mid, 15500, 15900), cI = bO;
+      const wA = aI * (1 - aO), wB = bI * (1 - bO), wC = cI;
+      // фон зоны не просвечивает сквозь соседний, а сменяет его «шторкой»: видимая полоса экрана от 640*(1-вход) до 640*(1-выход), край мягкий (40 px)
+      const zoneBg = (n, wIn, wOut, kx, yy) => { const im = L9.img[n], d = PX()[n]; if (!im || !d || wIn <= wOut) return; const h = d[1], w = d[0], y = clamp(yy, 360 - h, 0);
+        const x0 = 640 * (1 - wIn), x1 = 640 * (1 - wOut), draw = () => { for (let x = -((cx * kx % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); };
+        for (let i = 0; i < 4; i++) { const e = 10 * (4 - i), a = x0 > 0 ? x0 - e : 0, b = x1 < 640 ? x1 + e : 640; if (i < 3 && a <= 0 && b >= 640) continue;
+          c.save(); c.globalAlpha = i < 3 ? 0.25 : 1; c.beginPath(); c.rect(i < 3 ? a : x0, 0, (i < 3 ? b - a : x1 - x0), 360); c.clip(); draw(); c.restore(); } };
+      zoneBg('bgA', aI, aO, 0.18, -(cy + 420) * 0.5); zoneBg('bgB', bI, bO, 0.16, -(cy - 100) * 0.2); zoneBg('bgC', cI, 0, 0.14, -(cy - 700) * 0.3);
       if (wB > 0) {     // наклонный тоннель: средний план — арки крепи вдоль спуска, сдвигаются медленнее игрового плана (объём)
-        const f = 0.6, [aw, ah] = L9.size('part9', 'arch'), ak = 2.2; c.globalAlpha = wB * 0.85;
+        const f = 0.6, [aw, ah] = L9.size('part9', 'arch'), ak = 2.2; c.save(); c.beginPath(); c.rect(640 * (1 - bI), 0, 640 * (bI - bO), 360); c.clip();
         for (let ax = 12000; ax < 16200; ax += 420) { const ay = 330 + (ax - 12440) * 0.3 + 120, sx = (ax - (cx + 320)) * f + 320, sy = (ay - (cy + 180)) * f + 180; if (sx < -aw * ak || sx > 640 + aw * ak) continue; S(c, 'part9', 'arch', sx, sy - ah * ak / 2, ak); }
-        c.globalAlpha = 1; c.fillStyle = 'rgba(2,6,10,' + 0.3 * wB + ')'; c.fillRect(0, 0, 640, 360);
+        c.restore(); c.fillStyle = 'rgba(2,6,10,' + 0.3 * wB + ')'; c.fillRect(0, 0, 640, 360);
       }
       if (wA + wB + wC > 0) { c.fillStyle = 'rgba(2,6,10,' + (0.18 * Math.max(wA, wB, wC)) + ')'; c.fillRect(0, 0, 640, 360); }
-      c.globalAlpha = 1 - 0.85 * Math.max(wB, wC);
-      layer(c, 'px3', 215, 0.6, cx, 300 + (fy - 260) * 0.62);
-      c.globalAlpha = 1;
+      if (bI < 1) { c.save(); c.beginPath(); c.rect(0, 0, 640 * (1 - bI), 360); c.clip(); layer(c, 'px3', 215, 0.6, cx, 300 + (fy - 260) * 0.62); c.restore(); }     // машины общего плана уходят той же шторкой, что входит тоннель
       if (cx > 3500 && cy < -60) { c.globalAlpha = clamp((cx - 3500) / 600, 0, 1) * clamp((-cy - 60) / 220, 0, 1); layer(c, 'px3', 215, 0.6, cx + 300, 300 + (fy - 500 - 260) * 0.62, true); c.globalAlpha = 1; }     // у подъёмника второй ряд машин на уровне верхнего этажа: проявляется плавно, без скачка
       c.fillStyle = 'rgba(2,6,10,0.12)'; c.fillRect(0, 0, 640, 360);
     };
@@ -337,7 +339,8 @@
     const LK = 1.76, strip = (c, sh, fr, x, y0, y1, k) => { const h = L9.size(sh, fr)[1] * k; if (y1 > y0) S(c, sh, fr, x, (y0 + y1) / 2, k, { sy: (y1 - y0) / h }); };
     M.drawShaft = (c, L) => {
       const cxl = L.x + L.w / 2, wTop = LIFT_TOP - 235, [, wh] = L9.size('lift9', 'winch'), wb = wTop + wh * LK, carTop = L.y - L9D.lift9.carDeck * 0.5 * LK;
-      strip(c, 'lift9', 'post', L.x + 21, wb - 6, 410, LK); strip(c, 'lift9', 'post', L.x + L.w - 14, wb - 6, 410, LK);
+      strip(c, 'lift9', 'post', L.x + 21, wb - 6, 338, LK); strip(c, 'lift9', 'post', L.x + L.w - 14, wb - 6, 338, LK);     // направляющие стоят на полу
+      L9.LAB.drawColumn(c, 5232, LIFT_TOP - 250, 338, 1.1);     // торец шахты: колонна от потолка до пола там, где кончается нижний ярус
       strip(c, 'lift9', 'cable', cxl + 3, wb - 4, carTop + 4, LK);     // тросы — точно над креплениями кабины (у кабины и лебёдки они на 3 px правее центра)
       S(c, 'lift9', 'winch', cxl, wTop + wh * LK / 2, LK);
     };

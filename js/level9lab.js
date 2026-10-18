@@ -125,7 +125,7 @@
     },
     camera(dt) {
       const M = P.M, c = P.cam, look = P.dir * 70;
-      const tx = clamp(P.x - 320 + look, M.x0, M.x1 - 640), ty = clamp(P.y - 230, M.y0, M.y1 - 360);
+      const tx = clamp(P.x - 320 + look, M.x0, M.x1 - 640), gy = P.onG || P.climb ? (P.camGY = P.y) : Math.max(P.camGY ?? P.y, P.y), ty = clamp(gy - (Math.abs(gy - 330) < 3 ? 272 : P.x > 16500 && gy > 1200 ? 292 : 230), M.y0, M.y1 - 360);     // по опоре, а не по прыжку; на основном полу ниже — меньше пустоты под ним
       c.x += (tx - c.x) * Math.min(1, dt * 4); c.y += (ty - c.y) * Math.min(1, dt * 4.5);
       if (M.camLock) { const k = M.camLock(P); if (k) { c.x = clamp(c.x, k[0], k[1] - 640); } }
     },
@@ -294,6 +294,12 @@
       }
     }
     c.imageSmoothingEnabled = false;
+  };
+  LAB.drawColumn = (c, x, y0, y1, k = 1) => {     // отдельная колонна во всю высоту (капитель сверху, ствол повторяется, база на полу)
+    const im = L9.img.part9; if (!im) return; const F = L9D.part9.f[L9.fi('part9', 'pillar')], w = F[2] * 0.5 * k, h = F[3] * 0.5 * k, sh = 0.56 * h; c.imageSmoothingEnabled = true;
+    c.drawImage(im, F[0], F[1], F[2], F[3] * 0.2, x - w / 2, y0, w, h * 0.2); const stop = y1 - h * 0.1;
+    for (let y = y0 + h * 0.2 - 1; y < stop; y += sh - 1) { const hh = Math.min(sh, stop - y + 1); c.drawImage(im, F[0], F[1] + F[3] * 0.3, F[2], F[3] * 0.56 * hh / sh, x - w / 2, y, w, hh); }
+    c.drawImage(im, F[0], F[1] + F[3] * 0.9, F[2], F[3] * 0.1, x - w / 2, stop, w, h * 0.1); c.imageSmoothingEnabled = false;
   };
   LAB.cwBuild = (x, y, n, lad) => {
     const g = L9D.cw9.geo, W = g.w, parts = [['endL', x]], ls = [].concat(lad ?? []), lads = []; let cx = x + W.endL;

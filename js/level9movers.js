@@ -52,6 +52,8 @@
     // колесо: спицы (штоки) от ступицы к люлькам, ступица, люльки
     for (const w of V.wheel || []) {
       if (w.x + w.r < x0 || w.x - w.r > x1) continue; const [, rh] = L9.size('trap9a', 'rod');
+      const fl = LAB.floorBelow(M, w.x, w.y + w.r * 0.5, w.y + 2000, false) ?? w.y + w.r + 60;     // станина: А-образная рама из двух штоков от пола к ступице
+      for (const sx of [-120, 120]) { const fx = w.x + sx, dx = w.x - fx, dy = w.y - fl, Ln = Math.hypot(dx, dy); S(c, 'trap9a', 'rod', (fx + w.x) / 2, (fl + w.y) / 2, 0.8, { rot: Math.atan2(dy, dx) - Math.PI / 2, sy: Ln / (rh * 0.8) }); }
       for (const s of V.crads) if (s.wh === w) S(c, 'trap9a', 'rod', (w.x + s.px) / 2, (w.y + s.py) / 2, 0.5, { rot: Math.atan2(s.py - w.y, s.px - w.x) - Math.PI / 2, sy: w.r / (rh * 0.5) });
       S(c, 'lift9b', 'hub', w.x, w.y, 0.75, { rot: (M.mvT || 0) * w.w });
       for (const s of V.crads) if (s.wh === w) { const [, h] = L9.size('lift9b', 'cradle'), k = 0.9; S(c, 'lift9b', 'cradle', s.px, s.py + h * k / 2 - 4, k); }
@@ -65,10 +67,20 @@
   LAB.bigLiftDraw = (c, L, P) => {
     const im = L9.img.inc9, M = P.M, b = M.movers.big; if (!im) return; const f = L9D.inc9.f[L9.fi('inc9', 'car')], fr = L9D.inc9.f[L9.fi('inc9', 'rail')];
     c.imageSmoothingEnabled = true;
-    // рельс: линия через рельс тележки в начале пути
-    const c0 = carBox({ x: b.x, y: b.y0, w: L.w }, f), ry0 = c0.top + INC.railY * c0.FH, rk = c0.FW / (f[2] * 0.5) * 0.5, rw = fr[2] * rk, rh = fr[3] * rk;
-    { const RK = 0.95, [tw] = L9.size('part9', 'rail'), th = Math.atan(INC.slope), len = tw * RK - 1.5, ux = Math.cos(th), uy = Math.sin(th);     // рельс одной линией: бесшовная полоса, повёрнутая под уклон
-      const x0 = c0.x0 - 200, y0 = ry0 - 200 * INC.slope; for (let i = 0; ; i++) { const cx = x0 + (i + 0.5) * len * ux, cy = y0 + (i + 0.5) * len * uy; if (cx - len > b.x + b.dx + L.w + 300) break; if (cx + len < P.cam.x - 40 || cx - len > P.cam.x + 680) continue; S(c, 'part9', 'rail', cx, cy, RK, { rot: th }); } }
+    // рельс: одна линия, совпадающая с рельсом под колёсами тележки (в кадре тележки: верх рельса y = 153 + 0.315*(x-12), толщина 96 — в пикселях исходника 1182 px)
+    const c0 = carBox({ x: b.x, y: b.y0, w: L.w }, f), s0 = c0.FW / 1182, th = Math.atan(INC.slope), ux = Math.cos(th), uy = Math.sin(th);
+    const ax = c0.x0 + 580 * s0, ay = c0.top + 332 * s0, [tw, tth] = L9.size('part9', 'rail'), RK = 96 * ux * s0 / tth, len = tw * RK - 1.5;
+    const nx = -uy * tth * RK / 2, ny = ux * tth * RK / 2;      // от верха рельса к оси плитки
+    const xa = c0.x0 + 120 * s0, xb = c0.x0 + b.dx + 1150 * s0, yAt = x => ay + (x - ax) * INC.slope;     // рельс только от упора до упора: от левого края тележки наверху до правого внизу
+    // опоры под рельсом через 360 px: стойка колонны от низа рельса до пола (или ниже края экрана)
+    const pim = L9.img.part9, F = L9D.part9.f[L9.fi('part9', 'pillar')], pw = F[2] * 0.5 * 0.62, ph = F[3] * 0.5 * 0.62, sh = 0.56 * ph, bot = P.cam.y + 380;
+    for (let x = Math.ceil(xa / 360) * 360 + 180; pim && x < xb - 60; x += 360) {
+      if (x < P.cam.x - 60 || x > P.cam.x + 700) continue; const y0 = yAt(x) + 96 * s0 - 6, fb = M.solids.reduce((m, r) => x >= r[0] && x < r[0] + r[2] && r[1] > y0 + 4 && (m == null || r[1] < m) ? r[1] : m, null), end = fb != null ? fb : bot;
+      if (end < y0 + 20) continue; c.drawImage(pim, F[0], F[1], F[2], F[3] * 0.2, x - pw / 2, y0, pw, ph * 0.2);
+      for (let y = y0 + ph * 0.2 - 1; y < end; y += sh - 1) { const hh = Math.min(sh, end - y + 1); c.drawImage(pim, F[0], F[1] + F[3] * 0.3, F[2], F[3] * 0.56 * hh / sh, x - pw / 2, y, pw, hh); }
+    }
+    for (let i = 0; ; i++) { const cx = xa + (i + 0.5) * len * ux, cy = yAt(cx - nx) + ny; if (cx - len / 2 * ux > xb) break; if (cx + len < P.cam.x - 40 || cx - len > P.cam.x + 680) continue; S(c, 'part9', 'rail', cx, cy, RK, { rot: th }); }
+    for (const [x, fl] of [[xa, true], [xb, false]]) { const [, sth] = L9.size('inc9', 'stop'), k = 96 * s0 * 1.3 / sth; S(c, 'inc9', 'stop', x, yAt(x) - sth * k / 2 + 12 * s0, k, { flip: fl }); }     // упоры-буферы на концах
     const cb = carBox(L, f); c.drawImage(im, f[0], f[1], f[2], f[3], cb.x0, cb.top, cb.FW, cb.FH);
     c.imageSmoothingEnabled = false;
   };

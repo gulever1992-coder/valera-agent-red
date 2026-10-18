@@ -73,7 +73,9 @@
     for (const h of T.hlaser || []) {     // стойки с излучателями, луч поперёк
       const [a, b, fl, lo, hi] = h; if (b < x0 || a > x1) continue; const yy = h.by ?? hlaserY(h, t), [, rh] = L9.size('trap9a', 'rod'), [, bh] = L9.size('trap9a', 'beam');
       for (const px of [a, b]) for (let y = fl; y > fl - hi - 26; y -= rh * 0.35 - 1) S(c, 'trap9a', 'rod', px, y - rh * 0.35 / 2, 0.35);
+      c.filter = 'hue-rotate(115deg) saturate(1.3)';     // лазеры по ТЗ зелёные
       S(c, 'trap9a', 'beam', (a + b) / 2, yy, 0.8, { rot: Math.PI / 2, sy: (b - a - 16) / (bh * 0.8), add: 1, a: 0.8 + Math.sin(t * 40) * 0.15 });
+      c.filter = 'none';
       S(c, 'trap9a', 'emU', a + 6, yy, 0.42, { rot: Math.PI / 2 }); S(c, 'trap9a', 'emU', b - 6, yy, 0.42, { rot: -Math.PI / 2 });
     }
     // пила: желоб тайлом по полу, диск ездит туда-сюда (кадр отражается — зубья «бегут»)
@@ -92,7 +94,7 @@
     for (const [x, fl, top, f] of T.laser || []) {
       if (x < x0 || x > x1) continue; const u = (t + f) % LAS_T, on = u < LAS_ON, warn = !on && u > LAS_T - 0.35, k = 0.55;
       const [, eh] = L9.size('trap9a', 'emU'), eb = fl - eh * k + 6, et = top + eh * k - 6;
-      if (on || warn) { const [, bh] = L9.size('trap9a', 'beam'); S(c, 'trap9a', 'beam', x, (eb + et) / 2, 0.8, { sy: (eb - et) / (bh * 0.8), add: 1, a: on ? 0.75 + Math.sin(t * 40) * 0.2 : ((t * 20 | 0) % 2) * 0.35 }); }
+      if (on || warn) { const [, bh] = L9.size('trap9a', 'beam'); c.filter = 'hue-rotate(115deg) saturate(1.3)'; S(c, 'trap9a', 'beam', x, (eb + et) / 2, 0.8, { sy: (eb - et) / (bh * 0.8), add: 1, a: on ? 0.75 + Math.sin(t * 40) * 0.2 : ((t * 20 | 0) % 2) * 0.35 }); c.filter = 'none'; }
       S(c, 'trap9a', on || warn ? 'emU' : 'emOff', x, fl + 2 - eh * k / 2, k);
       const [rw, rh] = L9.size('trap9a', 'rod'); for (let y = top; y > cy - rh * 0.4; y -= rh * 0.4 - 1) S(c, 'trap9a', 'rod', x, y - rh * 0.4 / 2, 0.4);     // подвес верхнего излучателя
       S(c, 'trap9a', 'emD', x, top + eh * k / 2, k);
