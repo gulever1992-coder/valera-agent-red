@@ -498,6 +498,13 @@ if have('l9lift3_0.jpg'):    # большой грузовой лифт, сте�
     B = [(0, 4, 644, 385), (661, 4, 956, 385), (979, 4, 1159, 385), (1178, 4, 1353, 385), (31, 457, 350, 694), (446, 383, 517, 768), (611, 383, 1003, 768), (1054, 426, 1325, 721)]
     pack('lift9b', [trim(rgba_m('l9lift3_0.jpg', b)) for b in B], 0.5, anchor='mid', names=['deck', 'wall', 'levOff', 'levOn', 'step', 'chain', 'hub', 'cradle'])
 
+for _n, _src, _h in [('bgA', 'l9bgA_1.jpg', 620), ('bgB', 'l9bgB_1.jpg', 520), ('bgC', 'l9bgC_0.jpg', 520)]:     # фоны зон: шахта с ярусами (подъёмник), наклонный тоннель, зал реактора
+    if have(_src): save_px(_n, seamless(Image.open(os.path.join(SRC, _src)).convert('RGB')), _h)
+if have('l9inc_0.jpg'):      # наклонный грузовой лифт: тележка (настил горизонтальный, колёса на уклоне), рельс, упор
+    B = [(10, 24, 1200, 574), (10, 406, 933, 752), (989, 528, 1367, 762)]
+    fr = [trim(rgba_m('l9inc_0.jpg', b)) for b in B]
+    pack('inc9', fr, 0.5, anchor='mid', names=['car', 'rail', 'stop'])
+
 if have('l9vatdeep_1.jpg'):     # глубокий чан целиком (без растяжки), один кадр — кипение пузырями в коде
     vd = trim(rgba_m('l9vatdeep_1.jpg'))
     pack('vatD9', [vd], 0.5, anchor='mid', names=['v'])

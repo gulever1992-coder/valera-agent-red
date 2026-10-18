@@ -7,7 +7,7 @@
 
   LAB.moversInit = (M, atBottom) => {
     const V = M.movers; if (!V) return;
-    if (V.big) { const b = V.big; V.bigL = { kind: 'big', x: b.x, w: b.w, y: atBottom ? b.y1 : b.y0, on: atBottom ? 2 : 0, wv: 0 }; M.lifts.push(V.bigL); }
+    if (V.big) { const b = V.big; V.bigL = { kind: 'big', x: b.x + (atBottom ? b.dx || 0 : 0), w: b.w, y: atBottom ? b.y1 : b.y0, on: atBottom ? 2 : 0, wv: 0 }; M.lifts.push(V.bigL); }
     V.steps = []; for (const c of V.pater || []) { const L = c.bot - c.top, n = Math.ceil(L / PAT_GAP); for (let i = 0; i < n; i++) { const s = { kind: 'step', col: c, ph: i * PAT_GAP, x: c.x - STEP_W / 2, w: STEP_W, y: c.top }; V.steps.push(s); M.lifts.push(s); } }
     V.crads = []; for (const w of V.wheel || []) for (let i = 0; i < w.n; i++) { const s = { kind: 'cradle', wh: w, a0: i * Math.PI * 2 / w.n, x: 0, w: CRAD_W, y: 0 }; V.crads.push(s); M.lifts.push(s); }
     LAB.moversUpdate(M, null, 0);
@@ -26,17 +26,17 @@
       const w = s.wh, a = s.a0 + t * w.w, ox = s.x, oy = s.y; s.px = w.x + Math.cos(a) * w.r; s.py = w.y + Math.sin(a) * w.r;
       s.x = s.px - CRAD_W / 2; s.y = s.py + CRAD_HANG; carry(P, s, ox, oy);
     }
-    const L = V.bigL; if (!L || !P) return; const b = V.big, oy = L.y;
+    const L = V.bigL; if (!L || !P) return; const b = V.big, oy = L.y, ox = L.x;
     if (L.on === 0 && P.onG && P.x > L.x && P.x < L.x + L.w && Math.abs(P.y - L.y) < 3) { L.on = 1; Sound.play('crane'); lv.say('ГРУЗОВОЙ ЛИФТ! ВНИЗ!', 2); }
     if (L.on === 1) {
-      L.y = Math.min(b.y1, L.y + 42 * dt);
+      L.y = Math.min(b.y1, L.y + 42 * dt); L.x = b.x + (L.y - b.y0) / (b.y1 - b.y0) * (b.dx || 0);     // по наклонным рельсам: вбок и вниз
       while (L.wv < b.waves.length && L.y >= b.waves[L.wv][0]) {      // волна: охрана прыгает сверху на платформу
         for (const [tp, dx, o] of b.waves[L.wv][1]) P.foes.push(new (L9.FOES[tp])(M, L.x + dx, L.y - (tp === 'Fly' ? 150 : 300), Object.assign({}, o || {})));
         if (L.wv) lv.say('СВЕРХУ!', 1); L.wv++;
       }
       if (L.y >= b.y1) { L.on = 2; Sound.play('clank'); G.shake(3, 0.2); }
-      if (P.onG && P.x > L.x - 4 && P.x < L.x + L.w + 4 && Math.abs(P.y - oy) < 4) P.y = L.y;
-      for (const f of P.foes) if (!f.dead && !f.air && f.onG && f.x > L.x && f.x < L.x + L.w && Math.abs(f.y - oy) < 5) f.y = L.y;
+      if (P.onG && P.x > ox - 4 && P.x < ox + L.w + 4 && Math.abs(P.y - oy) < 4) { P.y = L.y; P.x += L.x - ox; }
+      for (const f of P.foes) if (!f.dead && !f.air && f.onG && f.x > ox && f.x < ox + L.w && Math.abs(f.y - oy) < 5) { f.y = L.y; f.x += L.x - ox; }
     }
   };
 
@@ -59,12 +59,16 @@
     c.imageSmoothingEnabled = false;
   };
 
-  // огромная платформа грузового лифта: рисунок растянут по ширине, тросы — до верха экрана
+  // наклонный грузовой лифт: тележка (настил горизонтальный, колёса на уклоне 0.3) едет по рельсу вбок и вниз; рельс — тайлами вдоль пути
+  const INC_K = 1.35, INC = { deckL: 0.22, deckR: 0.97, deckT: 0.122, railY: 0.72, slope: 0.3 };
+  const carBox = (L, f) => { const FW = f[2] * 0.5 * INC_K, FH = f[3] * 0.5 * INC_K, dw = (INC.deckR - INC.deckL) * FW, kx = L.w / dw; return { FW: FW * kx, FH: FH * kx, x0: L.x - INC.deckL * FW * kx, top: L.y - INC.deckT * FH * kx }; };
   LAB.bigLiftDraw = (c, L, P) => {
-    const im = L9.img.lift9b; if (!im) return; const F = L9D.lift9b.f[L9.fi('lift9b', 'deck')], dh = F[3] * 0.5 * 1.25, top = L.y - dh * 0.74;
+    const im = L9.img.inc9, M = P.M, b = M.movers.big; if (!im) return; const f = L9D.inc9.f[L9.fi('inc9', 'car')], fr = L9D.inc9.f[L9.fi('inc9', 'rail')];
     c.imageSmoothingEnabled = true;
-    c.drawImage(im, F[0], F[1], F[2], F[3] * 0.08, L.x - 8, P.cam.y - 10, L.w + 16, top - P.cam.y + 10 + dh * 0.08);
-    c.drawImage(im, F[0], F[1], F[2], F[3], L.x - 8, top, L.w + 16, dh);
+    // рельс: линия через рельс тележки в начале пути
+    const c0 = carBox({ x: b.x, y: b.y0, w: L.w }, f), ry0 = c0.top + INC.railY * c0.FH, rk = c0.FW / (f[2] * 0.5) * 0.5, rw = fr[2] * rk, rh = fr[3] * rk;
+    for (let x = b.x - 260; x < b.x + b.dx + L.w + 200; x += rw * 0.97) { if (x + rw < P.cam.x - 40 || x > P.cam.x + 680) continue; const yc = ry0 + (x + rw / 2 - c0.x0) * INC.slope; c.drawImage(im, fr[0], fr[1], fr[2], fr[3], x, yc - rh / 2, rw, rh); }
+    const cb = carBox(L, f); c.drawImage(im, f[0], f[1], f[2], f[3], cb.x0, cb.top, cb.FW, cb.FH);
     c.imageSmoothingEnabled = false;
   };
 

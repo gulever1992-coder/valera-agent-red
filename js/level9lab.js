@@ -229,7 +229,7 @@
           if (a < r[0] + r[2]) c.rect(a, r[1] - 8, r[0] + r[2] - a, FH + 4);
           c.clip(); for (let x = r[0] - ((r[0] % fw) + fw) % fw; x < r[0] + r[2]; x += fw) c.drawImage(fim, Math.floor(x), r[1] - 7, Math.ceil(fw) + 1, FH); c.restore(); }
         const [, th] = L9.size('col9', 'thick');
-        for (let ex = r[0] + 14; ex < r[0] + r[2]; ex += (r[2] - 28) / Math.max(1, Math.round((r[2] - 28) / 150)) || 1e9) if (ex > M.x0 + 20 && ex < M.x1 - 20) { const y0 = r[1] + FH - 6, fb = LAB.floorBelow(M, ex, r[1] + r[3] + 2, 900, false), len = fb != null ? fb + 2 - y0 : th * 0.38; S(c, 'col9', 'thick', ex, y0 + len / 2, 0.38, { sy: len / (th * 0.38) }); }   // цельные опорные колонны под плитой (капитель под полом, уходят вниз)
+        for (let ex = r[0] + 14; ex < r[0] + r[2]; ex += (r[2] - 28) / Math.max(1, Math.round((r[2] - 28) / 150)) || 1e9) if (ex > M.x0 + 20 && ex < M.x1 - 20) { const y0 = r[1] + FH - 6, fb = LAB.floorBelow(M, ex, r[1] + r[3] + 2, 900, false), len = fb != null ? fb + 2 - y0 : Math.max(th * 0.38, P.cam.y + 420 - y0); S(c, 'col9', 'thick', ex, y0 + len / 2, 0.38, { sy: len / (th * 0.38) }); }   // цельные опорные колонны под плитой (капитель под полом, уходят вниз)
       }
       M.drawOnFloor && M.drawOnFloor(c, P);
     },

@@ -78,17 +78,18 @@ window.__t9 = {
         // ловушки: переждать пресс/лазер/пар/кабель впереди, пилу перепрыгнуть
         const T = M.traps || {}, tt = P.t, ahead = x => x - P.x > 0 && x - P.x < 75;
         let wait = false;
-        for (const [x, fl, f] of T.press || []) if (ahead(x + 30) && Math.abs(P.y - fl) < 5) { const u = (tt + f) % 2.6; if (u > 1.0 && u < 2.3) wait = true; }
+        for (const [x, fl, f] of T.press || []) if (ahead(x - 50) && Math.abs(P.y - fl) < 5) { const u = (tt + f) % 2.6; if (u > 1.0 && u < 2.3) wait = true; }
         for (const [x, fl, top, f] of T.laser || []) if (ahead(x) && Math.abs(P.y - fl) < 5) { const u = (tt + f) % 2.8; if (u < 1.75 || u > 2.4) wait = true; }
         for (const [x, fl, f] of T.vent || []) if (ahead(x + 10) && Math.abs(P.y - fl) < 5) { const u = (tt + f) % 3.4; if (u > 1.5) wait = true; }
         for (const [x, fl, f] of T.cable || []) if (ahead(x + 10) && Math.abs(P.y - fl) < 5) { const u = (tt + f) % 2.2; if (u < 1.0 || u > 2.0) wait = true; }
-        if (wait && !f) { I.down.left = I.down.right = false; mv = 0; }
+        const onBelt = M.beltAt && M.beltAt(P.x, P.y) !== 0, nearL = ((M.traps || {}).laser || []).find(([x, fl]) => x - P.x > 0 && x - P.x < 75 && Math.abs(P.y - fl) < 5);
+        if (wait && !f) { if (onBelt && nearL && nearL[0] - P.x > 26) { I.down.right = true; I.down.left = false; } else { I.down.left = I.down.right = false; mv = 0; } }     // на ленте — держаться у самого луча
         for (const s of T.saw || []) if (s.bx && Math.abs(P.y - s[2]) < 5 && Math.abs(s.bx - P.x) < 70 && P.onG && jumpCd <= 0) { I.hit.jump = true; jumpCd = 0.5; }
         // горизонтальный лазер: низко — прыжок, высоко — перекат, иначе ждать
         for (const h of (M.traps || {}).hlaser || []) if (h[0] - P.x > 0 && h[0] - P.x < 45 && Math.abs(P.y - h[2]) < 5 && P.onG && h.by != null) {
           const per = h[5], ph = ((P.t + h[6]) % per) / per; if (ph > 0.3 && ph < 0.4) { I.down.right = true; I.down.left = false; } else { I.down.left = I.down.right = false; mv = 0; } }
         // большой лифт: встать в середину платформы (струи огня из стен до середины не достают)
-        if (M.movers && M.movers.bigL && M.movers.bigL.on === 1 && P.x > 14790 && P.x < 15410 && (!f || Math.abs(P.x - 15100) > 60)) { const d = 15100 - P.x; if (Math.abs(d) > 8) { I.down.right = d > 0; I.down.left = d < 0; } else { I.down.left = I.down.right = false; } mv = 0; }
+        const BL = M.movers && M.movers.bigL, bc = BL ? BL.x + BL.w / 2 : 0; if (BL && BL.on === 1 && P.x > BL.x - 10 && P.x < BL.x + BL.w + 10 && (!f || Math.abs(P.x - bc) > 60)) { const d = bc - P.x; if (Math.abs(d) > 8) { I.down.right = d > 0; I.down.left = d < 0; } else { I.down.left = I.down.right = false; } mv = 0; }
         // реакторная: патерностер и колесо — ждать подходящую платформу и прыгать
         if (P.y > 1000 && M.movers) {
           const V = M.movers, on = l => P.onG && Math.abs(P.y - l.y) < 4 && P.x >= l.x - 4 && P.x <= l.x + l.w + 4;
