@@ -178,6 +178,14 @@ if have('l9tunA_0.jpg'):
     wall = seamless(im.crop((0, 0, W, int(H * 0.74)))); wall = wall.resize((round(wall.width * 500 / wall.height), 500), Image.LANCZOS); wall.save(os.path.join(OUT, 'tunWall.jpg'), quality=90)
     flo = seamless(im.crop((0, int(H * 0.66), W, H))); flo = flo.resize((round(flo.width * 260 / flo.height), 260), Image.LANCZOS).convert('RGBA'); al = np.full((260, flo.width), 255, np.uint8); al[:64] = (np.linspace(0, 1, 64) ** 1.4 * 255)[:, None]; flo.putalpha(Image.fromarray(al)); flo.save(os.path.join(OUT, 'tunFloor.png'))   # верх пола плавно растворяется в стене — без шва
     DATA['_bg']['tunWall'] = {'w': wall.width, 'h': 500}; DATA.setdefault('_bgp', {})['tunFloor'] = 1
+if have('l9rca_0.jpg'):     # реакторная, средний план: ряд колб с жижей (низ кадра Flow), верх плавно растворяется в дальнем фоне bgC
+    _m = seamless(Image.open(os.path.join(SRC, 'l9rca_0.jpg')).convert('RGB')); _m = _m.crop((0, int(_m.height * 0.2), _m.width, _m.height))
+    _m = _m.resize((round(_m.width * 330 / _m.height), 330), Image.LANCZOS).convert('RGBA'); _al = np.full((330, _m.width), 255, np.uint8); _al[:90] = (np.linspace(0, 1, 90) ** 1.3 * 255)[:, None]
+    _m.putalpha(Image.fromarray(_al)); _m.save(os.path.join(OUT, 'rcaMid.png')); DATA.setdefault('_bgp', {})['rcaMid'] = 1
+if have('l9shb_0.jpg'):    # реакторная, ближний ярус: балки и трубы под сводом (низ — пурпур, вырезается)
+    a, m = key_flood(load('l9shb_0.jpg')); H = a.shape[0]
+    _c = seamless(Image.fromarray(np.dstack([a, np.where(m, 0, 255)]).astype(np.uint8)[:int(H * 0.72)], 'RGBA')); _c = _c.resize((round(_c.width * 200 / _c.height), 200), Image.LANCZOS)
+    _c.save(os.path.join(OUT, 'rcbCeil.png')); DATA.setdefault('_bgp', {})['rcbCeil'] = 1
 if have('l9tunB_0.jpg'):
     a, m = key_flood(load(TUNB)); H = a.shape[0]
     rgba = np.dstack([a, np.where(m, 0, 255)]).astype(np.uint8)[:int(H * 0.55)]

@@ -239,8 +239,14 @@
       const along = mx * ux + my * uy, n = -mx * uy + my * ux, nR = -(b.x + 108) * uy + (b.y0 + 90) * ux;
       c.save(); c.translate(320, 180); c.rotate(th); fn(nR - n, along); c.restore();
     };
+    M.drawReactFront = (c, cx, cy, w) => {     // реакторная: тёмные связки труб на переднем плане, быстрее игрового плана
+      const fc = M.fgCv2 || (M.fgCv2 = document.createElement('canvas')); fc.width = 640; fc.height = 360; const g = fc.getContext('2d'), step = 980, off = cx * 1.4, by = DY + 120 - cy;
+      for (let i = Math.floor((off - 200) / step); i * step < off + 900; i++) S(g, 'arch9', i % 2 ? 'pipes' : 'pillar', i * step - off + 300, by, 1.3);
+      g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(3,7,10,0.74)'; g.fillRect(0, 0, 640, 360);
+      c.save(); c.beginPath(); c.rect(640 * (1 - w), 0, 640 * w, 360); c.clip(); c.globalAlpha = 0.82; c.drawImage(fc, 0, 0); c.restore();
+    };
     M.drawOver = (c, cx, cy) => {     // передний план спуска: тёмные рёбра крепи поперёк тоннеля, быстрее игрового плана (объём)
-      const mid = cx + 320, r = (v, a0, a1) => clamp((v - a0) / (a1 - a0), 0, 1), bI = clamp((cx + 640 - M.portalX()) / 640, 0, 1), bO = r(mid, 15500, 15900); if (bI <= bO) return;
+      const mid = cx + 320, r = (v, a0, a1) => clamp((v - a0) / (a1 - a0), 0, 1), bI = clamp((cx + 640 - M.portalX()) / 640, 0, 1), bO = r(mid, 15500, 15900); if (bO > 0) M.drawReactFront(c, cx, cy, bO); if (bI <= bO) return;
       const fc = M.fgCv || (M.fgCv = document.createElement('canvas')); fc.width = 640; fc.height = 360; const g = fc.getContext('2d');     // рёбра рисуем отдельно и затемняем до силуэта
       M.tunFrame(g, cx, cy, (fy, along) => { const step = 1100, off = along * 1.4; for (let i = Math.floor((off - 900) / step); i * step < off + 900; i++) S(g, 'arch9', 'pillar', i * step - off, fy + 230, 1.5); });
       g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(3,7,10,0.72)'; g.fillRect(0, 0, 640, 360);
@@ -262,8 +268,14 @@
       const tunBg = () => { c.fillStyle = '#04070a'; c.fillRect(0, 0, 640, 360); M.tunFrame(c, cx, cy, (fy, along) => {
           tl2('tunWall', along * 0.3, fy - 660, 400); tl2('tunWall', along * 0.3, fy - 260, 400); c.fillStyle = 'rgba(2,6,10,0.25)'; c.fillRect(-800, -800, 1600, 1600); tl2('tunCeil', along * 0.5, fy - 460, 190); }); };
       const tl2 = (n, off, y, h) => { const im = L9.img[n]; if (!im) return; const w = im.width / im.height * h; for (let x = -((off % w) + w) % w - 2 * w; x < 760; x += w) c.drawImage(im, Math.floor(x) - 380, Math.round(y), Math.ceil(w) + 1, h); };
+      // реакторная — слоями, как в погоне: дальний зал bgC почти неподвижен, ряд колб (средний) и балки под сводом (ближний) едут быстрее
+      const reactBg = () => { const im = L9.img.bgC, d = PX().bgC, fl = DY - 292 - cy; c.fillStyle = '#04070a'; c.fillRect(0, 0, 640, 360);
+        if (im && d) { const w = d[0], h = d[1], y = clamp(-(cy - 700) * 0.08 - 60, 360 - h, 0); for (let x = -((cx * 0.06 % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); }
+        c.fillStyle = 'rgba(2,6,10,0.25)'; c.fillRect(0, 0, 640, 360);
+        tl('rcaMid', 0.32, 330 - 250 + fl * 0.85, 250); c.fillStyle = 'rgba(2,6,10,0.12)'; c.fillRect(0, 0, 640, 360);
+        tl('rcbCeil', 0.55, -150 + fl * 0.95, 200); };
       const zoneBg = (n, wIn, wOut, kx, yy) => { const im = L9.img[n], d = PX()[n]; if (!im || !d || wIn <= wOut) return; const h = d[1], w = d[0], y = clamp(yy, 360 - h, 0);
-        const x0 = 640 * (1 - wIn), x1 = 640 * (1 - wOut), draw = n === 'bgB' ? tunBg : () => { for (let x = -((cx * kx % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); };
+        const x0 = 640 * (1 - wIn), x1 = 640 * (1 - wOut), draw = n === 'bgB' ? tunBg : n === 'bgC' ? reactBg : () => { for (let x = -((cx * kx % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); };
         for (let i = 0; i < 4; i++) { const e = 10 * (4 - i), a = x0 > 0 ? x0 - e : 0, b = x1 < 640 ? x1 + e : 640; if (i < 3 && a <= 0 && b >= 640) continue;
           c.save(); c.globalAlpha = i < 3 ? 0.25 : 1; c.beginPath(); c.rect(i < 3 ? a : x0, 0, (i < 3 ? b - a : x1 - x0), 360); c.clip(); draw(); c.restore(); } };
       zoneBg('bgB', bI, bO, 0.16, -(cy - 100) * 0.2); zoneBg('bgC', cI, 0, 0.14, -(cy - 700) * 0.3);
