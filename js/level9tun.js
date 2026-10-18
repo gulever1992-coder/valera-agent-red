@@ -30,7 +30,7 @@
     [55, 'train', { y: 266 }], [56, 'sleep', { k: 'B', from: 1, y: 300 }], [58, 'btr', { hp: 110, final: 1 }], [62, 'cyb', { k: 'bike', from: 1, y: 320 }],
     [65, 'bar', { y: 290 }], [66, 'cyb', { k: 'apc', from: -1, y: 300 }], [67, 'sleep', { k: 'C', from: 1, y: 330 }], [69, 'cyb', { k: 'cart', from: 1, y: 280 }],
   ];
-  const HEAL = [21, 43, 63];
+  const HEAL = [8, 15, 21, 28, 36, 43, 51, 57, 63, 70];
 
   const P = L9.PARTS.tun = {
     deathText: 'КАПСУЛА РАЗБИТА', tvTop: true,
@@ -69,7 +69,7 @@
         P.shots.push({ x: mx, y: my, vx: Math.cos(a) * 1100, vy: Math.sin(a) * 1100, t: 0, gy: P.y });
       }
       while (P.si < SCRIPT.length && SCRIPT[P.si][0] <= P.t) { P.spawn(SCRIPT[P.si][1], SCRIPT[P.si][2]); P.si++; }
-      while (P.hi < HEAL.length && HEAL[P.hi] <= P.t) { P.o.push({ type: 'heal', x: 700, y: rnd(Y0 + 10, Y1 - 10), t: 0, hp: 99 }); P.hi++; }
+      while (P.hi < HEAL.length && HEAL[P.hi] <= P.t) { P.o.push({ type: 'heal', kind: P.hi % 2 ? 'pelmeni' : 'kefir', x: 700, y: rnd(Y0 + 10, Y1 - 10), t: 0, hp: 99 }); P.hi++; }
       P.updObjs(lv, dt); P.updShots(lv, dt); P.updFx(dt);
       if (P.truck && P.truck.final && P.t > DUR + 4) { P.killBtr(P.truck); lv.say('БТР врезался в опору!', 2); }
       if (P.t > DUR && !P.endT && !P.truck) { P.endT = 0.001; lv.say('ВПЕРЕДИ ШЛЮЗ ЛАБОРАТОРИИ...', 2.5); }
@@ -100,7 +100,7 @@
           if (q.type === 'tv') continue;
           const k = sc(q.y), w = (q.kind === 'beam' || q.kind === 'wreck' ? 70 : q.kind === 'slime' ? 50 : 22) * k;
           if (Math.abs(q.x - P.x) < w + 50 * k0 && Math.abs(q.y - P.y) < 16) {
-            if (q.type === 'heal') { q.dead = true; P.hp = Math.min(100, P.hp + 30); Sound.play('swig'); lv.say('Кефир! +30', 1.2); lv.stats.food++; }
+            if (q.type === 'heal') { q.dead = true; const pm = q.kind === 'pelmeni'; P.hp = Math.min(100, P.hp + (pm ? 35 : 25)); Sound.play('swig'); lv.say(pm ? 'Пельмешки!!! +35' : 'Кефир! +25', 1.2); lv.stats.food++; }
             else if (P.z < (q.kind === 'slime' ? 6 : 26) && !q.hitP) { q.hitP = 1; if (q.kind === 'slime') { P.y = clamp(P.y + rnd(-40, 40), Y0, Y1); Sound.play('splash'); P.hitP(6); } else if (q.kind.startsWith('barrel')) P.explode(q); else { P.hitP(18); Sound.play('crash'); G.shake(4, 0.2); } }
           }
         } else if (q.type === 'sleep') {     // мирная капсула: плывёт своей скоростью, слегка виляет; опасно только столкновение
@@ -218,7 +218,7 @@
       let k = sc(clamp(q.y, Y0, Y1)); const bob = Math.sin(q.t * 7) * 2;
       if (q.type === 'obst') { S(c, 'props8', 'shadow', q.x, q.y, 0.4 * k, { a: 0.4 }); S(c, 'hbar9', q.kind, q.x, q.y + 2, k); return; }
       if (q.type === 'fire') { S(c, 'fxA9', 'fire' + ((q.t * 10 | 0) % 4), q.x, q.y - 14, 0.9 * k); return; }
-      if (q.type === 'heal') { S(c, 'props8', 'shadow', q.x, q.y, 0.25 * k, { a: 0.4 }); S(c, 'pick9', 'kefir', q.x, q.y - 14 + Math.sin(q.t * 5) * 3, 0.9 * k); return; }
+      if (q.type === 'heal') { S(c, 'props8', 'shadow', q.x, q.y, 0.25 * k, { a: 0.4 }); Art.item(c, q.kind || 'kefir', q.x, q.y - 14 + Math.sin(q.t * 5) * 3, 0, 1.6 * k); return; }
       if (q.type === 'tv' || q.type === 'tvBroken') { S(c, 'tv9', q.type === 'tvBroken' ? ((q.t * 3 | 0) % 2 ? 'broken' : 'smoke') : q.x > 560 ? 'noise' : 'x' + ((q.t * 6 | 0) % 4), q.x, q.y, 1); if (q.type === 'tv' && q.x < 560 && !q.said) { q.said = 1; P.lv.xsay(q.line); } return; }
       if (q.type === 'sleep') { S(c, 'props8', 'shadow', q.x, q.y + 2, 0.75 * k, { a: 0.45 }); S(c, 'sleep9', (q.cr ? 'cr' : 'ok') + q.kind, q.x, q.y - 3 + Math.sin(q.t * 3) * 2, k); return; }
       if (q.type === 'cyb') { k *= q.sz; const fr = q.fireA > 0 ? (q.back ? 'fireBack' : 'fire') : 'run'; S(c, 'props8', 'shadow', q.x, q.y + 2, 0.75 * k, { a: 0.45 }); S(c, q.sh, fr, q.x, q.y - 4 + bob, k); if (q.fl > 0) S(c, q.sh, fr, q.x, q.y - 4 + bob, k, { add: 1, a: 0.5 }); return; }

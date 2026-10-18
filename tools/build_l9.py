@@ -108,6 +108,14 @@ va = cut('l9vat_1.jpg', 'm', 2, 4, clean=True)
 pack('vat9', va, 0.62, names=['v0', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'])
 tvs = cut('l9tv2_0.jpg', 'm', 3, 4, clean=True)[:8]   # экраны, утопленные в стенную плиту — без кронштейнов
 pack('tv9', tvs, 0.42, anchor='mid', names=['off', 'noise', 'x0', 'x1', 'x2', 'x3', 'broken', 'smoke'])
+if os.path.exists(os.path.join(SRC, 'l9tvp_0.jpg')):     # груда телевизоров на полу целиком (Flow): статика, Икс (2 кадра), разбита
+    tp = cut('l9tvp_0.jpg', 'm', 2, 3, clean=True)
+    for q in range(len(tp)):     # розовый отсвет фона в дыму -> серый
+        arr = np.asarray(tp[q]).copy(); r, g, b = [arr[..., i].astype(np.int32) for i in range(3)]
+        pur = (r > g * 1.15) & (b > g * 1.15); L = (r * 0.3 + g * 0.59 + b * 0.11)[pur]
+        arr[pur, 0] = (L * 0.8).astype(np.uint8); arr[pur, 1] = (L * 0.78).astype(np.uint8); arr[pur, 2] = (L * 0.74).astype(np.uint8)
+        tp[q] = Image.fromarray(arr)
+    pack('tvp9', [tp[0], tp[1], tp[2], tp[5]], 0.85, names=['off', 'xa', 'xb', 'broken'])
 for out, nm in (('lab1a', 'l9lab1_0.jpg'), ('lab1b', 'l9lab1_1.jpg'), ('lab1c', 'l9lab1b_0.jpg'), ('lab1d', 'l9lab1b_1.jpg')):
     bg(out, nm)
 

@@ -2,7 +2,6 @@
 // solids: [x, y, w, h]; walks: [x, y, w] (мостки, сквозь них можно спрыгнуть); ladders: [x, верх, низ].
 (() => {
   const S = L9.spr, clamp = L9.clamp, rnd = L9.rnd, F = () => L9.FOES;
-  const TVPILE = [[-44, 0, 0.95, 0], [46, 0, 1.05, 0.02], [-24, -47, 0.72, -0.05], [34, -51, 0.68, 0.06], [4, -84, 0.55, 0.04], [-50, -82, 0.42, -0.12]];     // [dx, низ, масштаб, наклон] телевизоров в груде
   const ZONES = [   // [x0, x1, подпись]
     [0, 2300, 'СКЛАД КАПСУЛ'],
     [2300, 4500, 'КОНВЕЙЕРНЫЙ ЗАЛ'],
@@ -214,7 +213,7 @@
     M.shootProps = (b, P) => {
       for (const c of M.covers) { if (c.hp <= 0) continue; if (Math.abs(b.x - c.x) < 28 && b.y > c.y - 44 && b.y < c.y) { b.dead = true; c.hp -= b.dmg; Sound.play('clank', 0.5); if (c.hp <= 0) { Sound.play('crash'); P.lv.score += 50; } return; } }
       for (const p of M.props) { if (p.hp <= 0) continue; if (Math.abs(b.x - p.x) < 22 && b.y > p.y - 56 && b.y < p.y) { b.dead = true; p.hp -= b.dmg; if (p.hp <= 0) M.breakProp(p, P); return; } }
-      for (const t of M.tvs) { if (t.broken) continue; if (Math.abs(b.x - t.x) < 70 && b.y > t.y - 120 && b.y < t.y) { b.dead = true; t.broken = 1; Sound.play('glass'); P.lv.score += 150; if (!M.tvBroke) { M.tvBroke = 1; P.lv.xsay('Я устал прощать.', 3); } return; } }
+      for (const t of M.tvs) { if (t.broken) continue; if (Math.abs(b.x - t.x) < 70 && b.y > t.y - 135 && b.y < t.y) { b.dead = true; t.broken = 1; Sound.play('glass'); P.lv.score += 150; if (!M.tvBroke) { M.tvBroke = 1; P.lv.xsay('Я устал прощать.', 3); } return; } }
     };
     M.breakProp = (p, P) => {
       Sound.play(p.kind === 'tube' ? 'glass' : 'crash'); P.lv.score += 50;
@@ -349,10 +348,7 @@
       for (const tv of M.tvs) {
         const on = Math.abs(P.x - tv.x) < 300;
         if (on && !tv.said && !tv.broken) { tv.said = 1; P.lv.xsay(tv.line, 6); }
-        for (let i = 0; i < TVPILE.length; i++) {     // груда телевизоров на полу: разные размеры, друг на друге; включаются все разом — на экранах Икс
-          const [dx, dy, k, rot] = TVPILE[i], [, th] = L9.size('tv9', 'off'), fr = tv.broken ? ((t * 3 + i) | 0) % 2 ? 'broken' : 'smoke' : !on ? (((t * 8 + i * 3) | 0) % 5 ? 'off' : 'noise') : 'x' + (((t * 6) | 0) + i) % 4;
-          S(c, 'tv9', fr, tv.x + dx, tv.y + 2 + dy - th * k / 2, k, { rot });
-        }
+        S(c, 'tvp9', tv.broken ? 'broken' : !on ? 'off' : ((t * 3) | 0) % 2 ? 'xb' : 'xa', tv.x, tv.y + 3, 1);     // груда телевизоров на полу (Flow): включаются все разом — на экранах Икс
       }
       // укрытия и предметы
       for (const cv of M.covers) if (cv.hp > -20) S(c, 'cover9', cv.hp > 0 ? (cv.hp < 3 && cv.kind === 'crates' ? 'cratesHit' : cv.kind) : 'cratesHit', cv.x, cv.y + 2, 1, { a: cv.hp > 0 ? 1 : 0.5 });
