@@ -388,22 +388,21 @@ if FLOOR_PICK and have(FLOOR_PICK):
     band.save(os.path.join(OUT, 'labFloor.png')); DATA.setdefault('_bgp', {})['labFloor'] = 1
 if have('l9flE_0.jpg'):     # законченные торцы плиты пола (Flow): скруглённый угол, уголок на болтах; внутренний край — ровный срез
     _e = [trim(rgba_m('l9flE_0.jpg', b)) for b in ((40, 150, 600, 620), (800, 150, 1340, 620))]
-    _bd = np.asarray(Image.open(os.path.join(OUT, 'labFloor.png')).convert('RGB')).astype(np.float32); _o = []
-    for _i, _im in enumerate(_e):     # цвет и фактура — из полосы пола (без стыка); от торца Flow — форма, тени скругления и уголок на болтах
+    _o = []
+    for _i, _im in enumerate(_e):     # торец = наложение поверх самой полосы пола (фактура та же, стыка нет): тень/блик скругления, затухают к середине, + уголок на болтах
         _im = _im.resize((round(_im.width * 96 / _im.height), 96), Image.LANCZOS); a_ = np.asarray(_im).astype(np.float32); al = a_[..., 3] > 110; W_ = a_.shape[1]
-        tx = _bd[:, :W_] if _i == 0 else _bd[:, -W_:]
         L_ = a_[..., :3].mean(2); rm = np.array([L_[y][al[y]].mean() if al[y].any() else 1 for y in range(96)])[:, None]
-        sh_ = np.clip(L_ / np.maximum(rm, 1), 0.45, 1.35)
-        out = tx * sh_[..., None]
+        sh_ = np.clip(L_ / np.maximum(rm, 1), 0.3, 1.6)
+        xs = np.arange(W_)[None, :] / W_; fade = np.clip((0.45 - (xs if _i == 0 else 1 - xs)) / 0.3, 0, 1)     # к внутреннему краю наложение пропадает
         rust = al & (a_[..., 0] > a_[..., 1] + 12) & (a_[..., 0] > a_[..., 2] + 12)
-        bolt = al & ~rust & (np.abs(a_[..., :3] - tx).mean(2) > 0) & (np.arange(W_)[None, :] < W_ * 0.14 if _i == 0 else np.arange(W_)[None, :] > W_ * 0.86)
-        bm = _bd.mean(1)     # построчно к среднему цвету всей полосы пола — торец не светлее и не темнее
-        for y in range(96):
-            m_ = al[y] & ~rust[y]
-            if m_.sum() > 2: out[y, m_] *= bm[y] / np.maximum(out[y, m_].mean(0), 1)
-        out[rust | bolt] = a_[..., :3][rust | bolt]
-        _o.append(Image.fromarray(np.dstack([out.clip(0, 255), np.where(al, 255, 0)]).astype(np.uint8)))
-    pack('flE9', _o, 1.0, anchor='mid', names=['endL', 'endR'])
+        out = np.zeros((96, W_, 4), np.float32)
+        dk = al & (sh_ < 1); out[dk, 3] = ((1 - sh_) * 255 * 1.1 * fade)[dk]
+        lt = al & (sh_ > 1); out[lt, :3] = 255; out[lt, 3] = ((sh_ - 1) * 255 * 0.5 * fade)[lt]
+        out[rust, :3] = a_[..., :3][rust]; out[rust, 3] = 255
+        _o.append(Image.fromarray(out.clip(0, 255).astype(np.uint8)))
+    _sh9 = Image.new('RGBA', (sum(o.width + 2 for o in _o) + 2, 98), (0, 0, 0, 0)); _x = 1; _meta = []     # своя упаковка: pack обнуляет полупрозрачность
+    for o in _o: _sh9.paste(o, (_x, 1)); _meta.append([_x, 1, o.width, 96, o.width // 2, 48]); _x += o.width + 2
+    _sh9.save(os.path.join(OUT, 'flE9.png')); DATA['flE9'] = {'f': _meta, 'n': ['endL', 'endR']}
 if have('l9unload_0.jpg'):     # рука-разгрузчик: 4 кадра сеткой по столбцам, в кадре только рука (связанная с верхом), тело рисуем своё
     from scipy import ndimage
     ua = rgba_m('l9unload_0.jpg'); W_, H_ = ua.size; fr_ = []

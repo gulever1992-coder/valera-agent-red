@@ -229,10 +229,10 @@
           const fw = fim.width / fim.height * FH; c.save(); c.beginPath();
           const seg = []; let a = r[0]; for (const [n0, n1] of (M.noFloor || []).filter(n => r[1] === 330 && n[1] > r[0] && n[0] < r[0] + r[2]).sort((p, q) => p[0] - q[0])) { if (n0 > a) seg.push([a, n0]); a = Math.max(a, n1); }
           if (a < r[0] + r[2]) seg.push([a, r[0] + r[2]]);
-          for (const [s0, s1] of seg) c.rect(s0, r[1] - 8, s1 - s0, FH + 4);
+          for (const [s0, s1] of seg) { const rl = s0 === r[0] && r[3] >= 40 ? 7 : 0, rr = s1 === r[0] + r[2] && r[3] >= 40 ? 7 : 0; c.roundRect(s0, r[1] - 7, s1 - s0, FH, [rl, rr, rr, rl]); }     // на настоящих краях плиты угол скруглён
           c.clip(); for (let x = r[0] - ((r[0] % fw) + fw) % fw; x < r[0] + r[2]; x += fw) c.drawImage(fim, Math.floor(x), r[1] - 7, Math.ceil(fw) + 1, FH); c.restore();
           if (L9.img.flE9 && r[3] >= 40) for (const [s0, s1] of seg) { const [ew] = L9.size('flE9', 'endL'), k = FH / 48, w = ew * k;     // законченные торцы плиты (скруглённый угол, уголок на болтах)
-            if (s1 - s0 > w * 2) { if (s0 === r[0]) S(c, 'flE9', 'endL', s0 - 3 + w / 2, r[1] - 7 + FH / 2, k); if (s1 === r[0] + r[2]) S(c, 'flE9', 'endR', s1 + 3 - w / 2, r[1] - 7 + FH / 2, k); } } }     // у ленты конвейера торцов нет — там стык
+            if (s1 - s0 > w * 2) { if (s0 === r[0]) S(c, 'flE9', 'endL', s0 + w / 2, r[1] - 7 + FH / 2, k); if (s1 === r[0] + r[2]) S(c, 'flE9', 'endR', s1 - w / 2, r[1] - 7 + FH / 2, k); } } }     // у ленты конвейера торцов нет — там стык
       }
       LAB.drawPillars(c, M, x0, x1, FH);
       M.drawOnFloor && M.drawOnFloor(c, P);
