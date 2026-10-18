@@ -294,7 +294,7 @@ def save_px(out, im, h):
 if have('l9rx1_1.jpg'):     # реакторная, те же три плана, что у цеха: дальний зал, средний ряд, ближние машины
     save_px('rx1', seamless(Image.open(os.path.join(SRC, 'l9rx1_1.jpg')).convert('RGB')), 470)
     save_px('rx2', loop2(rgba_m('l9rx2_0.jpg'), rgba_m('l9rx2_1.jpg'), 160), 330)
-    save_px('rx3', seamless(rgba_m('l9rx3_1.jpg'), 160), 300)
+    save_px('rx3', loop2(rgba_m('l9rx3_0.jpg'), rgba_m('l9rx3_1.jpg'), 160), 300)     # оба варианта ближних машин чередуются
 if have('l9px1_1.jpg'):     # дальний план: свод пещеры, туман, силуэты башен
     save_px('px1', seamless(Image.open(os.path.join(SRC, 'l9px1_1.jpg')).convert('RGB')), 470)
 if have('l9px2_1.jpg'):     # средний план: резервуары, фермы, стеллажи капсул (два кадра в одну бесшовную петлю)
