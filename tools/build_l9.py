@@ -161,6 +161,13 @@ if have(HCOP):
 if have('l9arch_0.jpg'):
     l9lib.THIN_LINES = True
     ar = cut(ARCH, 'm', 1, 4, mode='grid', clean='edge'); ar = [f.crop((8, 0, f.width - 8, f.height)) for f in ar]   # без просвечивающих полос по краям
+    def _core(f):     # колонна без обрывков соседних ячеек по бокам: самый длинный сплошной ряд столбцов
+        cov = (np.asarray(f)[..., 3] > 20).mean(0) > 0.9; best, run = (0, 0), None
+        for x, v in enumerate(list(cov) + [False]):
+            if v and run is None: run = x
+            if not v and run is not None: best = max(best, (run, x), key=lambda r: r[1] - r[0]); run = None
+        return f.crop((best[0], 0, best[1], f.height))
+    ar[2], ar[3] = _core(ar[2]), _core(ar[3])
     pack('arch9', ar, 760 / max(f.height for f in ar), names=['rib', 'pipes', 'pillar', 'glass'])
     l9lib.THIN_LINES = False
 if have('l9hbar_0.jpg'):

@@ -12,8 +12,9 @@
   const HILLS = [[24, 30, -0.045], [30, 33, 0.035], [52, 58, -0.045], [58, 61, 0.035]];   // подъёмы: [t0, t1, наклон]
   const tiltAt = t => { for (const h of HILLS) if (t >= h[0] && t < h[1]) { const k = (t - h[0]) / (h[1] - h[0]); return h[2] * Math.sin(k * Math.PI); } return 0; };
   const CKS = [0, 26, 50];
+  const BTR_K = 1.5, BTR_OFF = 100;     // БТР крупнее (стрелок в башне ростом с Валеру), стоит левее, чтобы нос не наезжал
   const CYB = {   // враги-киберзаводчане: лист, здоровье, оружие
-    bike: { sh: 'cybA9', hp: 8, gun: 'smg' }, apc: { sh: 'cybB9', hp: 16, gun: 'mg' }, cart: { sh: 'cybC9', hp: 10, gun: 'bomb' },
+    bike: { sh: 'cybA9', hp: 8, gun: 'smg', sz: 1.9 }, apc: { sh: 'cybB9', hp: 16, gun: 'mg', sz: 1.2 }, cart: { sh: 'cybC9', hp: 10, gun: 'bomb', sz: 1.4 },     // sz — чтобы люди в машинах были ростом с Валеру
   };
 
   // сценарий: [t, что, параметры]; sleep — мирная капсула со спящим (from 1 — обгоняем, -1 — обгоняет нас)
@@ -79,7 +80,7 @@
     spawn(what, o) {
       if (what === 'bar' || what === 'beam' || what === 'slime' || what === 'wreck') P.o.push({ type: 'obst', kind: o.kind || ({ bar: 'barrel', beam: 'beam', slime: 'slime', wreck: 'wreck' })[what], x: 700, y: o.y, t: 0, hp: what === 'bar' ? 2 : 99 });
       else if (what === 'sleep') P.o.push({ type: 'sleep', kind: o.k, x: o.from > 0 ? 700 : -160, y: o.y, ty: o.y, vx: o.from > 0 ? -rnd(170, 240) : rnd(150, 210), t: 0, hp: 99, cr: 0 });
-      else if (what === 'cyb') { const d = CYB[o.k]; P.o.push({ type: 'cyb', kind: o.k, sh: d.sh, gun: d.gun, x: o.from > 0 ? 700 : -140, y: o.y, ty: o.y, rel: o.from > 0 ? rnd(120, 200) : -rnd(150, 210), hold: rnd(6, 9), t: 0, hp: d.hp, cd: rnd(0.8, 1.4), fireA: 0 }); }
+      else if (what === 'cyb') { const d = CYB[o.k]; P.o.push({ type: 'cyb', kind: o.k, sh: d.sh, sz: d.sz || 1, gun: d.gun, x: o.from > 0 ? 700 : -140, y: o.y, ty: o.y, rel: (o.from > 0 ? rnd(120, 200) : -rnd(150, 210)) * (0.6 + 0.4 * (d.sz || 1)), hold: rnd(6, 9), t: 0, hp: d.hp, cd: rnd(0.8, 1.4), fireA: 0 }); }
       else if (what === 'train') { P.o.push({ type: 'train', y: o.y, x: -2200, wt: 1.6, t: 0, hp: 999 }); Sound.play('warn'); }
       else if (what === 'tv') P.o.push({ type: 'tv', x: 700, y: 52, line: o.line, t: 0, hp: 2 });
       else if (what === 'btr') { P.truck = { type: 'btr', x: -360, y: 300, hp: o.hp, max: o.hp, leave: o.leave, final: o.final, t: 0, cd: 2, burst: 0 }; P.o.push(P.truck); Sound.play('warn'); P.lv.say(o.final ? 'БТР ОХРАНЫ! УНИЧТОЖЬ ЕГО — СТРЕЛЯЙ НАЗАД {throw}' : 'СЗАДИ БТР! БЫСТРЕЕ!', 3); }
@@ -115,11 +116,11 @@
           q.y += clamp((q.hold > 0 ? P.y + Math.sin(q.t * 0.8 + q.rel) * 36 : q.ty) - q.y, -60, 60) * dt; q.y = clamp(q.y, Y0, Y1);
           q.cd -= dt; q.fireA -= dt;
           if (q.cd <= 0 && q.x > -30 && q.x < 650) {
-            const k = sc(q.y); q.back = P.x < q.x; q.fireA = 0.3;
+            const k = sc(q.y) * q.sz; q.back = P.x < q.x; q.fireA = 0.3;
             if (q.gun === 'bomb') { q.cd = rnd(1.7, 2.3); P.bomb(q.x + (q.back ? -30 : 30) * k, q.y - 90 * k); Sound.play('throw'); }
             else { q.cd = q.gun === 'mg' ? rnd(0.9, 1.3) : rnd(1.1, 1.6); P.ebul(q.x + (q.back ? -60 : 60) * k, q.y - 80 * k, P.x + rnd(-20, 20), P.y - P.z - 60 * k0 + rnd(-18, 18)); Sound.play('shot', 0.7); }
           }
-          if (Math.abs(q.x - P.x) < 96 * k0 && Math.abs(q.y - P.y) < 15 && P.z < 30 && (q.ram = (q.ram || 0) - dt) <= 0) { q.ram = 1.2; P.hitP(8); q.hp -= 2; q.y += Math.sign(q.y - P.y || 1) * 30; Sound.play('crash'); G.shake(4, 0.2); if (q.hp <= 0) P.killCyb(q); }
+          if (Math.abs(q.x - P.x) < 96 * k0 * (0.5 + 0.5 * q.sz) && Math.abs(q.y - P.y) < 15 && P.z < 30 && (q.ram = (q.ram || 0) - dt) <= 0) { q.ram = 1.2; P.hitP(8); q.hp -= 2; q.y += Math.sign(q.y - P.y || 1) * 30; Sound.play('crash'); G.shake(4, 0.2); if (q.hp <= 0) P.killCyb(q); }
         } else if (q.type === 'train') {     // поезд с капсулами спящих по дальней полосе: предупреждение 1.6 с, потом обгоняет
           if (q.wt > 0) { q.wt -= dt; continue; }
           if (!q.go) { q.go = 1; Sound.play('crane'); }
@@ -128,13 +129,14 @@
           for (const g of P.o) if (g.type === 'cyb' && !g.dead && Math.abs(g.y - q.y) < 22 && g.x > q.x && g.x < q.x + 1800) P.killCyb(g);
         } else if (q.type === 'btr') {     // тяжёлый БТР сзади: подъезжает, очереди из турели; уходит по таймеру или взрывается
           q.leave = q.leave != null ? q.leave - dt : null;
-          const tx = q.leave != null && q.leave <= 0 ? -480 : clamp(P.x - 480, -200, 0);
+          const tx = q.leave != null && q.leave <= 0 ? -480 - BTR_OFF : clamp(P.x - 480 - BTR_OFF, -200 - BTR_OFF, -BTR_OFF);
           q.x += clamp(tx - q.x, -140, 140) * dt; q.y += clamp(P.y - q.y, -40, 40) * dt; q.y = clamp(q.y, Y0 + 6, Y1);
-          if (q.leave != null && q.leave <= 0 && q.x < -440) { q.dead = true; P.truck = null; continue; }
+          if (q.leave != null && q.leave <= 0 && q.x < -440 - BTR_OFF) { q.dead = true; P.truck = null; continue; }
           q.cd -= dt;
           if (q.cd <= 0) { q.burst = 4; q.cd = rnd(2.6, 3.4); }
-          if (q.burst > 0 && (q.bt = (q.bt || 0) - dt) <= 0) { q.bt = 0.12; q.burst--; q.fireA = 0.12; const k = sc(q.y); P.ebul(q.x + 150 * k, q.y - 130 * k, P.x + rnd(-45, 45), P.y - P.z - 60 * k0, 560, 5); Sound.play('shot', 0.8); }
-          if (Math.abs(q.x + 140 * sc(q.y) + 150 - P.x) < 60 && Math.abs(q.y - P.y) < 22 && (q.ram = (q.ram || 0) - dt) <= 0) { q.ram = 1; P.hitP(20); P.x += 60; Sound.play('crash'); }
+          q.fireA = (q.fireA || 0) - dt;
+          if (q.burst > 0 && (q.bt = (q.bt || 0) - dt) <= 0) { q.bt = 0.14; q.burst--; q.fireA = 0.07; const k = sc(q.y) * BTR_K; P.ebul(q.x + 237 * k, q.y - 166 * k, P.x + rnd(-45, 45), P.y - P.z - 60 * k0, 560, 5); Sound.play('shot', 0.8); }
+          if (Math.abs(q.x + 310 * sc(q.y) * BTR_K - P.x) < 60 && Math.abs(q.y - P.y) < 22 && (q.ram = (q.ram || 0) - dt) <= 0) { q.ram = 1; P.hitP(20); P.x += 60; Sound.play('crash'); }
         }
       }
       for (const g of P.o) if ((g.type === 'cyb') && !g.dead) for (const q of P.o) if (q.type === 'obst' && !q.dead && q.kind.startsWith('barrel') && Math.abs(q.x - g.x) < 60 && Math.abs(q.y - g.y) < 16) { P.explode(q); P.killCyb(g); }
@@ -153,14 +155,14 @@
       P.eb = P.eb.filter(e => !e.dead);
     },
     explode(q) { q.dead = true; P.boom(q.x, q.y - 30); Sound.play('boom'); G.shake(5, 0.3); P.lv.score += 100; if (Math.abs(q.x - P.x) < 90 && Math.abs(q.y - P.y) < 30 && P.z < 40) P.hitP(20); P.o.push({ type: 'fire', x: q.x, y: q.y, t: 0, life: 1.5 }); },
-    killCyb(q) { if (q.dead) return; q.dead = true; P.lv.stats.kills++; P.lv.score += 300; Sound.play('crash'); P.boom(q.x, q.y - 40, 1); P.fx.push({ wreck: q.sh, x: q.x, y: q.y, t: 0, life: 0.9, vx: -P.v * 0.6, rot: rnd(-0.5, 0.5) }); },
-    killBtr(q) { q.dead = true; P.truck = null; P.lv.score += 2000; for (let i = 0; i < 4; i++) P.boom(q.x + 60 + i * 60, q.y - 60 - i * 15, 1.6); Sound.play('boom'); G.shake(10, 0.6); P.fx.push({ wreck: 'btr9', fr: 'boom', x: q.x + 140, y: q.y, t: 0, life: 1.4, vx: -400, rot: 0.4 }); },
+    killCyb(q) { if (q.dead) return; q.dead = true; P.lv.stats.kills++; P.lv.score += 300; Sound.play('crash'); P.boom(q.x, q.y - 40, 1); P.fx.push({ wreck: q.sh, sz: q.sz, x: q.x, y: q.y, t: 0, life: 0.9, vx: -P.v * 0.6, rot: rnd(-0.5, 0.5) }); },
+    killBtr(q) { q.dead = true; P.truck = null; P.lv.score += 2000; for (let i = 0; i < 4; i++) P.boom(q.x + (60 + i * 60) * BTR_K, q.y - (60 + i * 15) * BTR_K, 1.6); Sound.play('boom'); G.shake(10, 0.6); P.fx.push({ wreck: 'btr9', sz: BTR_K, fr: 'boom', x: q.x + 140 * BTR_K, y: q.y, t: 0, life: 1.4, vx: -400, rot: 0.4 }); },
     updShots(lv, dt) {
       for (const s of P.shots) {
         s.t += dt; s.x += s.vx * dt; s.y += s.vy * dt;
         for (const q of P.o) {
           if (s.dead || q.dead || q.hp >= 99) continue;    // капсулы со спящими (hp 99) пули не задевают
-          const k = sc(q.y), box = q.type === 'cyb' ? [q.x - 70 * k, q.y - 110 * k, 140 * k, 106 * k] : q.type === 'btr' ? [q.x, q.y - 160 * k, 300 * k, 160 * k] : q.type === 'tv' ? [q.x - 28, q.y - 26, 56, 52] : [q.x - 20 * k, q.y - 56 * k, 40 * k, 56 * k];
+          const k = sc(q.y), box = q.type === 'cyb' ? [q.x - 70 * k * q.sz, q.y - 110 * k * q.sz, 140 * k * q.sz, 106 * k * q.sz] : q.type === 'btr' ? [q.x, q.y - 160 * k * BTR_K, 300 * k * BTR_K, 160 * k * BTR_K] : q.type === 'tv' ? [q.x - 28, q.y - 26, 56, 52] : [q.x - 20 * k, q.y - 56 * k, 40 * k, 56 * k];
           if (q.type !== 'tv' && Math.abs(q.y - s.gy) > 40 && q.type !== 'btr') continue;   // пуля летит на своей глубине
           if (s.x > box[0] && s.x < box[0] + box[2] && s.y > box[1] && s.y < box[1] + box[3]) {
             s.dead = true; q.hp--; q.fl = 0.07; lv.stats.hits++; P.fx.push({ sh: 'fxA9', fr: ['spark'], x: s.x, y: s.y, s: 0.5, t: 0, life: 0.1 });
@@ -187,7 +189,7 @@
       const items = [];
       for (const q of P.o) items.push([q.type === 'train' ? q.y - 1 : q.y, () => P.drawObj(c, q)]);
       items.push([P.y + 0.5, () => P.drawCap(c)]);
-      for (const f of P.fx) if (f.wreck) items.push([f.y, () => S(c, f.wreck, f.fr || 'run', f.x, f.y - Math.sin(f.t / f.life * Math.PI) * 30, sc(clamp(f.y, Y0, Y1)), { rot: f.t * f.rot, a: clamp((f.life - f.t) / 0.3, 0, 1) })]);
+      for (const f of P.fx) if (f.wreck) items.push([f.y, () => S(c, f.wreck, f.fr || 'run', f.x, f.y - Math.sin(f.t / f.life * Math.PI) * 30, sc(clamp(f.y, Y0, Y1)) * (f.sz || 1), { rot: f.t * f.rot, a: clamp((f.life - f.t) / 0.3, 0, 1) })]);
       items.sort((a, b) => a[0] - b[0]); for (const it of items) it[1]();
       for (const f of P.fx) if (!f.wreck) { const i = Math.min(f.fr.length - 1, f.t / f.life * f.fr.length | 0); S(c, f.sh, f.fr[i], f.x, f.y, f.s); }
       for (const s of P.shots) S(c, 'fxL9', 'tracer', s.x, s.y, 0.4, { rot: Math.atan2(s.vy, s.vx) });
@@ -213,23 +215,24 @@
       }
     },
     drawObj(c, q) {
-      const k = sc(clamp(q.y, Y0, Y1)), bob = Math.sin(q.t * 7) * 2;
+      let k = sc(clamp(q.y, Y0, Y1)); const bob = Math.sin(q.t * 7) * 2;
       if (q.type === 'obst') { S(c, 'props8', 'shadow', q.x, q.y, 0.4 * k, { a: 0.4 }); S(c, 'hbar9', q.kind, q.x, q.y + 2, k); return; }
       if (q.type === 'fire') { S(c, 'fxA9', 'fire' + ((q.t * 10 | 0) % 4), q.x, q.y - 14, 0.9 * k); return; }
       if (q.type === 'heal') { S(c, 'props8', 'shadow', q.x, q.y, 0.25 * k, { a: 0.4 }); S(c, 'pick9', 'kefir', q.x, q.y - 14 + Math.sin(q.t * 5) * 3, 0.9 * k); return; }
       if (q.type === 'tv' || q.type === 'tvBroken') { S(c, 'tv9', q.type === 'tvBroken' ? ((q.t * 3 | 0) % 2 ? 'broken' : 'smoke') : q.x > 560 ? 'noise' : 'x' + ((q.t * 6 | 0) % 4), q.x, q.y, 1); if (q.type === 'tv' && q.x < 560 && !q.said) { q.said = 1; P.lv.xsay(q.line); } return; }
       if (q.type === 'sleep') { S(c, 'props8', 'shadow', q.x, q.y + 2, 0.75 * k, { a: 0.45 }); S(c, 'sleep9', (q.cr ? 'cr' : 'ok') + q.kind, q.x, q.y - 3 + Math.sin(q.t * 3) * 2, k); return; }
-      if (q.type === 'cyb') { const fr = q.fireA > 0 ? (q.back ? 'fireBack' : 'fire') : 'run'; S(c, 'props8', 'shadow', q.x, q.y + 2, 0.75 * k, { a: 0.45 }); S(c, q.sh, fr, q.x, q.y - 4 + bob, k); if (q.fl > 0) S(c, q.sh, fr, q.x, q.y - 4 + bob, k, { add: 1, a: 0.5 }); return; }
+      if (q.type === 'cyb') { k *= q.sz; const fr = q.fireA > 0 ? (q.back ? 'fireBack' : 'fire') : 'run'; S(c, 'props8', 'shadow', q.x, q.y + 2, 0.75 * k, { a: 0.45 }); S(c, q.sh, fr, q.x, q.y - 4 + bob, k); if (q.fl > 0) S(c, q.sh, fr, q.x, q.y - 4 + bob, k, { add: 1, a: 0.5 }); return; }
       if (q.type === 'train') { if (q.wt > 0) return; const kk = 1.6 * k, step = L9.size('trn9', 'wagon')[0] * kk - 3; ['tail', 'wagon', 'wagon', 'loco'].forEach((p, i) => S(c, 'trn9', p, q.x + step * i + step / 2, q.y + 6, kk)); return; }
-      if (q.type === 'btr') { const fr = q.hp < q.max * 0.35 ? 'dmg' : q.fireA > 0 ? 'fire' : 'run'; S(c, 'props8', 'shadow', q.x + 140 * k, q.y + 2, 1.6 * k, { a: 0.45 }); S(c, 'btr9', fr, q.x + 140 * k, q.y - 4 + Math.sin(q.t * 6) * 2, k); if (q.fl > 0) S(c, 'btr9', fr, q.x + 140 * k, q.y - 4 + Math.sin(q.t * 6) * 2, k, { add: 1, a: 0.45 }); }
+      if (q.type === 'btr') { k *= BTR_K; const fr = q.fireA > 0 ? 'fire' : q.hp < q.max * 0.35 ? 'dmg' : 'run'; S(c, 'props8', 'shadow', q.x + 140 * k, q.y + 2, 1.6 * k, { a: 0.45 }); S(c, 'btr9', fr, q.x + 140 * k, q.y - 4 + Math.sin(q.t * 6) * 2, k); if (q.fl > 0) S(c, 'btr9', fr, q.x + 140 * k, q.y - 4 + Math.sin(q.t * 6) * 2, k, { add: 1, a: 0.45 }); }
     },
     drawCap(c) {
       const k = sc(P.y), y = P.y - P.z;
       S(c, 'props8', 'shadow', P.x, P.y + 2, (0.8 - Math.min(0.4, P.z / 250)) * k, { a: 0.5 });
-      let fr = P.fireA > 0 ? (P.aim === 'back' ? 'fireBack' : P.aim === 'up' ? 'fireUp' : 'fire') : P.bank < 0 ? 'bankUp' : P.bank > 0 ? 'bankDown' : 'run';
-      if (P.inv > 0.5 && P.lv.stats.dmg) fr = 'hit';
-      const blink = P.inv > 0 && (P.t * 14 | 0) % 2;
-      S(c, 'hcap9', fr, P.x, y - 4 + Math.sin(P.t * 9) * 1.5, k, { a: blink ? 0.5 : 1 });
+      // все кадры — капсула с разбитым верхом (кадры bankUp/bankDown/hit на листе с целой капсулой не берём): крен и тормоз — поворотом, удар — вспышкой
+      const fr = P.fireA > 0 ? (P.aim === 'back' ? 'fireBack' : P.aim === 'up' ? 'fireUp' : 'fire') : 'run', rot = clamp(P.bank || 0, -1, 1) * 0.1;
+      const blink = P.inv > 0 && (P.t * 14 | 0) % 2, yy = y - 4 + Math.sin(P.t * 9) * 1.5;
+      S(c, 'hcap9', fr, P.x, yy, k, { a: blink ? 0.5 : 1, rot });
+      if (P.inv > 0.5 && P.lv.stats.dmg) S(c, 'hcap9', fr, P.x, yy, k, { rot, add: 1, a: 0.35 });
     },
     drawHud(lv, c) {
       const k = clamp(P.t / DUR, 0, 1);
