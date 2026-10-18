@@ -325,7 +325,7 @@
         if (!(M.noFloor || []).some(n => lgx > n[0] - 12 && lgx < n[1] + 12)) for (let yy = top + g.deckBot - 20 - hh; yy > (LAB.camY ?? M.y0) - 20 - hh; yy -= hh - 1) c.drawImage(im, hf[0], hf[1], hf[2], hf[3], lgx - hw / 2, yy, hw, hh);
         c.drawImage(im, f[0], f[1], f[2], g.deckBot * 2, x, top, dw + 1, g.deckBot); continue;
       }
-      const floorY = fy - top, [s0, s1] = g.legStr, flo = 175.3;      // низ плит в кадре (логич.)
+      const floorY = fy + 5 - top, [s0, s1] = g.legStr, flo = 175.3;      // низ плит в кадре (логич.)
       if (Math.abs(floorY - flo) < 1) { c.drawImage(im, f[0], f[1], f[2], f[3], x, top, dw + 1, f[3] * 0.5); continue; }
       const mid = s1 - s0 + (floorY - flo); if (mid < 4) { c.drawImage(im, f[0], f[1], f[2], f[3], x, top, dw + 1, f[3] * 0.5); continue; }
       c.drawImage(im, f[0], sy(0), f[2], s0 * 2, x, top, dw + 1, s0);
