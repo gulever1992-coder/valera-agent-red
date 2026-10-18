@@ -388,7 +388,22 @@ if FLOOR_PICK and have(FLOOR_PICK):
     band.save(os.path.join(OUT, 'labFloor.png')); DATA.setdefault('_bgp', {})['labFloor'] = 1
 if have('l9flE_0.jpg'):     # законченные торцы плиты пола (Flow): скруглённый угол, уголок на болтах; внутренний край — ровный срез
     _e = [trim(rgba_m('l9flE_0.jpg', b)) for b in ((40, 150, 600, 620), (800, 150, 1340, 620))]
-    pack('flE9', _e, 96 / _e[0].height, anchor='mid', names=['endL', 'endR'])
+    _bd = np.asarray(Image.open(os.path.join(OUT, 'labFloor.png')).convert('RGB')).astype(np.float32); _o = []
+    for _i, _im in enumerate(_e):     # цвет и фактура — из полосы пола (без стыка); от торца Flow — форма, тени скругления и уголок на болтах
+        _im = _im.resize((round(_im.width * 96 / _im.height), 96), Image.LANCZOS); a_ = np.asarray(_im).astype(np.float32); al = a_[..., 3] > 110; W_ = a_.shape[1]
+        tx = _bd[:, :W_] if _i == 0 else _bd[:, -W_:]
+        L_ = a_[..., :3].mean(2); rm = np.array([L_[y][al[y]].mean() if al[y].any() else 1 for y in range(96)])[:, None]
+        sh_ = np.clip(L_ / np.maximum(rm, 1), 0.45, 1.35)
+        out = tx * sh_[..., None]
+        rust = al & (a_[..., 0] > a_[..., 1] + 12) & (a_[..., 0] > a_[..., 2] + 12)
+        bolt = al & ~rust & (np.abs(a_[..., :3] - tx).mean(2) > 0) & (np.arange(W_)[None, :] < W_ * 0.14 if _i == 0 else np.arange(W_)[None, :] > W_ * 0.86)
+        bm = _bd.mean(1)     # построчно к среднему цвету всей полосы пола — торец не светлее и не темнее
+        for y in range(96):
+            m_ = al[y] & ~rust[y]
+            if m_.sum() > 2: out[y, m_] *= bm[y] / np.maximum(out[y, m_].mean(0), 1)
+        out[rust | bolt] = a_[..., :3][rust | bolt]
+        _o.append(Image.fromarray(np.dstack([out.clip(0, 255), np.where(al, 255, 0)]).astype(np.uint8)))
+    pack('flE9', _o, 1.0, anchor='mid', names=['endL', 'endR'])
 if have('l9unload_0.jpg'):     # рука-разгрузчик: 4 кадра сеткой по столбцам, в кадре только рука (связанная с верхом), тело рисуем своё
     from scipy import ndimage
     ua = rgba_m('l9unload_0.jpg'); W_, H_ = ua.size; fr_ = []

@@ -232,7 +232,7 @@
           for (const [s0, s1] of seg) c.rect(s0, r[1] - 8, s1 - s0, FH + 4);
           c.clip(); for (let x = r[0] - ((r[0] % fw) + fw) % fw; x < r[0] + r[2]; x += fw) c.drawImage(fim, Math.floor(x), r[1] - 7, Math.ceil(fw) + 1, FH); c.restore();
           if (L9.img.flE9 && r[3] >= 40) for (const [s0, s1] of seg) { const [ew] = L9.size('flE9', 'endL'), k = FH / 48, w = ew * k;     // законченные торцы плиты (скруглённый угол, уголок на болтах)
-            if (s1 - s0 > w * 2) { S(c, 'flE9', 'endL', s0 - 3 + w / 2, r[1] - 7 + FH / 2, k); S(c, 'flE9', 'endR', s1 + 3 - w / 2, r[1] - 7 + FH / 2, k); } } }
+            if (s1 - s0 > w * 2) { if (s0 === r[0]) S(c, 'flE9', 'endL', s0 - 3 + w / 2, r[1] - 7 + FH / 2, k); if (s1 === r[0] + r[2]) S(c, 'flE9', 'endR', s1 + 3 - w / 2, r[1] - 7 + FH / 2, k); } } }     // у ленты конвейера торцов нет — там стык
       }
       LAB.drawPillars(c, M, x0, x1, FH);
       M.drawOnFloor && M.drawOnFloor(c, P);
