@@ -67,7 +67,8 @@
     c.imageSmoothingEnabled = true;
     // рельс: линия через рельс тележки в начале пути
     const c0 = carBox({ x: b.x, y: b.y0, w: L.w }, f), ry0 = c0.top + INC.railY * c0.FH, rk = c0.FW / (f[2] * 0.5) * 0.5, rw = fr[2] * rk, rh = fr[3] * rk;
-    for (let x = b.x - 260; x < b.x + b.dx + L.w + 200; x += rw * 0.97) { if (x + rw < P.cam.x - 40 || x > P.cam.x + 680) continue; const yc = ry0 + (x + rw / 2 - c0.x0) * INC.slope; c.drawImage(im, fr[0], fr[1], fr[2], fr[3], x, yc - rh / 2, rw, rh); }
+    { const RK = 0.95, [tw] = L9.size('part9', 'rail'), th = Math.atan(INC.slope), len = tw * RK - 1.5, ux = Math.cos(th), uy = Math.sin(th);     // рельс одной линией: бесшовная полоса, повёрнутая под уклон
+      const x0 = c0.x0 - 200, y0 = ry0 - 200 * INC.slope; for (let i = 0; ; i++) { const cx = x0 + (i + 0.5) * len * ux, cy = y0 + (i + 0.5) * len * uy; if (cx - len > b.x + b.dx + L.w + 300) break; if (cx + len < P.cam.x - 40 || cx - len > P.cam.x + 680) continue; S(c, 'part9', 'rail', cx, cy, RK, { rot: th }); } }
     const cb = carBox(L, f); c.drawImage(im, f[0], f[1], f[2], f[3], cb.x0, cb.top, cb.FW, cb.FH);
     c.imageSmoothingEnabled = false;
   };
@@ -79,7 +80,6 @@
     }
   };
   LAB.leversDraw = (c, M, P) => {
-    for (const l of M.levers || []) { const [, h] = L9.size('lift9b', 'levOn'), k = 0.55, [, rh] = L9.size('trap9a', 'rod');
-      S(c, 'trap9a', 'rod', l.x - 12, l.y - rh * 0.3 / 2, 0.3); S(c, 'lift9b', l.on ? 'levOn' : 'levOff', l.x, l.y - 30 - h * k / 2 + 26, k); }
+    for (const l of M.levers || []) { const n = l.on ? 'levOn' : 'levOff', [, h] = L9.size('part9', n), k = 0.6; S(c, 'part9', n, l.x, l.y + 2 - h * k / 2, k); }     // рычаг на тумбе, привинченной к полу
   };
 })();

@@ -175,9 +175,9 @@
     draw(c) {
       if (this.st === 'walk' && !this.dead) {     // по полу бежит по-паучьи на шести руках: кадры потолка, отражённые по вертикали
         const fr = 'c' + ((this.t * 12 | 0) % 6), o = { flip: this.dir < 0, sy: -1 };
-        S(c, 'props8', 'shadow', this.x, this.y + 1, 0.9, { a: 0.4 }); const hh = L9.size(this.sh, fr)[1] / 2; S(c, this.sh, fr, this.x, this.y - hh, 1, o); if (this.fl > 0) S(c, this.sh, fr, this.x, this.y - hh, 1, Object.assign({ add: 1, a: 0.45 }, o)); return;
+        S(c, 'props8', 'shadow', this.x, this.y + 1, 0.9, { a: 0.4 }); const hh = L9.size(this.sh, fr)[1]; S(c, this.sh, fr, this.x, this.y - hh, 1, o); if (this.fl > 0) S(c, this.sh, fr, this.x, this.y - hh, 1, Object.assign({ add: 1, a: 0.45 }, o)); return;
       }
-      if (this.st === 'ceil') { S(c, this.sh, 'c' + ((this.t * 10 | 0) % 6), this.x, this.ceil + L9.size(this.sh, 'c0')[1] / 2, 1, { flip: this.dir < 0 }); if (this.fl > 0) S(c, this.sh, 'c' + ((this.t * 10 | 0) % 6), this.x, this.ceil + L9.size(this.sh, 'c0')[1] / 2, 1, { flip: this.dir < 0, add: 1, a: 0.45 }); return; } super.draw(c); }
+      if (this.st === 'ceil') { S(c, this.sh, 'c' + ((this.t * 10 | 0) % 6), this.x, this.ceil + L9.size(this.sh, 'c0')[1], 1, { flip: this.dir < 0 }); if (this.fl > 0) S(c, this.sh, 'c' + ((this.t * 10 | 0) % 6), this.x, this.ceil + L9.size(this.sh, 'c0')[1], 1, { flip: this.dir < 0, add: 1, a: 0.45 }); return; } super.draw(c); }
     box() { return this.st === 'ceil' ? [this.x - 22, this.ceil, 44, 60] : super.box(); }
     frame() { return this.dead ? 'dead' : this.fl > 0 ? 'hit' : ({ drop: 'drop', land: 'land', leap: 'leap', slash: 'slash' })[this.st] || 'leap'; }
   }

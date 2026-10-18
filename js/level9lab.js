@@ -228,9 +228,8 @@
           let a = r[0]; for (const [n0, n1] of (M.noFloor || []).filter(n => r[1] === 330 && n[1] > r[0] && n[0] < r[0] + r[2]).sort((p, q) => p[0] - q[0])) { if (n0 > a) c.rect(a, r[1] - 8, n0 - a, FH + 4); a = Math.max(a, n1); }
           if (a < r[0] + r[2]) c.rect(a, r[1] - 8, r[0] + r[2] - a, FH + 4);
           c.clip(); for (let x = r[0] - ((r[0] % fw) + fw) % fw; x < r[0] + r[2]; x += fw) c.drawImage(fim, Math.floor(x), r[1] - 7, Math.ceil(fw) + 1, FH); c.restore(); }
-        const [, th] = L9.size('col9', 'thick');
-        for (let ex = r[0] + 14; ex < r[0] + r[2]; ex += (r[2] - 28) / Math.max(1, Math.round((r[2] - 28) / 150)) || 1e9) if (ex > M.x0 + 20 && ex < M.x1 - 20) { const y0 = r[1] + FH - 6, fb = LAB.floorBelow(M, ex, r[1] + r[3] + 2, 900, false), len = fb != null ? fb + 2 - y0 : Math.max(th * 0.38, P.cam.y + 420 - y0); S(c, 'col9', 'thick', ex, y0 + len / 2, 0.38, { sy: len / (th * 0.38) }); }   // цельные опорные колонны под плитой (капитель под полом, уходят вниз)
       }
+      LAB.drawPillars(c, M, x0, x1, FH);
       M.drawOnFloor && M.drawOnFloor(c, P);
     },
     drawWalks(c) {
@@ -277,6 +276,25 @@
     },
   };
   // раскладка мостка: [x, y, пролётов, индекс пролёта с лестницей] -> куски cw9 и лестница
+  // опоры под полом: по сетке мира (без двойных на стыках плит); капитель — как нарисована, ствол повторяется вниз, база — если ниже есть пол
+  LAB.drawPillars = (c, M, x0, x1, FH) => {
+    const im = L9.img.part9; if (!im) return; const F = L9D.part9.f[L9.fi('part9', 'pillar')], k = 1.0, w = F[2] * 0.5 * k, h = F[3] * 0.5 * k;
+    const CAP = 0.2, S0 = 0.3, S1 = 0.86, B0 = 0.9, sh = (S1 - S0) * h, seen = new Set(), bot = P.cam.y + 380;
+    c.imageSmoothingEnabled = true;
+    for (const r of M.solids) {
+      if (r[4] === 'hide' || r[3] < 40 || r[0] > x1 || r[0] + r[2] < x0) continue;
+      for (let x = Math.ceil((r[0] + 40 - 150) / 300) * 300 + 150; x < r[0] + r[2] - 40; x += 300) {
+        if (x < x0 - 40 || x > x1 + 40 || seen.has(x + ':' + r[1])) continue; seen.add(x + ':' + r[1]);
+        const y0 = r[1] + FH - 9, fb = LAB.floorBelow(M, x, r[1] + r[3] + 2, 2000, false), end = fb != null ? fb : bot;
+        if (end < y0 + h * 0.4) continue;
+        c.drawImage(im, F[0], F[1], F[2], F[3] * CAP, x - w / 2, y0, w, h * CAP);
+        let y = y0 + h * CAP - 1; const stop = fb != null ? end - h * (1 - B0) : end;
+        for (; y < stop; y += sh - 1) { const hh = Math.min(sh, stop - y + 1); c.drawImage(im, F[0], F[1] + F[3] * S0, F[2], F[3] * (S1 - S0) * hh / sh, x - w / 2, y, w, hh); }
+        if (fb != null) c.drawImage(im, F[0], F[1] + F[3] * B0, F[2], F[3] * (1 - B0), x - w / 2, end - h * (1 - B0), w, h * (1 - B0));
+      }
+    }
+    c.imageSmoothingEnabled = false;
+  };
   LAB.cwBuild = (x, y, n, lad) => {
     const g = L9D.cw9.geo, W = g.w, parts = [['endL', x]], ls = [].concat(lad ?? []), lads = []; let cx = x + W.endL;
     for (let i = 0; i < n; i++) { const nm = ls.includes(i) ? 'lad' : 'mid'; if (nm === 'lad') lads.push([Math.round(cx + g.lad), y, null]); parts.push([nm, cx]); cx += W[nm]; }

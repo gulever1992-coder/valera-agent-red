@@ -116,7 +116,7 @@
       const arCk = M.cks.findIndex(c => c[0] === 10390), rkCk = M.cks.findIndex(c => c[0] === 15790);
       L9.LAB.moversInit(M, ck >= rkCk);
       if (ck < rkCk) LEV_SAVE = 0; M.levers.forEach((l, i) => l.on = i < LEV_SAVE ? 1 : 0);
-      M.picks = M.picks.filter(k => k.x > x0 + 40);
+      M.picks = M.picks.filter(k => k.x > x0 + 40); M.picks.forEach(k => k.t = k.t || 0);     // без начального t координата анимации — NaN, предмет не рисуется
       M.covers.forEach(c => c.hp = 6); M.props.forEach(p => p.hp = 2);
       M.lastZone = null; M.tvIdx = 0; M.ar = ck > arCk ? { w: WAVES.length, t: 0, gate: 0, done: 1 } : null; if (ck < arCk) AR_SAVE = 0;
       if (!ck) lv.say('ПРИЦЕЛ {up}/{down}+СТРЕЛКИ   КУВЫРОК [Q]   ГРАНАТА {throw}', 4);
@@ -179,7 +179,7 @@
       if (!M.ar && P.x > ARENA[0] + 90 && P.x < ARENA[1] - 40 && P.y > 250 && P.y < 400) { M.ar = { w: AR_SAVE, t: 0, gate: 0 }; gw[2] = 24; gr[2] = 24; Sound.play('door'); lv.say('ЗАПЕРТО! ОТБИВАЙСЯ!', 2); }
       if (M.ar && !M.ar.done) {
         const a = M.ar; a.t += dt; a.gate = Math.min(1, a.gate + dt * 2);
-        const alive = P.foes.some(f => !f.dead && f.x > ARENA[0]);
+        const alive = P.foes.some(f => !f.dead && f.x > ARENA[0] && f.x < ARENA[1] && f.y < 420);     // только враги внутри цеха
         if (!alive && a.t > 1) {
           if (a.w < WAVES.length) { for (const [tp, x, y, o] of WAVES[a.w]) P.foes.push(new (F()[tp])(M, x, y, o || {})); AR_SAVE = a.w; a.w++; a.t = 0; if (a.w > 1) lv.say('ВОЛНА ' + a.w + '!', 1.4); if (a.w === WAVES.length) M.picks.push({ kind: 'kefir', x: 10760, y: WY, t: 0 }); }
           else { a.done = 1; gw[2] = 0; gr[2] = 0; Sound.play('door'); lv.say('ЦЕХ ЗАЧИЩЕН! ДАЛЬШЕ — К КОНВЕЙЕРУ', 2.4); }
@@ -238,6 +238,11 @@
       const zoneBg = (n, wgt, kx, yy) => { const im = L9.img[n], d = PX()[n]; if (!im || !d || wgt <= 0) return; const h = d[1], w = d[0], y = clamp(yy, 360 - h, 0);
         c.globalAlpha = wgt; for (let x = -((cx * kx % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); c.globalAlpha = 1; };
       zoneBg('bgA', wA, 0.18, -(cy + 420) * 0.5); zoneBg('bgB', wB, 0.16, -(cy - 100) * 0.2); zoneBg('bgC', wC, 0.14, -(cy - 700) * 0.3);
+      if (wB > 0) {     // наклонный тоннель: средний план — арки крепи вдоль спуска, сдвигаются медленнее игрового плана (объём)
+        const f = 0.6, [aw, ah] = L9.size('part9', 'arch'), ak = 2.2; c.globalAlpha = wB * 0.85;
+        for (let ax = 12000; ax < 16200; ax += 420) { const ay = 330 + (ax - 12440) * 0.3 + 120, sx = (ax - (cx + 320)) * f + 320, sy = (ay - (cy + 180)) * f + 180; if (sx < -aw * ak || sx > 640 + aw * ak) continue; S(c, 'part9', 'arch', sx, sy - ah * ak / 2, ak); }
+        c.globalAlpha = 1; c.fillStyle = 'rgba(2,6,10,' + 0.3 * wB + ')'; c.fillRect(0, 0, 640, 360);
+      }
       if (wA + wB + wC > 0) { c.fillStyle = 'rgba(2,6,10,' + (0.18 * Math.max(wA, wB, wC)) + ')'; c.fillRect(0, 0, 640, 360); }
       c.globalAlpha = 1 - 0.85 * Math.max(wB, wC);
       layer(c, 'px3', 215, 0.6, cx, 300 + (fy - 260) * 0.62);
@@ -274,6 +279,8 @@
       // ямы: утопленные цистерны с кислотой (кадры поверхности 0-1-2-1)
       for (const p of M.pits) {      // глубокий чан целиком (без растяжки): кромка на уровне пола, стенки уходят вниз; кипение — пузыри поверх
         const [vw, vh] = L9.size('vatD9', 'v'), k = (p[1] - p[0] + 14) / vw, cx = (p[0] + p[1]) / 2, top = (p[2] || 330) - 3;
+        { const im = L9.img.vatD9, F = L9D.vatD9.f[0], dw = F[2] * 0.5 * k, dh = F[3] * 0.5 * k, s0 = 0.62, s1 = 0.9, sh = (s1 - s0) * dh;     // стенки чана уходят до низа экрана
+          if (im) { c.imageSmoothingEnabled = true; for (let y = top + dh * s1 - 2; y < P.cam.y + 380; y += sh - 2) c.drawImage(im, F[0], F[1] + F[3] * s0, F[2], F[3] * (s1 - s0), cx - dw / 2, y, dw, sh); c.imageSmoothingEnabled = false; } }
         S(c, 'vatD9', 'v', cx, top + vh * k / 2, k);
         for (let i = 0; i < 3; i++) { const ph = (t * 0.7 + i * 0.37 + p[0] * 0.001) % 1; S(c, 'fxL9', 'acid', cx + Math.sin(i * 2.3 + p[0]) * (p[1] - p[0]) * 0.3, top + 9 - ph * 6, 0.12 + ph * 0.06, { add: 1, a: Math.sin(ph * Math.PI) * 0.8 }); }
       }
@@ -331,7 +338,7 @@
     M.drawShaft = (c, L) => {
       const cxl = L.x + L.w / 2, wTop = LIFT_TOP - 235, [, wh] = L9.size('lift9', 'winch'), wb = wTop + wh * LK, carTop = L.y - L9D.lift9.carDeck * 0.5 * LK;
       strip(c, 'lift9', 'post', L.x + 21, wb - 6, 410, LK); strip(c, 'lift9', 'post', L.x + L.w - 14, wb - 6, 410, LK);
-      strip(c, 'lift9', 'cable', cxl, wb - 4, carTop + 4, LK);
+      strip(c, 'lift9', 'cable', cxl + 3, wb - 4, carTop + 4, LK);     // тросы — точно над креплениями кабины (у кабины и лебёдки они на 3 px правее центра)
       S(c, 'lift9', 'winch', cxl, wTop + wh * LK / 2, LK);
     };
     M.drawCar = (c, L) => { if (L.kind === 'big') return L9.LAB.bigLiftDraw(c, L, L9.PARTS.lab); if (L.kind) return; const [, ch] = L9.size('lift9', 'car'), top = L.y - L9D.lift9.carDeck * 0.5 * LK; S(c, 'lift9', 'car', L.x + L.w / 2, top + ch * LK / 2, LK); };

@@ -505,6 +505,11 @@ if have('l9inc_0.jpg'):      # наклонный грузовой лифт: т�
     fr = [trim(rgba_m('l9inc_0.jpg', b)) for b in B]
     pack('inc9', fr, 0.5, anchor='mid', names=['car', 'rail', 'stop'])
 
+if have('l9part_0.jpg'):     # рельс (бесшовный по горизонтали), рычаг на тумбе (выкл/вкл), колонна под пол (капитель + ствол), арка тоннеля, стенка чана
+    B = [(0, 33, 1376, 141), (26, 326, 217, 650), (217, 326, 408, 650), (389, 171, 591, 743), (587, 227, 1067, 726), (1085, 196, 1348, 737)]
+    fr = [trim(rgba_m('l9part_0.jpg', b)) for b in B]; fr[0] = seamless(fr[0], 60)
+    pack('part9', fr, 0.5, anchor='mid', names=['rail', 'levOff', 'levOn', 'pillar', 'arch', 'vatwall'])
+
 if have('l9vatdeep_1.jpg'):     # глубокий чан целиком (без растяжки), один кадр — кипение пузырями в коде
     vd = trim(rgba_m('l9vatdeep_1.jpg'))
     pack('vatD9', [vd], 0.5, anchor='mid', names=['v'])
