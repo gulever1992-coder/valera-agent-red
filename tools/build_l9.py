@@ -221,6 +221,15 @@ if have('l9dock_0.jpg'):
         if not all(have(n) for _, n in group): return
         rd = lambda n: Image.open(os.path.join(SRC, n)).convert('RGB').resize((1376, 768), Image.LANCZOS).crop(box)
         base = np.asarray(rd('l9dock_0.jpg')).astype(np.int32); ims = [rd(n) for _, n in group]
+        if group[0][0] == 'dkG1':     # за створками везде один и тот же коридор — из кадра «настежь» (во Flow каждый кадр рисовал свой)
+            from scipy import ndimage as _nd
+            last = np.asarray(ims[-1]).astype(np.int32)
+            for k in range(len(ims) - 1):
+                a_ = np.asarray(ims[k]).astype(np.int32); L_ = a_.mean(2)
+                m_ = (L_ > 105) & (a_[..., 2] >= a_[..., 0]); m_ = _nd.binary_opening(m_, iterations=2); m_ = _nd.binary_fill_holes(_nd.binary_closing(m_, iterations=4))
+                lab_, n_ = _nd.label(m_)
+                if n_: sz = _nd.sum(m_, lab_, range(1, n_ + 1)); m_ = lab_ == (1 + int(np.argmax(sz)))     # проём — самый большой светлый кусок
+                a_[m_] = last[m_]; ims[k] = Image.fromarray(a_.astype(np.uint8))
         df = np.zeros(base.shape[:2], bool)            # общая маска группы: всё, что изменилось хоть в одном кадре (иначе прошлый кадр просвечивает)
         for im in ims: df |= np.abs(np.asarray(im).astype(np.int32) - base).max(2) > 48
         df = ndimage.binary_opening(df, iterations=2); df = ndimage.binary_closing(df, iterations=6); df = ndimage.binary_fill_holes(df)
