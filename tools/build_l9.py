@@ -588,6 +588,9 @@ if have('l9pil_1.jpg'):     # бетонная опора под пол: тра�
     _cap = rgba_m('l9pil_1.jpg', (496, 0, 958, 190)); _sh = rgba_m('l9pil_1.jpg', (496, 200, 958, 760))
     _sh = seamless(_sh.rotate(90, expand=True), 80).rotate(-90, expand=True)
     pack('pil9', [_cap, _sh], 0.36, anchor='mid', names=['cap', 'shaft'])
+if have('l9veg_1.jpg') and have('l9ves_1.jpg'):     # тамбур в перспективе (Flow): на стыках фонов; ворота выхода в том же стиле — 3 кадра (закрыто, наполовину, открыто)
+    _vg = cut('l9veg_1.jpg', 'm', 1, 3, clean=True); pack('veg9', _vg, 600 / _vg[0].height, names=['g0', 'g1', 'g2'])
+    _vs = cut('l9ves_1.jpg', 'm', 1, 2, clean=True)[0]; pack('ves9', [_vs], 600 / _vs.height, names=['v0'])
 if have('l9cw_0.jpg'):     # металлическая опора под пол (нога мостка, двутавр с подкосом): капитель с подкосом, ствол (повтор), база-плита; общий x 420..620, ось ствола 505
     _X = (420, 620); _cp = rgba_m('l9cw_0.jpg', (_X[0], 284, _X[1], 398)); _st = rgba_m('l9cw_0.jpg', (_X[0], 398, _X[1], 668)); _bs = rgba_m('l9cw_0.jpg', (_X[0], 668, _X[1], 748))
     _st = seamless(_st.rotate(90, expand=True), 60).rotate(-90, expand=True)

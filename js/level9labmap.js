@@ -235,11 +235,15 @@
     // портал входа в наклонный тоннель: граница фона цеха и тоннеля стоит в мире здесь, её закрывают арка и колонна
     M.exitX = () => (M.movers && M.movers.big ? M.movers.big.x + M.movers.big.dx : 15440) + 330;     // выход из тоннеля внизу спуска
     M.portalX = () => (M.movers && M.movers.big ? M.movers.big.x : 12440) - 40;
+    M.drawVest = (c, P, sh, fr, x, fy, k) => {     // проём в перспективе: кадр стоит на полу, выше — верхние ряды кадра тянутся до края экрана (стена над проёмом)
+      const im = L9.img[sh]; if (!im) return; const f = L9D[sh].f[L9.fi(sh, fr)], w = f[2] * 0.5 * k, h = f[3] * 0.5 * k, L = x - w / 2, T = fy - h, top = P.cam.y - 40;
+      c.imageSmoothingEnabled = true; c.drawImage(im, f[0], f[1], f[2], f[3], L, T, w, h);
+      if (T > top) c.drawImage(im, f[0], f[1] + 2, f[2], f[3] * 0.05, L, top, w, T - top + 1); c.imageSmoothingEnabled = false;
+    };
     M.drawPortal = (c, P) => {
-      const X = M.portalX(), [aw, ah] = L9.size('part9', 'arch'), k = 310 / aw;
-      if (Math.abs(X - P.cam.x - 320) < 700) S(c, 'part9', 'arch', X + 150, 392 - ah * k / 2, k);     // полукруглая арка над стартом тележки: левая нога — на границе фонов
-      if (Math.abs(X - P.cam.x - 320) < 700) L9.LAB.drawColumn(c, X, P.cam.y - 40, 338, 1.25);     // массивная колонна-откос портала закрывает шов во всю высоту
-      const X2 = M.exitX(); if (Math.abs(X2 - P.cam.x - 320) < 700) { S(c, 'part9', 'arch', X2 + 150, DY + 62 - ah * k / 2, k); L9.LAB.drawColumn(c, X2, P.cam.y - 40, DY + 8, 1.25); }     // такой же портал на выходе из тоннеля в реакторную
+      const X = M.portalX();
+      if (Math.abs(X - P.cam.x - 320) < 700) M.drawVest(c, P, 'ves9', 'v0', X, 338, 1);     // тамбур в перспективе (Flow) закрывает стык фонов у начала наклонного спуска
+      const X2 = M.exitX(); if (Math.abs(X2 - P.cam.x - 320) < 700) M.drawVest(c, P, 'ves9', 'v0', X2, DY + 8, 1);     // такой же тамбур на выходе из тоннеля в реакторную
     };
     // наклонный спуск: тоннель повёрнут вдоль рельса (уклон 0.3). Кадр тоннеля: x — вдоль рельса, y — поперёк; fy — где в этом кадре проходит рельс
     M.tunFrame = (c, cx, cy, fn) => {
@@ -372,7 +376,7 @@
       }
       // шахта подъёмника: две цельные стойки от лебёдки до дна, лебёдка под потолком, тросы до траверсы кабины
       const L = M.lifts[0]; M.drawShaft(c, L); M.drawShaft(c, M.lifts[1], true);
-      { const d = M.door, f = d.open ? Math.min(5, (d.t || 0) / 1.4 * 6 | 0) : 0; S(c, 'gate9', 'g' + f, d.x, d.y + 2, 0.62); }     // ворота выхода: открываются по кадрам
+      { const d = M.door, f = d.open ? Math.min(2, (d.t || 0) / 1.4 * 3 | 0) : 0; if (L9.img.veg9) M.drawVest(c, P, 'veg9', 'g' + f, d.x, d.y + 6, 0.9); else S(c, 'gate9', 'g' + f, d.x, d.y + 2, 0.62); }     // ворота выхода: открываются по кадрам
     };
     const LK = 1.76, strip = (c, sh, fr, x, y0, y1, k) => { const h = L9.size(sh, fr)[1] * k; if (y1 > y0) S(c, sh, fr, x, (y0 + y1) / 2, k, { sy: (y1 - y0) / h }); };
     M.drawShaft = (c, L, second) => {
