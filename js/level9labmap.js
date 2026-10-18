@@ -226,6 +226,19 @@
       for (let x = -((off * kx % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), top, Math.ceil(w) + 1, h);
       if (bottom < 360 && !noFill) { c.fillStyle = d[2] || '#04080b'; c.fillRect(0, Math.round(bottom) - 1, 640, 362 - bottom); }
     };
+    // наклонный спуск: тоннель повёрнут вдоль рельса (уклон 0.3). Кадр тоннеля: x — вдоль рельса, y — поперёк; fy — где в этом кадре проходит рельс
+    M.tunFrame = (c, cx, cy, fn) => {
+      const b = M.movers && M.movers.big; if (!b) return; const th = Math.atan(0.3), ux = Math.cos(th), uy = Math.sin(th), mx = cx + 320, my = cy + 180;
+      const along = mx * ux + my * uy, n = -mx * uy + my * ux, nR = -(b.x + 108) * uy + (b.y0 + 90) * ux;
+      c.save(); c.translate(320, 180); c.rotate(th); fn(nR - n, along); c.restore();
+    };
+    M.drawOver = (c, cx, cy) => {     // передний план спуска: тёмные рёбра крепи поперёк тоннеля, быстрее игрового плана (объём)
+      const mid = cx + 320, r = (v, a0, a1) => clamp((v - a0) / (a1 - a0), 0, 1), bI = r(mid, 12200, 12700), bO = r(mid, 15500, 15900); if (bI <= bO) return;
+      const fc = M.fgCv || (M.fgCv = document.createElement('canvas')); fc.width = 640; fc.height = 360; const g = fc.getContext('2d');     // рёбра рисуем отдельно и затемняем до силуэта
+      M.tunFrame(g, cx, cy, (fy, along) => { const step = 1100, off = along * 1.4; for (let i = Math.floor((off - 900) / step); i * step < off + 900; i++) S(g, 'arch9', 'pillar', i * step - off, fy + 230, 1.5); });
+      g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(3,7,10,0.72)'; g.fillRect(0, 0, 640, 360);
+      c.save(); c.beginPath(); c.rect(640 * (1 - bI), 0, 640 * (bI - bO), 360); c.clip(); c.globalAlpha = 0.82; c.drawImage(fc, 0, 0); c.restore();     // чуть просвечивают — Валеру за ребром видно
+    };
     M.drawBack = (c, cx, cy) => {
       const fy = (cx > 12300 ? 330 + clamp((cy - 100) / 900, 0, 1) * 900 : 330) - cy;     // экранная высота пола (в грузовой шахте и реакторной пол уходит на 1200 вниз)
       { const im = L9.img.px1, d = PX().px1; if (im && d) { const h = 400, w = d[0] * h / d[1], y = clamp(-20 - cy * 0.06, 360 - h, 0); for (let x = -((cx * 0.12 % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); } }
@@ -239,8 +252,9 @@
       // фон зоны не просвечивает сквозь соседний, а сменяет его «шторкой»: видимая полоса экрана от 640*(1-вход) до 640*(1-выход), край мягкий (40 px)
       // наклонный спуск — тоннель как в погоне: дальняя стена и свод с трубами отдельными слоями (свой параллакс по x и y — объём)
       const tl = (n, kx, y, h) => { const im = L9.img[n]; if (!im) return; const w = im.width / im.height * h; for (let x = -((cx * kx % w) + w) % w - w; x < 700; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); };
-      const tunBg = () => { const dy = cy - 100; c.fillStyle = '#04070a'; c.fillRect(0, 0, 640, 360);
-        tl('tunWall', 0.22, clamp(-40 - dy * 0.1, -150, 0), 500); c.fillStyle = 'rgba(2,6,10,0.25)'; c.fillRect(0, 0, 640, 360); tl('tunCeil', 0.45, clamp(-6 - dy * 0.22, -320, 0), 300); };
+      const tunBg = () => { c.fillStyle = '#04070a'; c.fillRect(0, 0, 640, 360); M.tunFrame(c, cx, cy, (fy, along) => {
+          tl2('tunWall', along * 0.3, fy - 730, 400); tl2('tunWall', along * 0.3, fy - 330, 400); c.fillStyle = 'rgba(2,6,10,0.25)'; c.fillRect(-800, -800, 1600, 1600); tl2('tunCeil', along * 0.5, fy - 340, 150); }); };
+      const tl2 = (n, off, y, h) => { const im = L9.img[n]; if (!im) return; const w = im.width / im.height * h; for (let x = -((off % w) + w) % w - 2 * w; x < 760; x += w) c.drawImage(im, Math.floor(x) - 380, Math.round(y), Math.ceil(w) + 1, h); };
       const zoneBg = (n, wIn, wOut, kx, yy) => { const im = L9.img[n], d = PX()[n]; if (!im || !d || wIn <= wOut) return; const h = d[1], w = d[0], y = clamp(yy, 360 - h, 0);
         const x0 = 640 * (1 - wIn), x1 = 640 * (1 - wOut), draw = n === 'bgB' ? tunBg : () => { for (let x = -((cx * kx % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); };
         for (let i = 0; i < 4; i++) { const e = 10 * (4 - i), a = x0 > 0 ? x0 - e : 0, b = x1 < 640 ? x1 + e : 640; if (i < 3 && a <= 0 && b >= 640) continue;
