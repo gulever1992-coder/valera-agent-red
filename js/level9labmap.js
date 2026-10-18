@@ -197,8 +197,8 @@
       k.dead = true; Sound.play('pickup'); lv.score += 100;
       const W = L9.WEAP;
       if (W[k.kind]) { P.weap = k.kind; P.ammo[k.kind] = (P.ammo[k.kind] || 0) + W[k.kind].ammo; lv.say(W[k.kind].name + '!', 1.6); }
-      else if (k.kind === 'kefir') { P.hp = Math.min(100, P.hp + 35); lv.stats.food++; lv.say('Кефир! +35', 1.2); }
-      else if (k.kind === 'pelmeni') { P.hp = Math.min(100, P.hp + 40); lv.stats.food++; lv.say('Пельмешки!!! +40', 1.4); }
+      else if (k.kind === 'kefir') { P.hp = Math.min(100, P.hp + 45); lv.stats.food++; lv.say('Кефир! +45', 1.2); }
+      else if (k.kind === 'pelmeni') { P.hp = Math.min(100, P.hp + 60); lv.stats.food++; lv.say('Пельмешки!!! +60', 1.4); }
       else if (k.kind === 'pies') { P.hp = Math.min(100, P.hp + 25); lv.stats.food++; lv.say('Пирожки! +25', 1.2); }
       else if (k.kind === 'grenades') { P.gren = Math.min(9, P.gren + 3); lv.say('Гранаты +3', 1.2); }
       else if (k.kind === 'seed') { P.weap = 'seed'; P.ammo.seed += 30; lv.stats.secrets++; lv.say('ОСЕМЕНИТЕЛЬ 6000!!! СЕКРЕТ!', 2.5); }
@@ -213,7 +213,7 @@
       Sound.play(p.kind === 'tube' ? 'glass' : 'crash'); P.lv.score += 50;
       if (p.kind === 'waste' || p.kind === 'gas') P.blast(p.x, p.y - 30, 50, 6);
       if (p.kind === 'tube') { M.acid.push({ x: p.x, y: p.y, t: 0, life: 2 }); }
-      if (Math.random() < 0.35) M.picks.push({ kind: Math.random() < 0.6 ? 'kefir' : 'grenades', x: p.x, y: p.y, t: 0 });
+      if (Math.random() < 0.5) M.picks.push({ kind: Math.random() < 0.7 ? 'kefir' : 'grenades', x: p.x, y: p.y, t: 0 });
     };
     M.blast = (x, y, r, dmg, P) => { for (const p of M.props) if (p.hp > 0 && Math.hypot(p.x - x, p.y - 30 - y) < r + 20) { p.hp = 0; M.breakProp(p, P); } for (const c of M.covers) if (c.hp > 0 && Math.hypot(c.x - x, c.y - 20 - y) < r + 10) c.hp -= dmg; };
 
@@ -234,8 +234,8 @@
       c.fillStyle = 'rgba(2,6,10,0.22)'; c.fillRect(0, 0, 640, 360);
       // фоны зон: шахта с ярусами у подъёмника, наклонный тоннель, зал реактора — плавно сменяют общий план; по вертикали свой параллакс
       const ramp = (v, a0, a1) => clamp((v - a0) / (a1 - a0), 0, 1), mid = cx + 320;
-      const aI = ramp(mid, 4300, 4700), aO = ramp(mid, 6700, 7100), bI = ramp(mid, 12200, 12700), bO = ramp(mid, 15500, 15900), cI = bO;
-      const wA = aI * (1 - aO), wB = bI * (1 - bO), wC = cI;
+      const bI = ramp(mid, 12200, 12700), bO = ramp(mid, 15500, 15900), cI = bO;
+      const wA = 0, wB = bI * (1 - bO), wC = cI;
       // фон зоны не просвечивает сквозь соседний, а сменяет его «шторкой»: видимая полоса экрана от 640*(1-вход) до 640*(1-выход), край мягкий (40 px)
       // наклонный спуск — тоннель как в погоне: дальняя стена и свод с трубами отдельными слоями (свой параллакс по x и y — объём)
       const tl = (n, kx, y, h) => { const im = L9.img[n]; if (!im) return; const w = im.width / im.height * h; for (let x = -((cx * kx % w) + w) % w - w; x < 700; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); };
@@ -245,7 +245,7 @@
         const x0 = 640 * (1 - wIn), x1 = 640 * (1 - wOut), draw = n === 'bgB' ? tunBg : () => { for (let x = -((cx * kx % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); };
         for (let i = 0; i < 4; i++) { const e = 10 * (4 - i), a = x0 > 0 ? x0 - e : 0, b = x1 < 640 ? x1 + e : 640; if (i < 3 && a <= 0 && b >= 640) continue;
           c.save(); c.globalAlpha = i < 3 ? 0.25 : 1; c.beginPath(); c.rect(i < 3 ? a : x0, 0, (i < 3 ? b - a : x1 - x0), 360); c.clip(); draw(); c.restore(); } };
-      zoneBg('bgA', aI, aO, 0.18, -(cy + 420) * 0.5); zoneBg('bgB', bI, bO, 0.16, -(cy - 100) * 0.2); zoneBg('bgC', cI, 0, 0.14, -(cy - 700) * 0.3);
+      zoneBg('bgB', bI, bO, 0.16, -(cy - 100) * 0.2); zoneBg('bgC', cI, 0, 0.14, -(cy - 700) * 0.3);
       if (false) {     // наклонный тоннель (арки отключены: фон теперь тоннель как в погоне): средний план — арки крепи вдоль спуска, сдвигаются медленнее игрового плана (объём)
         const f = 0.6, [aw, ah] = L9.size('part9', 'arch'), ak = 2.2; c.save(); c.beginPath(); c.rect(640 * (1 - bI), 0, 640 * (bI - bO), 360); c.clip();
         for (let ax = 12000; ax < 16200; ax += 420) { const ay = 330 + (ax - 12440) * 0.3 + 120, sx = (ax - (cx + 320)) * f + 320, sy = (ay - (cy + 180)) * f + 180; if (sx < -aw * ak || sx > 640 + aw * ak) continue; S(c, 'part9', 'arch', sx, sy - ah * ak / 2, ak); }

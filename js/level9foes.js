@@ -15,7 +15,7 @@
       if (kind === 'melee' || kind === 'blast') { this.vx = dir * 160; this.stun = 0.35; }
       if (Math.random() < 0.3) Sound.play('hit');
     }
-    die(dir) { this.dead = true; this.set('dead'); this.vx = dir * 90; this.vy = -160; this.onG = false; Sound.play(this.deathSnd || 'hit'); const lv = L9.PARTS.lab.lv; lv.stats.kills++; lv.score += this.pts || 200; this.drop && this.drop(); }
+    die(dir) { this.dead = true; this.set('dead'); this.vx = dir * 90; this.vy = -160; this.onG = false; Sound.play(this.deathSnd || 'hit'); const lv = L9.PARTS.lab.lv; lv.stats.kills++; lv.score += this.pts || 200; if (this.drop) this.drop(); else if (Math.random() < 0.15) L9.PARTS.lab.M.picks.push({ kind: Math.random() < 0.7 ? 'kefir' : 'pelmeni', x: this.x, y: this.y, t: 0 }); }
     phys(dt, grav = true) {
       if (grav) { this.vy = Math.min(900, this.vy + 1300 * dt); const ny = this.y + this.vy * dt; const f = this.vy >= 0 ? LAB.floorBelow(this.M, this.x, this.y - 1, ny) : null; if (f !== null) { this.y = f; this.vy = 0; this.onG = true; } else { this.y = ny; this.onG = false; } }
       const nx = this.x + this.vx * dt;

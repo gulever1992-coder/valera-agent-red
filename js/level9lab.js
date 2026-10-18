@@ -50,7 +50,7 @@
     box() { const h = P.st === 'crouch' || P.st === 'roll' ? PHC : PH; return [P.x - PW, P.y - h, PW * 2, h]; },
     hurt(d, fromX) {
       if (P.inv > 0 || P.st === 'roll' || P.lv.dead) return;
-      P.lv.hurt(d); if (P.lv.dead) { P.st = 'dead'; return; }
+      P.lv.hurt(Math.ceil(d * 0.7)); if (P.lv.dead) { P.st = 'dead'; return; }     // лаборатория длинная: урон по Валере x0.7
       P.st = 'hurt'; P.stT = 0; P.vx = (fromX != null ? Math.sign(P.x - fromX) || -P.dir : -P.dir) * 120; P.vy = -180; P.onG = false; P.climb = null;
     },
     hintAt(s, t = 3) { if (P.hint !== s) { P.hint = s; P.hintT = t; } },
@@ -105,13 +105,14 @@
           if (f !== null) { if (!P.onG && P.vy > 300) { Sound.play('land'); P.landT = 0.12; } P.y = f; P.vy = 0; P.onG = true; }
           else { P.y = ny; P.onG = false; }
         } else {
-          if (LAB.solidAt(M, P.x, ny - PH)) P.vy = 0; else P.y = ny;
+          const hy = P.y - PH, nh = ny - PH, deck = M.walks.find(w => !w.gone && P.x + PW * 0.6 > w[0] && P.x - PW * 0.6 < w[0] + w[2] && hy >= w[1] + 8 && nh < w[1] + 8 && !(M.pits || []).some(q => P.x > q[0] - 70 && P.x < q[1] + 70));     // над ямой под мостком пропускаем — иначе её не перепрыгнуть     // мостки снизу твёрдые: в прыжке Валера бьётся о них головой (наверх — только по лестнице)
+          if (LAB.solidAt(M, P.x, nh)) P.vy = 0; else if (deck) { P.y = deck[1] + 8 + PH; P.vy = 30; Sound.play('clank', 0.4); } else P.y = ny;
           P.onG = false;
         }
         if (P.onG) { const lf = (M.lifts || []).find(l => P.x >= l.x && P.x < l.x + l.w && Math.abs(P.y - l.y) < 2); if (lf) P.y = lf.y; }
       }
       // пропасть / жижа
-      if (P.y > (M.killAt ? M.killAt(P.x) : M.killY)) { lv.hurt(30); const c = M.cks[P.ck]; if (!lv.dead) { P.x = c[0]; P.y = c[1]; P.vy = 0; } }
+      if (P.y > (M.killAt ? M.killAt(P.x) : M.killY)) { lv.hurt(20); const c = M.cks[P.ck]; if (!lv.dead) { P.x = c[0]; P.y = c[1]; P.vy = 0; } }
       if (M.hazAt) { const hz = M.hazAt(P.x, P.y, P); if (hz) P.hurt(hz[0], hz[1]); }
       // чекпоинты
       for (let i = P.ck + 1; i < M.cks.length; i++) if (P.x > M.cks[i][0] - 10 && Math.abs(P.y - M.cks[i][1]) < 200) { P.ck = i; lv.ck = i; Sound.play('checkpoint'); lv.say('КОНТРОЛЬНАЯ ТОЧКА', 1.5); }

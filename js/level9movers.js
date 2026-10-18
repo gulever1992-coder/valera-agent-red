@@ -32,8 +32,9 @@
       L.y = Math.min(b.y1, L.y + 42 * dt); L.x = b.x + (L.y - b.y0) / (b.y1 - b.y0) * (b.dx || 0);     // по наклонным рельсам: вбок и вниз
       while (L.wv < b.waves.length && L.y >= b.waves[L.wv][0]) {      // волна: охрана прыгает сверху на платформу
         for (const [tp, dx, o] of b.waves[L.wv][1]) P.foes.push(new (L9.FOES[tp])(M, L.x + dx, L.y - (tp === 'Fly' ? 150 : 300), Object.assign({}, o || {})));
-        if (L.wv) lv.say('СВЕРХУ!', 1); L.wv++;
+        if (L.wv) lv.say('СВЕРХУ!', 1); if (L.wv === 1 || L.wv === 3) M.picks.push({ kind: L.wv === 1 ? 'kefir' : 'pelmeni', x: L.x + L.w * 0.5, y: L.y, t: 0, lift: L }); L.wv++;     // на спуске еда едет на платформе
       }
+      for (const k of M.picks) if (k.lift === L) { k.x += L.x - ox; k.y = L.y; }
       if (L.y >= b.y1) { L.on = 2; Sound.play('clank'); G.shake(3, 0.2); }
       if (P.onG && P.x > ox - 4 && P.x < ox + L.w + 4 && Math.abs(P.y - oy) < 4) { P.y = L.y; P.x += L.x - ox; }
       for (const f of P.foes) if (!f.dead && !f.air && f.onG && f.x > ox && f.x < ox + L.w && Math.abs(f.y - oy) < 5) { f.y = L.y; f.x += L.x - ox; }
