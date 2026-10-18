@@ -76,11 +76,11 @@ WHO.mrx = WHO.mrx || { name: 'ГОСПОДИН ИКС', color: '#ff4040', voice:
       this.P.draw(this, c);
       if (!Scene.active) this.drawHud(c);
       if (this.tvT > 0 && !Scene.active) {     // плашка Икса (в тоннеле — сверху, чтобы не закрывать полосы)
-        const a = L9.clamp(Math.min(this.tvT, 0.4) / 0.4, 0, 1), Y = this.P.tvTop ? 26 : 300; c.globalAlpha = a;
-        c.fillStyle = 'rgba(10,4,6,0.85)'; c.fillRect(80, Y, 480, 52); c.fillStyle = '#c22'; c.fillRect(80, Y, 480, 2);
+        const a = L9.clamp(Math.min(this.tvT, 0.4) / 0.4, 0, 1), Y = this.P.tvTop ? 24 : 282; c.globalAlpha = a;
+        c.fillStyle = 'rgba(10,4,6,0.85)'; c.fillRect(80, Y, 480, 74); c.fillStyle = '#c22'; c.fillRect(80, Y, 480, 2);
         G.drawPortrait(c, 'mrx', 86, Y + 4, (this.t * 6 | 0) % 2 === 0);
-        G.text('ГОСПОДИН ИКС', 156, Y + 6, { size: 8, color: '#ff5050' });
-        G.wrap(this.tv, 390, 8).slice(0, 3).forEach((l, i) => G.text(l, 156, Y + 20 + i * 11, { size: 8, color: '#f4f0e4' }));
+        G.text('ГОСПОДИН ИКС', 156, Y + 10, { size: 8, color: '#ff5050' });
+        G.wrap(this.tv, 390, 8).slice(0, 3).forEach((l, i) => G.text(l, 156, Y + 26 + i * 12, { size: 8, color: '#f4f0e4' }));
         c.globalAlpha = 1;
       }
       if (this.msgT > 0 && this.msg) G.text(Game.fmtHint(this.msg), 320, 70, { align: 'center', size: 8, color: '#ffd84a', outline: true });
