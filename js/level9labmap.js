@@ -348,7 +348,7 @@
       for (const tv of M.tvs) {
         const on = Math.abs(P.x - tv.x) < 300;
         if (on && !tv.said && !tv.broken) { tv.said = 1; P.lv.xsay(tv.line, 6); }
-        S(c, 'tvp9', tv.broken ? 'broken' : !on ? 'off' : ((t * 3) | 0) % 2 ? 'xb' : 'xa', tv.x, tv.y + 3, 1);     // груда телевизоров на полу (Flow): включаются все разом — на экранах Икс
+        S(c, 'tvp9', tv.broken ? 'broken' : !on ? 'off' : (L9.N.tvp9.xc != null ? ['xa', 'xa', 'xb', 'xa', 'xd', 'xa', 'xc', 'xb'] : ['xa', 'xb'])[((t * 3) | 0) % (L9.N.tvp9.xc != null ? 8 : 2)], tv.x, tv.y + 3, 1);     // груда телевизоров на полу (Flow): включаются все разом — на экранах Икс
       }
       // укрытия и предметы
       for (const cv of M.covers) if (cv.hp > -20) S(c, 'cover9', cv.hp > 0 ? (cv.hp < 3 && cv.kind === 'crates' ? 'cratesHit' : cv.kind) : 'cratesHit', cv.x, cv.y + 2, 1, { a: cv.hp > 0 ? 1 : 0.5 });

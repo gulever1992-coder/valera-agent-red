@@ -108,7 +108,17 @@ pack('plat9', pl, 0.5, anchor='mid', names=['walk', 'walkL', 'walkR', 'rail', 'l
 va = cut('l9vat_1.jpg', 'm', 2, 4, clean=True)
 pack('vat9', va, 0.62, names=['v0', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'])
 tvs = cut('l9tv2_0.jpg', 'm', 3, 4, clean=True)[:8]   # экраны, утопленные в стенную плиту — без кронштейнов
-tvs = tvs[:2] + [mrx_screens(f, d, y) for f, (d, y) in zip(tvs[2:6], ((1, 0), (0.75, 1), (1, 0), (0.6, 0)))] + tvs[6:]
+if os.path.exists(os.path.join(SRC, 'l9tvw_1.jpg')):     # Икс на экранах (Flow): чёрный экран, красные глаза и улыбка — 4 кадра в ряд, верхний ряд листа
+    _tw = cut('l9tvw_1.jpg', 'm', 2, 4, clean=True)[:4]
+    _nz = np.asarray(tvs[1].convert('RGB')).astype(int); _sm = (_nz.min(2) > 110) & (_nz.max(2) - _nz.min(2) < 40); _ys = np.where(_sm.mean(1) > 0.3)[0]; _xs = np.where(_sm.mean(0) > 0.3)[0]     # экран старой рамки — по кадру со статикой
+    _box = (_xs.min() - 2, _ys.min() - 2, _xs.max() + 3, _ys.max() + 3); print('tv9 экран', _box, tvs[1].size); _o = []
+    for t in _tw:     # содержимое экрана нового кадра (тёмный прямоугольник) -> в экран старой рамки, рамки одинаковые во всех кадрах
+        q = np.asarray(t.convert('RGB')).astype(int); dk = q.max(2) < 45; ys_, xs_ = np.where(dk[:, :]); yc, xc = q.shape[0] // 2, q.shape[1] // 2
+        rows = np.where(dk.mean(1) > 0.5)[0]; cols = np.where(dk.mean(0) > 0.5)[0]
+        scr = t.convert('RGBA').crop((cols.min(), rows.min(), cols.max() + 1, rows.max() + 1)).resize((_box[2] - _box[0], _box[3] - _box[1]), Image.LANCZOS)
+        f = tvs[0].copy(); f.paste(scr, _box[:2]); _o.append(f)
+    _tw = _o
+    tvs = tvs[:2] + _tw + tvs[6:]
 pack('tv9', tvs, 0.42, anchor='mid', names=['off', 'noise', 'x0', 'x1', 'x2', 'x3', 'broken', 'smoke'])
 if os.path.exists(os.path.join(SRC, 'l9tvp_0.jpg')):     # груда телевизоров на полу целиком (Flow): статика, Икс (2 кадра), разбита
     tp = cut('l9tvp_0.jpg', 'm', 2, 3, clean=True)
@@ -117,7 +127,13 @@ if os.path.exists(os.path.join(SRC, 'l9tvp_0.jpg')):     # груда телев
         pur = (r > g * 1.15) & (b > g * 1.15); L = (r * 0.3 + g * 0.59 + b * 0.11)[pur]
         arr[pur, 0] = (L * 0.8).astype(np.uint8); arr[pur, 1] = (L * 0.78).astype(np.uint8); arr[pur, 2] = (L * 0.74).astype(np.uint8)
         tp[q] = Image.fromarray(arr)
-    pack('tvp9', [tp[0], mrx_screens(tp[1]), mrx_screens(tp[1], 0.7, 1), tp[5]], 0.85, names=['off', 'xa', 'xb', 'broken'])
+    if os.path.exists(os.path.join(SRC, 'l9tvy_1.jpg')):     # груда с Иксом на всех экранах (Flow): 2x3 — обычные, прищур, круглые глаза, помехи x2, разбита
+        ty = cut('l9tvy_1.jpg', 'm', 2, 3, clean=True)
+        q = np.asarray(ty[0]).copy(); c_ = q[..., :3].astype(int); lit = ((c_[..., 0] > 120) & (c_[..., 0] > c_[..., 1] * 1.8)) | (c_.min(2) > 170)
+        q[lit, :3] = (c_[lit] * 0.06).astype(np.uint8)     # выключенная груда — те же телевизоры, экраны погасли
+        pack('tvp9', [Image.fromarray(q), ty[0], ty[1], ty[5], ty[2], ty[3]], 280 / ty[0].height, names=['off', 'xa', 'xb', 'broken', 'xc', 'xd'])
+    else:
+        pack('tvp9', [tp[0], mrx_screens(tp[1]), mrx_screens(tp[1], 0.7, 1), tp[5]], 0.85, names=['off', 'xa', 'xb', 'broken'])
 for out, nm in (('lab1a', 'l9lab1_0.jpg'), ('lab1b', 'l9lab1_1.jpg'), ('lab1c', 'l9lab1b_0.jpg'), ('lab1d', 'l9lab1b_1.jpg')):
     bg(out, nm)
 
