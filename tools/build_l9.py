@@ -121,19 +121,26 @@ if os.path.exists(os.path.join(SRC, 'l9tvw_1.jpg')):     # Икс на экра�
     tvs = tvs[:2] + _tw + tvs[6:]
 pack('tv9', tvs, 0.42, anchor='mid', names=['off', 'noise', 'x0', 'x1', 'x2', 'x3', 'broken', 'smoke'])
 if os.path.exists(os.path.join(SRC, 'l9tvp_0.jpg')):     # груда телевизоров на полу целиком (Flow): статика, Икс (2 кадра), разбита
-    tp = cut('l9tvp_0.jpg', 'm', 2, 3, clean=True)
+    _tsrc = 'l9tvp_0.jpg'
+    if os.path.exists(os.path.join(SRC, 'l9tvz_0.jpg')):     # экраны с Иксом — правка Flow той же груды (l9tvsrc.png: ячейка 1 x2 по центру 1376x768) -> кладём в ячейки 1 и 2 листа
+        _sh = Image.open(os.path.join(SRC, 'l9tvp_0.jpg')).convert('RGB'); _cw, _chh = _sh.width / 3, _sh.height / 2
+        for _k, _f in ((1, 'l9tvz_0.jpg'), (2, 'l9tvz_1.jpg')):
+            _z = Image.open(os.path.join(SRC, _f)).convert('RGB').resize((1376, 768), Image.LANCZOS).crop((229, 0, 229 + 918, 768)).resize((round(_cw), round(_chh)), Image.LANCZOS)
+            _sh.paste(_z, (round(_k * _cw), 0))
+        _sh.save(os.path.join(SRC, 'l9tvp_x.jpg'), quality=95); _tsrc = 'l9tvp_x.jpg'
+    tp = cut(_tsrc, 'm', 2, 3, clean=True)
     for q in range(len(tp)):     # розовый отсвет фона в дыму -> серый
         arr = np.asarray(tp[q]).copy(); r, g, b = [arr[..., i].astype(np.int32) for i in range(3)]
         pur = (r > g * 1.15) & (b > g * 1.15); L = (r * 0.3 + g * 0.59 + b * 0.11)[pur]
         arr[pur, 0] = (L * 0.8).astype(np.uint8); arr[pur, 1] = (L * 0.78).astype(np.uint8); arr[pur, 2] = (L * 0.74).astype(np.uint8)
         tp[q] = Image.fromarray(arr)
-    if os.path.exists(os.path.join(SRC, 'l9tvy_1.jpg')):     # груда с Иксом на всех экранах (Flow): 2x3 — обычные, прищур, круглые глаза, помехи x2, разбита
+    if False and os.path.exists(os.path.join(SRC, 'l9tvy_1.jpg')):     # отвергнуто владельцем (мультяшные ТВ)     # груда с Иксом на всех экранах (Flow): 2x3 — обычные, прищур, круглые глаза, помехи x2, разбита
         ty = cut('l9tvy_1.jpg', 'm', 2, 3, clean=True)
         q = np.asarray(ty[0]).copy(); c_ = q[..., :3].astype(int); lit = ((c_[..., 0] > 120) & (c_[..., 0] > c_[..., 1] * 1.8)) | (c_.min(2) > 170)
         q[lit, :3] = (c_[lit] * 0.06).astype(np.uint8)     # выключенная груда — те же телевизоры, экраны погасли
         pack('tvp9', [Image.fromarray(q), ty[0], ty[1], ty[5], ty[2], ty[3]], 280 / ty[0].height, names=['off', 'xa', 'xb', 'broken', 'xc', 'xd'])
     else:
-        pack('tvp9', [tp[0], mrx_screens(tp[1]), mrx_screens(tp[1], 0.7, 1), tp[5]], 0.85, names=['off', 'xa', 'xb', 'broken'])
+        pack('tvp9', [tp[0], tp[1], tp[2], tp[5]], 0.85, names=['off', 'xa', 'xb', 'broken'])
 for out, nm in (('lab1a', 'l9lab1_0.jpg'), ('lab1b', 'l9lab1_1.jpg'), ('lab1c', 'l9lab1b_0.jpg'), ('lab1d', 'l9lab1b_1.jpg')):
     bg(out, nm)
 
@@ -588,9 +595,13 @@ if have('l9pil_1.jpg'):     # бетонная опора под пол: тра�
     _cap = rgba_m('l9pil_1.jpg', (496, 0, 958, 190)); _sh = rgba_m('l9pil_1.jpg', (496, 200, 958, 760))
     _sh = seamless(_sh.rotate(90, expand=True), 80).rotate(-90, expand=True)
     pack('pil9', [_cap, _sh], 0.36, anchor='mid', names=['cap', 'shaft'])
-if have('l9veg_1.jpg') and have('l9ves_1.jpg'):     # тамбур в перспективе (Flow): на стыках фонов; ворота выхода в том же стиле — 3 кадра (закрыто, наполовину, открыто)
+if False:     # тамбуры отвергнуты владельцем (v548) — вместо них стена переднего плана fgj9
+  if have('l9veg_1.jpg') and have('l9ves_1.jpg'):     # тамбур в перспективе (Flow): на стыках фонов; ворота выхода в том же стиле — 3 кадра (закрыто, наполовину, открыто)
     _vg = cut('l9veg_1.jpg', 'm', 1, 3, clean=True); pack('veg9', _vg, 600 / _vg[0].height, names=['g0', 'g1', 'g2'])
     _vs = cut('l9ves_1.jpg', 'm', 1, 2, clean=True)[0]; pack('ves9', [_vs], 600 / _vs.height, names=['v0'])
+if have('l9fgw_0.jpg'):     # стена переднего плана (Flow): торец переборки с боковой гранью в перспективе; середина повторяется по высоте, низ со скосом уходит под пол
+    _fm = rgba_m('l9fgw_0.jpg', (742, 140, 912, 620)); _fb = rgba_m('l9fgw_0.jpg', (742, 620, 912, 756))
+    pack('fgj9', [_fm, _fb], 1.0, anchor='mid', names=['mid', 'bot'])
 if have('l9cw_0.jpg'):     # металлическая опора под пол (нога мостка, двутавр с подкосом): капитель с подкосом, ствол (повтор), база-плита; общий x 420..620, ось ствола 505
     _X = (420, 620); _cp = rgba_m('l9cw_0.jpg', (_X[0], 284, _X[1], 398)); _st = rgba_m('l9cw_0.jpg', (_X[0], 398, _X[1], 668)); _bs = rgba_m('l9cw_0.jpg', (_X[0], 668, _X[1], 748))
     _st = seamless(_st.rotate(90, expand=True), 60).rotate(-90, expand=True)
