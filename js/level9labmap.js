@@ -2,6 +2,7 @@
 // solids: [x, y, w, h]; walks: [x, y, w] (мостки, сквозь них можно спрыгнуть); ladders: [x, верх, низ].
 (() => {
   const S = L9.spr, clamp = L9.clamp, rnd = L9.rnd, F = () => L9.FOES;
+  const TVPILE = [[-44, 0, 0.95, 0], [46, 0, 1.05, 0.02], [-24, -47, 0.72, -0.05], [34, -51, 0.68, 0.06], [4, -84, 0.55, 0.04], [-50, -82, 0.42, -0.12]];     // [dx, низ, масштаб, наклон] телевизоров в груде
   const ZONES = [   // [x0, x1, подпись]
     [0, 2300, 'СКЛАД КАПСУЛ'],
     [2300, 4500, 'КОНВЕЙЕРНЫЙ ЗАЛ'],
@@ -65,15 +66,15 @@
       noFloor: BELTS.map(b => [b.x0, b.x1]),     // здесь вместо плиты пола — лента конвейера
       vats: [[180, 330], [420, 330], [640, 330], [1420, 330], [1702, 330], [2128, 330], [5100, LIFT_TOP], [5430, LIFT_TOP], [6080, LIFT_TOP],
         [7020, 330], [7660, 330], [8320, 330], [8640, 330], [10560, 330], [11180, 330], [15800, DY], [17500, DY]],
-      tvs: [{ x: 2560, y: 70, line: 'Ваш Выборгск прогнил! Все блага должны достаться столице! Должны быть люди и черви! Я выжму все соки, все деньги из всех вас!' },
-        { x: 4400, y: 60, line: 'Знаете, Валера, как-то раз я набрался храбрости и зашёл в чёрную комнату...' },
-        { x: 7760, y: 70, line: 'Валера, вы как таракан. Но и из тараканов у меня выжимают сок. Всё идёт в дело!' },
-        { x: 10700, y: 50, line: 'Охрана! Заприте его в цехе. Живым не выпускать... Ну или выпускать, но в банке.' },
-        { x: 16500, y: DY - 270, line: 'Реактор, Валера! Сердце моей империи. Дёрнете рычаги — и дверь откроется. Если доживёте.' }],
+      tvs: [{ x: 1905, y: 330, line: 'Ваш Выборгск прогнил! Все блага должны достаться столице! Должны быть люди и черви! Я выжму все соки, все деньги из всех вас!' },
+        { x: 4400, y: 330, line: 'Знаете, Валера, как-то раз я набрался храбрости и зашёл в чёрную комнату...' },
+        { x: 8480, y: 330, line: 'Валера, вы как таракан. Но и из тараканов у меня выжимают сок. Всё идёт в дело!' },
+        { x: 10700, y: 330, line: 'Охрана! Заприте его в цехе. Живым не выпускать... Ну или выпускать, но в банке.' },
+        { x: 16130, y: DY, line: 'Реактор, Валера! Сердце моей империи. Дёрнете рычаги — и дверь откроется. Если доживёте.' }],
       covers: [{ x: 1300, y: 330, kind: 'crates' }, { x: 3562, y: 330, kind: 'crates' }, { x: 5640, y: LIFT_TOP, kind: 'crates' },
         { x: 6910, y: 330, kind: 'crates' }, { x: 11000, y: 330, kind: 'crates' }, { x: 15960, y: DY, kind: 'crates' }],
       props: [{ x: 820, y: 330, kind: 'console' }, { x: 1470, y: 330, kind: 'console' }, { x: 2000, y: 330, kind: 'waste' }, { x: 3760, y: 330, kind: 'gas' }, { x: 3950, y: 330, kind: 'waste' }, { x: 5200, y: LIFT_TOP, kind: 'console' }, { x: 5950, y: LIFT_TOP, kind: 'waste' },
-        { x: 6930, y: LIFT_TOP, kind: 'gas' }, { x: 7860, y: 330, kind: 'gas' }, { x: 10700, y: 330, kind: 'waste' }, { x: 16580, y: DY, kind: 'console' }, { x: 17700, y: DY, kind: 'gas' }],
+        { x: 6930, y: LIFT_TOP, kind: 'gas' }, { x: 7690, y: 330, kind: 'gas' }, { x: 10700, y: 330, kind: 'waste' }, { x: 16580, y: DY, kind: 'console' }, { x: 17700, y: DY, kind: 'gas' }],
       riders: [], acid: [], drops: [],
       traps: {     // ловушки (level9traps.js) — по зонам: в каждой своё
         press: [[3020, 330, 0.5], [6300, LIFT_TOP, 0], [6480, LIFT_TOP, 0.85], [6660, LIFT_TOP, 1.7], [9560, 330, 0.2]],
@@ -213,7 +214,7 @@
     M.shootProps = (b, P) => {
       for (const c of M.covers) { if (c.hp <= 0) continue; if (Math.abs(b.x - c.x) < 28 && b.y > c.y - 44 && b.y < c.y) { b.dead = true; c.hp -= b.dmg; Sound.play('clank', 0.5); if (c.hp <= 0) { Sound.play('crash'); P.lv.score += 50; } return; } }
       for (const p of M.props) { if (p.hp <= 0) continue; if (Math.abs(b.x - p.x) < 22 && b.y > p.y - 56 && b.y < p.y) { b.dead = true; p.hp -= b.dmg; if (p.hp <= 0) M.breakProp(p, P); return; } }
-      for (const t of M.tvs) { if (t.broken) continue; if (Math.abs(b.x - t.x) < 30 && Math.abs(b.y - t.y) < 28) { b.dead = true; t.broken = 1; Sound.play('glass'); P.lv.score += 150; if (!M.tvBroke) { M.tvBroke = 1; P.lv.xsay('Я устал прощать.', 3); } return; } }
+      for (const t of M.tvs) { if (t.broken) continue; if (Math.abs(b.x - t.x) < 70 && b.y > t.y - 120 && b.y < t.y) { b.dead = true; t.broken = 1; Sound.play('glass'); P.lv.score += 150; if (!M.tvBroke) { M.tvBroke = 1; P.lv.xsay('Я устал прощать.', 3); } return; } }
     };
     M.breakProp = (p, P) => {
       Sound.play(p.kind === 'tube' ? 'glass' : 'crash'); P.lv.score += 50;
@@ -348,7 +349,10 @@
       for (const tv of M.tvs) {
         const on = Math.abs(P.x - tv.x) < 300;
         if (on && !tv.said && !tv.broken) { tv.said = 1; P.lv.xsay(tv.line, 6); }
-        S(c, 'tv9', tv.broken ? ((t * 3 | 0) % 2 ? 'broken' : 'smoke') : !on ? 'off' : 'x' + ((t * 6 | 0) % 4), tv.x, tv.y, 1);
+        for (let i = 0; i < TVPILE.length; i++) {     // груда телевизоров на полу: разные размеры, друг на друге; включаются все разом — на экранах Икс
+          const [dx, dy, k, rot] = TVPILE[i], [, th] = L9.size('tv9', 'off'), fr = tv.broken ? ((t * 3 + i) | 0) % 2 ? 'broken' : 'smoke' : !on ? (((t * 8 + i * 3) | 0) % 5 ? 'off' : 'noise') : 'x' + (((t * 6) | 0) + i) % 4;
+          S(c, 'tv9', fr, tv.x + dx, tv.y + 2 + dy - th * k / 2, k, { rot });
+        }
       }
       // укрытия и предметы
       for (const cv of M.covers) if (cv.hp > -20) S(c, 'cover9', cv.hp > 0 ? (cv.hp < 3 && cv.kind === 'crates' ? 'cratesHit' : cv.kind) : 'cratesHit', cv.x, cv.y + 2, 1, { a: cv.hp > 0 ? 1 : 0.5 });

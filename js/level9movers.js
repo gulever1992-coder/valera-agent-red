@@ -44,12 +44,15 @@
   LAB.moversDraw = (c, M, P) => {
     const V = M.movers; if (!V) return; const x0 = P.cam.x - 200, x1 = P.cam.x + 840; c.imageSmoothingEnabled = true;
     // патерностер: цепь от верхней шестерни до кислоты, ступени
+    const SINK = 342;     // поверхность жижи в чане под патерностером: ступени и цепь уходят в неё (ниже не рисуются)
+    c.save(); c.beginPath(); c.rect(P.cam.x - 300, P.cam.y - 400, 1400, SINK - (P.cam.y - 400)); c.clip();
     for (const col of V.pater || []) {
       if (col.x < x0 || col.x > x1) continue; const [, ch] = L9.size('lift9b', 'chain'), k = 0.55, [, hh] = L9.size('lift9b', 'hub');
       for (let y = col.top; y < col.bot + 30; y += ch * k - 2) S(c, 'lift9b', 'chain', col.x + (col.up ? -20 : 20), y + ch * k / 2, k);
       S(c, 'lift9b', 'hub', col.x, col.top - 10, 0.42, { rot: (M.mvT || 0) * (col.up ? -1.2 : 1.2) });
     }
     for (const s of V.steps) { if (s.hid || s.x < x0 || s.x > x1) continue; const [, h] = L9.size('lift9b', 'step'), k = 0.9; S(c, 'lift9b', 'step', s.x + STEP_W / 2, s.y - h * k * 0.18, k, { flip: !s.col.up }); }
+    c.restore();
     // колесо: спицы (штоки) от ступицы к люлькам, ступица, люльки
     for (const w of V.wheel || []) {
       if (w.x + w.r < x0 || w.x - w.r > x1) continue; const [, rh] = L9.size('trap9a', 'rod');
