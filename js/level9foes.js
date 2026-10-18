@@ -172,7 +172,12 @@
       if (Math.abs(dx) < 120 && Math.abs(P.y - this.y) < 40 && this.onG && (this.cd = (this.cd || 0) - dt) <= 0) { this.set('leap'); this.vy = -380; this.vx = this.dir * 230; this.onG = false; this.cd = 1.6; }
       this.phys(dt);
     }
-    draw(c) { if (this.st === 'ceil') { S(c, this.sh, 'c' + ((this.t * 10 | 0) % 6), this.x, this.ceil + 64, 1, { flip: this.dir < 0 }); if (this.fl > 0) S(c, this.sh, 'c' + ((this.t * 10 | 0) % 6), this.x, this.ceil + 64, 1, { flip: this.dir < 0, add: 1, a: 0.45 }); return; } super.draw(c); }
+    draw(c) {
+      if (this.st === 'walk' && !this.dead) {     // по полу бежит по-паучьи на шести руках: кадры потолка, отражённые по вертикали
+        const fr = 'c' + ((this.t * 12 | 0) % 6), o = { flip: this.dir < 0, sy: -1 };
+        S(c, 'props8', 'shadow', this.x, this.y + 1, 0.9, { a: 0.4 }); S(c, this.sh, fr, this.x, this.y - 64, 1, o); if (this.fl > 0) S(c, this.sh, fr, this.x, this.y - 64, 1, Object.assign({ add: 1, a: 0.45 }, o)); return;
+      }
+      if (this.st === 'ceil') { S(c, this.sh, 'c' + ((this.t * 10 | 0) % 6), this.x, this.ceil + 64, 1, { flip: this.dir < 0 }); if (this.fl > 0) S(c, this.sh, 'c' + ((this.t * 10 | 0) % 6), this.x, this.ceil + 64, 1, { flip: this.dir < 0, add: 1, a: 0.45 }); return; } super.draw(c); }
     box() { return this.st === 'ceil' ? [this.x - 22, this.ceil, 44, 60] : super.box(); }
     frame() { return this.dead ? 'dead' : this.fl > 0 ? 'hit' : ({ drop: 'drop', land: 'land', leap: 'leap', slash: 'slash' })[this.st] || 'leap'; }
   }

@@ -475,6 +475,17 @@ if have('l9cw_1.jpg'):
                           'legStr': [round((430 - Y0) * k2, 2), round((650 - Y0) * k2, 2)], 'lad': round((990 - CUTS[2]) * k2, 2),
                           'legs': {'endL': round((143 - CUTS[0]) * k2, 2), 'mid': round((501 - CUTS[1]) * k2, 2), 'lad': round((857 - CUTS[2]) * k2, 2), 'endR': round((1226 - CUTS[3]) * k2, 2)}}
     print('cw9 geo', DATA['cw9']['geo'])
+if have('l9trapa_0.jpg'):     # ловушки: гидропресс (шток тайлом, головка, удар), лазерные ворота (излучатели, луч тайлом)
+    B = [(90, 50, 187, 355), (289, 50, 590, 325), (617, 50, 1002, 354), (1022, 222, 1321, 355), (90, 413, 251, 561), (438, 585, 599, 733), (778, 585, 938, 733), (1165, 413, 1235, 733)]
+    pack('trap9a', [trim(rgba_m('l9trapa_0.jpg', b)) for b in B], 0.68, anchor='mid', names=['rod', 'head', 'slam', 'anvil', 'emD', 'emU', 'emOff', 'beam'])
+if have('l9trapb_0.jpg'):    # паровой клапан (4 стадии), пила в желобе, искрящий кабель
+    B = [(111, 216, 304, 427), (458, 104, 651, 427), (760, 0, 1000, 427), (1108, 23, 1302, 427), (16, 461, 534, 557), (1092, 409, 1331, 756)]
+    fr = [trim(rgba_m('l9trapb_0.jpg', b)) for b in B]
+    def blade(b, top):          # диск пилы: только то, что выше верха желоба (ниже его закрывает желоб)
+        im = rgba_m('l9trapb_0.jpg', b); return trim(im.crop((0, 0, im.width, top)))
+    fr += [blade((16, 581, 534, 731), 62), blade((567, 581, 1084, 731), 62)]
+    pack('trap9b', fr, 0.5, anchor='mid', names=['vent0', 'vent1', 'vent2', 'vent3', 'track', 'cable', 'saw0', 'saw1'])
+
 if have('l9vatdeep_1.jpg'):     # глубокий чан целиком (без растяжки), один кадр — кипение пузырями в коде
     vd = trim(rgba_m('l9vatdeep_1.jpg'))
     pack('vatD9', [vd], 0.5, anchor='mid', names=['v'])

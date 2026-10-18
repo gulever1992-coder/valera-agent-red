@@ -75,6 +75,15 @@ window.__t9 = {
         const wp = M.pits.find(p => p[1] - p[0] > 120 && P.y > 300 && P.x < p[0] && P.x > p[0] - 260);
         if (wp && !P.climb) { const lad = M.ladders.find(l => l[0] < wp[0] && l[0] > P.x - 40 && l[2] === 330); if (lad) { const d = lad[0] - P.x; if (Math.abs(d) > 5) { I.down.right = d > 0; I.down.left = d < 0; } else { I.down.left = I.down.right = false; I.down.up = true; } } }
         if (P.climb) { I.down.up = true; I.down.left = I.down.right = false; }
+        // ловушки: переждать пресс/лазер/пар/кабель впереди, пилу перепрыгнуть
+        const T = M.traps || {}, tt = P.t, ahead = x => x - P.x > 0 && x - P.x < 75;
+        let wait = false;
+        for (const [x, fl, f] of T.press || []) if (ahead(x + 30) && Math.abs(P.y - fl) < 5) { const u = (tt + f) % 2.6; if (u > 1.0 && u < 2.3) wait = true; }
+        for (const [x, fl, top, f] of T.laser || []) if (ahead(x) && Math.abs(P.y - fl) < 5) { const u = (tt + f) % 2.8; if (u < 1.75 || u > 2.4) wait = true; }
+        for (const [x, fl, f] of T.vent || []) if (ahead(x + 10) && Math.abs(P.y - fl) < 5) { const u = (tt + f) % 3.4; if (u > 1.5) wait = true; }
+        for (const [x, fl, f] of T.cable || []) if (ahead(x + 10) && Math.abs(P.y - fl) < 5) { const u = (tt + f) % 2.2; if (u < 1.0 || u > 2.0) wait = true; }
+        if (wait && !f) { I.down.left = I.down.right = false; mv = 0; }
+        for (const s of T.saw || []) if (s.bx && Math.abs(P.y - s[2]) < 5 && Math.abs(s.bx - P.x) < 70 && P.onG && jumpCd <= 0) { I.hit.jump = true; jumpCd = 0.5; }
         // ямы и стены
         jumpCd -= dt;
         const pitAhead = M.pits.some(p => p[0] !== 4610 && p[1] - p[0] <= 120 && P.x > p[0] - 26 && P.x < p[0] - 4) || (L.on === 2 && P.y > 300 && P.x > 4560 && P.x < 4610);

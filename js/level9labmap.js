@@ -6,7 +6,7 @@
     [0, 2300, 'СКЛАД КАПСУЛ'],
     [2300, 4500, 'КОНВЕЙЕРНЫЙ ЗАЛ'],
     [4500, 6200, 'ГРУЗОВОЙ ПОДЪЁМНИК'],
-    [6200, 6880, 'ВЕРХНИЙ ЯРУС'],
+    [6200, 6880, 'ЦЕХ ПРЕССОВ'],
     [6880, 8950, 'ОТСТОЙНИК'],
     [8950, 10330, 'СОРТИРОВКА'],
     [10330, 11400, 'ЦЕХ ОХРАНЫ'],
@@ -16,15 +16,16 @@
     { x0: 9060, x1: 10250, v: -95, arm: 10120, vat: 9005 },
   ];
   const UNL = 2.6;
-  const DRIPS = [6560, 7420, 8070, 8820, 9420, 9900];     // протечки с потолка: капли кислоты
+  const DRIPS = [3000, 8070, 9420, 9900];     // протечки с потолка: капли кислоты
   const ARENA = [10330, 11400];
+  let AR_SAVE = 0;     // сколько волн цеха охраны уже отбито (после смерти на арене начинаем с недобитой)
   const HOOKS = [3330, 3560];            // крюки только там, где цепь не проходит сквозь мостки;           // рука-разгрузчик над правым краем ленты, цикл выгрузки
   const LIFT_X = 4700, LIFT_TOP = -170;
 
   const WY = 200, UY = LIFT_TOP - 130;     // настил мостков — 130 px над полом
   const CW = [     // [x, y, пролётов, пролёт с лестницей]; опоры над чаном/лентой становятся подвесами к потолку
     [250, WY, 2, 1], [820, WY, 3, 2], [1440, WY, 3, 2], [2040, WY, 8, 0], [3600, WY, 6, 3],
-    [5260, UY, 2, 1], [5690, UY, 2, 0], [6230, UY, 3, 1],
+    [5260, UY, 2, 1], [5690, UY, 2, 0],
     [7080, WY, 12, [0, 6]],                   // отстойник: длинный подвесной мост над двумя широкими чанами
     [10480, WY, 3, 1], [10960, WY, 2, 0],     // цех охраны
   ];
@@ -41,26 +42,33 @@
       ],
       walks: [], ladders: [],     // строятся из CW (мостки v5: опоры и лестница — часть рисунка)
       lifts: [{ x: LIFT_X, w: 140, y: 330, y0: 330, y1: LIFT_TOP, on: 0 }],
-      cks: [[140, 330], [2380, 330], [4560, 330], [5000, LIFT_TOP], [6950, 330], [8890, 330], [10390, 330]],
+      cks: [[140, 330], [2380, 330], [4560, 330], [5000, LIFT_TOP], [6160, LIFT_TOP], [6950, 330], [8890, 330], [10390, 330]],
       picks: [
         { kind: 'pist', x: 1600, y: WY }, { kind: 'kefir', x: 2100, y: 330 }, { kind: 'grenades', x: 2700, y: WY },
         { kind: 'rocket', x: 4200, y: WY }, { kind: 'kefir', x: 3850, y: WY }, { kind: 'pies', x: 4640, y: 330 }, { kind: 'plasma', x: 5950, y: UY },
-        { kind: 'pies', x: 6600, y: LIFT_TOP }, { kind: 'kefir', x: 7700, y: 330 }, { kind: 'grenades', x: 8300, y: WY }, { kind: 'kefir', x: 8850, y: 330 },
+        { kind: 'pies', x: 6600, y: LIFT_TOP }, { kind: 'kefir', x: 7700, y: 330 }, { kind: 'grenades', x: 8300, y: WY }, { kind: 'kefir', x: 8905, y: 330 },
         { kind: 'kefir', x: 10180, y: 330 }, { kind: 'mini', x: 10400, y: 330 }, { kind: 'rocket', x: 11060, y: WY },
       ],
       pits: [[955, 1045], [2280, 2370], [3615, 3705], [7300, 7550], [7950, 8200], [8960, 9050]],     // в отстойнике два широких — только по мосту     // по 90 px — перепрыгиваются с разбега     // ямы — в них утоплены цистерны с кислотой (средняя — чан в конце конвейера)
       noFloor: BELTS.map(b => [b.x0, b.x1]),     // здесь вместо плиты пола — лента конвейера
-      vats: [[180, 330], [420, 330], [640, 330], [1420, 330], [1702, 330], [2128, 330], [5100, LIFT_TOP], [5430, LIFT_TOP], [6080, LIFT_TOP], [6420, LIFT_TOP], [6760, LIFT_TOP],
+      vats: [[180, 330], [420, 330], [640, 330], [1420, 330], [1702, 330], [2128, 330], [5100, LIFT_TOP], [5430, LIFT_TOP], [6080, LIFT_TOP],
         [7020, 330], [7660, 330], [8320, 330], [8640, 330], [10560, 330], [11180, 330]],
       tvs: [{ x: 2560, y: 70, line: 'Ваш Выборгск прогнил! Все блага должны достаться столице! Должны быть люди и черви! Я выжму все соки, все деньги из всех вас!' },
         { x: 4400, y: 60, line: 'Знаете, Валера, как-то раз я набрался храбрости и зашёл в чёрную комнату...' },
         { x: 7760, y: 70, line: 'Валера, вы как таракан. Но и из тараканов у меня выжимают сок. Всё идёт в дело!' },
         { x: 10700, y: 50, line: 'Охрана! Заприте его в цехе. Живым не выпускать... Ну или выпускать, но в банке.' }],
       covers: [{ x: 1300, y: 330, kind: 'crates' }, { x: 1610, y: 330, kind: 'barrier' }, { x: 3562, y: 330, kind: 'crates' }, { x: 4130, y: 330, kind: 'barrier' }, { x: 5640, y: LIFT_TOP, kind: 'crates' },
-        { x: 6910, y: 330, kind: 'crates' }, { x: 6560, y: LIFT_TOP, kind: 'barrier' }, { x: 8450, y: 330, kind: 'barrier' }, { x: 11000, y: 330, kind: 'crates' }],
+        { x: 6910, y: 330, kind: 'crates' }, { x: 8300, y: 330, kind: 'barrier' }, { x: 11000, y: 330, kind: 'crates' }],
       props: [{ x: 820, y: 330, kind: 'console' }, { x: 1600, y: 330, kind: 'tube' }, { x: 2000, y: 330, kind: 'waste' }, { x: 3760, y: 330, kind: 'gas' }, { x: 3950, y: 330, kind: 'tube' }, { x: 5200, y: LIFT_TOP, kind: 'console' }, { x: 5950, y: LIFT_TOP, kind: 'waste' },
-        { x: 6930, y: LIFT_TOP, kind: 'gas' }, { x: 7750, y: 330, kind: 'gas' }, { x: 8500, y: 330, kind: 'tube' }, { x: 8750, y: 330, kind: 'console' }, { x: 10700, y: 330, kind: 'waste' }],
-      riders: [], acid: [], drops: [], door: { x: 11340, y: 330, open: 0 }, gateL: { x: ARENA[0] + 20, y: 330 },
+        { x: 6930, y: LIFT_TOP, kind: 'gas' }, { x: 7860, y: 330, kind: 'gas' }, { x: 10700, y: 330, kind: 'waste' }],
+      riders: [], acid: [], drops: [],
+      traps: {     // ловушки (level9traps.js)
+        press: [[6300, LIFT_TOP, 0], [6480, LIFT_TOP, 0.85], [6660, LIFT_TOP, 1.7]],
+        laser: [[7760, 330, 222, 0], [10292, 330, 160, 1.1]],
+        vent: [[1150, 330, 0], [1930, 330, 1.2], [3860, 330, 0.5], [8420, 330, 0.9]],
+        saw: [[8480, 8860, 330]],
+        cable: [[7420, WY, 0.3], [5745, UY, 1.1]],
+      }, door: { x: 11340, y: 330, open: 0 }, gateL: { x: ARENA[0] + 20, y: 330 },
     };
     for (const [x, y, n, l] of CW) { const r = L9.LAB.cwBuild(x, y, n, l); M.walks.push(r.w); for (const l of r.lads) { l[2] = y < 0 ? LIFT_TOP : 330; M.ladders.push(l); } }
     // ---------- враги по зонам ----------
@@ -68,8 +76,8 @@
       ['Hat', 760, 330], ['Hat', 1210, WY], ['Arm', 1500, 330], ['Turret', 2270, 260, { dir: -1 }], ['Hat', 1700, WY], ['Stump', 2050, 330],
       ['Spit', 2600, WY], ['Stump', 2600, 330], ['Stump', 2900, 330], ['Weld', 3300, 330], ['Fly', 3500, 120], ['Crawl', 3900, 60, { ceil: 60 }], ['Hat', 4150, WY], ['Weld', 4100, 330],
       ['Super', 5550, LIFT_TOP], ['Spit', 5900, UY], ['Arm', 6000, LIFT_TOP],
-      ['Hat', 6450, LIFT_TOP], ['Spit', 6520, UY], ['Fly', 6700, -330], ['Arm', 6820, LIFT_TOP],
-      ['Stump', 7200, 330], ['Hat', 7420, WY], ['Spit', 7860, WY], ['Hat', 7720, 330], ['Fly', 8100, 90], ['Hat', 8250, WY], ['Weld', 8420, 330], ['Turret', 8930, 260, { dir: -1 }],
+      ['Hat', 6430, LIFT_TOP], ['Fly', 6700, -330], ['Arm', 6840, LIFT_TOP],
+      ['Stump', 7200, 330], ['Hat', 7420, WY], ['Spit', 7860, WY], ['Hat', 7720, 330], ['Fly', 8100, 90], ['Hat', 8250, WY], ['Weld', 8380, 330], ['Turret', 8930, 260, { dir: -1 }],
       ['Stump', 9450, 330], ['Fly', 9650, 120], ['Stump', 9800, 330], ['Hat', 10050, 330], ['Crawl', 9900, 60, { ceil: 60 }],
     ];
     const WAVES = [     // цех охраны: волны прыгают сверху (с мостков и из-за края экрана), пока заслон закрыт
@@ -83,7 +91,7 @@
       if (ck >= 3) { M.lifts[0].y = LIFT_TOP; M.lifts[0].on = 2; }
       M.picks = M.picks.filter(k => k.x > x0 + 40);
       M.covers.forEach(c => c.hp = 6); M.props.forEach(p => p.hp = 2);
-      M.lastZone = null; M.tvIdx = 0; M.ar = null;
+      M.lastZone = null; M.tvIdx = 0; M.ar = null; if (ck < M.cks.length - 1) AR_SAVE = 0;
       if (!ck) lv.say('ПРИЦЕЛ {up}/{down}+СТРЕЛКИ   КУВЫРОК [Q]   ГРАНАТА {throw}', 4);
     };
     M.zoneAt = x => ZONES.find(z => x >= z[0] && x < z[1]) || ZONES[ZONES.length - 1];
@@ -129,6 +137,7 @@
         else { if (r.y > 340) r.vx *= 0.8; r.x += r.vx * dt; r.vy += 900 * dt; r.y += r.vy * dt; r.rot = Math.max(-1.4, r.rot - 3 * dt); if (r.y > 336 && !r.spl) { r.spl = 1; Sound.play('splash', 0.35); P.fx.push({ sh: 'fxL9', fr: ['acidHit'], x: r.x, y: 334, s: 0.7, t: 0, life: 0.5, fade: 1 }); } }
       }
       M.riders = M.riders.filter(r => r.y < 420);
+      L9.LAB.trapsUpdate(M, P, dt);
       // протечки: капля срывается с потолка (из-за края экрана), падает до пола или мостка, обжигает
       for (let i = 0; i < DRIPS.length; i++) { const x = DRIPS[i]; if (Math.abs(x - P.x) > 420) continue; const ph = (P.t + i * 0.53) % 1.7, pp = ((P.t - dt) + i * 0.53) % 1.7; if (ph < pp) M.drops.push({ x, y: P.cam.y - 10, vy: 120 }); }
       for (const d of M.drops) {
@@ -140,12 +149,12 @@
       M.drops = M.drops.filter(d => !d.dead && d.y < 420);
       // цех охраны: войдя, Валера оказывается взаперти — решётка падает, сверху сыплются волны охраны
       const gw = M.solids.find(r => r[4] === 'hide' && r[0] === ARENA[0] && r[1] === -170);
-      if (!M.ar && P.x > ARENA[0] + 90 && P.y > 250) { M.ar = { w: 0, t: 0, gate: 0 }; gw[2] = 24; Sound.play('door'); lv.say('ЗАПЕРТО! ОТБИВАЙСЯ!', 2); }
+      if (!M.ar && P.x > ARENA[0] + 90 && P.y > 250) { M.ar = { w: AR_SAVE, t: 0, gate: 0 }; gw[2] = 24; Sound.play('door'); lv.say('ЗАПЕРТО! ОТБИВАЙСЯ!', 2); }
       if (M.ar && !M.ar.done) {
         const a = M.ar; a.t += dt; a.gate = Math.min(1, a.gate + dt * 2);
         const alive = P.foes.some(f => !f.dead && f.x > ARENA[0]);
         if (!alive && a.t > 1) {
-          if (a.w < WAVES.length) { for (const [tp, x, y, o] of WAVES[a.w]) P.foes.push(new (F()[tp])(M, x, y, o || {})); a.w++; a.t = 0; if (a.w > 1) lv.say('ВОЛНА ' + a.w + '!', 1.4); if (a.w === WAVES.length) M.picks.push({ kind: 'kefir', x: 10760, y: WY, t: 0 }); }
+          if (a.w < WAVES.length) { for (const [tp, x, y, o] of WAVES[a.w]) P.foes.push(new (F()[tp])(M, x, y, o || {})); AR_SAVE = a.w; a.w++; a.t = 0; if (a.w > 1) lv.say('ВОЛНА ' + a.w + '!', 1.4); if (a.w === WAVES.length) M.picks.push({ kind: 'kefir', x: 10760, y: WY, t: 0 }); }
           else { a.done = 1; gw[2] = 0; Sound.play('door'); lv.say('ЦЕХ ЗАЧИЩЕН!', 2); }
         }
       }
@@ -261,6 +270,7 @@
       for (const a of M.acid) S(c, 'fxL9', 'acidHit', a.x, a.y - 4, 0.45, { a: clamp((a.life - a.t) / 0.6, 0, 1) });
       for (const d of M.drops) S(c, 'fxL9', 'acid', d.x, d.y, 0.09, { add: 1 });
       for (const x of DRIPS) if (Math.abs(x - P.cam.x - 320) < 400) { const f = L9.LAB.floorBelow(M, x, P.cam.y, 400); if (f != null) S(c, 'fxL9', 'acidHit', x, f - 1, 0.22, { a: 0.35 + Math.sin(t * 3 + x) * 0.1 }); }     // лужа под протечкой — предупреждение
+      L9.LAB.trapsDraw(c, M, P);
       // подборы
       for (const k of M.picks) { S(c, 'fxL9', 'spark', k.x, k.y - 14, 0.4 + Math.sin(k.t * 5) * 0.08, { add: 1 }); S(c, 'pick9', k.kind, k.x, k.y - 16 + Math.sin(k.t * 4) * 2, 1); }
       // шахта подъёмника: две цельные стойки от лебёдки до дна, лебёдка под потолком, тросы до траверсы кабины

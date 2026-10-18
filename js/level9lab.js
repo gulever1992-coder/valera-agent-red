@@ -201,6 +201,7 @@
       M.drawBack(c, cx, cy, P);
       c.save(); c.translate(-cx, -cy);
       P.drawFloor(c);
+      P.drawWalks(c);     // мостки (опоры, лестницы) — позади предметов: капсулы, пульты, укрытия стоят перед опорами
       M.drawMid && M.drawMid(c, P);
       P.drawWorld(c);
       for (const f of P.foes) if (f.behind) f.draw(c);
@@ -231,10 +232,13 @@
       }
       M.drawOnFloor && M.drawOnFloor(c, P);
     },
-    drawWorld(c) {
+    drawWalks(c) {
       const M = P.M, x0 = P.cam.x - 100, x1 = P.cam.x + 740;
       // мостки v5 (cw9): опоры, лестница и настил — один рисунок; передние перила (F) — после Валеры в drawRails
       LAB.camY = P.cam.y; for (const w of M.walks) if (!w.gone && w[0] < x1 && w[0] + w[2] > x0) LAB.cwLayer(c, M, w, 'B');
+    },
+    drawWorld(c) {
+      const M = P.M;
       for (const l of M.lifts || []) M.drawCar ? M.drawCar(c, l) : S(c, 'plat9', 'lift', l.x + l.w / 2, l.y + 24, l.w / 53);
     },
     drawRails(c) {     // передние перила мостков — перед Валерой и врагами
