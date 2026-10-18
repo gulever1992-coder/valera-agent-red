@@ -3,7 +3,7 @@
 (() => {
   const S = L9.spr, clamp = L9.clamp, LAB = L9.LAB;
   const PH = 78, near = (P, x, w) => Math.abs(P.x - x) < w;
-  const hit = (P, d, x) => { if (P.inv > 0 || P.lv.dead) return; P.hurt(d, x); };
+  const hit = (P, d, x) => { if (P.inv > 0 || P.lv.dead) return; if (P.st === 'roll') P.st = 'stand'; P.hurt(d, x); };     // от ловушек перекат не спасает (только если пролез под лучом)
 
   // гидропресс: стоит вверху -> дрожит (предупреждение) -> бьёт в пол -> держит -> поднимается
   const PRESS_T = 2.6, PK = 0.95;
@@ -19,8 +19,19 @@
   // кабель: искрит часть цикла
   const CAB_T = 2.2, CAB_ON = 0.9;
 
+  // зелёный огонь: столб из решётки в полу и струя из настенного сопла; горизонтальный лазер ходит вверх-вниз между стойками
+  const FC_T = 2.4, JET_T = 2.6;
+  const bodyTop = P => P.y - (P.st === 'crouch' || P.st === 'roll' ? 50 : PH);
+  const hlaserY = (h, t) => { const [, , fl, lo, hi, per, f] = h; return fl - (lo + (hi - lo) * (0.5 - 0.5 * Math.cos((t + f) / per * Math.PI * 2))); };
+  LAB.trapsUpdate2 = (M, P, dt) => {
+    const T = M.traps; if (!T) return; const t = P.t;
+    for (const [x, fl, f] of T.fcol || []) { const u = (t + f) % FC_T; if (u > 1.6 && near(P, x, 16) && P.y <= fl + 2 && P.y > fl - 118) hit(P, 18, x); }
+    for (const [x, y, d, f, len] of T.jet || []) { const u = (t + f) % JET_T; if (u >= 1.6) { const a = Math.min(x, x + d * len), b = Math.max(x, x + d * len); if (P.x > a && P.x < b && y > bodyTop(P) && y < P.y) hit(P, 20, x); } }
+    for (const h of T.hlaser || []) { const yy = hlaserY(h, t); h.by = yy; if (P.x > h[0] && P.x < h[1] && yy > bodyTop(P) && yy < P.y - 2) hit(P, 15, P.x - P.dir * 20); }
+  };
   LAB.trapsUpdate = (M, P, dt) => {
     const T = M.traps; if (!T) return; const t = P.t, ph = P.y - PH;
+    LAB.trapsUpdate2(M, P, dt);
     for (const [x, fl, f] of T.press || []) {
       const u = (t + f) % PRESS_T, hb = pressY(fl, u), pu = ((t - dt) + f) % PRESS_T;
       if (pu < 1.62 && u >= 1.62 && Math.abs(P.x - x) < 420) { Sound.play('crash', 0.5); G.shake(3, 0.15); }
@@ -48,6 +59,23 @@
   LAB.trapsDraw = (c, M, P) => {
     const T = M.traps; if (!T) return; const t = P.t, x0 = P.cam.x - 120, x1 = P.cam.x + 760, cy = P.cam.y;
     c.imageSmoothingEnabled = true;
+    const slice = (sh, n, s0, s1, dx, dy, dw, dh, flip, add, al) => { const F = fr(sh, n), im = L9.img[sh]; if (!im) return; c.save(); if (al != null) c.globalAlpha = al; if (add) c.globalCompositeOperation = 'lighter'; if (flip) { c.translate(dx * 2 + dw, 0); c.scale(-1, 1); } c.drawImage(im, F[0] + F[2] * s0, F[1], F[2] * (s1 - s0), F[3], dx, dy, dw, dh); c.restore(); };
+    for (const [x, fl, f] of T.fcol || []) {      // решётка в полу; перед выбросом — вспышки, потом столб огня
+      if (x < x0 || x > x1) continue; const u = (t + f) % FC_T, k = 0.9;
+      if (u > 1.6) { const n = (t * 10 | 0) % 2 ? 'col0' : 'col1', [, h] = L9.size('fire9', n); S(c, 'fire9', n, x, fl + 3 - h * k / 2, k); }
+      else { const [, gh] = L9.size('fire9', 'grate'); S(c, 'fire9', 'grate', x, fl + 2 - gh * k / 2, k); if (u > 1.2 && (t * 16 | 0) % 2) { const [, h] = L9.size('fire9', 'col0'); S(c, 'fire9', 'col0', x, fl + 3 - h * 0.3 / 2, 0.3, { a: 0.7 }); } }
+    }
+    for (const [x, y, d, f, len] of T.jet || []) {     // сопло на стене; раскаляется, потом бьёт струёй (пламя тянется на len)
+      if (Math.max(x, x + d * len) < x0 || Math.min(x, x + d * len) > x1) continue; const u = (t + f) % JET_T, k = 0.6, [nw, nh] = L9.size('fire9', 'noz');
+      if (u >= 1.6) { const n = (t * 12 | 0) % 2 ? 'jet0' : 'jet1', [jw, jh] = L9.size('fire9', n), fh = jh * k * 1.1; slice('fire9', n, 0.2, 1, d > 0 ? x + nw * k * 0.6 : x - nw * k * 0.6 - len, y - fh / 2, len, fh, d < 0, 0, 1); }
+      S(c, 'fire9', u >= 1.2 ? 'nozHot' : 'noz', x + d * nw * k * 0.3, y, k, { flip: d < 0 });
+    }
+    for (const h of T.hlaser || []) {     // стойки с излучателями, луч поперёк
+      const [a, b, fl, lo, hi] = h; if (b < x0 || a > x1) continue; const yy = h.by ?? hlaserY(h, t), [, rh] = L9.size('trap9a', 'rod'), [, bh] = L9.size('trap9a', 'beam');
+      for (const px of [a, b]) for (let y = fl; y > fl - hi - 26; y -= rh * 0.35 - 1) S(c, 'trap9a', 'rod', px, y - rh * 0.35 / 2, 0.35);
+      S(c, 'trap9a', 'beam', (a + b) / 2, yy, 0.8, { rot: Math.PI / 2, sy: (b - a - 16) / (bh * 0.8), add: 1, a: 0.8 + Math.sin(t * 40) * 0.15 });
+      S(c, 'trap9a', 'emU', a + 6, yy, 0.42, { rot: Math.PI / 2 }); S(c, 'trap9a', 'emU', b - 6, yy, 0.42, { rot: -Math.PI / 2 });
+    }
     // пила: желоб тайлом по полу, диск ездит туда-сюда (кадр отражается — зубья «бегут»)
     for (const s of T.saw || []) {
       const [a, b, fl] = s; if (b < x0 || a > x1) continue; const [tw, th] = L9.size('trap9b', 'track');

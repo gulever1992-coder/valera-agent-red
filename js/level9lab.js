@@ -111,7 +111,7 @@
         if (P.onG) { const lf = (M.lifts || []).find(l => P.x >= l.x && P.x < l.x + l.w && Math.abs(P.y - l.y) < 2); if (lf) P.y = lf.y; }
       }
       // пропасть / жижа
-      if (P.y > M.killY) { lv.hurt(30); const c = M.cks[P.ck]; if (!lv.dead) { P.x = c[0]; P.y = c[1]; P.vy = 0; } }
+      if (P.y > (M.killAt ? M.killAt(P.x) : M.killY)) { lv.hurt(30); const c = M.cks[P.ck]; if (!lv.dead) { P.x = c[0]; P.y = c[1]; P.vy = 0; } }
       if (M.hazAt) { const hz = M.hazAt(P.x, P.y, P); if (hz) P.hurt(hz[0], hz[1]); }
       // чекпоинты
       for (let i = P.ck + 1; i < M.cks.length; i++) if (P.x > M.cks[i][0] - 10 && Math.abs(P.y - M.cks[i][1]) < 200) { P.ck = i; lv.ck = i; Sound.play('checkpoint'); lv.say('КОНТРОЛЬНАЯ ТОЧКА', 1.5); }
@@ -218,6 +218,7 @@
     },
     drawFloor(c) {     // пол, опоры под ним, лента и цистерны — раньше всех предметов: всё стоит ПОВЕРХ пола
       const M = P.M, x0 = P.cam.x - 100, x1 = P.cam.x + 740;
+      M.drawBackWorld && M.drawBackWorld(c, P);
       // пол — тонкая металлическая плита (бесшовная полоса labFloor), под ней виден дальний план; торцы плиты на опорных колоннах
       const fim = L9.img.labFloor, FH = 34;
       for (const r of M.solids) {
@@ -259,7 +260,7 @@
       else if (P.st === 'run') { if (P.aim === 'diag') { sh = 'vRunUD9'; fr = 'u' + run4; } else if (P.aim === 'down') { sh = 'vRunUD9'; fr = 'd' + run4; } else { sh = 'vRun9'; fr = 'r' + run8; } }
       else fr = P.aim === 'diag' ? 'diag' : P.aim === 'up' ? 'up' : P.aim === 'down' ? 'down' : P.fireA > 0 ? 'fire' : 'stand';
       if (P.weap !== 'rifle' && L9D[sh + '_' + P.weap]) sh += '_' + P.weap;     // в руках то оружие, которое подобрал
-      S(c, sh, fr, P.x, P.y + 1, 1, { flip: fl });
+      S(c, sh, fr, P.x, P.y + 1, P.st === 'crouch' ? 0.78 : 1, { flip: fl });     // кадры приседа нарезаны почти в рост стоящего — уменьшаем до пропорций
     },
     drawBullet(c, b) {
       const a = Math.atan2(b.vy, b.vx);

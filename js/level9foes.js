@@ -175,9 +175,9 @@
     draw(c) {
       if (this.st === 'walk' && !this.dead) {     // по полу бежит по-паучьи на шести руках: кадры потолка, отражённые по вертикали
         const fr = 'c' + ((this.t * 12 | 0) % 6), o = { flip: this.dir < 0, sy: -1 };
-        S(c, 'props8', 'shadow', this.x, this.y + 1, 0.9, { a: 0.4 }); S(c, this.sh, fr, this.x, this.y - 64, 1, o); if (this.fl > 0) S(c, this.sh, fr, this.x, this.y - 64, 1, Object.assign({ add: 1, a: 0.45 }, o)); return;
+        S(c, 'props8', 'shadow', this.x, this.y + 1, 0.9, { a: 0.4 }); const hh = L9.size(this.sh, fr)[1] / 2; S(c, this.sh, fr, this.x, this.y - hh, 1, o); if (this.fl > 0) S(c, this.sh, fr, this.x, this.y - hh, 1, Object.assign({ add: 1, a: 0.45 }, o)); return;
       }
-      if (this.st === 'ceil') { S(c, this.sh, 'c' + ((this.t * 10 | 0) % 6), this.x, this.ceil + 64, 1, { flip: this.dir < 0 }); if (this.fl > 0) S(c, this.sh, 'c' + ((this.t * 10 | 0) % 6), this.x, this.ceil + 64, 1, { flip: this.dir < 0, add: 1, a: 0.45 }); return; } super.draw(c); }
+      if (this.st === 'ceil') { S(c, this.sh, 'c' + ((this.t * 10 | 0) % 6), this.x, this.ceil + L9.size(this.sh, 'c0')[1] / 2, 1, { flip: this.dir < 0 }); if (this.fl > 0) S(c, this.sh, 'c' + ((this.t * 10 | 0) % 6), this.x, this.ceil + L9.size(this.sh, 'c0')[1] / 2, 1, { flip: this.dir < 0, add: 1, a: 0.45 }); return; } super.draw(c); }
     box() { return this.st === 'ceil' ? [this.x - 22, this.ceil, 44, 60] : super.box(); }
     frame() { return this.dead ? 'dead' : this.fl > 0 ? 'hit' : ({ drop: 'drop', land: 'land', leap: 'leap', slash: 'slash' })[this.st] || 'leap'; }
   }
@@ -199,15 +199,48 @@
     frame() { return this.dead ? (this.stT < 0.5 ? 'kneel' : 'dead') : this.fl > 0 && this.st === 'walk' ? 'stagger' : ({ spin: 'spin', fire: 'fire', taunt: 'taunt' })[this.st] || (this.vx ? this.walkFr(6, 6) : 'w0'); }
   }
 
-  // Турель на стене
+  // Выдвижная лазерная турель: спит под люком в полу; Валера рядом — люк открывается, турель выезжает,
+  // ствол поворачивается за ним (кадры листа нарисованы стволом вправо; влево — зеркально), бьёт красными лазерными зарядами. Живучая.
+  const TUR_AIM = [[-Math.PI / 2, 'a5'], [-Math.PI / 4, 'a4'], [0, 'a2'], [Math.PI / 5, 'a1']];
   class Turret extends Foe {
-    constructor(M, x, y, o) { super(M, x, y, Object.assign({ sh: 'mech9', maxHp: 6, w: 22, pts: 200, air: 1, dir: -1 }, o)); this.cd = 1.5; }
-    get h() { return 36; }
-    box() { return [this.x - 24, this.y - 20, 48, 40]; }
-    ai(dt, P) { this.cd -= dt; this.fireT = (this.fireT || 0) - dt; if (this.cd <= 0 && this.seen(P)) { this.cd = 2; this.fireT = 0.2; const a = Math.atan2(P.y - 45 - this.y, P.x - this.x); this.ebul(this.x, this.y, Math.cos(a) * 300, Math.sin(a) * 300, { fr: 'fireball', s: 0.3, dmg: 10 }); Sound.play('shot'); } }
-    update(dt, P, lv) { this.t += dt; this.stT += dt; this.fl -= dt; if (this.dead) return; this.ai(dt, P); }
-    die(dir, kind) { super.die(dir, kind); this.fx('fxA9', ['boom0', 'boom1', 'boom2', 'boom3'], this.x, this.y, 0.7, 0.5); Sound.play('boom'); }
-    draw(c) { S(c, 'mech9', this.dead ? 'turDead' : this.fireT > 0 ? 'turFire' : 'tur', this.x, this.y, 1, { flip: this.dir > 0 }); if (this.fl > 0) S(c, 'mech9', this.fireT > 0 ? 'turFire' : 'tur', this.x, this.y, 1, { flip: this.dir > 0, add: 1, a: 0.45 }); }
+    constructor(M, x, y, o) { super(M, x, y, Object.assign({ sh: 'tur9', maxHp: 26, touch: 0, w: 24, pts: 600, air: 1 }, o)); this.st = 'hide'; this.cd = 0.8; this.ang = Math.PI; }
+    get h() { return this.st === 'hide' || this.st === 'open' ? 12 : this.st === 'rise' ? 12 + 50 * Math.min(1, this.stT / 0.5) : 62; }
+    box() { const h = this.h; return [this.x - 22, this.y - h, 44, h]; }
+    hit(d, dir, kind) { if (this.st === 'hide' || this.st === 'open') return; super.hit(d, dir, kind); }
+    ai(dt, P) {
+      const dx = P.x - this.x, dy = (P.y - 42) - (this.y - 48);
+      this.fireT = Math.max(0, (this.fireT || 0) - dt);
+      if (this.st === 'hide') { if (Math.abs(dx) < 340 && Math.abs(P.y - this.y) < 220) { this.set('open'); Sound.play('clank'); } return; }
+      if (this.st === 'open') { if (this.stT > 0.45) { this.set('rise'); Sound.play('crane', 0.5); } return; }
+      if (this.st === 'rise') { if (this.stT > 0.5) this.set('aim'); return; }
+      const want = Math.atan2(dy, dx); let d = want - this.ang; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+      this.ang += clamp(d, -2.4 * dt, 2.4 * dt);       // поворачивается не мгновенно — можно успеть уйти
+      this.cd -= dt;
+      if (this.cd <= 0 && Math.abs(d) < 0.35 && Math.abs(dx) < 430) {
+        this.cd = 1.25; this.fireT = 0.16; const a = this.aimA(), sp = 330, ox = this.x + Math.cos(a) * 34, oy = this.y - 50 + Math.sin(a) * 28;
+        this.ebul(ox, oy, Math.cos(a) * sp, Math.sin(a) * sp, { dmg: 12, life: 2.2, draw: (c, e) => S(c, 'trap9a', 'beam', e.x, e.y, 0.32, { rot: Math.atan2(e.vy, e.vx) + Math.PI / 2, add: 1 }) });
+        Sound.play('shot', 0.6);
+      }
+    }
+    aimA() { const left = Math.cos(this.ang) < 0, a = left ? Math.PI - this.ang : this.ang, n = ((a + Math.PI) % (2 * Math.PI)) - Math.PI;   // угол в правой полуплоскости
+      let best = TUR_AIM[0]; for (const t of TUR_AIM) if (Math.abs(t[0] - n) < Math.abs(best[0] - n)) best = t; this.aimFr = best[1]; return left ? Math.PI - best[0] : best[0]; }
+    update(dt, P, lv) { this.t += dt; this.stT += dt; this.fl -= dt; if (this.dead) { if (this.stT > 6) this.gone = true; return; } this.ai(dt, P); }
+    die(dir, kind) { this.dead = true; this.set('dead'); const lv = L9.PARTS.lab.lv; lv.stats.kills++; lv.score += this.pts; this.fx('fxA9', ['boom0', 'boom1', 'boom2', 'boom3'], this.x, this.y - 40, 0.8, 0.5); Sound.play('boom'); }
+    draw(c) {
+      const k = 0.95, flip = Math.cos(this.ang) < 0; let fr, clip = null;
+      if (this.dead) fr = this.stT < 1.2 ? 'wreck' : 'empty';
+      else if (this.st === 'hide') fr = 'hatch';
+      else if (this.st === 'open') fr = 'open';
+      else if (this.st === 'rise') { fr = 'up'; clip = Math.min(1, this.stT / 0.5); }
+      else { this.aimA(); fr = this.fireT > 0 && this.aimFr === 'a2' ? 'fire' : this.aimFr; }
+      const [, h] = L9.size('tur9', fr), y = this.y + 4 - h * k / 2;
+      if (clip != null) {      // выезжает из люка: рисуем люк и поднимающуюся турель, обрезанную по полу
+        S(c, 'tur9', 'open', this.x, this.y + 4 - L9.size('tur9', 'open')[1] * k / 2, k);
+        c.save(); c.beginPath(); c.rect(this.x - 60, this.y - 140, 120, 140); c.clip(); S(c, 'tur9', 'up', this.x, y + (1 - clip) * h * k * 0.8, k, { flip }); c.restore(); return;
+      }
+      S(c, 'tur9', fr, this.x, y, k, { flip });
+      if (this.fl > 0 && !this.dead) S(c, 'tur9', fr, this.x, y, k, { flip, add: 1, a: 0.45 });
+    }
   }
 
   L9.FOES = { Foe, Hat, Arm, Weld, Stump, Fly, Spit, Crawl, Super, Turret };

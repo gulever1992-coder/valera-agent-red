@@ -131,11 +131,12 @@ for sh, src, rows, cols, names, hk in (
     fr = cut(src, 'm', rows, cols, mode='grid', clean='edge')
     pack(sh, fr, VH * hk / hgt(fr, 0), names=names)
 # плевун и ползун стоят на листе неровно — режем по промежуткам между фигурами (сетка резала плевок, руки и труп)
-fr = cut_blobs('l9eSpit_0.jpg', 'm', 2)
+fr = cut_blobs('l9eSpit_1.jpg', 'm', 3)      # вариант-жаба (выбор владельца): 6 шагов, раздувается, плевок, кашель, крик; ряд 3 — 2 лишних кадра на коленях, удар, труп
+print('eSpit9 blobs', len(fr)); fr = fr[:10] + fr[12:14]
 pack('eSpit9', fr, VH * 1.02 / hgt(fr, 0), names=['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'inflate', 'spit', 'crouch', 'scream', 'hit', 'dead'])
-fr = cut('l9eCrawl_0.jpg', 'm', 2, [5, 6], clean=True)
-fr = fr[:5] + [fr[0]] + fr[5:]          # в ряду ползания 5 кадров, шестой — повтор первого
-pack('eCrawl9', fr, VH * 0.75 / hgt(fr, 0), names=['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'drop', 'land', 'leap', 'slash', 'hit', 'dead'])
+fr = cut_blobs('l9eCrawl_1.jpg', 'm', 2)     # вариант с лысым (выбор владельца): 5 кадров по потолку, падение, присел, прыжок, удар, попадание, труп
+print('eCrawl9 blobs', len(fr)); fr = fr[:5] + [fr[1]] + fr[5:11]
+pack('eCrawl9', fr, VH * 1.0 / hgt(fr, 10), names=['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'drop', 'land', 'leap', 'slash', 'hit', 'dead'])
 
 ew = cut('l9eWeld_0.jpg', 'm', 3, [8, 7, 8], clean=True)
 pack('eWeld9', ew[:8] + [ew[9], ew[10], ew[11], ew[12], ew[14], ew[22]], VH * 1.0 / hgt(ew, 0), names=['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'mask', 'flame', 'shield', 'laugh', 'hit', 'dead'])
@@ -485,6 +486,17 @@ if have('l9trapb_0.jpg'):    # паровой клапан (4 стадии), п�
         im = rgba_m('l9trapb_0.jpg', b); return trim(im.crop((0, 0, im.width, top)))
     fr += [blade((16, 581, 534, 731), 62), blade((567, 581, 1084, 731), 62)]
     pack('trap9b', fr, 0.5, anchor='mid', names=['vent0', 'vent1', 'vent2', 'vent3', 'track', 'cable', 'saw0', 'saw1'])
+
+if have('l9fire_0.jpg'):      # зелёный огонь: настенное сопло (холодное/раскалённое), струи, вспышка; решётка в полу и столбы огня
+    B = [(23, 57, 238, 263), (289, 57, 524, 263), (636, 35, 1334, 267), (23, 283, 600, 490), (23, 528, 374, 737), (393, 639, 648, 748), (662, 264, 917, 748), (931, 288, 1187, 748)]
+    pack('fire9', [trim(rgba_m('l9fire_0.jpg', b)) for b in B], 0.5, anchor='mid', names=['noz', 'nozHot', 'jet0', 'jet1', 'puff', 'grate', 'col0', 'col1'])
+if have('l9tur2_0.jpg'):     # выдвижная лазерная турель: люк, открытие, поднята, прицелы, выстрел, попадание, обломки, пустой люк
+    B = [(16, 261, 238, 399), (240, 225, 462, 399), (464, 114, 686, 399), (689, 114, 910, 399), (914, 114, 1151, 399), (1140, 114, 1361, 399),
+         (20, 445, 244, 747), (244, 403, 463, 747), (468, 466, 690, 747), (700, 466, 919, 747), (916, 457, 1137, 747), (1141, 496, 1361, 747)]
+    pack('tur9', [trim(rgba_m('l9tur2_0.jpg', b)) for b in B], 0.5, anchor='mid', names=['hatch', 'open', 'up', 'a1', 'a2', 'a3', 'a4', 'a5', 'fire', 'hit', 'wreck', 'empty'])
+if have('l9lift3_0.jpg'):    # большой грузовой лифт, стена шахты, рычаг, ступень патерностера, цепь, колесо, люлька
+    B = [(0, 4, 644, 385), (661, 4, 956, 385), (979, 4, 1159, 385), (1178, 4, 1353, 385), (31, 457, 350, 694), (446, 383, 517, 768), (611, 383, 1003, 768), (1054, 426, 1325, 721)]
+    pack('lift9b', [trim(rgba_m('l9lift3_0.jpg', b)) for b in B], 0.5, anchor='mid', names=['deck', 'wall', 'levOff', 'levOn', 'step', 'chain', 'hub', 'cradle'])
 
 if have('l9vatdeep_1.jpg'):     # глубокий чан целиком (без растяжки), один кадр — кипение пузырями в коде
     vd = trim(rgba_m('l9vatdeep_1.jpg'))

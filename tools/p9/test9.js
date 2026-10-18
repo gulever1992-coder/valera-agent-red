@@ -84,6 +84,26 @@ window.__t9 = {
         for (const [x, fl, f] of T.cable || []) if (ahead(x + 10) && Math.abs(P.y - fl) < 5) { const u = (tt + f) % 2.2; if (u < 1.0 || u > 2.0) wait = true; }
         if (wait && !f) { I.down.left = I.down.right = false; mv = 0; }
         for (const s of T.saw || []) if (s.bx && Math.abs(P.y - s[2]) < 5 && Math.abs(s.bx - P.x) < 70 && P.onG && jumpCd <= 0) { I.hit.jump = true; jumpCd = 0.5; }
+        // горизонтальный лазер: низко — прыжок, высоко — перекат, иначе ждать
+        for (const h of (M.traps || {}).hlaser || []) if (h[0] - P.x > 0 && h[0] - P.x < 45 && Math.abs(P.y - h[2]) < 5 && P.onG && h.by != null) {
+          const per = h[5], ph = ((P.t + h[6]) % per) / per; if (ph > 0.3 && ph < 0.4) { I.down.right = true; I.down.left = false; } else { I.down.left = I.down.right = false; mv = 0; } }
+        // большой лифт: встать в середину платформы (струи огня из стен до середины не достают)
+        if (M.movers && M.movers.bigL && M.movers.bigL.on === 1 && P.x > 14790 && P.x < 15410 && (!f || Math.abs(P.x - 15100) > 60)) { const d = 15100 - P.x; if (Math.abs(d) > 8) { I.down.right = d > 0; I.down.left = d < 0; } else { I.down.left = I.down.right = false; } mv = 0; }
+        // реакторная: патерностер и колесо — ждать подходящую платформу и прыгать
+        if (P.y > 1000 && M.movers) {
+          const V = M.movers, on = l => P.onG && Math.abs(P.y - l.y) < 4 && P.x >= l.x - 4 && P.x <= l.x + l.w + 4;
+          const stA = V.steps.find(on), cr = V.crads.find(on);
+          const go = (dir, j) => { I.down.right = dir > 0; I.down.left = dir < 0; if (j && P.onG && jumpCd <= 0) { I.hit.jump = true; jumpCd = 0.4; } };
+          const hold = () => { I.down.left = I.down.right = false; mv = 0; };
+          if (!P.onG) { const ts = V.steps.filter(s => !s.hid).concat(V.crads).filter(s => s.y >= P.y - 6 && Math.abs(s.x + s.w / 2 - P.x) < 110).sort((p, q) => Math.abs(p.x + p.w / 2 - P.x) - Math.abs(q.x + q.w / 2 - P.x))[0];
+            const lg = M.solids.filter(r => r[1] > 1000 && r[1] < 1500 && r[1] >= P.y - 6 && P.x > r[0] - 80 && P.x < r[0] + r[2]);
+            if (lg.length) go(1, false); else if (ts) { const d = ts.x + ts.w / 2 - P.x; if (Math.abs(d) > 8) go(Math.sign(d), false); else hold(); } }
+          else if (stA && stA.col.up) { const nb = V.steps.find(s => !s.col.up && !s.hid && Math.abs(s.y - stA.y) < 26); if (nb) go(1, true); else hold(); }
+          else if (stA) { if (stA.y > 1228 && stA.y < 1262) go(1, true); else if (stA.y > 1480) go(1, true); else hold(); }
+          else if (cr) { if (cr.px > 16630 && cr.py < 1250) go(1, true); else hold(); }
+          else if (P.onG && P.x > 15540 && P.x < 15605 && Math.abs(P.y - 1530) < 4) { const a = V.steps.find(s => s.col.up && !s.hid && s.y > 1470 && s.y < 1528); if (a) go(1, true); else hold(); }
+          else if (P.onG && P.x > 16230 && P.x < 16300 && Math.abs(P.y - 1530) < 4) { const c = V.crads.find(c => c.px > 16360 && c.px < 16420 && c.py < 1450); if (c) go(1, true); else { hold(); if (P.x < 16285) go(1, false); } }
+        }
         // ямы и стены
         jumpCd -= dt;
         const pitAhead = M.pits.some(p => p[0] !== 4610 && p[1] - p[0] <= 120 && P.x > p[0] - 26 && P.x < p[0] - 4) || (L.on === 2 && P.y > 300 && P.x > 4560 && P.x < 4610);

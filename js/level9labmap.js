@@ -10,15 +10,20 @@
     [6880, 8950, 'ОТСТОЙНИК'],
     [8950, 10330, 'СОРТИРОВКА'],
     [10330, 11400, 'ЦЕХ ОХРАНЫ'],
+    [11400, 13600, 'КОНВЕЙЕР ПРЕССОВ'],
+    [13600, 14760, 'ОГНЕННЫЙ КОРИДОР'],
+    [14760, 15440, 'ГРУЗОВАЯ ШАХТА'],
+    [15440, 17400, 'РЕАКТОРНАЯ'],
   ];
   const BELTS = [     // конвейеры вместо пола: тянут влево; рука-разгрузчик кладёт тела, в конце лента сбрасывает их в чан
     { x0: 2380, x1: 3520, v: -70, arm: 3175, vat: 2325 },
     { x0: 9060, x1: 10250, v: -95, arm: 10120, vat: 9005 },
+    { x0: 11460, x1: 13500, v: 75 },          // конвейер прессов: везёт вперёд, под прессы и лазеры
   ];
   const UNL = 2.6;
   const DRIPS = [3000, 8070, 9420, 9900];     // протечки с потолка: капли кислоты
   const ARENA = [10330, 11400];
-  let AR_SAVE = 0;     // сколько волн цеха охраны уже отбито (после смерти на арене начинаем с недобитой)
+  let AR_SAVE = 0, LEV_SAVE = 0;     // сколько волн цеха охраны уже отбито (после смерти на арене начинаем с недобитой)
   const HOOKS = [3330, 3560];            // крюки только там, где цепь не проходит сквозь мостки;           // рука-разгрузчик над правым краем ленты, цикл выгрузки
   const LIFT_X = 4700, LIFT_TOP = -170;
 
@@ -31,25 +36,30 @@
   ];
   L9.MAPS.lab = () => {
     const M = {
-      x0: 0, x1: 11400, y0: -420, y1: 400, killY: 430,
+      x0: 0, x1: 17400, y0: -420, y1: 1660, killY: 1700, killAt: x => x < 14760 ? 430 : 1700,
       solids: [
         [0, 330, 955, 80], [1045, 330, 1235, 80], [2370, 330, 1245, 80], [3705, 330, 1215, 80],
         [4920, 330, 300, 80], [4840, LIFT_TOP, 2160, 40], [4600, LIFT_TOP - 260, 2500, 30, 'hide'],     // верхний этаж (обрывается сбросом у 7000); потолок
-        [-40, -420, 40, 830, 'hide'], [11400, -420, 40, 830, 'hide'], [5210, -130, 40, 540, 'hide'],     // за нижним ярусом подъёмника — стена шахты
+        [-40, -420, 40, 830, 'hide'], [17400, -420, 40, 2100, 'hide'], [5210, -130, 40, 540, 'hide'],     // за нижним ярусом подъёмника — стена шахты
         [6866, -130, 20, 460, 'hide'],     // под верхним этажом после сброса — глухо
         [6870, 330, 430, 80], [7550, 330, 400, 80], [8200, 330, 760, 80], [9050, 330, 2350, 80],     // отстойник и сортировка
-        [ARENA[0], -170, 0, 500, 'hide'],     // решётка арены: ширина 0, пока не заперто
+        [ARENA[0], -170, 0, 500, 'hide'], [ARENA[1] - 20, -170, 0, 500, 'hide'],     // заслоны арены: ширина 0, пока не заперто
+        [11400, 330, 3400, 80],     // конвейер прессов и огненный коридор (на ленте плиты нет — noFloor)
+        [14780, 360, 20, 1300, 'hide'], [15400, -170, 20, 1590, 'hide'],     // стенки грузовой шахты
+        [15400, 1530, 200, 80], [15900, 1530, 450, 80], [16800, 1530, 600, 80],     // реакторная (низ шахты)
+        [15860, 1250, 120, 20], [16740, 1290, 160, 20],     // уступы с рычагами
       ],
       walks: [], ladders: [],     // строятся из CW (мостки v5: опоры и лестница — часть рисунка)
       lifts: [{ x: LIFT_X, w: 140, y: 330, y0: 330, y1: LIFT_TOP, on: 0 }],
-      cks: [[140, 330], [2380, 330], [4560, 330], [5000, LIFT_TOP], [6160, LIFT_TOP], [6950, 330], [8890, 330], [10390, 330]],
+      cks: [[140, 330], [2380, 330], [4560, 330], [5000, LIFT_TOP], [6160, LIFT_TOP], [6950, 330], [8890, 330], [10390, 330], [11470, 330], [13620, 330], [14700, 330], [15460, 1530], [15960, 1530]],
       picks: [
         { kind: 'pist', x: 1600, y: WY }, { kind: 'kefir', x: 2100, y: 330 }, { kind: 'grenades', x: 2700, y: WY },
         { kind: 'rocket', x: 4200, y: WY }, { kind: 'kefir', x: 3850, y: WY }, { kind: 'pies', x: 4640, y: 330 }, { kind: 'plasma', x: 5950, y: UY },
         { kind: 'pies', x: 6600, y: LIFT_TOP }, { kind: 'kefir', x: 7700, y: 330 }, { kind: 'grenades', x: 8300, y: WY }, { kind: 'kefir', x: 8905, y: 330 },
         { kind: 'kefir', x: 10180, y: 330 }, { kind: 'mini', x: 10400, y: 330 }, { kind: 'rocket', x: 11060, y: WY },
+        { kind: 'kefir', x: 12560, y: 330 }, { kind: 'grenades', x: 13560, y: 330 }, { kind: 'pies', x: 14720, y: 330 }, { kind: 'plasma', x: 15480, y: 1530 }, { kind: 'kefir', x: 15930, y: 1250 }, { kind: 'kefir', x: 16820, y: 1290 },
       ],
-      pits: [[955, 1045], [2280, 2370], [3615, 3705], [7300, 7550], [7950, 8200], [8960, 9050]],     // в отстойнике два широких — только по мосту     // по 90 px — перепрыгиваются с разбега     // ямы — в них утоплены цистерны с кислотой (средняя — чан в конце конвейера)
+      pits: [[955, 1045], [2280, 2370], [3615, 3705], [7300, 7550], [7950, 8200], [8960, 9050], [15600, 15900, 1530], [16350, 16800, 1530]],     // в отстойнике два широких — только по мосту     // по 90 px — перепрыгиваются с разбега     // ямы — в них утоплены цистерны с кислотой (средняя — чан в конце конвейера)
       noFloor: BELTS.map(b => [b.x0, b.x1]),     // здесь вместо плиты пола — лента конвейера
       vats: [[180, 330], [420, 330], [640, 330], [1420, 330], [1702, 330], [2128, 330], [5100, LIFT_TOP], [5430, LIFT_TOP], [6080, LIFT_TOP],
         [7020, 330], [7660, 330], [8320, 330], [8640, 330], [10560, 330], [11180, 330]],
@@ -63,22 +73,38 @@
         { x: 6930, y: LIFT_TOP, kind: 'gas' }, { x: 7860, y: 330, kind: 'gas' }, { x: 10700, y: 330, kind: 'waste' }],
       riders: [], acid: [], drops: [],
       traps: {     // ловушки (level9traps.js)
-        press: [[6300, LIFT_TOP, 0], [6480, LIFT_TOP, 0.85], [6660, LIFT_TOP, 1.7]],
-        laser: [[7760, 330, 222, 0], [10292, 330, 160, 1.1]],
-        vent: [[1150, 330, 0], [1930, 330, 1.2], [3860, 330, 0.5], [8420, 330, 0.9]],
+        press: [[6300, LIFT_TOP, 0], [6480, LIFT_TOP, 0.85], [6660, LIFT_TOP, 1.7], [11800, 330, 0], [12250, 330, 0.9], [12700, 330, 1.7], [13150, 330, 0.4]],
+        laser: [[12000, 330, 150, 0], [12470, 330, 150, 1.0], [12930, 330, 150, 0.5], [13360, 330, 150, 1.6], [13980, 330, 160, 0], [14060, 330, 160, 0.45], [14140, 330, 160, 0.9]],
+        fcol: [[13700, 330, 0], [13780, 330, 0.3], [13860, 330, 0.6], [16050, 1530, 0], [16150, 1530, 1.2], [17000, 1530, 0.5]],
+        hlaser: [[14260, 14380, 330, 8, 112, 2.6, 0], [14540, 14660, 330, 8, 112, 2.2, 0.8], [17100, 17220, 1530, 8, 112, 2.4, 0.3]],
+        jet: [[14812, 560, 1, 0, 270], [15388, 680, -1, 0.9, 270], [14812, 820, 1, 1.7, 270], [15388, 960, -1, 0.4, 270], [14812, 1100, 1, 1.3, 270], [15388, 1230, -1, 2.1, 270], [14812, 1360, 1, 0.6, 270]],
         saw: [[8480, 8860, 330]],
-        cable: [[7420, WY, 0.3], [5745, UY, 1.1]],
-      }, door: { x: 11340, y: 330, open: 0 }, gateL: { x: ARENA[0] + 20, y: 330 },
+      }, door: { x: 17340, y: 1530, open: 0 }, gateL: { x: ARENA[0] + 20, y: 330 }, gateR: { x: ARENA[1] - 30, y: 330 },
+      movers: {
+        big: { x: 14798, w: 602, y0: 330, y1: 1530, waves: [[420, [['Hat', 120], ['Hat', 470]]], [600, [['Stump', 220], ['Fly', 380]]], [780, [['Hat', 90], ['Stump', 480]]], [960, [['Spit', 160], ['Fly', 420]]], [1140, [['Hat', 120], ['Hat', 500], ['Stump', 300]]], [1320, [['Fly', 150], ['Fly', 450]]]] },
+        pater: [{ x: 15660, up: 1, top: 1150, bot: 1640 }, { x: 15790, up: 0, top: 1150, bot: 1640 }],
+        wheel: [{ x: 16520, y: 1320, r: 160, n: 4, w: 0.45 }],
+      },
+      levers: [{ x: 15930, y: 1250 }, { x: 16840, y: 1290 }],
     };
     for (const [x, y, n, l] of CW) { const r = L9.LAB.cwBuild(x, y, n, l); M.walks.push(r.w); for (const l of r.lads) { l[2] = y < 0 ? LIFT_TOP : 330; M.ladders.push(l); } }
     // ---------- враги по зонам ----------
     M.spawnList = [
-      ['Hat', 760, 330], ['Hat', 1210, WY], ['Arm', 1500, 330], ['Turret', 2270, 260, { dir: -1 }], ['Hat', 1700, WY], ['Stump', 2050, 330],
+      ['Hat', 760, 330], ['Hat', 1210, WY], ['Arm', 1500, 330], ['Turret', 2200, 330], ['Hat', 1700, WY], ['Stump', 2050, 330],
       ['Spit', 2600, WY], ['Stump', 2600, 330], ['Stump', 2900, 330], ['Weld', 3300, 330], ['Fly', 3500, 120], ['Crawl', 3900, 60, { ceil: 60 }], ['Hat', 4150, WY], ['Weld', 4100, 330],
       ['Super', 5550, LIFT_TOP], ['Spit', 5900, UY], ['Arm', 6000, LIFT_TOP],
       ['Hat', 6430, LIFT_TOP], ['Fly', 6700, -330], ['Arm', 6840, LIFT_TOP],
-      ['Stump', 7200, 330], ['Hat', 7420, WY], ['Spit', 7860, WY], ['Hat', 7720, 330], ['Fly', 8100, 90], ['Hat', 8250, WY], ['Weld', 8380, 330], ['Turret', 8930, 260, { dir: -1 }],
+      ['Stump', 7200, 330], ['Hat', 7420, WY], ['Spit', 7860, WY], ['Hat', 7720, 330], ['Fly', 8100, 90], ['Hat', 8250, WY], ['Weld', 8380, 330], ['Turret', 8900, 330],
       ['Stump', 9450, 330], ['Fly', 9650, 120], ['Stump', 9800, 330], ['Hat', 10050, 330], ['Crawl', 9900, 60, { ceil: 60 }],
+      // подкрепление по всему уровню
+      ['Hat', 330, 330], ['Stump', 620, 330], ['Spit', 1000, WY], ['Fly', 1900, 100], ['Hat', 2700, 330], ['Fly', 3050, 100], ['Hat', 3800, WY], ['Stump', 4300, 330],
+      ['Fly', 7600, 100], ['Stump', 8620, 330], ['Hat', 9300, 330], ['Fly', 10120, 100],
+      // конвейер прессов, огненный коридор
+      ['Fly', 11900, 100], ['Hat', 12100, 330], ['Stump', 12330, 330], ['Fly', 12550, 90], ['Hat', 12660, 330], ['Weld', 12860, 330], ['Stump', 13020, 330], ['Fly', 13250, 100],
+      ['Turret', 13640, 330], ['Hat', 13920, 330], ['Fly', 14100, 110], ['Crawl', 14350, 150, { ceil: 150 }], ['Turret', 14740, 330],
+      // реакторная
+      ['Turret', 15520, 1530], ['Fly', 15720, 1300], ['Spit', 15950, 1250], ['Hat', 16100, 1530], ['Turret', 16200, 1530], ['Fly', 16500, 1230], ['Crawl', 16600, 1200, { ceil: 1200 }],
+      ['Hat', 16880, 1290], ['Hat', 16950, 1530], ['Turret', 17120, 1530], ['Super', 17220, 1530],
     ];
     const WAVES = [     // цех охраны: волны прыгают сверху (с мостков и из-за края экрана), пока заслон закрыт
       [['Hat', 10750, 240], ['Hat', 11220, 240], ['Stump', 10600, 240]],
@@ -89,18 +115,21 @@
       const x0 = M.cks[ck][0];
       for (const [tp, x, y, o] of M.spawnList) if (x > x0 + 200) P.foes.push(new (F()[tp])(M, x, y, o || {}));
       if (ck >= 3) { M.lifts[0].y = LIFT_TOP; M.lifts[0].on = 2; }
+      const arCk = M.cks.findIndex(c => c[0] === 10390), rkCk = M.cks.findIndex(c => c[0] === 15460);
+      L9.LAB.moversInit(M, ck >= rkCk);
+      if (ck < rkCk) LEV_SAVE = 0; M.levers.forEach((l, i) => l.on = i < LEV_SAVE ? 1 : 0);
       M.picks = M.picks.filter(k => k.x > x0 + 40);
       M.covers.forEach(c => c.hp = 6); M.props.forEach(p => p.hp = 2);
-      M.lastZone = null; M.tvIdx = 0; M.ar = null; if (ck < M.cks.length - 1) AR_SAVE = 0;
+      M.lastZone = null; M.tvIdx = 0; M.ar = ck > arCk ? { w: WAVES.length, t: 0, gate: 0, done: 1 } : null; if (ck < arCk) AR_SAVE = 0;
       if (!ck) lv.say('ПРИЦЕЛ {up}/{down}+СТРЕЛКИ   КУВЫРОК [Q]   ГРАНАТА {throw}', 4);
     };
     M.zoneAt = x => ZONES.find(z => x >= z[0] && x < z[1]) || ZONES[ZONES.length - 1];
     M.beltAt = (x, y) => { if (Math.abs(y - 330) >= 2) return 0; for (const b of BELTS) if (x > b.x0 && x < b.x1) return b.v; return 0; };
     M.hazAt = (x, y, P) => {
-      for (const p of M.pits) if (x > p[0] && x < p[1] && y > 334 && y < 400) {
-        if (p[1] - p[0] > 120) { P.x = p[0] - 30; P.y = 330; P.vy = 0; return [25, x + 40]; }     // широкий чан: выбрасывает на ближний край
+      for (const p of M.pits) { const fy = p[2] || 330; if (x > p[0] && x < p[1] && y > fy + 4 && y < fy + 70) {
+        if (p[1] - p[0] > 120) { P.x = p[0] - 30; P.y = fy; P.vy = 0; return [25, x + 40]; }     // широкий чан: выбрасывает на ближний край
         return [12, x];
-      }
+      } }
       for (const a of M.acid) if (Math.abs(a.x - x) < 22 && Math.abs(a.y - y) < 4) return [8, a.x];
       return null;
     };
@@ -130,7 +159,7 @@
       // конвейер: рука с потолка кладёт тело на ленту (цикл UNL сек), лента везёт влево, в конце тело падает в чан с жижей
       M.unlT = (M.unlT || 0) + dt; const ut = M.unlT % UNL;
       if (ut < M.unlPrev) { M.rideN = (M.rideN || 0) + 1; }
-      if (M.unlPrev < UNL * 0.55 && ut >= UNL * 0.55) BELTS.forEach((b, i) => M.riders.push({ x: b.arm, y: 330, b, k: ['bum', 'drunk', 'thug', 'lady'][(M.rideN + i) % 4] }));
+      if (M.unlPrev < UNL * 0.55 && ut >= UNL * 0.55) BELTS.forEach((b, i) => b.arm && M.riders.push({ x: b.arm, y: 330, b, k: ['bum', 'drunk', 'thug', 'lady'][(M.rideN + i) % 4] }));
       M.unlPrev = ut;
       for (const r of M.riders) {
         if (!r.fall) { r.x += r.b.v * dt; if (r.x < r.b.x0 + 8) { r.fall = 1; r.vx = -(r.x - r.b.vat) / 0.42; r.vy = -160; r.rot = 0; }     /* падает точно в середину чана в конце ленты */ }
@@ -148,19 +177,20 @@
       }
       M.drops = M.drops.filter(d => !d.dead && d.y < 420);
       // цех охраны: войдя, Валера оказывается взаперти — решётка падает, сверху сыплются волны охраны
-      const gw = M.solids.find(r => r[4] === 'hide' && r[0] === ARENA[0] && r[1] === -170);
-      if (!M.ar && P.x > ARENA[0] + 90 && P.y > 250) { M.ar = { w: AR_SAVE, t: 0, gate: 0 }; gw[2] = 24; Sound.play('door'); lv.say('ЗАПЕРТО! ОТБИВАЙСЯ!', 2); }
+      const gw = M.solids.find(r => r[4] === 'hide' && r[0] === ARENA[0] && r[1] === -170), gr = M.solids.find(r => r[4] === 'hide' && r[0] === ARENA[1] - 20 && r[1] === -170);
+      if (!M.ar && P.x > ARENA[0] + 90 && P.y > 250) { M.ar = { w: AR_SAVE, t: 0, gate: 0 }; gw[2] = 24; gr[2] = 24; Sound.play('door'); lv.say('ЗАПЕРТО! ОТБИВАЙСЯ!', 2); }
       if (M.ar && !M.ar.done) {
         const a = M.ar; a.t += dt; a.gate = Math.min(1, a.gate + dt * 2);
         const alive = P.foes.some(f => !f.dead && f.x > ARENA[0]);
         if (!alive && a.t > 1) {
           if (a.w < WAVES.length) { for (const [tp, x, y, o] of WAVES[a.w]) P.foes.push(new (F()[tp])(M, x, y, o || {})); AR_SAVE = a.w; a.w++; a.t = 0; if (a.w > 1) lv.say('ВОЛНА ' + a.w + '!', 1.4); if (a.w === WAVES.length) M.picks.push({ kind: 'kefir', x: 10760, y: WY, t: 0 }); }
-          else { a.done = 1; gw[2] = 0; Sound.play('door'); lv.say('ЦЕХ ЗАЧИЩЕН!', 2); }
+          else { a.done = 1; gw[2] = 0; gr[2] = 0; Sound.play('door'); lv.say('ЦЕХ ЗАЧИЩЕН! ДАЛЬШЕ — К КОНВЕЙЕРУ', 2.4); }
         }
       }
       if (M.ar && M.ar.done) M.ar.gate = Math.max(0, M.ar.gate - dt);
       // выход: дверь в конце цеха охраны
-      const d = M.door; if (!d.open && P.x > d.x - 120 && Math.abs(P.y - d.y) < 10) { if (!M.ar || !M.ar.done) P.hintAt('Дверь заблокирована — зачисти цех!', 2); else { d.open = 1; d.t = 0; Sound.play('door'); } }
+      L9.LAB.moversUpdate(M, P, dt, lv); L9.LAB.leversUpdate(M, P, lv); LEV_SAVE = Math.max(LEV_SAVE, M.levers.filter(l => l.on).length);
+      const d = M.door; if (!d.open && P.x > d.x - 120 && Math.abs(P.y - d.y) < 10) { if (M.levers.some(l => !l.on)) P.hintAt('Дверь заперта — найди и переключи рычаги (' + M.levers.filter(l => l.on).length + '/' + M.levers.length + ')', 2); else { d.open = 1; d.t = 0; Sound.play('door'); } }
       if (d.open) d.t = (d.t || 0) + dt;
       if (d.open && d.t > 1.4 && P.x > d.x - 30 && !M.leaving) { M.leaving = 1; lv.next(); }
       if (d.open && d.t <= 1.4 && P.x > d.x - 46) P.x = d.x - 46;     // пока створки не разъехались — не пройти
@@ -198,7 +228,7 @@
       if (bottom < 360 && !noFill) { c.fillStyle = d[2] || '#04080b'; c.fillRect(0, Math.round(bottom) - 1, 640, 362 - bottom); }
     };
     M.drawBack = (c, cx, cy) => {
-      const fy = 330 - cy;                             // экранная высота пола первого этажа
+      const fy = (cx > 14400 ? 330 + clamp((cy - 100) / 1200, 0, 1) * 1200 : 330) - cy;     // экранная высота пола (в грузовой шахте и реакторной пол уходит на 1200 вниз)
       { const im = L9.img.px1, d = PX().px1; if (im && d) { const h = 400, w = d[0] * h / d[1], y = clamp(-20 - cy * 0.06, 360 - h, 0); for (let x = -((cx * 0.12 % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); } }
       c.fillStyle = 'rgba(2,6,10,0.15)'; c.fillRect(0, 0, 640, 360);
       layer(c, 'px2', 250, 0.32, cx, 268 + (fy - 260) * 0.3);
@@ -208,7 +238,7 @@
       c.fillStyle = 'rgba(2,6,10,0.12)'; c.fillRect(0, 0, 640, 360);
     };
     // рука-разгрузчик с потолка: опускает тело на ленту, раскрывает клешню, поднимается за следующим (цикл UNL)
-    M.drawUnloader = (c, P) => { for (const b of BELTS) if (Math.abs(b.arm - P.cam.x - 320) < 480) M.drawArm(c, P, b.arm); };
+    M.drawUnloader = (c, P) => { for (const b of BELTS) if (b.arm && Math.abs(b.arm - P.cam.x - 320) < 480) M.drawArm(c, P, b.arm); };
     M.drawArm = (c, P, ARM_X) => {
       const im = L9.img.unload9, D = L9D.unload9; if (!im || !D) return;
       const u = (M.unlT || 0) % UNL / UNL, low = 300, high = Math.min(150, P.cam.y - 70);     // сверху — из-за края экрана
@@ -222,10 +252,14 @@
       c.imageSmoothingEnabled = false;
       if (u < 0.55) S(c, 'body9', ['bum', 'drunk', 'thug', 'lady'][(M.rideN || 0) % 4], ARM_X, clawY + 30, 0.85);     // несёт тело (за шиворот)
     };
+    M.drawBackWorld = (c, P) => {      // грузовая шахта: стены из панелей во всю высоту
+      if (P.cam.x + 640 < 14700 || P.cam.x > 15500) return; const [ww, wh] = L9.size('lift9b', 'wall'), k = 1.5, y0 = Math.max(300, P.cam.y - 60), y1 = Math.min(1620, P.cam.y + 420);
+      c.imageSmoothingEnabled = true; for (let x = 14760; x < 15440; x += ww * k - 2) for (let y = y0 - ((y0 - 300) % (wh * k - 2)); y < y1; y += wh * k - 2) S(c, 'lift9b', 'wall', x + ww * k / 2, y + wh * k / 2, k, { a: 0.85 }); c.imageSmoothingEnabled = false;
+    };
     M.drawOnFloor = (c, P) => {     // поверх плиты пола: лента конвейера с телами, цистерны в ямах
       const t = P.t;
       // лента конвейера: бесшовная середина крутится влево, по краям торцы с барабанами; на ней лежат тела
-      for (const B of BELTS) { if (B.x1 < P.cam.x - 100 || B.x0 > P.cam.x + 740) continue; const BELT = [B.x0, B.x1]; const BK = 1.8, [ew] = L9.size('belt9b', 'endL'), [mw, mh] = L9.size('belt9b', 'mid'), y = 316 + mh * BK / 2, x0 = BELT[0] + ew * BK * 0.45, x1 = BELT[1] - ew * BK * 0.45, sh = (t * -B.v) % (mw * BK - 1);
+      for (const B of BELTS) { if (B.x1 < P.cam.x - 100 || B.x0 > P.cam.x + 740) continue; const BELT = [B.x0, B.x1]; const BK = 1.8, [ew] = L9.size('belt9b', 'endL'), [mw, mh] = L9.size('belt9b', 'mid'), y = 316 + mh * BK / 2, x0 = BELT[0] + ew * BK * 0.45, x1 = BELT[1] - ew * BK * 0.45, PER = mw * BK - 1, sh = ((t * -B.v) % PER + PER) % PER;
         c.save(); c.beginPath(); c.rect(x0, y - 40, x1 - x0, 80); c.clip(); for (let x = x0 - sh; x < x1; x += mw * BK - 1) S(c, 'belt9b', 'mid', x + mw * BK / 2, y, BK); c.restore();     /* лента одним куском едет по всей длине */
         S(c, 'belt9b', 'endL', BELT[0] + ew * BK / 2, y, BK); S(c, 'belt9b', 'endR', BELT[1] - ew * BK / 2, y, BK); }
       for (const r of M.riders) {     // упавшее тело уходит под поверхность жижи (рисуем только то, что выше неё)
@@ -235,7 +269,7 @@
       M.drawUnloader && M.drawUnloader(c, P);
       // ямы: утопленные цистерны с кислотой (кадры поверхности 0-1-2-1)
       for (const p of M.pits) {      // глубокий чан целиком (без растяжки): кромка на уровне пола, стенки уходят вниз; кипение — пузыри поверх
-        const [vw, vh] = L9.size('vatD9', 'v'), k = (p[1] - p[0] + 14) / vw, cx = (p[0] + p[1]) / 2, top = 327;
+        const [vw, vh] = L9.size('vatD9', 'v'), k = (p[1] - p[0] + 14) / vw, cx = (p[0] + p[1]) / 2, top = (p[2] || 330) - 3;
         S(c, 'vatD9', 'v', cx, top + vh * k / 2, k);
         for (let i = 0; i < 3; i++) { const ph = (t * 0.7 + i * 0.37 + p[0] * 0.001) % 1; S(c, 'fxL9', 'acid', cx + Math.sin(i * 2.3 + p[0]) * (p[1] - p[0]) * 0.3, top + 9 - ph * 6, 0.12 + ph * 0.06, { add: 1, a: Math.sin(ph * Math.PI) * 0.8 }); }
       }
@@ -270,12 +304,13 @@
       for (const a of M.acid) S(c, 'fxL9', 'acidHit', a.x, a.y - 4, 0.45, { a: clamp((a.life - a.t) / 0.6, 0, 1) });
       for (const d of M.drops) S(c, 'fxL9', 'acid', d.x, d.y, 0.09, { add: 1 });
       for (const x of DRIPS) if (Math.abs(x - P.cam.x - 320) < 400) { const f = L9.LAB.floorBelow(M, x, P.cam.y, 400); if (f != null) S(c, 'fxL9', 'acidHit', x, f - 1, 0.22, { a: 0.35 + Math.sin(t * 3 + x) * 0.1 }); }     // лужа под протечкой — предупреждение
+      L9.LAB.moversDraw(c, M, P); L9.LAB.leversDraw(c, M, P);
       L9.LAB.trapsDraw(c, M, P);
       // подборы
       for (const k of M.picks) { S(c, 'fxL9', 'spark', k.x, k.y - 14, 0.4 + Math.sin(k.t * 5) * 0.08, { add: 1 }); S(c, 'pick9', k.kind, k.x, k.y - 16 + Math.sin(k.t * 4) * 2, 1); }
       // шахта подъёмника: две цельные стойки от лебёдки до дна, лебёдка под потолком, тросы до траверсы кабины
       const L = M.lifts[0]; M.drawShaft(c, L);
-      if (M.ar && M.ar.gate > 0) { const g = M.gateL, k = M.ar.gate; c.save(); c.beginPath(); c.rect(g.x - 60, g.y - 120, 120, 122); c.clip(); for (let i = 0; i < 2; i++) S(c, 'cover9', 'barrier', g.x, g.y + 2 - i * 40 + (1 - k) * 90, 1); c.restore(); }     // заслон входа в цех охраны: выезжает из пола
+      if (M.ar && M.ar.gate > 0) for (const g of [M.gateL, M.gateR]) { const k = M.ar.gate; c.save(); c.beginPath(); c.rect(g.x - 60, g.y - 120, 120, 122); c.clip(); for (let i = 0; i < 2; i++) S(c, 'cover9', 'barrier', g.x, g.y + 2 - i * 40 + (1 - k) * 90, 1); c.restore(); }     // заслон входа в цех охраны: выезжает из пола
       { const d = M.door, f = d.open ? Math.min(5, (d.t || 0) / 1.4 * 6 | 0) : 0; S(c, 'gate9', 'g' + f, d.x, d.y + 2, 0.62); }     // ворота выхода: открываются по кадрам
     };
     const LK = 1.76, strip = (c, sh, fr, x, y0, y1, k) => { const h = L9.size(sh, fr)[1] * k; if (y1 > y0) S(c, sh, fr, x, (y0 + y1) / 2, k, { sy: (y1 - y0) / h }); };
@@ -285,7 +320,7 @@
       strip(c, 'lift9', 'cable', cxl, wb - 4, carTop + 4, LK);
       S(c, 'lift9', 'winch', cxl, wTop + wh * LK / 2, LK);
     };
-    M.drawCar = (c, L) => { const [, ch] = L9.size('lift9', 'car'), top = L.y - L9D.lift9.carDeck * 0.5 * LK; S(c, 'lift9', 'car', L.x + L.w / 2, top + ch * LK / 2, LK); };
+    M.drawCar = (c, L) => { if (L.kind === 'big') return L9.LAB.bigLiftDraw(c, L, L9.PARTS.lab); if (L.kind) return; const [, ch] = L9.size('lift9', 'car'), top = L.y - L9D.lift9.carDeck * 0.5 * LK; S(c, 'lift9', 'car', L.x + L.w / 2, top + ch * LK / 2, LK); };
     M.drawHud = (c, P) => { if (M.lifts[0].on === 1) G.text('ПОДЪЁМ: ' + Math.round((1 - (M.lifts[0].y - M.lifts[0].y1) / (M.lifts[0].y0 - M.lifts[0].y1)) * 100) + '%', 320, 30, { align: 'center', size: 8, color: '#ffd84a' }); };
     return M;
   };
