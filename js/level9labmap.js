@@ -241,13 +241,8 @@
       const along = mx * ux + my * uy, n = -mx * uy + my * ux, nR = -(b.x + 108) * uy + (b.y0 + 90) * ux;
       c.save(); c.translate(320, 180); c.rotate(th); fn(nR - n, along); c.restore();
     };
-    M.drawReactFront = (c, cx, cy, w) => {     // реакторная: колонны переднего плана как в погоне (стекло с жижей и бетон), быстрее игрового плана
-      const step = 760, off = cx * 1.35, by = DY + 130 - cy; c.save(); c.beginPath(); c.rect(640 * (1 - w), 0, 640 * w, 360); c.clip();
-      for (let i = Math.floor((off - 300) / step); i * step < off + 1000; i++) S(c, 'arch9', ((i % 3) + 3) % 3 ? 'pillar' : 'glass', i * step - off + 200, by, 1.1);
-      c.restore();
-    };
     M.drawOver = (c, cx, cy) => {     // передний план спуска: тёмные рёбра крепи поперёк тоннеля, быстрее игрового плана (объём)
-      const mid = cx + 320, r = (v, a0, a1) => clamp((v - a0) / (a1 - a0), 0, 1), bI = clamp((cx + 640 - M.portalX()) / 640, 0, 1), bO = clamp((cx + 640 - M.exitX()) / 640, 0, 1); if (bO > 0) M.drawReactFront(c, cx, cy, bO); if (bI <= bO) return;
+      const mid = cx + 320, r = (v, a0, a1) => clamp((v - a0) / (a1 - a0), 0, 1), bI = clamp((cx + 640 - M.portalX()) / 640, 0, 1), bO = clamp((cx + 640 - M.exitX()) / 640, 0, 1); if (bI <= bO) return;
       const fc = M.fgCv || (M.fgCv = document.createElement('canvas')); fc.width = 640; fc.height = 360; const g = fc.getContext('2d');     // рёбра рисуем отдельно и затемняем до силуэта
       M.tunFrame(g, cx, cy, (fy, along) => { const step = 1100, off = along * 1.4; for (let i = Math.floor((off - 900) / step); i * step < off + 900; i++) S(g, 'arch9', 'pillar', i * step - off, fy + 230, 1.5); });
       g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(3,7,10,0.72)'; g.fillRect(0, 0, 640, 360);
@@ -270,9 +265,11 @@
           tl2('tunWall', along * 0.3, fy - 660, 400); tl2('tunWall', along * 0.3, fy - 260, 400); c.fillStyle = 'rgba(2,6,10,0.25)'; c.fillRect(-800, -800, 1600, 1600); tl2('tunCeil', along * 0.5, fy - 460, 190); }); };
       const tl2 = (n, off, y, h) => { const im = L9.img[n]; if (!im) return; const w = im.width / im.height * h; for (let x = -((off % w) + w) % w - 2 * w; x < 760; x += w) c.drawImage(im, Math.floor(x) - 380, Math.round(y), Math.ceil(w) + 1, h); };
       // реакторная — слоями, как в погоне: дальний зал bgC почти неподвижен, ряд колб (средний) и балки под сводом (ближний) едут быстрее
-      const reactBg = () => { const fl = DY - cy; c.fillStyle = '#04070a'; c.fillRect(0, 0, 640, 360);     // реакторная — продолжение тоннеля погони: стена с трубами, свод, параллакс по x и y
-        tl('tunWall', 0.3, fl - 420 + (cy - DY + 292) * 0.15, 520); tl('tunWall', 0.3, fl - 940 + (cy - DY + 292) * 0.15, 520); c.fillStyle = 'rgba(2,6,10,0.22)'; c.fillRect(0, 0, 640, 360);
-        tl('tunCeil', 0.5, fl - 600 + (cy - DY + 292) * 0.3, 220); };
+      const reactBg = () => {     // реакторная — слоями, как общий план цеха: дальний зал (rx1), средний ряд башен и сосудов (rx2), ближние машины (rx3)
+        const cy2 = cy - (DY - 330), f2 = DY - cy; c.fillStyle = '#04070a'; c.fillRect(0, 0, 640, 360);
+        { const im = L9.img.rx1, d = PX().rx1; if (im && d) { const h = 400, w = d[0] * h / d[1], y = clamp(-20 - cy2 * 0.06, 360 - h, 0); for (let x = -((cx * 0.12 % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); } }
+        c.fillStyle = 'rgba(2,6,10,0.15)'; c.fillRect(0, 0, 640, 360); layer(c, 'rx2', 250, 0.32, cx, 268 + (f2 - 260) * 0.3);
+        c.fillStyle = 'rgba(2,6,10,0.22)'; c.fillRect(0, 0, 640, 360); layer(c, 'rx3', 215, 0.6, cx, 300 + (f2 - 260) * 0.62); };
       const zoneBg = (n, wIn, wOut, kx, yy) => { const im = L9.img[n], d = PX()[n]; if (!im || !d || wIn <= wOut) return; const h = d[1], w = d[0], y = clamp(yy, 360 - h, 0);
         const x0 = 640 * (1 - wIn), x1 = 640 * (1 - wOut), draw = n === 'bgB' ? tunBg : n === 'bgC' ? reactBg : () => { for (let x = -((cx * kx % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); };
         for (let i = 0; i < 4; i++) { const e = 10 * (4 - i), a = x0 > 0 ? x0 - e : 0, b = x1 < 640 ? x1 + e : 640; if (i < 3 && a <= 0 && b >= 640) continue;

@@ -1,6 +1,7 @@
 # Сборка ассетов уровня 9: art_src/l9/*.jpg (Flow) -> assets/l9/*.png|jpg + js/l9_data.js
 # Запуск: py tools/build_l9.py [--debug]   (потом py tools/optimize_assets.py)
 import os, sys, json
+from PIL import ImageFile as _IF; _IF.LOAD_TRUNCATED_IMAGES = True     # картинки из Flow через форму иногда приходят без последних байт
 sys.path.insert(0, os.path.dirname(__file__))
 from l9lib import *
 import l9lib
@@ -290,6 +291,10 @@ def save_px(out, im, h):
         im.save(os.path.join(OUT, out + '.jpg'), quality=90); DATA['_bg'][out] = {'w': im.width, 'h': h}
     bot = np.asarray(im.convert('RGB'))[-6:].reshape(-1, 3).mean(0).astype(int).tolist()     # цвет низа слоя — им заливаем всё ниже, чтобы не было ступеньки
     DATA.setdefault('_px', {})[out] = [im.width, h, '#%02x%02x%02x' % tuple(bot)]
+if have('l9rx1_1.jpg'):     # реакторная, те же три плана, что у цеха: дальний зал, средний ряд, ближние машины
+    save_px('rx1', seamless(Image.open(os.path.join(SRC, 'l9rx1_1.jpg')).convert('RGB')), 470)
+    save_px('rx2', loop2(rgba_m('l9rx2_0.jpg'), rgba_m('l9rx2_1.jpg'), 160), 330)
+    save_px('rx3', seamless(rgba_m('l9rx3_1.jpg'), 160), 300)
 if have('l9px1_1.jpg'):     # дальний план: свод пещеры, туман, силуэты башен
     save_px('px1', seamless(Image.open(os.path.join(SRC, 'l9px1_1.jpg')).convert('RGB')), 470)
 if have('l9px2_1.jpg'):     # средний план: резервуары, фермы, стеллажи капсул (два кадра в одну бесшовную петлю)
