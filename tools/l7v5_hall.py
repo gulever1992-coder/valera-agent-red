@@ -130,3 +130,4 @@ if __name__ == '__main__':
 
 # Господин Икс — только глаза и улыбка на чёрном (перезаписывает p_mrx, mrx_box, hmrx)
 import subprocess as _sp, sys as _sys; _sp.run([_sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "mrx_eyes.py")])
+import subprocess as _sp2, sys as _sys2; _sp2.run([_sys2.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "valera_slide.py")])     # Валера на слайде «в прицеле»
