@@ -226,6 +226,13 @@
       for (let x = -((off * kx % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), top, Math.ceil(w) + 1, h);
       if (bottom < 360 && !noFill) { c.fillStyle = d[2] || '#04080b'; c.fillRect(0, Math.round(bottom) - 1, 640, 362 - bottom); }
     };
+    // портал входа в наклонный тоннель: граница фона цеха и тоннеля стоит в мире здесь, её закрывают арка и колонна
+    M.portalX = () => (M.movers && M.movers.big ? M.movers.big.x : 12440) - 40;
+    M.drawPortal = (c, P) => {
+      const X = M.portalX(); if (Math.abs(X - P.cam.x - 320) > 700) return; const [aw, ah] = L9.size('part9', 'arch'), k = 310 / aw;
+      S(c, 'part9', 'arch', X + 150, 392 - ah * k / 2, k);     // полукруглая арка над стартом тележки: левая нога — на границе фонов
+      L9.LAB.drawColumn(c, X, P.cam.y - 40, 338, 1.25);     // массивная колонна-откос портала закрывает шов во всю высоту
+    };
     // наклонный спуск: тоннель повёрнут вдоль рельса (уклон 0.3). Кадр тоннеля: x — вдоль рельса, y — поперёк; fy — где в этом кадре проходит рельс
     M.tunFrame = (c, cx, cy, fn) => {
       const b = M.movers && M.movers.big; if (!b) return; const th = Math.atan(0.3), ux = Math.cos(th), uy = Math.sin(th), mx = cx + 320, my = cy + 180;
@@ -233,7 +240,7 @@
       c.save(); c.translate(320, 180); c.rotate(th); fn(nR - n, along); c.restore();
     };
     M.drawOver = (c, cx, cy) => {     // передний план спуска: тёмные рёбра крепи поперёк тоннеля, быстрее игрового плана (объём)
-      const mid = cx + 320, r = (v, a0, a1) => clamp((v - a0) / (a1 - a0), 0, 1), bI = r(mid, 12200, 12700), bO = r(mid, 15500, 15900); if (bI <= bO) return;
+      const mid = cx + 320, r = (v, a0, a1) => clamp((v - a0) / (a1 - a0), 0, 1), bI = clamp((cx + 640 - M.portalX()) / 640, 0, 1), bO = r(mid, 15500, 15900); if (bI <= bO) return;
       const fc = M.fgCv || (M.fgCv = document.createElement('canvas')); fc.width = 640; fc.height = 360; const g = fc.getContext('2d');     // рёбра рисуем отдельно и затемняем до силуэта
       M.tunFrame(g, cx, cy, (fy, along) => { const step = 1100, off = along * 1.4; for (let i = Math.floor((off - 900) / step); i * step < off + 900; i++) S(g, 'arch9', 'pillar', i * step - off, fy + 230, 1.5); });
       g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(3,7,10,0.72)'; g.fillRect(0, 0, 640, 360);
@@ -247,13 +254,13 @@
       c.fillStyle = 'rgba(2,6,10,0.22)'; c.fillRect(0, 0, 640, 360);
       // фоны зон: шахта с ярусами у подъёмника, наклонный тоннель, зал реактора — плавно сменяют общий план; по вертикали свой параллакс
       const ramp = (v, a0, a1) => clamp((v - a0) / (a1 - a0), 0, 1), mid = cx + 320;
-      const bI = ramp(mid, 12200, 12700), bO = ramp(mid, 15500, 15900), cI = bO;
+      const bI = clamp((cx + 640 - M.portalX()) / 640, 0, 1), bO = ramp(mid, 15500, 15900), cI = bO;
       const wA = 0, wB = bI * (1 - bO), wC = cI;
       // фон зоны не просвечивает сквозь соседний, а сменяет его «шторкой»: видимая полоса экрана от 640*(1-вход) до 640*(1-выход), край мягкий (40 px)
       // наклонный спуск — тоннель как в погоне: дальняя стена и свод с трубами отдельными слоями (свой параллакс по x и y — объём)
       const tl = (n, kx, y, h) => { const im = L9.img[n]; if (!im) return; const w = im.width / im.height * h; for (let x = -((cx * kx % w) + w) % w - w; x < 700; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); };
       const tunBg = () => { c.fillStyle = '#04070a'; c.fillRect(0, 0, 640, 360); M.tunFrame(c, cx, cy, (fy, along) => {
-          tl2('tunWall', along * 0.3, fy - 730, 400); tl2('tunWall', along * 0.3, fy - 330, 400); c.fillStyle = 'rgba(2,6,10,0.25)'; c.fillRect(-800, -800, 1600, 1600); tl2('tunCeil', along * 0.5, fy - 340, 150); }); };
+          tl2('tunWall', along * 0.3, fy - 660, 400); tl2('tunWall', along * 0.3, fy - 260, 400); c.fillStyle = 'rgba(2,6,10,0.25)'; c.fillRect(-800, -800, 1600, 1600); tl2('tunCeil', along * 0.5, fy - 460, 190); }); };
       const tl2 = (n, off, y, h) => { const im = L9.img[n]; if (!im) return; const w = im.width / im.height * h; for (let x = -((off % w) + w) % w - 2 * w; x < 760; x += w) c.drawImage(im, Math.floor(x) - 380, Math.round(y), Math.ceil(w) + 1, h); };
       const zoneBg = (n, wIn, wOut, kx, yy) => { const im = L9.img[n], d = PX()[n]; if (!im || !d || wIn <= wOut) return; const h = d[1], w = d[0], y = clamp(yy, 360 - h, 0);
         const x0 = 640 * (1 - wIn), x1 = 640 * (1 - wOut), draw = n === 'bgB' ? tunBg : () => { for (let x = -((cx * kx % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); };
@@ -306,6 +313,7 @@
       }
     };
     M.drawMid = (c, P) => {
+      M.drawPortal(c, P);
       const t = P.t;
       // капсулы-прессы с людьми (цикл: человек -> пресс -> жижа -> слив)
       // пресс-капсулы: один раз, когда Валера рядом — пресс выжимает «сок», дальше капсула стоит полной зелёной жижи
