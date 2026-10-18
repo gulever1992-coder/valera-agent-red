@@ -279,17 +279,18 @@
   };
   // раскладка мостка: [x, y, пролётов, индекс пролёта с лестницей] -> куски cw9 и лестница
   // опоры под полом: по сетке мира (без двойных на стыках плит); капитель — как нарисована, ствол повторяется вниз, база — если ниже есть пол
-  LAB.drawPillars = (c, M, x0, x1, FH) => {     // бетонные опоры под полом: трапеция-капитель под плитой, ствол повторяется до пола ниже или края экрана
-    const im = L9.img.pil9; if (!im) return; const D9 = L9D.pil9, C = D9.f[0], Sh = D9.f[1], k = 1.0, cw = C[2] * 0.5 * k, ch = C[3] * 0.5 * k, sw = Sh[2] * 0.5 * k, sh = Sh[3] * 0.5 * k, seen = new Set(), bot = P.cam.y + 380;
+  LAB.drawPillars = (c, M, x0, x1, FH) => {     // металлические опоры под полом (двутавр с подкосом, как ноги мостков): капитель под плитой, ствол повторяется, плита-база на полу ниже
+    const im = L9.img.pilM9; if (!im) return; const F = L9D.pilM9.f, C = F[0], Sh = F[1], B = F[2], s = 0.5 * 1.1, W = C[2] * s, ch = C[3] * s, sh = Sh[3] * s, bh = B[3] * s, AX = 85 * s, seen = new Set(), bot = P.cam.y + 380;
     c.imageSmoothingEnabled = true;
     for (const r of M.solids) {
       if (r[4] === 'hide' || r[3] < 40 || r[0] > x1 || r[0] + r[2] < x0) continue;
       for (let x = Math.ceil((r[0] + 40 - 150) / 300) * 300 + 150; x < r[0] + r[2] - 40; x += 300) {
         if (x < x0 - 60 || x > x1 + 60 || seen.has(x + ':' + r[1])) continue; seen.add(x + ':' + r[1]);
-        const y0 = r[1] + FH - 9, fb = LAB.floorBelow(M, x, r[1] + r[3] + 2, 2000, false), end = fb != null ? fb + 4 : bot;
-        if (end < y0 + ch * 1.5) continue;
-        for (let y = y0 + ch - 4; y < end; y += sh - 1) { const hh = Math.min(sh, end - y + 1); c.drawImage(im, Sh[0], Sh[1], Sh[2], Sh[3] * hh / sh, x - sw / 2, y, sw, hh); }
-        c.drawImage(im, C[0], C[1], C[2], C[3], x - cw / 2, y0, cw, ch);
+        const y0 = r[1] + FH - 6, fb = LAB.floorBelow(M, x, r[1] + r[3] + 2, 2000, false), end = fb != null ? fb + 3 : bot, sEnd = fb != null ? end - bh + 2 : end, L = x - AX;
+        if (end < y0 + 20) continue;
+        for (let y = y0 + ch - 1; y < sEnd; y += sh - 1) { const hh = Math.min(sh, sEnd - y + 1); c.drawImage(im, Sh[0], Sh[1], Sh[2], Sh[3] * hh / sh, L, y, W, hh); }
+        c.drawImage(im, C[0], C[1], C[2], C[3], L, y0, W, ch);
+        if (fb != null) c.drawImage(im, B[0], B[1], B[2], B[3], L, end - bh, W, bh);
       }
     }
     c.imageSmoothingEnabled = false;

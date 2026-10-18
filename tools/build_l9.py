@@ -378,6 +378,11 @@ if have('l9floor3_0.jpg'):     # пол: верхняя плита + балка 
     band = seamless(band, 160); band = band.resize((round(band.width * 96 / band.height), 96), Image.LANCZOS)
     band.save(os.path.join(OUT, 'labFloor.png')); DATA.setdefault('_bgp', {})['labFloor'] = 1
     print('labFloor band rows', rows.min(), rows.max())
+FLOOR_PICK = 'l9flB_1.jpg'     # вариант пола 4 (бетонная плита с трещинами); '' — вернуть l9floor3
+if FLOOR_PICK and have(FLOOR_PICK):
+    band = Image.open(os.path.join(SRC, FLOOR_PICK)).convert('RGB').crop((0, 220, 1376, 385))
+    band = seamless(band, 160); band = band.resize((round(band.width * 96 / band.height), 96), Image.LANCZOS)
+    band.save(os.path.join(OUT, 'labFloor.png')); DATA.setdefault('_bgp', {})['labFloor'] = 1
 if have('l9unload_0.jpg'):     # рука-разгрузчик: 4 кадра сеткой по столбцам, в кадре только рука (связанная с верхом), тело рисуем своё
     from scipy import ndimage
     ua = rgba_m('l9unload_0.jpg'); W_, H_ = ua.size; fr_ = []
@@ -535,6 +540,10 @@ if have('l9pil_1.jpg'):     # бетонная опора под пол: тра�
     _cap = rgba_m('l9pil_1.jpg', (496, 0, 958, 190)); _sh = rgba_m('l9pil_1.jpg', (496, 200, 958, 760))
     _sh = seamless(_sh.rotate(90, expand=True), 80).rotate(-90, expand=True)
     pack('pil9', [_cap, _sh], 0.36, anchor='mid', names=['cap', 'shaft'])
+if have('l9cw_0.jpg'):     # металлическая опора под пол (нога мостка, двутавр с подкосом): капитель с подкосом, ствол (повтор), база-плита; общий x 420..620, ось ствола 505
+    _X = (420, 620); _cp = rgba_m('l9cw_0.jpg', (_X[0], 284, _X[1], 398)); _st = rgba_m('l9cw_0.jpg', (_X[0], 398, _X[1], 668)); _bs = rgba_m('l9cw_0.jpg', (_X[0], 668, _X[1], 748))
+    _st = seamless(_st.rotate(90, expand=True), 60).rotate(-90, expand=True)
+    pack('pilM9', [_cp, _st, _bs], 1.0, anchor='mid', names=['cap', 'shaft', 'base'])
 if have('l9part_0.jpg'):     # рельс (бесшовный по горизонтали), рычаг на тумбе (выкл/вкл), колонна под пол (капитель + ствол), арка тоннеля, стенка чана
     B = [(0, 33, 1376, 141), (26, 326, 217, 650), (217, 326, 408, 650), (389, 171, 591, 743), (587, 227, 1067, 726), (1085, 196, 1348, 737)]
     fr = [trim(rgba_m('l9part_0.jpg', b)) for b in B]; fr[0] = seamless(fr[0], 60)

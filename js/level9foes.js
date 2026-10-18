@@ -2,7 +2,7 @@
 // У каждого своя атака, смерть и звук. Цветовой код: снаряды врагов оранжевые/красные, кислота — лаймовая.
 (() => {
   const S = L9.spr, clamp = L9.clamp, rnd = L9.rnd, LAB = L9.LAB;
-  const FACE_R = { eHat9: 1, eWeld9: 1, eStump9: 1, eFly9: 1, eSpit9: 1, eCrawl9: 1, eSuper9: 1, eArm9: -1 };   // куда смотрит кадр листа
+  const FACE_R = { eHat9: 1, eWeld9: 1, eStump9: 1, eFly9: 1, eSpit9: 1, eCrawl9: 1, eSuper9: 1, eArm9: 1 };   // куда смотрит кадр листа
 
   class Foe {
     constructor(M, x, y, o = {}) { this.M = M; this.x = x; this.y = y; this.vx = 0; this.vy = 0; this.dir = -1; this.t = 0; this.stT = 0; this.st = 'idle'; this.dead = false; this.gone = false; this.fl = 0; this.onG = true; Object.assign(this, o); this.hp = this.hp || this.maxHp || 4; }
@@ -32,7 +32,7 @@
       this.t += dt; this.stT += dt; this.fl -= dt; this.stun = (this.stun || 0) - dt; this.blockedT = (this.blockedT || 0) - dt;
       if (this.dead) { this.vx *= 0.9; this.phys(dt); if (this.stT > 2.2) this.gone = true; return; }
       if (this.stun > 0) { this.phys(dt); return; }
-      this.ai(dt, P, lv);
+      this.face(P); this.ai(dt, P, lv);     // враги всегда смотрят на Валеру
       // касание
       if (this.touch && !P.lv.dead) { const b = this.box(), pb = P.box(); if (b[0] < pb[0] + pb[2] && b[0] + b[2] > pb[0] && b[1] < pb[1] + pb[3] && b[1] + b[3] > pb[1]) P.hurt(this.touch, this.x); }
     }
