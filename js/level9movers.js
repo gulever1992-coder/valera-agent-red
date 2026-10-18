@@ -8,7 +8,7 @@
   LAB.moversInit = (M, atBottom) => {
     const V = M.movers; if (!V) return;
     if (V.big) { const b = V.big; V.bigL = { kind: 'big', x: b.x + (atBottom ? b.dx || 0 : 0), w: b.w, y: atBottom ? b.y1 : b.y0, on: atBottom ? 2 : 0, wv: 0 }; M.lifts.push(V.bigL); }
-    V.steps = []; for (const c of V.pater || []) { const L = c.bot - c.top, n = Math.ceil(L / PAT_GAP); for (let i = 0; i < n; i++) { const s = { kind: 'step', col: c, ph: i * PAT_GAP, x: c.x - STEP_W / 2, w: STEP_W, y: c.top }; V.steps.push(s); M.lifts.push(s); } }
+    V.steps = []; for (const c of V.pater || []) { const L = c.bot - c.top, n = Math.ceil(L / PAT_GAP); for (let i = 0; i < n; i++) { const s = { kind: 'step', col: c, ph: i * L / n, x: c.x - STEP_W / 2, w: STEP_W, y: c.top }; V.steps.push(s); M.lifts.push(s); } }
     V.crads = []; for (const w of V.wheel || []) for (let i = 0; i < w.n; i++) { const s = { kind: 'cradle', wh: w, a0: i * Math.PI * 2 / w.n, x: 0, w: CRAD_W, y: 0 }; V.crads.push(s); M.lifts.push(s); }
     LAB.moversUpdate(M, null, 0);
   };

@@ -106,7 +106,8 @@
           else { P.y = ny; P.onG = false; }
         } else {
           const hy = P.y - PH, nh = ny - PH, deck = M.walks.find(w => !w.gone && P.x + PW * 0.6 > w[0] && P.x - PW * 0.6 < w[0] + w[2] && hy >= w[1] + 8 && nh < w[1] + 8 && !(M.pits || []).some(q => P.x > q[0] - 70 && P.x < q[1] + 70));     // над ямой под мостком пропускаем — иначе её не перепрыгнуть     // мостки снизу твёрдые: в прыжке Валера бьётся о них головой (наверх — только по лестнице)
-          if (LAB.solidAt(M, P.x, nh)) P.vy = 0; else if (deck) { P.y = deck[1] + 8 + PH; P.vy = 30; Sound.play('clank', 0.4); } else P.y = ny;
+          const pc = LAB.pressCeil ? LAB.pressCeil(M, P, P.x) : null;     // головка пресса снизу тоже твёрдая
+          if (LAB.solidAt(M, P.x, nh)) P.vy = 0; else if (pc !== null && hy >= pc - 2 && nh < pc) { P.y = pc + PH; P.vy = 30; Sound.play('clank', 0.4); } else if (deck) { P.y = deck[1] + 8 + PH; P.vy = 30; Sound.play('clank', 0.4); } else P.y = ny;
           P.onG = false;
         }
         if (P.onG) { const lf = (M.lifts || []).find(l => P.x >= l.x && P.x < l.x + l.w && Math.abs(P.y - l.y) < 2); if (lf) P.y = lf.y; }

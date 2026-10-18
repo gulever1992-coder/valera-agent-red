@@ -50,7 +50,7 @@
         [17090, DY - 240, 160, 20],     // уступ со вторым рычагом
       ],
       walks: [], ladders: [],     // строятся из CW (мостки v5: опоры и лестница — часть рисунка)
-      lifts: [{ x: LIFT_X, w: 140, y: 330, y0: 330, y1: LIFT_TOP, on: 0 }],
+      lifts: [{ x: LIFT_X, w: 140, y: 330, y0: 330, y1: LIFT_TOP, on: 0 }, { x: 7002, w: 140, y: LIFT_TOP, y0: LIFT_TOP, y1: 330, on: 0, down: 1 }],     // второй — спуск с верхнего этажа в отстойник
       cks: [[140, 330], [2380, 330], [4560, 330], [5000, LIFT_TOP], [6160, LIFT_TOP], [6950, 330], [8890, 330], [10390, 330], [11470, 330], [12360, 330], [15790, DY], [16650, DY]],
       picks: [
         { kind: 'pist', x: 1600, y: WY }, { kind: 'pelmeni', x: 1220, y: WY }, { kind: 'kefir', x: 2100, y: 330 }, { kind: 'grenades', x: 2700, y: WY },
@@ -113,6 +113,7 @@
       const x0 = M.cks[ck][0];
       for (const [tp, x, y, o] of M.spawnList) if (x > x0 + 200) P.foes.push(new (F()[tp])(M, x, y, o || {}));
       if (ck >= 3) { M.lifts[0].y = LIFT_TOP; M.lifts[0].on = 2; }
+      if (ck >= 5) { M.lifts[1].y = 330; M.lifts[1].on = 2; }
       const arCk = M.cks.findIndex(c => c[0] === 10390), rkCk = M.cks.findIndex(c => c[0] === 15790);
       L9.LAB.moversInit(M, ck >= rkCk);
       if (ck < rkCk) LEV_SAVE = 0; M.levers.forEach((l, i) => l.on = i < LEV_SAVE ? 1 : 0);
@@ -134,6 +135,12 @@
     M.update = (dt, P, lv) => {
       const z = M.zoneAt(P.x); if (z !== M.lastZone) { M.lastZone = z; lv.say(z[2], 2); }
       // подъёмник: едет вверх, когда на нём Валера; по дороге запрыгивают враги
+      { const D = M.lifts[1];     // спуск с верхнего этажа: Валера встал — едет вниз; внизу ждёт, а если Валера снова наверху — поднимается за ним
+        const on = P.onG && P.x > D.x && P.x < D.x + D.w && Math.abs(P.y - D.y) < 3;
+        if (D.on === 0 && on) { D.on = 1; Sound.play('crane'); lv.say('ЛИФТ ВНИЗ!', 1.4); }
+        if (D.on === 1 || D.on === 3) { const oy = D.y; D.y = D.on === 1 ? Math.min(D.y1, D.y + 70 * dt) : Math.max(D.y0, D.y - 70 * dt); if (P.onG && P.x > D.x - 4 && P.x < D.x + D.w + 4 && Math.abs(P.y - oy) < 4) P.y = D.y;
+          if (D.on === 1 && D.y >= D.y1) { D.on = 2; Sound.play('clank'); } if (D.on === 3 && D.y <= D.y0) { D.on = 0; Sound.play('clank'); } }
+        if (D.on === 2 && P.onG && Math.abs(P.y - LIFT_TOP) < 4 && P.x > 6500 && P.x < D.x) D.on = 3; }
       const L = M.lifts[0];
       if (L.on === 0 && P.onG && P.x > L.x && P.x < L.x + L.w && Math.abs(P.y - L.y) < 3) { L.on = 1; L.t = 0; Sound.play('crane'); lv.say('ПОДЪЁМНИК! ДЕРЖИСЬ!', 2); }
       if (L.on === 1) {
@@ -364,18 +371,18 @@
         S(c, 'fxL9', 'spark', k.x, k.y - 14, 0.4 + Math.sin(k.t * 5) * 0.08, { add: 1 }); S(c, 'pick9', k.kind, k.x, k.y - 16 + bob, 1);
       }
       // шахта подъёмника: две цельные стойки от лебёдки до дна, лебёдка под потолком, тросы до траверсы кабины
-      const L = M.lifts[0]; M.drawShaft(c, L);
+      const L = M.lifts[0]; M.drawShaft(c, L); M.drawShaft(c, M.lifts[1], true);
       { const d = M.door, f = d.open ? Math.min(5, (d.t || 0) / 1.4 * 6 | 0) : 0; S(c, 'gate9', 'g' + f, d.x, d.y + 2, 0.62); }     // ворота выхода: открываются по кадрам
     };
     const LK = 1.76, strip = (c, sh, fr, x, y0, y1, k) => { const h = L9.size(sh, fr)[1] * k; if (y1 > y0) S(c, sh, fr, x, (y0 + y1) / 2, k, { sy: (y1 - y0) / h }); };
-    M.drawShaft = (c, L) => {
+    M.drawShaft = (c, L, second) => {
       const cxl = L.x + L.w / 2, wTop = LIFT_TOP - 235, [, wh] = L9.size('lift9', 'winch'), wb = wTop + wh * LK, carTop = L.y - L9D.lift9.carDeck * 0.5 * LK;
       strip(c, 'lift9', 'post', L.x + 21, wb - 6, 338, LK); strip(c, 'lift9', 'post', L.x + L.w - 14, wb - 6, 338, LK);     // направляющие стоят на полу
-      L9.LAB.drawColumn(c, 5232, LIFT_TOP - 250, 338, 1.1);     // торец шахты: колонна от потолка до пола там, где кончается нижний ярус
+      if (!second) L9.LAB.drawColumn(c, 5232, LIFT_TOP - 250, 338, 1.1);     // торец шахты: колонна от потолка до пола там, где кончается нижний ярус
       strip(c, 'lift9', 'cable', cxl + 3, wb - 4, carTop + 4, LK);     // тросы — точно над креплениями кабины (у кабины и лебёдки они на 3 px правее центра)
       S(c, 'lift9', 'winch', cxl, wTop + wh * LK / 2, LK);
     };
-    M.drawCar = (c, L) => { if (L.kind === 'big') return L9.LAB.bigLiftDraw(c, L, L9.PARTS.lab); if (L.kind) return; const [, ch] = L9.size('lift9', 'car'), top = L.y - L9D.lift9.carDeck * 0.5 * LK; S(c, 'lift9', 'car', L.x + L.w / 2, top + ch * LK / 2, LK); };
+    M.drawCar = (c, L) => { if (L.kind === 'big') return L9.LAB.bigLiftDraw(c, L, L9.PARTS.lab); if (L.kind) return; const [, ch] = L9.size('lift9', 'car'), top = L.y - L9D.lift9.carDeck * 0.5 * LK; if (L.down) { c.save(); c.beginPath(); c.rect(L.x - 40, L.y - 400, L.w + 80, Math.min(400 + 14, 336 - (L.y - 400))); c.clip(); } S(c, 'lift9', 'car', L.x + L.w / 2, top + ch * LK / 2, LK); if (L.down) c.restore(); };     // спусковой лифт: низ рамы не уходит под пол
     M.drawHud = (c, P) => { if (M.lifts[0].on === 1) G.text('ПОДЪЁМ: ' + Math.round((1 - (M.lifts[0].y - M.lifts[0].y1) / (M.lifts[0].y0 - M.lifts[0].y1)) * 100) + '%', 320, 30, { align: 'center', size: 8, color: '#ffd84a' }); };
     return M;
   };
