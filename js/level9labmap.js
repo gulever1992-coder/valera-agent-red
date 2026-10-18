@@ -243,14 +243,14 @@
       c.imageSmoothingEnabled = false; c.restore();
     };
     M.drawFront = (c, P) => {     // передний план: стены на стыках фонов и по бокам ворот выхода — Валера проходит за ними
-      M.drawJamb(c, P, M.portalX(), 338); M.drawJamb(c, P, M.exitX(), DY + 8);
-      const d = M.door; M.drawJamb(c, P, d.x - 78, d.y + 4); M.drawJamb(c, P, d.x + 78, d.y + 4, 1);
+      if (!M.useJamb) return;     // стена-переборка отвергнута владельцем; на стыки — рама проёма (M.drawDoorway)
+    };
+    M.drawDoorway = (c, P, x, fy, k = 1, ax = 0.72) => {     // рама проёма в перспективе (по макету B): стоит на полу за Валерой; x — точка рамы с долей ax ширины (0.72 — толстая правая стойка, под ней стык фонов)
+      const im = L9.img.door9; if (!im || Math.abs(x - P.cam.x - 320) > 520) return; const f = L9D.door9.f[0], w = f[2] * 0.5 * k, h = f[3] * 0.5 * k;
+      c.imageSmoothingEnabled = true; c.drawImage(im, f[0], f[1], f[2], f[3], x - w * ax, fy - h, w, h); c.imageSmoothingEnabled = false;
     };
     M.drawPortal = (c, P) => {
-      const X = M.portalX(), [aw, ah] = L9.size('part9', 'arch'), k = 310 / aw;
-      if (Math.abs(X - P.cam.x - 320) < 700) S(c, 'part9', 'arch', X + 150, 392 - ah * k / 2, k);     // полукруглая арка над стартом тележки: левая нога — на границе фонов
-      if (Math.abs(X - P.cam.x - 320) < 700) L9.LAB.drawColumn(c, X, P.cam.y - 40, 338, 1.25);     // массивная колонна-откос портала закрывает шов во всю высоту
-      const X2 = M.exitX(); if (Math.abs(X2 - P.cam.x - 320) < 700) { S(c, 'part9', 'arch', X2 + 150, DY + 62 - ah * k / 2, k); L9.LAB.drawColumn(c, X2, P.cam.y - 40, DY + 8, 1.25); }     // такой же портал на выходе из тоннеля в реакторную
+      M.drawDoorway(c, P, M.portalX(), 338); M.drawDoorway(c, P, M.exitX(), DY + 8);     // рамы проёма закрывают стыки фонов у наклонного спуска и внизу
     };
     // наклонный спуск: тоннель повёрнут вдоль рельса (уклон 0.3). Кадр тоннеля: x — вдоль рельса, y — поперёк; fy — где в этом кадре проходит рельс
     M.tunFrame = (c, cx, cy, fn) => {
@@ -383,7 +383,7 @@
       }
       // шахта подъёмника: две цельные стойки от лебёдки до дна, лебёдка под потолком, тросы до траверсы кабины
       const L = M.lifts[0]; M.drawShaft(c, L); M.drawShaft(c, M.lifts[1], true);
-      { const d = M.door, f = d.open ? Math.min(5, (d.t || 0) / 1.4 * 6 | 0) : 0; S(c, 'gate9', 'g' + f, d.x, d.y + 2, 0.62); }     // ворота выхода: открываются по кадрам
+      { const d = M.door, f = d.open ? Math.min(5, (d.t || 0) / 1.4 * 6 | 0) : 0; M.drawDoorway(c, P, d.x, d.y + 4, 1.25, 0.38); S(c, 'gate9', 'g' + f, d.x, d.y + 2, 0.62); }     // ворота в раме проёма     // ворота выхода: открываются по кадрам
     };
     const LK = 1.76, strip = (c, sh, fr, x, y0, y1, k) => { const h = L9.size(sh, fr)[1] * k; if (y1 > y0) S(c, sh, fr, x, (y0 + y1) / 2, k, { sy: (y1 - y0) / h }); };
     M.drawShaft = (c, L, second) => {
