@@ -181,3 +181,6 @@ if have('pick_mrx.jpg'): Image.open(os.path.join(L7SRC, 'pick_mrx.jpg')).convert
 with open(DATA, 'w', encoding='utf-8') as fp:
     fp.write('// автоматически создано tools/build_assets.py\n' + ''.join('window.%s = %s;\n' % (k, json.dumps(v)) for k, v in G.items()))
 print('листов в SPRITES:', len(S))
+
+# Господин Икс — только глаза и улыбка на чёрном (перезаписывает p_mrx, mrx_box, hmrx)
+import subprocess as _sp, sys as _sys; _sp.run([_sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "mrx_eyes.py")])

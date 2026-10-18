@@ -5,6 +5,7 @@ from PIL import ImageFile as _IF; _IF.LOAD_TRUNCATED_IMAGES = True     # кар�
 sys.path.insert(0, os.path.dirname(__file__))
 from l9lib import *
 import l9lib
+from mrx_face import screens as mrx_screens     # Господин Икс на экранах — только глаза и улыбка на чёрном
 
 DATA = l9lib.DATA
 # выбранные варианты Flow (_0/_1)
@@ -107,6 +108,7 @@ pack('plat9', pl, 0.5, anchor='mid', names=['walk', 'walkL', 'walkR', 'rail', 'l
 va = cut('l9vat_1.jpg', 'm', 2, 4, clean=True)
 pack('vat9', va, 0.62, names=['v0', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'])
 tvs = cut('l9tv2_0.jpg', 'm', 3, 4, clean=True)[:8]   # экраны, утопленные в стенную плиту — без кронштейнов
+tvs = tvs[:2] + [mrx_screens(f, d, y) for f, (d, y) in zip(tvs[2:6], ((1, 0), (0.75, 1), (1, 0), (0.6, 0)))] + tvs[6:]
 pack('tv9', tvs, 0.42, anchor='mid', names=['off', 'noise', 'x0', 'x1', 'x2', 'x3', 'broken', 'smoke'])
 if os.path.exists(os.path.join(SRC, 'l9tvp_0.jpg')):     # груда телевизоров на полу целиком (Flow): статика, Икс (2 кадра), разбита
     tp = cut('l9tvp_0.jpg', 'm', 2, 3, clean=True)
@@ -115,7 +117,7 @@ if os.path.exists(os.path.join(SRC, 'l9tvp_0.jpg')):     # груда телев
         pur = (r > g * 1.15) & (b > g * 1.15); L = (r * 0.3 + g * 0.59 + b * 0.11)[pur]
         arr[pur, 0] = (L * 0.8).astype(np.uint8); arr[pur, 1] = (L * 0.78).astype(np.uint8); arr[pur, 2] = (L * 0.74).astype(np.uint8)
         tp[q] = Image.fromarray(arr)
-    pack('tvp9', [tp[0], tp[1], tp[2], tp[5]], 0.85, names=['off', 'xa', 'xb', 'broken'])
+    pack('tvp9', [tp[0], mrx_screens(tp[1]), mrx_screens(tp[1], 0.7, 1), tp[5]], 0.85, names=['off', 'xa', 'xb', 'broken'])
 for out, nm in (('lab1a', 'l9lab1_0.jpg'), ('lab1b', 'l9lab1_1.jpg'), ('lab1c', 'l9lab1b_0.jpg'), ('lab1d', 'l9lab1b_1.jpg')):
     bg(out, nm)
 
@@ -211,6 +213,7 @@ if have('l9dock_0.jpg'):
         d = np.minimum(np.minimum(xx, w - 1 - xx), np.minimum(yy, h - 1 - yy)).astype(np.float32)
         al = (np.clip(d / fe, 0, 1) * np.clip(ndimage.gaussian_filter(df.astype(np.float32), 2.5) * 1.6, 0, 1) * 255).astype(np.uint8)
         for (out, _), im in zip(group, ims):
+            if out.startswith('dkX'): im = mrx_screens(im, 1.0 if out == 'dkX0' else 0.8)
             im.putalpha(Image.fromarray(al)); im.save(os.path.join(OUT, out + '.png'))
             DATA.setdefault('_bgp', {})[out] = 1; DATA.setdefault('dockOv', {})[out] = [box[0], box[1], w, h]
     dock_ov((('dkG1', 'l9dg1_1.jpg'), ('dkG2', 'l9dg2_0.jpg'), ('dkG3', 'l9dg3_1.jpg')), (930, 130, 1310, 720), 22)

@@ -127,3 +127,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# Господин Икс — только глаза и улыбка на чёрном (перезаписывает p_mrx, mrx_box, hmrx)
+import subprocess as _sp, sys as _sys; _sp.run([_sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "mrx_eyes.py")])
