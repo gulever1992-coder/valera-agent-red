@@ -249,8 +249,14 @@
       const im = L9.img.door9; if (!im || Math.abs(x - P.cam.x - 320) > 520) return; const f = L9D.door9.f[0], w = f[2] * 0.5 * k, h = f[3] * 0.5 * k;
       c.imageSmoothingEnabled = true; c.drawImage(im, f[0], f[1], f[2], f[3], x - w * ax, fy - h, w, h); c.imageSmoothingEnabled = false;
     };
+    M.drawWall = (c, P, x, fy) => {     // стена на стыке: низ с полосой стоит на полу, середина повторяется до верха экрана
+      const im = L9.img.wall9; if (!im || Math.abs(x - P.cam.x - 320) > 420) return; const F = L9D.wall9.f, Mf = F[0], Bf = F[1], s = 0.3, W = Mf[2] * s, mh = Mf[3] * s, bh = Bf[3] * s, yb = fy - bh;
+      c.imageSmoothingEnabled = true; c.drawImage(im, Bf[0], Bf[1], Bf[2], Bf[3], x - W / 2, yb, W, bh);
+      for (let y = yb - mh + 1; y > P.cam.y - mh - 20; y -= mh - 1) c.drawImage(im, Mf[0], Mf[1], Mf[2], Mf[3], x - W / 2, y, W, mh);
+      c.imageSmoothingEnabled = false;
+    };
     M.drawPortal = (c, P) => {
-      M.drawDoorway(c, P, M.portalX(), 338); M.drawDoorway(c, P, M.exitX(), DY + 8);     // рамы проёма закрывают стыки фонов у наклонного спуска и внизу
+      M.drawWall(c, P, M.portalX(), 338); M.drawWall(c, P, M.exitX(), DY + 8);     // ровная стена во всю высоту закрывает стыки фонов у наклонного спуска и внизу
     };
     // наклонный спуск: тоннель повёрнут вдоль рельса (уклон 0.3). Кадр тоннеля: x — вдоль рельса, y — поперёк; fy — где в этом кадре проходит рельс
     M.tunFrame = (c, cx, cy, fn) => {
@@ -383,7 +389,7 @@
       }
       // шахта подъёмника: две цельные стойки от лебёдки до дна, лебёдка под потолком, тросы до траверсы кабины
       const L = M.lifts[0]; M.drawShaft(c, L); M.drawShaft(c, M.lifts[1], true);
-      { const d = M.door, f = d.open ? Math.min(5, (d.t || 0) / 1.4 * 6 | 0) : 0; M.drawDoorway(c, P, d.x, d.y + 4, 1.25, 0.38); S(c, 'gate9', 'g' + f, d.x, d.y + 2, 0.62); }     // ворота в раме проёма     // ворота выхода: открываются по кадрам
+      { const d = M.door, f = d.open ? Math.min(5, (d.t || 0) / 1.4 * 6 | 0) : 0; S(c, 'gate9', 'g' + f, d.x, d.y + 2, 0.62); }     // ворота выхода: открываются по кадрам
     };
     const LK = 1.76, strip = (c, sh, fr, x, y0, y1, k) => { const h = L9.size(sh, fr)[1] * k; if (y1 > y0) S(c, sh, fr, x, (y0 + y1) / 2, k, { sy: (y1 - y0) / h }); };
     M.drawShaft = (c, L, second) => {
