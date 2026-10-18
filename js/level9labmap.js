@@ -44,7 +44,7 @@
         [-40, -420, 40, 830, 'hide'], [17800, -420, 40, 2100, 'hide'], [5210, -130, 40, 540, 'hide'],     // за нижним ярусом подъёмника — стена шахты
         [6866, -130, 20, 460, 'hide'],     // под верхним этажом после сброса — глухо
         [6870, 330, 430, 80], [7550, 330, 400, 80], [8200, 330, 760, 80], [9050, 330, 2350, 80],     // отстойник и сортировка
-        [ARENA[0], -170, 0, 500, 'hide'], [ARENA[1] - 20, -170, 0, 500, 'hide'],     // заслоны арены: ширина 0, пока не заперто
+        // заслонов у арены больше нет — проход всегда свободен
         [11400, 330, 1040, 80],     // огненный коридор — до верхней площадки наклонного лифта
         [15740, DY, 960, 80], [17150, DY, 650, 80],     // реакторная (низ спуска); между ними — чан с колесом
         [17090, DY - 240, 160, 20],     // уступ со вторым рычагом
@@ -70,8 +70,8 @@
         { x: 7760, y: 70, line: 'Валера, вы как таракан. Но и из тараканов у меня выжимают сок. Всё идёт в дело!' },
         { x: 10700, y: 50, line: 'Охрана! Заприте его в цехе. Живым не выпускать... Ну или выпускать, но в банке.' },
         { x: 16500, y: DY - 270, line: 'Реактор, Валера! Сердце моей империи. Дёрнете рычаги — и дверь откроется. Если доживёте.' }],
-      covers: [{ x: 1300, y: 330, kind: 'crates' }, { x: 1610, y: 330, kind: 'barrier' }, { x: 3562, y: 330, kind: 'crates' }, { x: 4130, y: 330, kind: 'barrier' }, { x: 5640, y: LIFT_TOP, kind: 'crates' },
-        { x: 6910, y: 330, kind: 'crates' }, { x: 8300, y: 330, kind: 'barrier' }, { x: 11000, y: 330, kind: 'crates' }, { x: 11720, y: 330, kind: 'barrier' }, { x: 15960, y: DY, kind: 'crates' }, { x: 17280, y: DY, kind: 'barrier' }],
+      covers: [{ x: 1300, y: 330, kind: 'crates' }, { x: 3562, y: 330, kind: 'crates' }, { x: 5640, y: LIFT_TOP, kind: 'crates' },
+        { x: 6910, y: 330, kind: 'crates' }, { x: 11000, y: 330, kind: 'crates' }, { x: 15960, y: DY, kind: 'crates' }],
       props: [{ x: 820, y: 330, kind: 'console' }, { x: 1470, y: 330, kind: 'console' }, { x: 2000, y: 330, kind: 'waste' }, { x: 3760, y: 330, kind: 'gas' }, { x: 3950, y: 330, kind: 'waste' }, { x: 5200, y: LIFT_TOP, kind: 'console' }, { x: 5950, y: LIFT_TOP, kind: 'waste' },
         { x: 6930, y: LIFT_TOP, kind: 'gas' }, { x: 7860, y: 330, kind: 'gas' }, { x: 10700, y: 330, kind: 'waste' }, { x: 16580, y: DY, kind: 'console' }, { x: 17700, y: DY, kind: 'gas' }],
       riders: [], acid: [], drops: [],
@@ -81,7 +81,7 @@
         fcol: [[7600, 330, 0], [7780, 330, 1.2], [11500, 330, 0], [11580, 330, 0.3], [11660, 330, 0.6], [15900, DY, 0], [16450, DY, 1.1]],
         hlaser: [[5470, 5590, LIFT_TOP, 8, 112, 2.6, 0], [12080, 12200, 330, 8, 112, 2.2, 0.8], [12260, 12380, 330, 8, 112, 2.4, 0.3], [17400, 17520, DY, 8, 112, 2.4, 0.5]],
         saw: [[8480, 8860, 330]],
-      }, door: { x: 17740, y: DY, open: 0 }, gateL: { x: ARENA[0] + 20, y: 330 }, gateR: { x: ARENA[1] - 30, y: 330 },
+      }, door: { x: 17740, y: DY, open: 0 }, 
       movers: {
         big: { x: 12440, w: 300, y0: 330, y1: DY, dx: 3000, waves: [[440, [['Hat', 60], ['Hat', 240]]], [580, [['Stump', 150], ['Fly', 200]]], [720, [['Hat', 50], ['Spit', 250]]], [880, [['Hat', 90], ['Stump', 210], ['Fly', 150]]], [1040, [['Fly', 80], ['Fly', 220]]]] },
         pater: [{ x: 7360, up: 1, top: 40, bot: 440 }, { x: 7490, up: 0, top: 40, bot: 440 }],
@@ -175,14 +175,13 @@
       }
       M.drops = M.drops.filter(d => !d.dead && d.y < 420);
       // цех охраны: войдя, Валера оказывается взаперти — решётка падает, сверху сыплются волны охраны
-      const gw = M.solids.find(r => r[4] === 'hide' && r[0] === ARENA[0] && r[1] === -170), gr = M.solids.find(r => r[4] === 'hide' && r[0] === ARENA[1] - 20 && r[1] === -170);
-      if (!M.ar && P.x > ARENA[0] + 90 && P.x < ARENA[1] - 40 && P.y > 250 && P.y < 400) { M.ar = { w: AR_SAVE, t: 0, gate: 0 }; gw[2] = 24; gr[2] = 24; Sound.play('door'); lv.say('ЗАПЕРТО! ОТБИВАЙСЯ!', 2); }
+      if (!M.ar && P.x > ARENA[0] + 90 && P.x < ARENA[1] - 40 && P.y > 250 && P.y < 400) { M.ar = { w: AR_SAVE, t: 0, gate: 0 }; Sound.play('warn'); lv.say('ОХРАНА! ОТБИВАЙСЯ!', 2); }     // без заслонов: проход не перекрывается
       if (M.ar && !M.ar.done) {
         const a = M.ar; a.t += dt; a.gate = Math.min(1, a.gate + dt * 2);
         const alive = P.foes.some(f => !f.dead && f.x > ARENA[0] && f.x < ARENA[1] && f.y < 420);     // только враги внутри цеха
         if (!alive && a.t > 1) {
           if (a.w < WAVES.length) { for (const [tp, x, y, o] of WAVES[a.w]) P.foes.push(new (F()[tp])(M, x, y, o || {})); AR_SAVE = a.w; a.w++; a.t = 0; if (a.w > 1) lv.say('ВОЛНА ' + a.w + '!', 1.4); if (a.w === WAVES.length) M.picks.push({ kind: 'kefir', x: 10760, y: WY, t: 0 }); }
-          else { a.done = 1; gw[2] = 0; gr[2] = 0; Sound.play('door'); lv.say('ЦЕХ ЗАЧИЩЕН! ДАЛЬШЕ — К КОНВЕЙЕРУ', 2.4); }
+          else { a.done = 1; Sound.play('door'); lv.say('ЦЕХ ЗАЧИЩЕН! ДАЛЬШЕ — К КОНВЕЙЕРУ', 2.4); }
         }
       }
       if (M.ar && M.ar.done) M.ar.gate = Math.max(0, M.ar.gate - dt);
@@ -366,7 +365,6 @@
       }
       // шахта подъёмника: две цельные стойки от лебёдки до дна, лебёдка под потолком, тросы до траверсы кабины
       const L = M.lifts[0]; M.drawShaft(c, L);
-      if (M.ar && M.ar.gate > 0) for (const g of [M.gateL, M.gateR]) { const k = M.ar.gate; c.save(); c.beginPath(); c.rect(g.x - 60, g.y - 120, 120, 122); c.clip(); for (let i = 0; i < 2; i++) S(c, 'cover9', 'barrier', g.x, g.y + 2 - i * 40 + (1 - k) * 90, 1); c.restore(); }     // заслон входа в цех охраны: выезжает из пола
       { const d = M.door, f = d.open ? Math.min(5, (d.t || 0) / 1.4 * 6 | 0) : 0; S(c, 'gate9', 'g' + f, d.x, d.y + 2, 0.62); }     // ворота выхода: открываются по кадрам
     };
     const LK = 1.76, strip = (c, sh, fr, x, y0, y1, k) => { const h = L9.size(sh, fr)[1] * k; if (y1 > y0) S(c, sh, fr, x, (y0 + y1) / 2, k, { sy: (y1 - y0) / h }); };
