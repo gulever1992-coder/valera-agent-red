@@ -241,13 +241,8 @@
       const tl = (n, kx, y, h) => { const im = L9.img[n]; if (!im) return; const w = im.width / im.height * h; for (let x = -((cx * kx % w) + w) % w - w; x < 700; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); };
       const tunBg = () => { const dy = cy - 100; c.fillStyle = '#04070a'; c.fillRect(0, 0, 640, 360);
         tl('tunWall', 0.22, clamp(-40 - dy * 0.1, -150, 0), 500); c.fillStyle = 'rgba(2,6,10,0.25)'; c.fillRect(0, 0, 640, 360); tl('tunCeil', 0.45, clamp(-6 - dy * 0.22, -320, 0), 300); };
-      // шахта подъёмника и реакторная — тоже в стиле погони: дальняя стена ярусами (тайл по x и y) + ближний ярус балок и труб сверху
-      const wallRows = (n, kx, ky, oy) => { const im = L9.img[n]; if (!im) return; const h = 500, w = im.width / im.height * h, y0 = -((((cy + oy) * ky) % h) + h) % h;
-        for (let y = y0; y < 360; y += h) for (let x = -((cx * kx % w) + w) % w - w; x < 700; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); };
-      const shaftBg = () => { c.fillStyle = '#04070a'; c.fillRect(0, 0, 640, 360); wallRows('shaWall', 0.22, 0.6, 0); c.fillStyle = 'rgba(2,6,10,0.22)'; c.fillRect(0, 0, 640, 360); tl('shbCeil', 0.45, (LIFT_TOP - 300 - cy) * 0.75, 340); };
-      const reactBg = () => { c.fillStyle = '#04070a'; c.fillRect(0, 0, 640, 360); wallRows('rcaWall', 0.2, 0.6, 140); c.fillStyle = 'rgba(2,6,10,0.18)'; c.fillRect(0, 0, 640, 360); tl('rcbCeil', 0.42, (DY - 600 - cy) * 0.75, 340); };
       const zoneBg = (n, wIn, wOut, kx, yy) => { const im = L9.img[n], d = PX()[n]; if (!im || !d || wIn <= wOut) return; const h = d[1], w = d[0], y = clamp(yy, 360 - h, 0);
-        const x0 = 640 * (1 - wIn), x1 = 640 * (1 - wOut), draw = n === 'bgB' ? tunBg : n === 'bgA' ? shaftBg : n === 'bgC' ? reactBg : () => { for (let x = -((cx * kx % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); };
+        const x0 = 640 * (1 - wIn), x1 = 640 * (1 - wOut), draw = n === 'bgB' ? tunBg : () => { for (let x = -((cx * kx % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); };
         for (let i = 0; i < 4; i++) { const e = 10 * (4 - i), a = x0 > 0 ? x0 - e : 0, b = x1 < 640 ? x1 + e : 640; if (i < 3 && a <= 0 && b >= 640) continue;
           c.save(); c.globalAlpha = i < 3 ? 0.25 : 1; c.beginPath(); c.rect(i < 3 ? a : x0, 0, (i < 3 ? b - a : x1 - x0), 360); c.clip(); draw(); c.restore(); } };
       zoneBg('bgA', aI, aO, 0.18, -(cy + 420) * 0.5); zoneBg('bgB', bI, bO, 0.16, -(cy - 100) * 0.2); zoneBg('bgC', cI, 0, 0.14, -(cy - 700) * 0.3);
