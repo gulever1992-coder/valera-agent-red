@@ -27,7 +27,7 @@
     const T = M.traps; if (!T) return; const t = P.t;
     for (const [x, fl, f] of T.fcol || []) { const u = (t + f) % FC_T; if (u > 1.6 && near(P, x, 16) && P.y <= fl + 2 && P.y > fl - 118) hit(P, 18, x); }
     for (const [x, y, d, f, len] of T.jet || []) { const u = (t + f) % JET_T; if (u >= 1.6) { const a = Math.min(x, x + d * len), b = Math.max(x, x + d * len); if (P.x > a && P.x < b && y > bodyTop(P) && y < P.y) hit(P, 20, x); } }
-    for (const h of T.hlaser || []) { h.by = hlaserY(h, t); h.by2 = hlaserY(h, t + h[5] / 2); for (const yy of [h.by, h.by2]) if (P.x > h[0] && P.x < h[1] && yy > bodyTop(P) && yy < P.y - 2) hit(P, 15, P.x - P.dir * 20); }     // два луча в противофазе
+    for (const h of T.hlaser || []) { h.by = hlaserY(h, t); h.by2 = h.by - 14;     /* лучи идут парой (зазор 14): когда пара выше роста Валеры (78) — проходишь под ней, окно ~40% периода */ for (const yy of [h.by, h.by2]) if (P.x > h[0] && P.x < h[1] && yy > bodyTop(P) && yy < P.y - 2) hit(P, 15, P.x - P.dir * 20); }     // два луча в противофазе
   };
   LAB.pressCeil = (M, P, x) => {     // низ головки пресса над x (в прыжке Валера упирается в неё головой); null — пресса нет
     let best = null; for (const [px, fl, f] of (M.traps && M.traps.press) || []) if (Math.abs(x - px) < 44 && P.y <= fl + 2 && P.y > fl - 200) { const hb = pressY(fl, (P.t + f) % PRESS_T); if (best === null || hb > best) best = hb; }
@@ -77,7 +77,7 @@
     for (const h of T.hlaser || []) {     // стойки с излучателями, луч поперёк
       const [a, b, fl, lo, hi] = h; if (b < x0 || a > x1) continue; const yy = h.by ?? hlaserY(h, t), [, rh] = L9.size('trap9a', 'rod'), [, bh] = L9.size('trap9a', 'beam');
       for (const px of [a, b]) for (let y = fl; y > Math.min(fl - hi - 26, P.cam.y - 30); y -= rh * 0.35 - 1) S(c, 'trap9a', 'rod', px, y - rh * 0.35 / 2, 0.35);     // стойки до потолка (выше края экрана)
-      for (const y of [yy, h.by2 ?? hlaserY(h, t + h[5] / 2)]) {
+      for (const y of [yy, h.by2 ?? (yy - 14)]) {
         c.filter = 'hue-rotate(115deg) saturate(1.3)';     // лазеры по ТЗ зелёные
         S(c, 'trap9a', 'beam', (a + b) / 2, y, 0.8, { rot: Math.PI / 2, sy: (b - a - 16) / (bh * 0.8), add: 1, a: 0.8 + Math.sin(t * 40) * 0.15 });
         c.filter = 'none';
