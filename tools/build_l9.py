@@ -605,11 +605,14 @@ if have('l9fgw_0.jpg'):     # стена переднего плана (Flow): �
 if False and have('l9jamb_0.jpg'):     # рама отвергнута (v551)
       # рама проёма в перспективе (Flow, по макету B владельца): стоит на полу, стык фонов — под толстой правой стойкой
     _dj = trim(rgba_m('l9jamb_0.jpg', (20, 120, 440, 960))); pack('door9', [_dj], 600 / _dj.height, names=['frame'])
-if have('l9fgw_0.jpg'):     # ровная стена на стыке фонов (из листа Flow l9fgw_0: стена с трубами и полосой у пола, клёпаные кромки с двух сторон), цвет — к бирюзе лаборатории
+if False and have('l9fgw_0.jpg'):     # (отвергнуто v552) ровная стена на стыке фонов (из листа Flow l9fgw_0: стена с трубами и полосой у пола, клёпаные кромки с двух сторон), цвет — к бирюзе лаборатории
     _w = Image.open(os.path.join(SRC, 'l9fgw_0.jpg')).convert('RGB'); _e = _w.crop((205, 0, 238, 600)); _b = _w.crop((0, 0, 238, 600))
     _wall = Image.new('RGB', (238 + 33, 600)); _wall.paste(_e.transpose(Image.FLIP_LEFT_RIGHT), (0, 0)); _wall.paste(_b, (33, 0))
     _wa = np.asarray(_wall).astype(np.float32) * np.array([0.82, 1.0, 0.98]); _wall = Image.fromarray(_wa.clip(0, 255).astype(np.uint8)).convert('RGBA')
     pack('wall9', [_wall.crop((0, 0, 271, 470)), _wall.crop((0, 470, 271, 600))], 1.0, anchor='mid', names=['mid', 'bot'])
+if have('l9pipe_0.jpg'):     # трубы с зелёной жижей на стыках фонов (Flow 9:16, по образцу фона l9px3_1): повторяются по вертикали без шва
+    _pp = rgba_m('l9pipe_0.jpg'); _pp = seamless(_pp.rotate(90, expand=True), 80).rotate(-90, expand=True)
+    pack('pipes9', [_pp], 0.5, anchor='mid', names=['p'])
 if have('l9cw_0.jpg'):     # металлическая опора под пол (нога мостка, двутавр с подкосом): капитель с подкосом, ствол (повтор), база-плита; общий x 420..620, ось ствола 505
     _X = (420, 620); _cp = rgba_m('l9cw_0.jpg', (_X[0], 284, _X[1], 398)); _st = rgba_m('l9cw_0.jpg', (_X[0], 398, _X[1], 668)); _bs = rgba_m('l9cw_0.jpg', (_X[0], 668, _X[1], 748))
     _st = seamless(_st.rotate(90, expand=True), 60).rotate(-90, expand=True)
