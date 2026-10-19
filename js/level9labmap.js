@@ -255,12 +255,12 @@
       for (let y = yb - mh + 1; y > P.cam.y - mh - 20; y -= mh - 1) c.drawImage(im, Mf[0], Mf[1], Mf[2], Mf[3], x - W / 2, y, W, mh);
       c.imageSmoothingEnabled = false;
     };
-    M.drawPipes = (c, P, x, fy) => {     // связка вертикальных труб с жижей (Flow): от пола (чуть уходит в него) до верха экрана, кадр повторяется
+    M.drawPipes = (c, P, x, fy) => {     // связка вертикальных труб с жижей (Flow): низ — ровно по поверхности пола, вверх до края экрана, кадр повторяется
       const im = L9.img.pipes9; if (!im || Math.abs(x - P.cam.x - 320) > 420) return; const f = L9D.pipes9.f[0], W = 130, k = W / f[2], h = f[3] * k;
-      c.imageSmoothingEnabled = true; for (let y = fy + 16 - h; y + h > P.cam.y - 20; y -= h - 1) c.drawImage(im, f[0], f[1], f[2], f[3], x - W / 2, y, W, h); c.imageSmoothingEnabled = false;
+      c.imageSmoothingEnabled = true; for (let y = fy - 2 - h; y + h > P.cam.y - 20; y -= h - 1) c.drawImage(im, f[0], f[1], f[2], f[3], x - W / 2, y, W, h); c.imageSmoothingEnabled = false;
     };
     M.drawPortal = (c, P) => {
-      M.drawPipes(c, P, M.portalX(), 338); M.drawPipes(c, P, M.exitX(), DY + 8);     // вертикальные трубы с жижей закрывают стыки фонов у наклонного спуска и внизу
+      M.drawPipes(c, P, M.portalX(), 330); { const fl = M.solids.find(r => r[1] === DY && r[0] <= M.exitX() + 70 && r[0] + r[2] > M.exitX()); M.drawPipes(c, P, Math.max(M.exitX(), fl ? fl[0] + 67 : 0), DY); }     // внизу трубы целиком на плите пола     // вертикальные трубы с жижей закрывают стыки фонов у наклонного спуска и внизу
     };
     // наклонный спуск: тоннель повёрнут вдоль рельса (уклон 0.3). Кадр тоннеля: x — вдоль рельса, y — поперёк; fy — где в этом кадре проходит рельс
     M.tunFrame = (c, cx, cy, fn) => {
