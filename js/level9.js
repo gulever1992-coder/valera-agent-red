@@ -16,7 +16,7 @@ WHO.mrx = WHO.mrx || { name: 'ГОСПОДИН ИКС', color: '#ff4040', voice:
     for (const n of names) { L9.N[n] = {}; (D()[n].n || []).forEach((nm, i) => L9.N[n][nm] = i); }
     L9.img.props8 = await G.loadImage('assets/l8/props8.png');   // тень из ур.8 (Flow)
     G.portraits = G.portraits || {};
-    await Promise.all(['mrx', 'valera6', 'kesha', 'grab'].filter(k => !G.portraits[k]).map(async k => { G.portraits[k] = await G.loadImage('assets/spr/p_' + k + '.png'); }));
+    await Promise.all(['mrx', 'valera6', 'kesha', 'grab', 'sanya', 'sanya2'].filter(k => !G.portraits[k]).map(async k => { G.portraits[k] = await G.loadImage('assets/spr/p_' + k + '.png'); }));
     L9.ready = true;
   };
   L9.fi = (sh, name) => typeof name === 'number' ? name : L9.N[sh][name];
@@ -37,7 +37,7 @@ WHO.mrx = WHO.mrx || { name: 'ГОСПОДИН ИКС', color: '#ff4040', voice:
   L9.size = (sh, i) => { const f = D()[sh].f[L9.fi(sh, i)]; return [f[2] * 0.5, f[3] * 0.5]; };
   L9.rnd = (a, b) => a + Math.random() * (b - a);
   L9.clamp = (v, a, b) => v < a ? a : v > b ? b : v;
-  L9.ORDER = ['tun', 'arrive', 'lab'];                // порядок частей (дополняется по мере сборки)
+  L9.ORDER = ['tun', 'arrive', 'lab', 'sanya'];                // порядок частей (дополняется по мере сборки)
 
   L9.Level = class {
     constructor() { this.id = 9; this.canPause = true; this.stats = { time: 0, dmg: 0, kills: 0, deflect: 0, secrets: 0, food: 0, deaths: 0, shots: 0, hits: 0 }; this.score = 0; }

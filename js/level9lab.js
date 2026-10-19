@@ -35,8 +35,8 @@
 
   const P = L9.PARTS.lab = {
     deathText: 'ВАЛЕРУ ПЕРЕРАБОТАЛИ',
-    start(lv, ck) {
-      const M = P.M = L9.MAPS.lab(); P.lv = lv;
+    start(lv, ck, map) {
+      const M = P.M = L9.MAPS[map || 'lab'](); P.lv = lv;
       const cp = M.cks[ck || 0] || M.cks[0];
       Object.assign(P, { hp: 100, inv: 1.2, x: cp[0], y: cp[1], vx: 0, vy: 0, dir: 1, st: 'stand', stT: 0, onG: true, aim: 'fwd', fireT: 0, fireA: 0, rollT: 0, rollCd: 0, buttT: 0,
         climb: null, gren: 5, weap: 'rifle', ammo: {}, t: 0, ck: ck || 0, dropT: 0, cam: { x: cp[0] - 220, y: cp[1] - 250 }, bul: [], ebul: [], fx: [], foes: [], hint: null, hintT: 0, cover: false });

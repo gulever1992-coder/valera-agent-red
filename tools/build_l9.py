@@ -626,6 +626,33 @@ if have('l9vatdeep_1.jpg'):     # глубокий чан целиком (без
     vd = trim(rgba_m('l9vatdeep_1.jpg'))
     pack('vatD9', [vd], 0.5, anchor='mid', names=['v'])
 
+# ---------- часть 4 «ПРОФЕССОР САНЯ» (Flow 2026-10-19, задания tools/p9/flow9s.js) ----------
+def depurple(fr):     # пурпур фона, просвечивающий сквозь стекло/дым -> тёмное бирюзовое стекло той же яркости
+    out = []
+    for im in fr:
+        a = np.asarray(im).copy(); r_, g_, b_ = [a[..., i].astype(int) for i in range(3)]; pu = (r_ > g_ * 1.2) & (b_ > g_ * 1.2) & (b_ > 50)
+        L_ = (r_ * 0.3 + g_ * 0.59 + b_ * 0.11); a[pu, 0] = (L_[pu] * 0.45).clip(0, 255); a[pu, 1] = (L_[pu] * 0.95).clip(0, 255); a[pu, 2] = (L_[pu] * 0.9).clip(0, 255)
+        out.append(Image.fromarray(a))
+    return out
+if have('l9san_0.jpg'):
+    sa = cut('l9san_0.jpg', 'm', 2, 5, clean=True)
+    pack('san9', sa, VH * 1.0 / hgt(sa, 2), names=['fix0', 'fix1', 'talk', 'finger', 'shout', 'w0', 'w1', 'press', 'laugh', 'panic'])
+    sc = cut('l9sclone_1.jpg', 'm', 2, 6, mode='grid', clean='edge')
+    pack('sclone9', sc, VH * 0.98 / hgt(sc, 0), names=['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'wind', 'punch', 'grab', 'hit', 'fall', 'dead'])
+    sn = depurple(cut('l9scan_1.jpg', 'm', 2, 3, clean='edge'))
+    pack('scan9', sn, VH * 1.6 / hgt(sn, 1), names=['open', 'press', 'glass', 'spark', 'fire', 'wreck'])
+    pr = depurple(cut('l9prn_0.jpg', 'm', 2, 4, clean='edge'))
+    pack('prn9', pr[:4], VH * 2.15 / hgt(pr, 0), names=['idle', 'print', 'out', 'wreck'])
+    pack('bat9', pr[4:7], 0.5, anchor='mid', names=['on', 'hit', 'dead'])
+    pack('srail9', [seamless(pr[7], 40)], 0.5, anchor='mid', names=['rail'])
+    rb = cut('l9robo_1.jpg', 'm', 2, 3, clean=True)
+    pack('robo9', rb, VH * 0.95 / hgt(rb, 0), names=['bench', 'dog', 'dogSit', 'spider', 'dogDead', 'benchDead'])
+    # портреты для диалога: две головы на чёрном (ухмылка, смех) -> 128x128
+    _pi = Image.open(os.path.join(SRC, 'l9spor_0.jpg')).convert('RGB'); _W, _H = _pi.size
+    for _i, _nm in enumerate(['p_sanya', 'p_sanya2']):
+        _cx = _W * (1 + 2 * _i) // 4; _s = int(_H * 0.62); _y0 = int(_H * 0.08)
+        _pi.crop((_cx - _s // 2, _y0, _cx + _s // 2, _y0 + _s)).resize((128, 128), Image.LANCZOS).save(os.path.join(ROOT, 'assets', 'spr', _nm + '.png'))
+
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 
 if DBG:
