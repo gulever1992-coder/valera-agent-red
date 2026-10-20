@@ -745,6 +745,37 @@ if have('l9ccap_1.jpg'):
     cp = depurple(cut('l9ccap_1.jpg', 'm', 1, 4, clean='edge'))
     pack('capL9', cp, 1.0, names=['c0', 'c1', 'c2', 'c3'])
 
+# ---------- часть 5 «ЗАЛ СЛАВЫ» (Flow 2026-10-21) ----------
+if have('l9htv_1.jpg'):
+    from scipy import ndimage as _nd
+    _far = 'l9hfar2_0.jpg' if have('l9hfar2_0.jpg') else 'l9hfar_0.jpg'
+    _im = seamless(Image.open(os.path.join(SRC, _far)).convert('RGB'), 160); _im.save(os.path.join(OUT, 'haFar.jpg'), quality=90); DATA['_bg']['haFar'] = {'w': _im.width, 'h': _im.height}
+    _m = rgba_m('l9hmid_0.jpg'); _m = seamless(_m, 140); _a = np.asarray(_m).copy(); _a[_a[..., 3] < 60, 3] = 0; _a[..., :3] = (_a[..., :3] * 0.7).astype(np.uint8)
+    Image.fromarray(_a).save(os.path.join(OUT, 'haMid.png')); DATA.setdefault('_bgp', {})['haMid'] = 1; DATA['_bg']['haMid'] = {'w': _m.width, 'h': _m.height}
+    _st = rgba_m('l9hfloor_1.jpg'); _b = bands(_st); print('полосы hfloor', _b)
+    for _n, (y0, y1) in zip(['haFloor', 'haCeil'], _b[:2]):
+        _s2 = seamless(_st.crop((0, y0, _st.width, y1)), 120); _a = np.asarray(_s2).copy(); _a[_a[..., 3] < 60, 3] = 0
+        Image.fromarray(_a).save(os.path.join(OUT, _n + '.png')); DATA.setdefault('_bgp', {})[_n] = 1; DATA['_bg'][_n] = {'w': _s2.width, 'h': _s2.height}
+    tv = cut('l9htv_1.jpg', 'm', 2, 4, clean='edge'); scr = []
+    for _k, _f in enumerate(tv):
+        _a = np.asarray(_f).copy(); _r, _g, _b2 = [_a[..., i].astype(int) for i in range(3)]; _gr = (_g > 150) & (_r < 120) & (_b2 < 140) & (_a[..., 3] > 0)
+        if _k < 4:
+            _lab, _n2 = _nd.label(_nd.binary_closing(_gr, iterations=2)); rs = []
+            for _sl in _nd.find_objects(_lab):
+                _y0, _y1, _x0, _x1 = _sl[0].start, _sl[0].stop, _sl[1].start, _sl[1].stop
+                if (_x1 - _x0) * (_y1 - _y0) > 300: rs.append([int(_x0), int(_y0), int(_x1 - _x0), int(_y1 - _y0)])
+            scr.append(rs)
+        _a[_gr, 0] = 6; _a[_gr, 1] = 14; _a[_gr, 2] = 12; tv[_k] = Image.fromarray(_a)     # экран — тёмный (портрет рисуется в игре)
+    pack('tvA9', tv, 1.0, names=['t0', 't1', 't2', 't3', 'b0', 'b1', 'b2', 'b3']); DATA['tvA9']['scr'] = scr
+    bg_ = cut('l9hbig_0.jpg', 'm', 1, 1, clean='edge')[0]
+    _a = np.asarray(bg_).copy(); _r, _g, _b2 = [_a[..., i].astype(int) for i in range(3)]; _gr = (_g > 150) & (_r < 120) & (_b2 < 140)
+    _off = _a.copy(); _off[_gr, 0] = 10; _off[_gr, 1] = 18; _off[_gr, 2] = 16
+    _on = mrx_screens(Image.fromarray(_a)); _o = np.asarray(_on).copy(); _r, _g, _b2 = [_o[..., i].astype(int) for i in range(3)]; _gr2 = (_g > 120) & (_g > _r * 1.4) & (_g > _b2 * 1.2); _o[_gr2, 0] = 0; _o[_gr2, 1] = 0; _o[_gr2, 2] = 0; _on = Image.fromarray(_o)     # остатки зелёного по краю экрана -> чёрный
+    pack('bigA9', [Image.fromarray(_off), _on], 1.0, names=['off', 'on'])
+    tp = cut('l9htp_0.jpg', 'm', 1, 3, clean='edge')
+    _a = np.asarray(tp[0]).copy(); _r, _g, _b2 = [_a[..., i].astype(int) for i in range(3)]; _pk = (_r > 170) & (_b2 > 150) & (_g < _r - 25) & (_g < _b2 - 15); _a[_pk, 3] = 0; tp[0] = trim(Image.fromarray(_a))     # розовый конус прожектора (пурпур фона в свете) — убрать, луч рисуем в игре
+    pack('tpA9', tp, 1.0, names=['pyr', 'pack', 'pile'])
+
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 
 if DBG:
