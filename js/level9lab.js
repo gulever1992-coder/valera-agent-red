@@ -39,7 +39,7 @@
       const M = P.M = L9.MAPS[map || 'lab'](); P.lv = lv;
       const cp = M.cks[ck || 0] || M.cks[0];
       Object.assign(P, { hp: 100, inv: 1.2, x: cp[0], y: cp[1], vx: 0, vy: 0, dir: 1, st: 'stand', stT: 0, onG: true, aim: 'fwd', fireT: 0, fireA: 0, rollT: 0, rollCd: 0, buttT: 0,
-        climb: null, gren: 5, weap: 'rifle', ammo: {}, t: 0, ck: ck || 0, dropT: 0, cam: { x: cp[0] - 220, y: cp[1] - 250 }, bul: [], ebul: [], fx: [], foes: [], hint: null, hintT: 0, cover: false });
+        climb: null, gren: 5, weap: 'rifle', ammo: {}, t: 0, ck: ck || 0, dropT: 0, cam: { x: cp[0] - 220, y: cp[1] - 250 }, bul: [], ebul: [], fx: [], foes: [], hint: null, hintT: 0, cover: false, web: 0 });
       for (const k in WEAP) P.ammo[k] = 0;
       M.init && M.init(P, lv, ck || 0);
       try { Music.play('alarm'); } catch (e) {}
@@ -59,6 +59,11 @@
       const L = I.held('left'), R = I.held('right'), U = I.held('up'), Dn = I.held('down');
       // ---- состояния
       if (P.st === 'hurt') { if (P.stT > 0.35 && P.onG) P.st = 'stand'; }
+      else if (P.web > 0) {     // опутан паутиной паука: стоит, жми стрелки, чтобы порвать
+        P.vx = 0; P.st = 'stand'; P.web -= dt * 0.2;
+        if (['left', 'right', 'up', 'down'].some(a => I.pressed(a))) { P.web -= 0.11; Sound.play('clank', 0.25); }
+        if (P.web <= 0) { P.web = 0; P.inv = Math.max(P.inv, 0.5); Sound.play('punch', 0.5); }
+      }
       else if (P.climb) {
         const l = P.climb; P.vx = 0; P.vy = 0; P.x = l[0];
         const dy = (Dn ? 1 : 0) - (U ? 1 : 0); P.y += dy * 95 * dt; P.climbT = (P.climbT || 0) + Math.abs(dy) * dt;
@@ -105,7 +110,7 @@
           if (f !== null) { if (!P.onG && P.vy > 300) { Sound.play('land'); P.landT = 0.12; } P.y = f; P.vy = 0; P.onG = true; }
           else { P.y = ny; P.onG = false; }
         } else {
-          const hy = P.y - PH, nh = ny - PH, deck = M.walks.find(w => !w.gone && P.x + PW * 0.6 > w[0] && P.x - PW * 0.6 < w[0] + w[2] && hy >= w[1] + 8 && nh < w[1] + 8 && !(M.pits || []).some(q => P.x > q[0] - 70 && P.x < q[1] + 70));     // над ямой под мостком пропускаем — иначе её не перепрыгнуть     // мостки снизу твёрдые: в прыжке Валера бьётся о них головой (наверх — только по лестнице)
+          const hy = P.y - PH, nh = ny - PH, deck = M.walks.find(w => !w.gone && !w.thru && P.x + PW * 0.6 > w[0] && P.x - PW * 0.6 < w[0] + w[2] && hy >= w[1] + 8 && nh < w[1] + 8 && !(M.pits || []).some(q => P.x > q[0] - 70 && P.x < q[1] + 70));     // над ямой под мостком пропускаем — иначе её не перепрыгнуть     // мостки снизу твёрдые: в прыжке Валера бьётся о них головой (наверх — только по лестнице)
           const pc = LAB.pressCeil ? LAB.pressCeil(M, P, P.x) : null;     // головка пресса снизу тоже твёрдая
           if (LAB.solidAt(M, P.x, nh)) P.vy = 0; else if (pc !== null && hy >= pc - 2 && nh < pc) { P.y = pc + PH; P.vy = 30; Sound.play('clank', 0.4); } else if (deck) { P.y = deck[1] + 8 + PH; P.vy = 30; Sound.play('clank', 0.4); } else P.y = ny;
           P.onG = false;
@@ -240,7 +245,7 @@
     drawWalks(c) {
       const M = P.M, x0 = P.cam.x - 100, x1 = P.cam.x + 740;
       // мостки v5 (cw9): опоры, лестница и настил — один рисунок; передние перила (F) — после Валеры в drawRails
-      LAB.camY = P.cam.y; for (const w of M.walks) if (!w.gone && w[0] < x1 && w[0] + w[2] > x0) LAB.cwLayer(c, M, w, 'B');
+      LAB.camY = P.cam.y; for (const w of M.walks) if (!w.gone && !w.own && w[0] < x1 && w[0] + w[2] > x0) LAB.cwLayer(c, M, w, 'B');
     },
     drawWorld(c) {
       const M = P.M;
@@ -248,7 +253,7 @@
     },
     drawRails(c) {     // передние перила мостков — перед Валерой и врагами
       const M = P.M, x0 = P.cam.x - 100, x1 = P.cam.x + 740;
-      for (const w of M.walks) if (!w.gone && w[0] < x1 && w[0] + w[2] > x0) LAB.cwLayer(c, M, w, 'F');
+      for (const w of M.walks) if (!w.gone && !w.own && w[0] < x1 && w[0] + w[2] > x0) LAB.cwLayer(c, M, w, 'F');
     },
     drawValera(c) {
       if (P.lv.dead && P.lv.dead > 0.3) { S(c, 'vClimb9', 'down', P.x, P.y, 1, { flip: P.dir < 0 }); return; }

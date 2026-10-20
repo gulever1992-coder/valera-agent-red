@@ -667,6 +667,37 @@ if have('l9rdog_0.jpg'):
         if _n == 'sxNear': _a[..., :3] = (_a[..., :3] * 0.55).astype(np.uint8)     # ближний план темнее (силуэт)
         Image.fromarray(_a).save(os.path.join(OUT, _n + '.png')); DATA.setdefault('_bgp', {})[_n] = 1
 
+# ---------- часть 4, арена по эскизу владельца (Flow 16:9, 2026-10-20): пещера-лаборатория, острова, рельс, мастерская, 4 слоя параллакса ----------
+def bands(im, thr=0.25, gap=12):     # горизонтальные полосы листа на пурпуре -> [(y0, y1)]
+    al = (np.asarray(im)[..., 3] > 0).mean(1) > thr; out = []; y = 0
+    while y < len(al):
+        if al[y]:
+            y0 = y
+            while y < len(al) and (al[y] or al[y:y + gap].any()): y += 1
+            out.append((y0, y))
+        y += 1
+    return out
+if have('l9afar_0.jpg'):
+    _im = seamless(Image.open(os.path.join(SRC, 'l9afar_0.jpg')).convert('RGB'), 160); _im.save(os.path.join(OUT, 'saFar.jpg'), quality=90); DATA['_bg']['saFar'] = {'w': _im.width, 'h': _im.height}
+    for _n, _src, _dk in (('saMid', 'l9amid_0.jpg', 0.62), ('saPipe', 'l9apipe_0.jpg', 0.6), ('saNear', 'l9anear_0.jpg', 0.42)):
+        _im = rgba_m(_src); _rgb = depurple([_im.convert('RGB')])[0]; _im = Image.fromarray(np.dstack([np.asarray(_rgb), np.asarray(_im)[..., 3]]))
+        if _n != 'saNear': _im = seamless(_im, 140)
+        _a = np.asarray(_im).copy(); _a[_a[..., 3] < 60, 3] = 0; _a[..., :3] = (_a[..., :3] * _dk).astype(np.uint8)
+        Image.fromarray(_a).save(os.path.join(OUT, _n + '.png')); DATA.setdefault('_bgp', {})[_n] = 1; DATA['_bg'][_n] = {'w': _im.width, 'h': _im.height}
+    black_grid('l9asteam_0.jpg', 2, 4, 'steam9', ['s0', 's1', 's2', 's3', 's4', 's5', 's6', 's7'], scale=0.5)
+    black_grid('l9afx_0.jpg', 2, 4, 'afx9', ['bolt0', 'bolt1', 'bolt2', 'arc', 'web', 'cocoon', 'cocoonT', 'plasma'], scale=0.5)
+    vt = depurple(cut('l9avat_0.jpg', 'm', 2, 4, clean='edge'))
+    pack('vatA9', vt, 1.0, names=['v0', 'v1', 'v2', 'v3', 'c0', 'c1', 'c2', 'c3'])
+    il = cut('l9aisl_0.jpg', 'm', 2, [3, 2], clean='edge')
+    pack('isl9', il, 1.0, names=['big0', 'big1', 'big2', 'small0', 'small1'])
+    ws = cut('l9aws_0.jpg', 'm', 1, 2, clean='edge')
+    pack('ws9', ws, 1.0, names=['off', 'on'])
+    _st = rgba_m('l9astrip_0.jpg'); _b = bands(_st); print('полосы astrip', _b)
+    for _n, (y0, y1) in zip(['saRail', 'saFloor', 'saCeil'], _b[:3]):
+        _im = seamless(_st.crop((0, y0, _st.width, y1)), 120)
+        _a = np.asarray(_im).copy(); _a[_a[..., 3] < 60, 3] = 0
+        Image.fromarray(_a).save(os.path.join(OUT, _n + '.png')); DATA.setdefault('_bgp', {})[_n] = 1; DATA['_bg'][_n] = {'w': _im.width, 'h': _im.height}
+
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 
 if DBG:

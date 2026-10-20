@@ -75,7 +75,8 @@
       if (P.climb && this.onG) { this.vx = 0; this.set(this.sh === 'rspd9' ? 'walk' : 'run'); this.phys(dt); return; }     // на лестнице Валеру не бьют — он не может отстреливаться
       if (this.st === 'crouch') { this.vx = 0; if (this.stT > 0.35) { this.set('jump'); this.vy = -460; this.vx = clamp(dx * 1.3, -240, 240); this.onG = false; Sound.play('jump', 0.4); } }
       else if (this.st === 'jump') { if (this.near(P, 32, 46)) { P.hurt(11, this.x); } if (this.onG && this.stT > 0.1) { this.set('walk'); this.cd = rnd(1, 1.8); } }
-      else if (this.st === 'fire') { this.vx = 0; if (this.stT > 0.3 && !this.shot) { this.shot = 1; for (const a of [-0.08, 0.08]) this.ebul(this.x + this.dir * 26, this.y - 36, Math.cos(a) * this.dir * 320, Math.sin(a) * 320, { fr: 'laser', s: 0.4, dmg: 8 }); Sound.play('zap', 0.5); } if (this.stT > 0.6) { this.set('walk'); this.shot = 0; this.cd = rnd(1.6, 2.6); } }
+      else if (this.st === 'fire') { this.vx = 0; if (this.stT > 0.3 && !this.shot && this.M.spdWeb) { this.shot = 1; const a = Math.atan2(P.y - 40 - (this.y - 36), P.x - this.x); this.ebul(this.x + this.dir * 26, this.y - 36, Math.cos(a) * 260, Math.sin(a) * 260, this.M.spdWeb); Sound.play('throw', 0.5); }     // арена: паук плюётся паутиной (сковывает)
+        if (this.stT > 0.3 && !this.shot) { this.shot = 1; for (const a of [-0.08, 0.08]) this.ebul(this.x + this.dir * 26, this.y - 36, Math.cos(a) * this.dir * 320, Math.sin(a) * 320, { fr: 'laser', s: 0.4, dmg: 8 }); Sound.play('zap', 0.5); } if (this.stT > 0.6) { this.set('walk'); this.shot = 0; this.cd = rnd(1.6, 2.6); } }
       else {
         this.set('walk');
         if (ad < 150 && this.cd <= 0 && this.onG) this.set('crouch');
@@ -243,7 +244,7 @@
     deathText: 'ВАЛЕРУ РАСПЕЧАТАЛИ',
     get hp() { return LP().hp; }, set hp(v) { LP().hp = v; },
     get inv() { return LP().inv; }, set inv(v) { LP().inv = v; },
-    start(lv, ck) { LP().start(lv, ck, L9.SANYA_VERT && !/[?&]h=1/.test(location.search) ? 'sanyaV' : 'sanya'); },     // вертикальная версия; ?h=1 или L9.SANYA_VERT=false — прежняя горизонтальная
+    start(lv, ck) { const q = location.search; LP().start(lv, ck, /[?&]h=1/.test(q) ? 'sanya' : /[?&]h=2/.test(q) || !L9.MAPS.sanyaA ? 'sanyaV' : 'sanyaA'); },     // арена по эскизу; ?h=2 — вертикальная башня, ?h=1 — первая горизонтальная
     onDie(lv) { LP().onDie(lv); },
     deadUpdate(lv, dt) { LP().deadUpdate(lv, dt); },
     update(lv, dt) { LP().update(lv, dt); },

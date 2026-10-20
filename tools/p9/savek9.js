@@ -11,7 +11,7 @@ window.__saveK = async (want) => {
       const row = imgs.filter(v => Math.abs(v[0] - ky) < 90).sort((a, b) => a[1] - b[1]);
       for (let j = 0; j < row.length && j < 2; j++) {
         const name = nm + '_' + j + '.jpg'; if (done[name]) continue;
-        const b = await (await fetch(row[j][2])).blob(); const b64 = await new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(b); });
+        const b = await (await fetch(row[j][2].replace(/=sd+-rw/, "=s2048"))).blob(); const b64 = await new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(b); });
         await fetch('http://127.0.0.1:8790/', { method: 'POST', body: name + '|' + b64 }); done[name] = b.size;
       }
     }
