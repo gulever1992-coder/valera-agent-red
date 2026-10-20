@@ -637,7 +637,7 @@ def depurple(fr):     # пурпур фона, просвечивающий ск
 if have('l9san_0.jpg'):
     sa = cut('l9san_0.jpg', 'm', 2, 5, clean=True)
     pack('san9', sa, VH * 1.0 / hgt(sa, 2), names=['fix0', 'fix1', 'talk', 'finger', 'shout', 'w0', 'w1', 'press', 'laugh', 'panic'])
-    sc = cut('l9sclone_1.jpg', 'm', 2, 6, mode='grid', clean='edge')
+    sc = cut('l9sclone2_0.jpg', 'm', 4, 3, clean=True) if have('l9sclone2_0.jpg') else cut('l9sclone_1.jpg', 'm', 2, 6, mode='grid', clean='edge')     # v2: лицом как Саня (по листу san9)
     pack('sclone9', sc, VH * 0.98 / hgt(sc, 0), names=['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'wind', 'punch', 'grab', 'hit', 'fall', 'dead'])
     sn = depurple(cut('l9scan_1.jpg', 'm', 2, 3, clean='edge'))
     pack('scan9', sn, VH * 1.6 / hgt(sn, 1), names=['open', 'press', 'glass', 'spark', 'fire', 'wreck'])
@@ -652,6 +652,20 @@ if have('l9san_0.jpg'):
     for _i, _nm in enumerate(['p_sanya', 'p_sanya2']):
         _cx = _W * (1 + 2 * _i) // 4; _s = int(_H * 0.62); _y0 = int(_H * 0.08)
         _pi.crop((_cx - _s // 2, _y0, _cx + _s // 2, _y0 + _s)).resize((128, 128), Image.LANCZOS).save(os.path.join(ROOT, 'assets', 'spr', _nm + '.png'))
+
+# ---------- часть 4, вертикальная версия (Flow 9:16, 2026-10-20): роботы-враги и фон-слои ----------
+if have('l9rdog_0.jpg'):
+    rd = cut('l9rdog_0.jpg', 'm', 6, 2, clean='edge')
+    pack('rdog9', rd, VH * 0.6 / hgt(rd, 0), names=['r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'crouch', 'leap', 'bite', 'laser', 'hit', 'dead'])
+    rs = cut('l9rspd_0.jpg', 'm', 4, 3, clean='edge')
+    pack('rspd9', rs, VH * 0.55 / hgt(rs, 0), names=['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'crouch', 'jump', 'fire', 'hang', 'hit', 'dead'])
+    for _n, _src in (('sxFarA', 'l9vfarA_1.jpg'), ('sxFarB', 'l9vfarB_1.jpg')):     # дальний зал (непрозрачный)
+        _im = Image.open(os.path.join(SRC, _src)).convert('RGB'); _im.save(os.path.join(OUT, _n + '.jpg'), quality=90); DATA['_bg'][_n] = {'w': _im.width, 'h': _im.height}
+    for _n, _src in (('sxMid', 'l9vmid_0.jpg'), ('sxNear', 'l9vnear_1.jpg')):     # средний и ближний слои на пурпуре: бесшовные по вертикали
+        _im = rgba_m(_src); _im = seamless(_im.rotate(90, expand=True), 120).rotate(-90, expand=True)
+        _a = np.asarray(_im).copy(); _a[_a[..., 3] < 60, 3] = 0
+        if _n == 'sxNear': _a[..., :3] = (_a[..., :3] * 0.55).astype(np.uint8)     # ближний план темнее (силуэт)
+        Image.fromarray(_a).save(os.path.join(OUT, _n + '.png')); DATA.setdefault('_bgp', {})[_n] = 1
 
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 

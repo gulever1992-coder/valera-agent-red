@@ -160,4 +160,46 @@ window.__t9 = {
     }
     log.T = Math.round(log.t); log.x = Math.round(P.x); log.part = lv.partName; log.kills = lv.stats.kills - log.kills0; log.dmgTotal = log.hits.reduce((a, b) => a + b[1], 0); log.hits = log.hits.slice(0, 30); log.cut = Math.round(log.cut); return log;
   },
+  // часть 4, вертикальная версия: аккумулятор своего этажа -> лестница наверх -> на верхнем этаже дверь слева
+  sanyaV(o = {}) {
+    const lv = App.level, I = G.Input, skill = o.skill ?? 0.8; let P = L9.PARTS.lab;
+    App.paused = true; Scene.active = false; Scene.dialog = null; lv.partName = 'sanya'; lv.ck = o.ck || 0; lv.done = false; lv.reset(); P = L9.PARTS.lab;
+    const log = { deaths: 0, minHp: 100, t: 0, end: false, hits: [], cut: 0, bats: [], floors: [], kills0: lv.stats.kills };
+    let lastHp = P.hp, lastX = P.x, stuckT = 0, jumpCd = 0, lastK = -1;
+    const dt = 1 / 60, max = (o.secs || 360) * 60;
+    for (let i = 0; i < max; i++) {
+      I.down = {}; I.hit = {};
+      if (Scene.active) { log.cut += dt; if (Scene.dialog && Scene.dialog.t > 0.4) I.hit.jump = true; }
+      else if (lv.dead) { }
+      else if (lv.partName !== 'sanya' || lv.done) { log.end = true; break; }
+      else {
+        const M = P.M, k = M.floorOf(P.y); if (k !== lastK && !P.climb) { lastK = k; log.floors.push([k, Math.round(log.t)]); }
+        if (P.climb) { I.down.up = true; }
+        else {
+          const foes = P.foes.filter(f => !f.dead && !f.hang && Math.abs(f.x - P.x) < 300 && Math.abs(f.y - P.y) < 50).sort((a, b) => Math.abs(a.x - P.x) - Math.abs(b.x - P.x));
+          const f = foes[0], bt = M.bats.find(b => b.hp > 0 && b.k === k), lad = M.ladders[k];
+          let tx = bt ? bt.x - (18 + (P.y - 86 - bt.y) * 0.255) : lad ? lad[0] : M.door.x + 30, shootUp = bt && Math.abs(P.x - tx) < 6, climb = !bt && lad && Math.abs(P.x - tx) < 4;
+          if (f && Math.abs(f.x - P.x) < 170 && Math.random() < skill) {
+            I.down[f.x < P.x ? 'left' : 'right'] = true; I.down.punch = true; P.dir = f.x < P.x ? -1 : 1;
+            if (Math.abs(f.x - P.x) > 50) { I.down.left = I.down.right = false; }
+            if (f.st === 'leap' || f.st === 'jump') { if (P.rollCd <= 0) I.hit.switch = true; }
+          } else if (shootUp) { if (P.dir < 0) I.down.right = true; else { I.down.up = true; I.down.punch = true; } }
+          else if (climb) { I.down.up = true; }
+          else { I.down.right = tx > P.x + 3; I.down.left = tx < P.x - 3; }
+        }
+        jumpCd -= dt;
+        if (Math.abs(P.x - lastX) < 0.2 && (I.down.right || I.down.left) && !I.down.punch && !P.climb) stuckT += dt; else stuckT = 0;
+        if (stuckT > 0.8 && P.onG && jumpCd <= 0) { I.hit.jump = true; jumpCd = 0.6; stuckT = 0; }
+        lastX = P.x;
+      }
+      for (const k in I.hit) if (I.hit[k]) I.down[k] = I.down[k] || false;
+      const nb = P.M && P.M.bats ? P.M.bats.filter(b => b.hp <= 0).length : 0;
+      lv.update(dt);
+      if (P.M && P.M.bats && P.M.bats.filter(b => b.hp <= 0).length > nb) log.bats.push(Math.round(log.t));
+      if (lv.dead === 0.001) { log.deaths++; (log.dx = log.dx || []).push([Math.round(P.x), Math.round(P.y)]); }
+      if (lv.partName === 'sanya') { log.minHp = Math.min(log.minHp, P.hp); if (P.hp < lastHp) log.hits.push([Math.round(P.x), Math.round(P.y), lastHp - P.hp]); lastHp = P.hp; }
+      log.t += dt;
+    }
+    log.T = Math.round(log.t); log.x = Math.round(P.x); log.y = Math.round(P.y); log.part = lv.partName; log.kills = lv.stats.kills - log.kills0; log.dmgTotal = log.hits.reduce((a, b) => a + b[2], 0); log.hits = log.hits.length; log.cut = Math.round(log.cut); return log;
+  },
 };

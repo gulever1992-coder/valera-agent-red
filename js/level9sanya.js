@@ -22,6 +22,7 @@
     get h() { return 82; }
     ai(dt, P) {
       const dx = P.x - this.x, ad = Math.abs(dx); this.cd -= dt; this.born += dt;
+      if (P.climb && this.onG) { this.vx = 0; this.set(this.sh === 'rspd9' ? 'walk' : 'run'); this.phys(dt); return; }     // на лестнице Валеру не бьют — он не может отстреливаться
       if (this.st === 'wind') { this.vx = 0; if (this.stT > 0.28) { this.set('punch'); if (ad < 50 && Math.abs(P.y - this.y) < 40) P.hurt(9, this.x); Sound.play('punch', 0.6); } }
       else if (this.st === 'punch') { this.vx = 0; if (this.stT > 0.3) { this.set('run'); this.cd = rnd(0.7, 1.2); } }
       else if (this.st === 'grab') { this.vx = this.dir * 260; if (this.stT < 0.35 && ad < 26 && Math.abs(P.y - this.y) < 40) { P.hurt(11, this.x); this.set('punch'); } if (this.stT > 0.45) { this.set('run'); this.cd = 1; } }
@@ -37,6 +38,56 @@
     frame() { if (this.dead) return this.stT < 0.35 ? 'fall' : 'dead'; if (this.fl > 0) return 'hit'; return ({ wind: 'wind', punch: 'punch', grab: 'grab' })[this.st] || (this.vx ? this.walkFr(6, 11) : 'w0'); }
   }
   L9.FOES.Clone = Clone;
+
+  // ---------- робот-собака Сани: галоп, прыжок на Валеру, укус, лазер из камеры-головы ----------
+  class RDog extends L9.FOES.Foe {
+    constructor(M, x, y, o) { super(M, x, y, Object.assign({ sh: 'rdog9', maxHp: 5, touch: 0, w: 24, pts: 250 }, o)); this.cd = rnd(0.5, 1.2); this.wake = o && o.wake ? 0.8 : 0; }
+    get h() { return 50; }
+    ai(dt, P) {
+      const dx = P.x - this.x, ad = Math.abs(dx), dy = Math.abs(P.y - this.y); this.cd -= dt;
+      if (P.climb && this.onG) { this.vx = 0; this.set(this.sh === 'rspd9' ? 'walk' : 'run'); this.phys(dt); return; }     // на лестнице Валеру не бьют — он не может отстреливаться
+      if (this.wake > 0) { this.wake -= dt; this.vx = 0; this.set('crouch'); this.phys(dt); return; }
+      if (dy > 70) { this.set('run'); this.vx = 0; this.phys(dt); return; }     // Валера на другом этаже — ждёт
+      if (this.st === 'crouch') { this.vx = 0; if (this.stT > 0.3) { this.set('leap'); this.vy = -380; this.vx = this.dir * 290; this.onG = false; Sound.play('jump', 0.5); } }
+      else if (this.st === 'leap') { if (this.near(P, 30, 50)) { P.hurt(10, this.x); this.vx *= -0.3; } if (this.onG && this.stT > 0.1) { this.set('run'); this.cd = rnd(1, 1.6); } }
+      else if (this.st === 'bite') { this.vx = 0; if (this.stT > 0.12 && !this.bit) { this.bit = 1; if (this.near(P, 40, 40)) P.hurt(9, this.x); Sound.play('punch', 0.6); } if (this.stT > 0.4) { this.set('run'); this.bit = 0; this.cd = rnd(0.6, 1); } }
+      else if (this.st === 'laser') { this.vx = 0; if (this.stT > 0.25 && !this.shot) { this.shot = 1; this.ebul(this.x + this.dir * 30, this.y - 38, this.dir * 330, 0, { fr: 'laser', s: 0.45, dmg: 8 }); Sound.play('zap', 0.5); } if (this.stT > 0.55) { this.set('run'); this.shot = 0; this.cd = rnd(1.2, 2); } }
+      else {
+        this.set('run');
+        if (ad < 40 && this.cd <= 0) this.set('bite');
+        else if (ad > 130 && ad < 230 && this.cd <= 0 && Math.random() < 0.5) this.set('crouch');
+        else if (ad > 230 && ad < 380 && this.cd <= 0) this.set('laser');
+        else this.vx = ad > 26 ? Math.sign(dx) * 175 : 0;
+        if (this.st !== 'run') this.cd = 0.3;
+      }
+      this.phys(dt);
+    }
+    frame() { if (this.dead) return 'dead'; if (this.fl > 0) return 'hit'; return ({ crouch: 'crouch', leap: 'leap', bite: 'bite', laser: 'laser' })[this.st] || (this.vx ? 'r' + ((this.t * 14 | 0) % 6) : 'r0'); }
+  }
+  // ---------- робот-паук: семенит, прыгает, стреляет лазером из глаз; может висеть на тросе под потолком и падать сверху ----------
+  class RSpd extends L9.FOES.Foe {
+    constructor(M, x, y, o) { super(M, x, y, Object.assign({ sh: 'rspd9', maxHp: 6, touch: 0, w: 28, pts: 300, jumps: 1 }, o)); this.cd = rnd(0.6, 1.4); if (this.ceil != null) { this.hang = 1; this.hy = this.y; this.y = this.ceil + 70; this.air = 1; } }
+    get h() { return 48; }
+    ai(dt, P) {
+      const dx = P.x - this.x, ad = Math.abs(dx); this.cd -= dt;
+      if (this.hang) { this.vx = 0; this.vy = 0; this.y = this.ceil + 70 + Math.sin(this.t * 2) * 4; if (ad < 90 && P.y > this.y && P.y - this.y < 260) { this.hang = 0; this.air = 0; this.set('jump'); Sound.play('clank', 0.5); } return; }
+      if (Math.abs(P.y - this.y) > 70 && this.onG) { this.vx = 0; this.set('walk'); this.phys(dt); return; }
+      if (P.climb && this.onG) { this.vx = 0; this.set(this.sh === 'rspd9' ? 'walk' : 'run'); this.phys(dt); return; }     // на лестнице Валеру не бьют — он не может отстреливаться
+      if (this.st === 'crouch') { this.vx = 0; if (this.stT > 0.35) { this.set('jump'); this.vy = -460; this.vx = clamp(dx * 1.3, -240, 240); this.onG = false; Sound.play('jump', 0.4); } }
+      else if (this.st === 'jump') { if (this.near(P, 32, 46)) { P.hurt(11, this.x); } if (this.onG && this.stT > 0.1) { this.set('walk'); this.cd = rnd(1, 1.8); } }
+      else if (this.st === 'fire') { this.vx = 0; if (this.stT > 0.3 && !this.shot) { this.shot = 1; for (const a of [-0.08, 0.08]) this.ebul(this.x + this.dir * 26, this.y - 36, Math.cos(a) * this.dir * 320, Math.sin(a) * 320, { fr: 'laser', s: 0.4, dmg: 8 }); Sound.play('zap', 0.5); } if (this.stT > 0.6) { this.set('walk'); this.shot = 0; this.cd = rnd(1.6, 2.6); } }
+      else {
+        this.set('walk');
+        if (ad < 150 && this.cd <= 0 && this.onG) this.set('crouch');
+        else if (ad < 300 && this.cd <= 0) this.set('fire');
+        else this.vx = ad > 60 ? Math.sign(dx) * 85 : 0;
+      }
+      this.phys(dt);
+    }
+    phys(dt) { if (this.hang) return; super.phys(dt); }
+    frame() { if (this.dead) return 'dead'; if (this.hang) return 'hang'; if (this.fl > 0) return 'hit'; return ({ crouch: 'crouch', jump: 'jump', fire: 'fire' })[this.st] || (this.vx ? 'w' + ((this.t * 12 | 0) % 6) : 'w0'); }
+  }
+  L9.FOES.RDog = RDog; L9.FOES.RSpd = RSpd;
 
   L9.MAPS.sanya = () => {
     const LM = L9.MAPS.lab();     // общий фон, подборы и их отрисовка — как в лаборатории
@@ -192,7 +243,7 @@
     deathText: 'ВАЛЕРУ РАСПЕЧАТАЛИ',
     get hp() { return LP().hp; }, set hp(v) { LP().hp = v; },
     get inv() { return LP().inv; }, set inv(v) { LP().inv = v; },
-    start(lv, ck) { LP().start(lv, ck, 'sanya'); },
+    start(lv, ck) { LP().start(lv, ck, L9.SANYA_VERT && !/[?&]h=1/.test(location.search) ? 'sanyaV' : 'sanya'); },     // вертикальная версия; ?h=1 или L9.SANYA_VERT=false — прежняя горизонтальная
     onDie(lv) { LP().onDie(lv); },
     deadUpdate(lv, dt) { LP().deadUpdate(lv, dt); },
     update(lv, dt) { LP().update(lv, dt); },

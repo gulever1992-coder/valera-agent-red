@@ -127,7 +127,7 @@
     },
     camera(dt) {
       const M = P.M, c = P.cam, look = P.dir * 70;
-      const tx = clamp(P.x - 320 + look, M.x0, M.x1 - 640), gy = P.onG || P.climb ? (P.camGY = P.y) : Math.max(P.camGY ?? P.y, P.y), ty = clamp(gy - (Math.abs(gy - 330) < 3 ? 272 : P.x > 16500 && gy > 1200 ? 292 : 230), M.y0, M.y1 - 360);     // по опоре, а не по прыжку; на основном полу ниже — меньше пустоты под ним
+      const tx = clamp(P.x - 320 + look, M.x0, M.x1 - 640), gy = P.onG || P.climb ? (P.camGY = P.y) : Math.max(P.camGY ?? P.y, P.y), ty = clamp(M.camY ? M.camY(gy) : gy - (Math.abs(gy - 330) < 3 ? 272 : P.x > 16500 && gy > 1200 ? 292 : 230), M.y0, M.y1 - 360);     // по опоре, а не по прыжку; на основном полу ниже — меньше пустоты под ним
       c.x += (tx - c.x) * Math.min(1, dt * 4); c.y += (ty - c.y) * Math.min(1, dt * 4.5);
       if (M.camLock) { const k = M.camLock(P); if (k) { c.x = clamp(c.x, k[0], k[1] - 640); } }
     },
