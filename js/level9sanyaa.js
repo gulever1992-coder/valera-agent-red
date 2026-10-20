@@ -8,10 +8,10 @@
 // Арт — Flow (tools/p9/flow9s.js: l9afar/amid/apipe/anear, l9asteam, l9avat, l9aisl, l9astrip, l9aws, l9afx -> build_l9.py).
 (() => {
   const S = L9.spr, clamp = L9.clamp, rnd = L9.rnd, F = () => L9.FOES;
-  const W = 1280, GY = 930, RY = 190, RM = 600, RB = 790, SCAN_H = 134, WS_X = 640, DOCK_X = 790, PRN_K = 1.17, PRN_DY = 13, BAT_K = 0.62;     // PRN_DY: низ кадра принтера — свисающие кабели, основание стоит на настиле
+  const W = 1280, GY = 930, RY = 190, RM = 600, RB = 796, SCAN_H = 134, WS_X = 640, DOCK_X = 790, FLY = 16, PRN_K = 1.17, PRN_DY = 13, BAT_K = 0.62;     // PRN_DY: низ кадра принтера — свисающие кабели, основание стоит на настиле
   // сеть рельсов (по эскизу): под потолком, по середине карты и вертикали у стен — сканер всегда едет к ближайшей к Валере точке
-  const RN = { TL: [40, RY], TR: [1240, RY], ML: [40, RM], MR: [1240, RM], BL: [40, RB], BR: [1240, RB] };
-  const RE = [['TL', 'TR'], ['ML', 'MR'], ['TL', 'ML'], ['ML', 'BL'], ['TR', 'MR'], ['MR', 'BR']].map(([a, b]) => ({ a, b, A: RN[a], B: RN[b], len: Math.hypot(RN[b][0] - RN[a][0], RN[b][1] - RN[a][1]), vert: RN[a][0] === RN[b][0] }));
+  const RN = { TL: [40, RY], TR: [1240, RY], ML: [40, RM], MR: [1240, RM], BL: [40, RB], BR: [1240, RB], MD: [790, RM], DD: [790, 796] };     // MD-DD — рельс от капсулы в доке вверх
+  const RE = [['TL', 'TR'], ['ML', 'MD'], ['MD', 'MR'], ['TL', 'ML'], ['ML', 'BL'], ['TR', 'MR'], ['MR', 'BR'], ['MD', 'DD']].map(([a, b]) => ({ a, b, A: RN[a], B: RN[b], len: Math.hypot(RN[b][0] - RN[a][0], RN[b][1] - RN[a][1]), vert: RN[a][0] === RN[b][0] }));
   const rPos = (e, f) => [e.A[0] + (e.B[0] - e.A[0]) * f, e.A[1] + (e.B[1] - e.A[1]) * f];
   const rNear = (x, y) => { let best = null; for (const e of RE) { const dx = e.B[0] - e.A[0], dy = e.B[1] - e.A[1], f = clamp(((x - e.A[0]) * dx + (y - e.A[1]) * dy) / (e.len * e.len), 0, 1), [px, py] = rPos(e, f), d = Math.hypot(px - x, py - y) * (e.vert ? 1.1 : 1); if (!best || d < best.d) best = { e, f, d }; } return best; };
   const rDist = t => {     // кратчайшие расстояния от узлов сети до точки t (по рельсам)
@@ -112,10 +112,11 @@
       M.prn = ISL.filter(s => s.prn).map((s, i) => ({ x: s.prn, y: s.y, isl: i, st: SAVE.some(b => BATS[b][2] === i) ? 'wreck' : 'idle', t: rnd(0, 2), cd: rnd(0.5, 2.5) }));
       M.robots = ck > 0 ? [] : [{ fr: 'dogSit', dead: 'dogDead', x: 480, hp: 99, wake: 1 }];
       M.san = { x: 560, fr: 'fix0', dir: -1, gone: ck > 0 }; M.lift = null;
-      M.scan = { x: ck > 0 ? 400 : DOCK_X, bot: ck > 0 ? RM + SCAN_H : GY, fr: ck > 0 ? 'glass' : 'open', cd: 2, dead: 0, e: RE[1], f: ((ck > 0 ? 400 : DOCK_X) - 40) / 1200 };
+      M.scan = { x: ck > 0 ? 400 : DOCK_X, bot: ck > 0 ? RM + SCAN_H : GY, fr: ck > 0 ? 'glass' : 'open', cd: 2, dead: 0, e: ck > 0 ? RE[1] : RE[7], f: ck > 0 ? (400 - 40) / 750 : 1 };
       const foes = [['RDog', 1150, GY], ['RSpd', 700, GY], ['RSpd', 250, ISL[3].y, 1], ['RSpd', 1030, ISL[4].y, 1], ['RDog', 1040, ISL[1].y]];
       if (ck > 0) foes.push(['RDog', 500, GY]);
-      for (const [tp, x, y, ceil] of foes) P.foes.push(new (F()[tp])(M, x, y, ceil ? { ceil: y - 200 } : {}));
+      M.spawn = () => { for (const [tp, x, y, ceil] of foes) P.foes.push(new (F()[tp])(M, x, y, ceil ? { ceil: y - 200 } : {})); M.spawn = null; };     // до катсцены врагов нет
+      if (ck > 0) M.spawn();
       if (ck > 0) lv.say('СТРЕЛЯЙ ПО АККУМУЛЯТОРАМ НА СТЕНАХ И ПОТОЛКЕ!', 3);
       M.vent = [...Array(6)].map(() => ({ t: rnd(-4, 0), sp: rnd(0.9, 1.4) }));
     };
@@ -127,7 +128,7 @@
     };
     const surfFor = P => { const s = surfAt(P.x, P.y); if (!s) return null; if (s.i == null) return { x0: clamp(P.x - 170, 0, W), x1: clamp(P.x + 170, 0, W), y: GY }; return { x0: s.x0, x1: s.x1, y: s.y }; };
     M.update = (dt, P, lv) => {
-      if (!M.cut && P.x > 200) { M.cut = 1; P.vx = 0; Scene.dialogTop = true; Scene.run(M.script, () => { M.fight = true; P.st = 'stand'; lv.say('СТРЕЛЯЙ ПО АККУМУЛЯТОРАМ НА СТЕНАХ И ПОТОЛКЕ!', 3); }); return; }
+      if (!M.cut && P.x > 200) { M.cut = 1; P.vx = 0; Scene.dialogTop = true; Scene.run(M.script, () => { M.fight = true; M.spawn && M.spawn(); P.st = 'stand'; lv.say('СТРЕЛЯЙ ПО АККУМУЛЯТОРАМ НА СТЕНАХ И ПОТОЛКЕ!', 3); }); return; }
       for (const k of M.picks) { k.t += dt; if (!k.dead && Math.abs(P.x - k.x) < 22 && Math.abs(P.y - k.y) < 40) LM.take(k, P, lv); }
       M.picks = M.picks.filter(k => !k.dead);
       M.zapHitT = (M.zapHitT || 0) - dt;
@@ -185,11 +186,10 @@
           for (const c of P.foes) if (!c.dead) c.hit(99, Math.sign(c.x - s.x) || 1, 'blast');
         }
         if (f.t > 5 && !M.tv) { M.tv = 0.01; Sound.play('zap'); }
-        if (M.tv) { M.tv += dt; if (M.tv > 1.2 && !M.lift) { M.lift = { t: 0 }; Sound.play('crane'); G.shake(2, 0.6); } }
-        if (M.lift) { M.lift.t += dt; if (M.lift.t > 2.8 && !f.l2) { f.l2 = 1; Sound.play('door'); lv.say('ИЗ ПОЛА ВЫЕХАЛ ПОТАЙНОЙ ЛИФТ!', 2.8); } }
+        if (M.tv) { M.tv += dt; if (M.tv > 1.4 && !f.l2) { f.l2 = 1; lv.say('СПУСКАЙСЯ В МАСТЕРСКУЮ САНИ!', 3); } }
       }
       // потайной ход в мастерской: подойти к люку
-      if (M.lift && M.lift.t > 2.8 && !M.leaving && Math.abs(P.x - WS_X) < 26 && Math.abs(P.y - GY) < 4) { M.leaving = 1; lv.next(); }
+      if (M.tv > 1.4 && !M.leaving && Math.abs(P.x - WS_X) < 260 && Math.abs(P.y - GY) < 4 && P.onG) { M.leaving = 1; P.vx = 0; P.st = 'stand'; Scene.dialogTop = true; Scene.run(M.endScript, () => lv.next()); }
     };
     M.batHit = (b, dmg, P) => {
       b.hp -= dmg; Sound.play('clank', 0.5); b.fl = 0.06;
@@ -235,9 +235,22 @@
       sc.fr = 'glass'; Sound.play('zap'); G.shake(3, 0.4); yield 0.8;
       Sound.play('crane');
       for (const p of M.prn) if (p.st !== 'wreck' && p.isl < 2) { p.st = 'print'; p.t = 0.6; }
-      const top = RM + SCAN_H; while (sc.bot > top) { sc.bot = Math.max(top, sc.bot - 160 * D); yield D; }
+      sc.e = RE[7]; sc.f = 1; while (sc.f > 0) { sc.f = Math.max(0, sc.f - 160 * D / RE[7].len); sc.bot = rPos(sc.e, sc.f)[1] + SCAN_H; yield D; }
       const dg = M.robots.find(r => r.wake); if (dg) { M.robots = M.robots.filter(r => r !== dg); const f = new (F().RDog)(M, dg.x, GY, { wake: 1 }); f.dir = -1; P.foes.push(f); Sound.play('zap'); }
       Sound.play('clank'); yield 0.5; M.camT = null;
+    };
+    // ---------- заставка финала: пол раздвигается, из шахты поднимается капсула-лифт, Валера заходит, капсула уходит под пол ----------
+    M.endScript = function* () {
+      const P = L9.PARTS.lab, D = 0.016, L = M.lift = { op: 0, up: 0, door: 0, down: 0, lit: 0, inside: 0 };
+      P.vx = 0; P.st = 'stand'; P.foes = []; P.ebul = []; M.camT = WS_X - 320; yield 0.5;
+      Sound.play('crane'); G.shake(2, 0.9); for (let t = 0; t < 1; t += D) { L.op = t; yield D; } L.op = 1;
+      yield 0.2; for (let t = 0; t < 1.8; t += D) { L.up = t / 1.8; yield D; } L.up = 1; Sound.play('clank'); G.shake(2, 0.2);
+      L.lit = 1; Sound.play('confirm'); yield 0.5; Sound.play('door'); for (let t = 0; t < 0.6; t += D) { L.door = t / 0.6; yield D; } L.door = 1; yield 0.3;
+      P.dir = P.x < WS_X ? 1 : -1; P.st = 'run'; while (Math.abs(P.x - WS_X) > 2) { P.x += Math.sign(WS_X - P.x) * Math.min(130 * D, Math.abs(WS_X - P.x)); P.dir = Math.sign(WS_X - P.x) || P.dir; yield D; }
+      P.x = WS_X; P.st = 'stand'; P.dir = 1; L.inside = 1; P.hide = 1; yield 0.35;
+      Sound.play('door'); for (let t = 0; t < 0.6; t += D) { L.door = 1 - t / 0.6; yield D; } L.door = 0; L.lit = 2; yield 0.5;
+      Sound.play('zap'); G.flash(0.08, '#7f7'); Sound.play('crane'); for (let t = 0; t < 1.8; t += D) { L.down = t / 1.8; yield D; } L.down = 1; L.inside = 0;
+      for (let t = 0; t < 0.9; t += D) { L.op = 1 - t / 0.9; yield D; } L.op = 0; Sound.play('clank'); yield 0.8;
     };
     M.cutUpdate = (dt, P) => { P.t += dt; for (const p of M.prn) p.t += dt; for (const v of M.vent) { v.t += dt * v.sp; if (v.t > 1.3) v.t = rnd(-4, -1); } if (M.camT != null) P.cam.x += (M.camT - P.cam.x) * Math.min(1, dt * 2.5); else P.camera(dt); P.updFx(dt); };
 
@@ -269,13 +282,12 @@
       // 3) средний план: ряд чанов, капсул и шаровых цистерн на своём полу (k 0.35)
       { const im = L9.img.saMid; if (im) { const h = 270, w = im.width * h / im.height, yb = 318 + (fy - 300) * 0.35; if (yb - h < 360) for (let x = -((cx * 0.35 % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), Math.round(yb - h), Math.ceil(w) + 1, h); } }
       haze(c, 0.24);
-      // 4) кипящие чаны (k 0.5) — редко, на своём полу
-      for (const [X, ph] of [[180, 0], [820, 1.3]]) { const px = X - cx * 0.5 + 160, py = 326 + (fy - 300) * 0.5; if (px > -120 && px < 760 && py < 470) S(c, 'vatA9', 'v' + ((t * 6 + ph * 3 | 0) % 4), px, py, 0.42); }
-      // 5) ближе: трубы у пола (нижняя часть кадра труб, k 0.62) — из сопел бьёт пар; сверху с потолка свисают трубы (верх кадра)
-      const pim = L9.img.saPipe; if (pim) { const w = pim.width / 2, h = pim.height / 2, k = 0.62, yb = 352 + (fy - 300) * k, v0 = 0.62, hh = h * (1 - v0), ox = -((cx * k % w) + w) % w;
-        if (yb - hh < 360) for (let x = ox - w; x < 640; x += w) { c.drawImage(pim, 0, pim.height * v0, pim.width, pim.height * (1 - v0), Math.floor(x), Math.round(yb - hh), Math.ceil(w) + 1, hh);
-          for (const [fx, fy2, vi] of [[0.106, 0.69, 0], [0.464, 0.69, 1]]) { const v = M.vent[(vi + ((x / w | 0) & 1) * 2) % M.vent.length]; if (v.t < 0) continue;
-            S(c, 'steam9', 's' + Math.min(7, v.t / 1.3 * 8 | 0), x + fx * w, yb - hh + (fy2 - v0) * h - 22, 0.5, { a: 0.65 }); } }
+      // 4) пар из предохранительных клапанов цистерн среднего плана
+      { const im = L9.img.saMid; if (im) { const h = 270, w = im.width * h / im.height, yb = 318 + (fy - 300) * 0.35, ox = -((cx * 0.35 % w) + w) % w;
+        for (let x = ox; x < 640 + w; x += w) for (const [fx, fy2, vi] of [[0.12, 0.42, 0], [0.62, 0.36, 1], [0.86, 0.4, 2]]) { const v = M.vent[(vi + ((x / w | 0) & 1) * 3) % M.vent.length]; if (v.t < 0) continue;
+          S(c, 'steam9', 's' + Math.min(7, v.t / 1.3 * 8 | 0), x + fx * w, yb - h + fy2 * h - 18, 0.42, { a: 0.55 }); } } }
+      // 5) ближе: трубы, свисающие с потолка (верх кадра труб, k 0.62)
+      const pim = L9.img.saPipe; if (pim) { const w = pim.width / 2, h = pim.height / 2, k = 0.62, ox = -((cx * k % w) + w) % w;
         const yt = 40 + (120 - cy) * k; if (yt < 360 && yt + h * 0.3 > 0) for (let x = ox - w + w / 2; x < 640; x += w) c.drawImage(pim, 0, 0, pim.width, pim.height * 0.3, Math.floor(x), Math.round(yt), Math.ceil(w) + 1, h * 0.3); }
       haze(c, 0.1);
     };
@@ -287,8 +299,8 @@
       part(0, 0, iw * 0.2, ih, -30, 560, 150, 0.5, 0.5); part(iw * 0.8, 0, iw * 0.2, ih, W + 30, 560, 150, 0.5, 0.5);     // колонны у стен
       for (let X = 100; X < W; X += 560) part(iw * 0.25, ih * 0.8, iw * 0.5, ih * 0.2, X, 1010, 420, 0.5, 1);     // камни у пола
     };
-    const isl = (c, s) => { const [fw, fh] = L9.size('isl9', s.fr), k = s.w / fw * 1.04; S(c, 'isl9', s.fr, s.x + s.w / 2, s.y - 6 + fh * k * 0.85, k, { sy: 0.85 }); };
-    const prop = (c, sh, fr, x, h, o = {}) => { if (!L9D[sh]) return; const [, fh] = L9.size(sh, fr); S(c, sh, fr, x, GY + 3 + (o.dy || 0), h / fh, o); };
+    const isl = (c, s) => { const [fw, fh] = L9.size('isl9', s.fr), k = s.w / fw * 1.04; S(c, 'isl9', s.fr, s.x + s.w / 2, s.y - 14 + fh * k * 0.85, k, { sy: 0.85 }); };
+    const prop = (c, sh, fr, x, h, o = {}) => { if (!L9D[sh]) return; const [, fh] = L9.size(sh, fr); S(c, sh, fr, x, GY + 2 + (o.dy || 0), h / fh, o); };
     // мастерская Сани: захламлённая рабочая зона безумного инженера — отдельные предметы (Flow wsp9 / wsq9), в центре люк лифта в полу
     const drawWS = (c, t, on) => {
       prop(c, 'wsq9', 'shelf', 470, 150); prop(c, 'wsq9', 'hoist', 742, 165); prop(c, 'wsq9', 'tesla', 830, 135);
@@ -297,13 +309,19 @@
       prop(c, 'wsq9', 'barrels', 448, 58); prop(c, 'wsq9', 'desk', 528, 74); prop(c, 'wsq9', 'arm', 735, 105); prop(c, 'wsp9', 'scrap', 790, 44); prop(c, 'wsp9', 'crates', 842, 56);
       if (!M.fin && (t * 9 | 0) % 4 === 0) S(c, 'fxL9', 'spark', 772, GY - 92, 0.5, { add: 1 });     // сварка манипулятора
     };
-    const drawLift = (c) => {     // куски пола над шахтой разъезжаются в стороны, из шахты поднимается кабина лифта
-      const L = M.lift, op = L ? clamp(L.t / 1, 0, 1) : 0, up = L ? clamp((L.t - 1) / 1.6, 0, 1) : 0, X = WS_X, fl = L9.img.saFloor;
-      if (!L || !fl || !L9D.liftA9) return;
-      const [sw, sh] = L9.size('liftA9', 'shaft'), k = 96 / sw; c.save(); c.beginPath(); c.rect(X - 48, GY - 6, 96, 90); c.clip(); S(c, 'liftA9', 'shaft', X, GY - 6 + sh * k, k); c.restore();
-      if (up > 0) { const [cw, ch] = L9.size('liftA9', 'cage'), kc = 96 / cw, yb = GY + 2 + (1 - up) * ch * kc; c.save(); c.beginPath(); c.rect(X - 70, -500, 140, GY + 4 + 500); c.clip(); S(c, 'liftA9', 'cage', X, yb, kc); c.restore(); }
-      const h = 52, sw2 = fl.width * 48 / (fl.width * h / fl.height);
-      c.drawImage(fl, 0, 0, sw2, fl.height, Math.round(X - 48 - op * 50), GY - 6, 48, h); c.drawImage(fl, fl.width - sw2, 0, sw2, fl.height, Math.round(X + op * 50), GY - 6, 48, h);
+    const drawLift = (c) => {     // куски пола разъезжаются, из шахты поднимается футуристичная капсула-лифт, Валера заходит, капсула уходит под пол
+      const L = M.lift, X = WS_X, fl = L9.img.saFloor; if (!L || !fl) return;
+      const top = GY - FLY, op = L.op;
+      if (op > 0 && L9D.liftA9) { const [sw, sh] = L9.size('liftA9', 'shaft'), k = 100 / sw; c.save(); c.beginPath(); c.rect(X - 50 * op, top, 100 * op, 90); c.clip(); S(c, 'liftA9', 'shaft', X, top + sh * k, k); c.restore(); }
+      if (L9D.capL9 && L.up > 0) {
+        const [cw, ch] = L9.size('capL9', 'c0'), kc = 128 / ch, hh = ch * kc, yb = GY + 2 + (1 - L.up) * hh + L.down * (hh + 20), fr = L.door > 0.5 ? 'c2' : L.lit === 2 ? 'c3' : L.lit ? 'c1' : 'c0';
+        c.save(); c.beginPath(); c.rect(X - 90, -500, 180, top + 2 + 500); c.clip();
+        if (L.inside) { S(c, 'capL9', 'c2', X, yb, kc); S(c, 'vAim9', 'stand', X, yb - 12, 1); if (L.door < 0.5) S(c, 'capL9', fr, X, yb, kc, { a: 0.7 }); }
+        else S(c, 'capL9', fr, X, yb, kc);
+        if (L.lit) S(c, 'fxL9', 'spark', X, yb - hh * 0.5, 1.6 + Math.sin(T() * 8) * 0.2, { add: 1, a: 0.25 });
+        c.restore(); }
+      const h = 52, sw2 = fl.width * 50 / (fl.width * h / fl.height);
+      c.drawImage(fl, 0, 0, sw2, fl.height, Math.round(X - 50 - op * 52), top, 50, h); c.drawImage(fl, fl.width - sw2, 0, sw2, fl.height, Math.round(X + op * 52), top, 50, h);
     };
     M.drawMid = (c, P) => {
       const x0 = P.cam.x - 200, x1 = P.cam.x + 840, y0 = P.cam.y - 200, y1 = P.cam.y + 560, vis = (x, y) => x > x0 && x < x1 && y > y0 && y < y1, t = P.t;
@@ -311,18 +329,22 @@
       const ce = L9.img.saCeil; if (ce) { const h = 110, w = ce.width * h / ce.height; for (let x = Math.floor(x0 / w) * w; x < x1; x += w) c.drawImage(ce, Math.floor(x), 40, Math.ceil(w) + 1, h); }
       // мастерская Сани (внизу по центру): телевизоры и люк — в финале с Иксом и открытым ходом
       const on = M.tv > 0.6 || (M.tv > 0 && (t * 14 | 0) % 2);
-      if (L9D.wsq9) drawWS(c, t, on); else S(c, 'ws9', on ? 'on' : 'off', WS_X, GY + 4, 0.62);
-      // пол — тонкая плита (полоса Flow в родном масштабе)
-      const fl = L9.img.saFloor; if (fl) { const h = 52, w = fl.width * h / fl.height; for (let x = Math.floor(x0 / w) * w; x < x1; x += w) c.drawImage(fl, Math.floor(x), GY - 6, Math.ceil(w) + 1, h); }
-      drawLift(c);
-      // рельс под потолком
+      // боковые стены от пола до потолка (на них держатся аккумуляторы)
+      const wl = L9.img.saWall; if (wl) { const ww = 104, wh = wl.height * ww / wl.width; for (const side of [-1, 1]) for (let y = 40; y < GY + 40; y += wh) { c.save(); c.translate(side < 0 ? 0 : W, 0); c.scale(side < 0 ? 1 : -1, 1); c.drawImage(wl, 0, Math.floor(y), ww, Math.ceil(wh) + 1); c.restore(); } }
+      // рельсы (поверх стен) и сканер с Саней — позади всех предметов; в катсцене Саня проходит перед капсулой
       const rl = L9.img.saRail; if (rl) { const h = 30, w = rl.width * h / rl.height;
-        for (const e of RE) { c.save(); c.translate(e.A[0], e.A[1]); if (e.vert) c.rotate(Math.PI / 2); for (let x = -h / 2; x < e.len + h / 2; x += w) c.drawImage(rl, 0, 0, Math.min(1, (e.len + h / 2 - x) / w) * rl.width, rl.height, Math.floor(x), -h / 2, Math.min(Math.ceil(w) + 1, e.len + h / 2 - x), h); c.restore(); } }
+        for (const e of RE) { const ext = e.vert && (e.b === 'BL' || e.b === 'BR' || e.b === 'DD') ? GY - FLY - e.B[1] : 0, el = e.len + ext; c.save(); c.translate(e.A[0], e.A[1]); if (e.vert) c.rotate(Math.PI / 2); for (let x = -h / 2; x < el + h / 2; x += w) c.drawImage(rl, 0, 0, Math.min(1, (el + h / 2 - x) / w) * rl.width, rl.height, Math.floor(x), -h / 2, Math.min(Math.ceil(w) + 1, el + h / 2 - x), h); c.restore(); } }
+      // сканер с Саней — позади всех предметов (сразу за рельсами); в катсцене Саня проходит перед ним
+      { const sc = M.scan; if (vis(sc.x, sc.bot)) S(c, 'scan9', sc.fr, sc.x, sc.bot, 1); }
+      // пол — тонкая плита (полоса Flow в родном масштабе); ноги стоят на его верхней плоскости
+      const fl = L9.img.saFloor; if (fl) { const h = 52, w = fl.width * h / fl.height; for (let x = Math.floor(x0 / w) * w; x < x1; x += w) c.drawImage(fl, Math.floor(x), GY - FLY, Math.ceil(w) + 1, h); }
+      if (L9D.wsq9) drawWS(c, t, on); else S(c, 'ws9', on ? 'on' : 'off', WS_X, GY + 4, 0.62);
+      drawLift(c);
       // стойка потолочного аккумулятора
       const b0 = M.bats.find(b => b.ceil); if (b0 && rl) { const h = 16, len = b0.y - 56 - 120 + 20; c.save(); c.translate(b0.x, 120); c.rotate(Math.PI / 2); c.drawImage(rl, 0, 0, rl.width * 0.3, rl.height, 0, -h / 2, len - 20, h); c.restore(); }
       // острова, лестницы
       for (const s of ISL) if (s.x < x1 && s.x + s.w > x0) isl(c, s);
-      for (const l of M.ladders) { if (L9D.lad9) { const [lw, lh] = L9.size('lad9', 'l'), k = 34 / lw, len = l[2] - l[1] + 22; S(c, 'lad9', 'l', l[0], l[2] + 2, k, { sy: len / (lh * k) }); } else { const [, lh] = L9.size('plat9', 'ladder'); for (let y = l[2]; y > l[1] + lh * 0.5; y -= lh - 2) S(c, 'plat9', 'ladder', l[0], y + 4, 1); S(c, 'plat9', 'ladderTop', l[0], l[1] + 4, 1); } }     // цельная лестница из Flow — без швов
+      for (const l of M.ladders) { if (L9D.lad9) { const [lw, lh] = L9.size('lad9', 'l'), k = 34 / lw, len = l[2] - l[1] + 10; S(c, 'lad9', 'l', l[0], l[2] + 2, k, { sy: len / (lh * k) }); } else { const [, lh] = L9.size('plat9', 'ladder'); for (let y = l[2]; y > l[1] + lh * 0.5; y -= lh - 2) S(c, 'plat9', 'ladder', l[0], y + 4, 1); S(c, 'plat9', 'ladderTop', l[0], l[1] + 4, 1); } }     // цельная лестница из Flow — без швов
       // аккумуляторы
       for (const b of M.bats) if (vis(b.x, b.y)) { const fr = (b.ceil ? 'c' : 'w') + (b.hp <= 0 ? 2 : b.hp <= BAT_HP / 2 ? 1 : 0), o = { flip: b.x > W / 2 }, cx2 = b.x + (b.ceil ? 0 : b.x < W / 2 ? 14 : -14);
         S(c, 'batW9', fr, b.x, b.y, BAT_K, o);
@@ -350,7 +372,7 @@
         if (z.st === 'warn') { for (let i = 0; i < n; i++) if (((t * 20 | 0) + i) % 3 === 0) S(c, 'afx9', 'arc', z.x0 + (i + 0.5) * (z.x1 - z.x0) / n, z.y - 4, 0.45, { add: 1, a: 0.5 }); }
         else if (z.st === 'bolt') { const sc = M.scan, [, bh] = L9.size('afx9', 'bolt0'), len = z.y - sc.bot; S(c, 'afx9', 'bolt' + ((t * 30 | 0) % 3), (sc.x + z.bx) / 2, sc.bot + len / 2, 1, { add: 1, sy: len / bh, rot: Math.atan2(z.bx - sc.x, len) * -1 }); }
         else for (let i = 0; i < n; i++) S(c, 'afx9', 'arc', z.x0 + (i + 0.5) * (z.x1 - z.x0) / n, z.y - 6 + ((t * 25 + i) % 2), 0.6, { add: 1, flip: ((t * 12 | 0) + i) % 2 }); }
-      const sc = M.scan; if (vis(sc.x, sc.bot)) S(c, 'scan9', sc.fr, sc.x, sc.bot, 1);
+      
       for (const k of M.picks) { if (!vis(k.x, k.y)) continue; const bob = Math.sin(k.t * 4) * 2;
         if (k.kind === 'pelmeni' || k.kind === 'kefir') { Art.item(c, k.kind, k.x, k.y - 14 + bob, 0, 1); continue; }
         S(c, 'fxL9', 'spark', k.x, k.y - 14, 0.4 + Math.sin(k.t * 5) * 0.08, { add: 1 }); S(c, 'pick9', k.kind, k.x, k.y - 16 + bob, 1); }

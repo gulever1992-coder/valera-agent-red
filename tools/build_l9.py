@@ -728,6 +728,23 @@ if have('l9sclone3_0.jpg'):
     s3 = cut('l9sclone3_0.jpg', 'm', 4, 3, clean=True)
     pack('sclone9', s3, VH * 0.98 / hgt(s3, 0), names=['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'wind', 'punch', 'grab', 'hit', 'fall', 'dead'])
 
+# ---------- 2026-10-21: принтеры строго сбоку (l9cprn_1, верхний ряд), боковая стена (l9cwall_0), капсула-лифт финала (l9ccap_1) ----------
+if have('l9cprn_1.jpg'):
+    _im = Image.open(os.path.join(SRC, 'l9cprn_1.jpg')); _W, _H = _im.size
+    _tmp = os.path.join(SRC, '_cprn_top.jpg'); _im.crop((0, 0, _W, _H // 2)).save(_tmp, quality=95)
+    pn2 = cut('_cprn_top.jpg', 'm', 1, 4, mode='grid', clean='edge')
+    for _k, _f in enumerate(pn2):
+        _a = np.asarray(_f).copy(); _r, _g, _b = [_a[..., i].astype(int) for i in range(3)]; _pu = (_r > _g * 1.05) & (_b > _g * 1.08) & (_b > 60)
+        _L = _r * 0.3 + _g * 0.59 + _b * 0.11; _a[_pu, 0] = (_L[_pu] * 0.45).clip(0, 255); _a[_pu, 1] = (_L[_pu] * 0.95).clip(0, 255); _a[_pu, 2] = (_L[_pu] * 0.9).clip(0, 255); pn2[_k] = trim(Image.fromarray(_a))
+    pack('prnB9', pn2, VH * 2.15 / hgt(pn2, 0), names=['idle', 'print', 'out', 'wreck'])
+if have('l9cwall_0.jpg'):
+    _w = trim(rgba_m('l9cwall_0.jpg')); _w = seamless(_w.rotate(90, expand=True), 120).rotate(-90, expand=True)
+    _a = np.asarray(_w).copy(); _a[_a[..., 3] < 60, 3] = 0; _a[..., :3] = (_a[..., :3] * 0.8).astype(np.uint8)
+    Image.fromarray(_a).save(os.path.join(OUT, 'saWall.png')); DATA.setdefault('_bgp', {})['saWall'] = 1; DATA['_bg']['saWall'] = {'w': _w.width, 'h': _w.height}
+if have('l9ccap_1.jpg'):
+    cp = depurple(cut('l9ccap_1.jpg', 'm', 1, 4, clean='edge'))
+    pack('capL9', cp, 1.0, names=['c0', 'c1', 'c2', 'c3'])
+
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 
 if DBG:

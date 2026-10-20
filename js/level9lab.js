@@ -39,7 +39,7 @@
       const M = P.M = L9.MAPS[map || 'lab'](); P.lv = lv;
       const cp = M.cks[ck || 0] || M.cks[0];
       Object.assign(P, { hp: 100, inv: 1.2, x: cp[0], y: cp[1], vx: 0, vy: 0, dir: 1, st: 'stand', stT: 0, onG: true, aim: 'fwd', fireT: 0, fireA: 0, rollT: 0, rollCd: 0, buttT: 0,
-        climb: null, gren: 5, weap: 'rifle', ammo: {}, t: 0, ck: ck || 0, dropT: 0, cam: { x: cp[0] - 220, y: cp[1] - 250 }, bul: [], ebul: [], fx: [], foes: [], hint: null, hintT: 0, cover: false, web: 0 });
+        climb: null, gren: 5, weap: 'rifle', ammo: {}, t: 0, ck: ck || 0, dropT: 0, cam: { x: cp[0] - 220, y: cp[1] - 250 }, bul: [], ebul: [], fx: [], foes: [], hint: null, hintT: 0, cover: false, web: 0, hide: 0 });
       for (const k in WEAP) P.ammo[k] = 0;
       M.init && M.init(P, lv, ck || 0);
       try { Music.play('alarm'); } catch (e) {}
@@ -257,6 +257,7 @@
     },
     drawValera(c) {
       if (P.lv.dead && P.lv.dead > 0.3) { S(c, 'vClimb9', 'down', P.x, P.y, 1, { flip: P.dir < 0 }); return; }
+      if (P.hide) return;     // спрятан картой (например, внутри капсулы-лифта)
       if (P.inv > 0 && (P.t * 16 | 0) % 2 && P.st !== 'hurt') return;
       const fl = P.dir < 0; let sh = 'vAim9', fr = 'stand';
       const run4 = (P.t * 10 | 0) % 4, run8 = (P.t * 12 | 0) % 8;
