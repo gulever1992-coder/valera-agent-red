@@ -8,7 +8,7 @@
 // Арт — Flow (tools/p9/flow9s.js: l9afar/amid/apipe/anear, l9asteam, l9avat, l9aisl, l9astrip, l9aws, l9afx -> build_l9.py).
 (() => {
   const S = L9.spr, clamp = L9.clamp, rnd = L9.rnd, F = () => L9.FOES;
-  const W = 1280, GY = 930, RY = 190, RM = 600, RB = 790, SCAN_H = 134, WS_X = 640, DOCK_X = 890;
+  const W = 1280, GY = 930, RY = 190, RM = 600, RB = 790, SCAN_H = 134, WS_X = 640, DOCK_X = 790, PRN_K = 1.17, PRN_DY = 13, BAT_K = 0.62;     // PRN_DY: низ кадра принтера — свисающие кабели, основание стоит на настиле
   // сеть рельсов (по эскизу): под потолком, по середине карты и вертикали у стен — сканер всегда едет к ближайшей к Валере точке
   const RN = { TL: [40, RY], TR: [1240, RY], ML: [40, RM], MR: [1240, RM], BL: [40, RB], BR: [1240, RB] };
   const RE = [['TL', 'TR'], ['ML', 'MR'], ['TL', 'ML'], ['ML', 'BL'], ['TR', 'MR'], ['MR', 'BR']].map(([a, b]) => ({ a, b, A: RN[a], B: RN[b], len: Math.hypot(RN[b][0] - RN[a][0], RN[b][1] - RN[a][1]), vert: RN[a][0] === RN[b][0] }));
@@ -31,18 +31,19 @@
     }
   };
   // острова: x, y (настил), ширина, кадр isl9; prn — x принтера
+  // острова в родном масштабе картинки (узкие, как объекты прошлой локации); у стен — пустые колонны под боковые рельсы
   const ISL = [
-    { x: 70, y: 790, w: 300, fr: 'big0', prn: 190 },      // 0 нижний левый (лестница)
-    { x: 910, y: 790, w: 300, fr: 'big1', prn: 1090 },    // 1 нижний правый (лестница)
-    { x: 500, y: 636, w: 280, fr: 'big2', prn: 640 },     // 2 центр
-    { x: 70, y: 476, w: 280, fr: 'big1', prn: 180 },      // 3 верхний левый
-    { x: 930, y: 476, w: 280, fr: 'big0', prn: 1100 },    // 4 верхний правый
-    { x: 405, y: 712, w: 90, fr: 'small0' }, { x: 785, y: 712, w: 90, fr: 'small1' },     // ступеньки
-    { x: 375, y: 556, w: 90, fr: 'small1' }, { x: 815, y: 556, w: 90, fr: 'small0' },
+    { x: 200, y: 790, w: 210, fr: 'big0', prn: 300 },     // 0 нижний левый (лестница)
+    { x: 870, y: 790, w: 210, fr: 'big1', prn: 980 },     // 1 нижний правый (лестница)
+    { x: 535, y: 636, w: 210, fr: 'big2', prn: 690 },     // 2 центр
+    { x: 200, y: 476, w: 210, fr: 'big1', prn: 300 },     // 3 верхний левый
+    { x: 870, y: 476, w: 210, fr: 'big0', prn: 980 },     // 4 верхний правый
+    { x: 445, y: 712, w: 100, fr: 'small0' }, { x: 735, y: 712, w: 100, fr: 'small1' },     // ступеньки
+    { x: 425, y: 556, w: 100, fr: 'small1' }, { x: 755, y: 556, w: 100, fr: 'small0' },
   ];
-  const LADS = [[340, 790, GY], [940, 790, GY]];
-  // аккумуляторы: x, y, остров-принтер, на потолке ли
-  const BATS = [[640, 380, 2, 1], [24, 431, 3], [1256, 431, 4], [24, 745, 0], [1256, 745, 1]];
+  const LADS = [[395, 790, GY], [885, 790, GY]];
+  // аккумуляторы (огромные силовые ячейки): x, y (центр), остров-принтер, на потолке ли
+  const BATS = [[640, 330, 2, 1], [60, 431, 3], [1220, 431, 4], [60, 745, 0], [1220, 745, 1]];
   const BAT_HP = 24;
   let SAVE = [];
 
@@ -106,13 +107,13 @@
     M.init = (P, lv, ck) => {
       if (!ck) SAVE = [];
       M.fight = ck > 0; M.cut = ck > 0; M.fin = null; M.leaving = 0; M.zap = null; M.zapCd = 0; M.robT = 10; M.tv = 0;
-      M.picks = [['kefir', 250, ISL[0].y], ['grenades', 1000, ISL[1].y], ['pelmeni', 600, ISL[2].y], ['rocket', 140, ISL[3].y], ['kefir', 1150, ISL[4].y], ['pelmeni', 1200, GY]].map(([kind, x, y]) => ({ kind, x, y, t: 0 }));
-      M.bats = BATS.map(([x, y, isl, ceil], i) => ({ x, y, isl, ceil, i, hp: SAVE.includes(i) ? 0 : BAT_HP }));
+      M.picks = [['kefir', 240, ISL[0].y], ['grenades', 1040, ISL[1].y], ['pelmeni', 590, ISL[2].y], ['rocket', 240, ISL[3].y], ['kefir', 1040, ISL[4].y], ['pelmeni', 1200, GY]].map(([kind, x, y]) => ({ kind, x, y, t: 0 }));
+      M.bats = BATS.map(([x, y, isl, ceil], i) => ({ x, y, isl, ceil, i, hp: SAVE.includes(i) ? 0 : ceil ? BAT_HP * 0.67 : BAT_HP }));     // потолочный стреляется снизу вверх — послабее
       M.prn = ISL.filter(s => s.prn).map((s, i) => ({ x: s.prn, y: s.y, isl: i, st: SAVE.some(b => BATS[b][2] === i) ? 'wreck' : 'idle', t: rnd(0, 2), cd: rnd(0.5, 2.5) }));
-      M.robots = ck > 0 ? [] : [{ fr: 'dogSit', dead: 'dogDead', x: 470, hp: 99, wake: 1 }];
-      M.san = { x: WS_X, fr: 'fix0', dir: -1, gone: ck > 0 };
+      M.robots = ck > 0 ? [] : [{ fr: 'dogSit', dead: 'dogDead', x: 480, hp: 99, wake: 1 }];
+      M.san = { x: 560, fr: 'fix0', dir: -1, gone: ck > 0 }; M.lift = null;
       M.scan = { x: ck > 0 ? 400 : DOCK_X, bot: ck > 0 ? RM + SCAN_H : GY, fr: ck > 0 ? 'glass' : 'open', cd: 2, dead: 0, e: RE[1], f: ((ck > 0 ? 400 : DOCK_X) - 40) / 1200 };
-      const foes = [['RDog', 1100, GY], ['RSpd', 640, ISL[2].y], ['RSpd', 200, ISL[3].y, 1], ['RSpd', 1080, ISL[4].y, 1], ['RDog', 1050, ISL[1].y]];
+      const foes = [['RDog', 1150, GY], ['RSpd', 700, GY], ['RSpd', 250, ISL[3].y, 1], ['RSpd', 1030, ISL[4].y, 1], ['RDog', 1040, ISL[1].y]];
       if (ck > 0) foes.push(['RDog', 500, GY]);
       for (const [tp, x, y, ceil] of foes) P.foes.push(new (F()[tp])(M, x, y, ceil ? { ceil: y - 200 } : {}));
       if (ck > 0) lv.say('СТРЕЛЯЙ ПО АККУМУЛЯТОРАМ НА СТЕНАХ И ПОТОЛКЕ!', 3);
@@ -138,16 +139,16 @@
       M.prnCd = (M.prnCd || 0) - dt;
       for (const p of M.prn) {
         p.t += dt; if (p.st === 'wreck') continue;
-        const near = Math.abs(P.x - p.x) < 100 && Math.abs(P.y - p.y) < 10;
-        if (p.st === 'idle') { p.cd -= dt; if (p.cd <= 0 && !near && clones < 5 && M.prnCd <= 0 && !M.fin && Math.abs(P.y - p.y) < 330 && Math.abs(P.x - p.x) < 620) { p.st = 'print'; p.t = 0; M.prnCd = 2.1; Sound.play('zap', 0.4); } }
+        const near = Math.abs(P.x - p.x) < 140 && Math.abs(P.y - p.y) < 10;
+        if (p.st === 'idle') { p.cd -= dt; if (p.cd <= 0 && !near && clones < 4 && M.prnCd <= 0 && !M.fin && Math.abs(P.y - p.y) < 330 && Math.abs(P.x - p.x) < 620) { p.st = 'print'; p.t = 0; M.prnCd = 2.6; Sound.play('zap', 0.4); } }
         else if (p.st === 'print' && M.fin) p.st = 'idle';
-        else if (p.st === 'print' && p.t > 1.6) { p.st = 'out'; p.t = 0; const f = new AClone(M, p.x + 8, p.y); f.dir = P.x < p.x ? -1 : 1; P.foes.push(f); Sound.play('door', 0.4); }
+        else if (p.st === 'print' && p.t > 2.6) { p.st = 'out'; p.t = 0; const f = new AClone(M, p.x + 8, p.y); f.dir = P.x < p.x ? -1 : 1; P.foes.push(f); Sound.play('door', 0.4); }
         else if (p.st === 'out' && p.t > 0.6) { p.st = 'idle'; p.cd = rnd(2.2, 3.8); }
       }
       // роботы подбегают из краёв арены, пока их меньше трёх
       M.robT -= dt;
       if (M.robT <= 0 && !M.fin) { M.robT = rnd(10, 15); const n = P.foes.filter(f => !f.dead && !(f instanceof AClone)).length;
-        if (n < 3) { const x = P.x < W / 2 ? 1230 : 50, f = new (F()[Math.random() < 0.5 ? 'RDog' : 'RSpd'])(M, x, GY); f.dir = x > W / 2 ? -1 : 1; P.foes.push(f); } }
+        if (n < 2) { const x = P.x < W / 2 ? 1230 : 50, f = new (F()[Math.random() < 0.5 ? 'RDog' : 'RSpd'])(M, x, GY); f.dir = x > W / 2 ? -1 : 1; P.foes.push(f); } }
       // сканер с Саней: едет по рельсу к Валере, стреляет плазмой (одна / веер из пяти) или бьёт молнией
       const s = M.scan;
       if (!s.dead) {
@@ -158,7 +159,7 @@
           if (s.cd <= 0 && !P.climb && !P.lv.dead && Math.hypot(P.x - s.x, P.y - 40 - (s.bot - 60)) < 400) {
             const r = Math.random(), a0 = Math.atan2(P.y - 40 - (s.bot - 14), P.x - s.x);
             const shot = (a, sp, dmg) => P.ebul.push({ x: s.x, y: s.bot - 14, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, dmg, draw: ebulDraw('plasma', 0.42) });
-            if (r < 0.28 && !M.zap && P.onG && M.zapCd <= 0) { const sf = surfFor(P); if (sf) { M.zap = Object.assign(sf, { st: 'warn', t: 0, bx: P.x }); M.zapCd = 6; Sound.play('warn', 0.6); s.cd = 3.2; } else s.cd = 0.5; }
+            if (r < 0.28 && !M.zap && P.onG && M.zapCd <= 0) { const sf = surfFor(P); if (sf) { M.zap = Object.assign(sf, { st: 'warn', t: 0, bx: P.x }); M.zapCd = 8; Sound.play('warn', 0.6); s.cd = 3.2; } else s.cd = 0.5; }
             else if (r < 0.62) { for (let i = -2; i <= 2; i++) shot(a0 + i * 0.24, 210, 8); Sound.play('zap'); s.cd = rnd(2.6, 3.4); }
             else { shot(a0, 270, 10); Sound.play('zap', 0.7); s.cd = rnd(1.6, 2.4); }
           }
@@ -184,10 +185,11 @@
           for (const c of P.foes) if (!c.dead) c.hit(99, Math.sign(c.x - s.x) || 1, 'blast');
         }
         if (f.t > 5 && !M.tv) { M.tv = 0.01; Sound.play('zap'); }
-        if (M.tv) { M.tv += dt; if (M.tv > 1.6 && !f.l2) { f.l2 = 1; Sound.play('door'); lv.say('В МАСТЕРСКОЙ ОТКРЫЛСЯ ПОТАЙНОЙ ХОД!', 2.8); } }
+        if (M.tv) { M.tv += dt; if (M.tv > 1.2 && !M.lift) { M.lift = { t: 0 }; Sound.play('crane'); G.shake(2, 0.6); } }
+        if (M.lift) { M.lift.t += dt; if (M.lift.t > 2.8 && !f.l2) { f.l2 = 1; Sound.play('door'); lv.say('ИЗ ПОЛА ВЫЕХАЛ ПОТАЙНОЙ ЛИФТ!', 2.8); } }
       }
       // потайной ход в мастерской: подойти к люку
-      if (M.tv > 1.6 && !M.leaving && Math.abs(P.x - (WS_X + 40)) < 30 && Math.abs(P.y - GY) < 4) { M.leaving = 1; lv.next(); }
+      if (M.lift && M.lift.t > 2.8 && !M.leaving && Math.abs(P.x - WS_X) < 26 && Math.abs(P.y - GY) < 4) { M.leaving = 1; lv.next(); }
     };
     M.batHit = (b, dmg, P) => {
       b.hp -= dmg; Sound.play('clank', 0.5); b.fl = 0.06;
@@ -202,12 +204,12 @@
       const n = M.left(); P.lv.say(n ? 'АККУМУЛЯТОР РАЗБИТ! ОСТАЛОСЬ ' + n : 'ВСЕ АККУМУЛЯТОРЫ РАЗБИТЫ!', 1.8);
     };
     M.shootProps = (b, P) => {
-      for (const bt of M.bats) if (bt.hp > 0 && Math.abs(b.x - bt.x) < 28 && Math.abs(b.y - bt.y) < 28) { b.dead = true; if (b.w === 'rocket' || b.w === 'gren') P.blast(b.x, b.y, b.blast || 46, b.dmg); else M.batHit(bt, b.dmg, P); return; }
+      for (const bt of M.bats) if (bt.hp > 0 && Math.abs(b.x - bt.x) < 46 && Math.abs(b.y - bt.y) < 50) { b.dead = true; if (b.w === 'rocket' || b.w === 'gren') P.blast(b.x, b.y, b.blast || 46, b.dmg); else M.batHit(bt, b.dmg, P); return; }
       const s = M.scan; if (M.fight && !s.dead && Math.abs(b.x - s.x) < 34 && b.y > s.bot - 130 && b.y < s.bot) {
         b.dead = true; Sound.play('deflect'); P.fx.push({ sh: 'fxL9', fr: ['spark'], x: b.x, y: b.y, s: 0.45, t: 0, life: 0.1, add: 1 });
         if (!M.glassHint) { M.glassHint = 1; P.hintAt('Бронестекло! Бей по аккумуляторам на стенах и потолке!', 3); } return; }
     };
-    M.blast = (x, y, r, dmg, P) => { for (const bt of M.bats) if (bt.hp > 0 && Math.hypot(bt.x - x, bt.y - y) < r + 28) M.batHit(bt, dmg, P); };
+    M.blast = (x, y, r, dmg, P) => { for (const bt of M.bats) if (bt.hp > 0 && Math.hypot(bt.x - x, bt.y - y) < r + 46) M.batHit(bt, dmg, P); };
 
     // ---------- катсцена (диалог дословно по ТЗ) ----------
     M.script = function* () {
@@ -249,34 +251,33 @@
       return [x, y];
     };
     const haze = (c, a) => { c.fillStyle = 'rgba(3,8,12,' + a + ')'; c.fillRect(0, 0, 640, 360); };
-    // фон разнесён по высоте, чтобы планы не лезли друг на друга: верх — дальняя пещера и трубы с потолка, середина — пещера и конвейер с капсулами вдали, низ — чаны/цистерны и трубы у пола
+    // фон — как в цехе (вторая часть уровня): каждый план на своей глубине и в родном разрешении картинки (без растяжения), между планами дымка;
+    // планы «стоят» каждый на своём полу: чем дальше слой, тем меньше он смещается за камерой по x и по y
     M.drawBack = (c, cx, cy) => {
       c.fillStyle = '#03070a'; c.fillRect(0, 0, 640, 360);
-      const t = T();
-      // 1) дальний зал пещеры: цистерны, чаны, капсулы на конвейерах
-      const fim = L9.img.saFar; if (fim) { const w = 880, h = fim.height * w / fim.width, [x, y] = lay(640, 560, 0.15, cx, cy); c.drawImage(fim, Math.round(x - w / 2), Math.round(y - h / 2), w, h); }
-      haze(c, 0.12);
+      const t = T(), fy = GY - cy;     // экранная высота пола
+      // 1) дальний зал пещеры (бесшовный, повтор по x): почти неподвижен
+      const fim = L9.img.saFar; if (fim) { const h = fim.height / 2, w = fim.width / 2, y = clamp(-12 - (cy - 50) * 0.05, 360 - h, 0); for (let x = -((cx * 0.1 % w) + w) % w; x < 640; x += w) c.drawImage(fim, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); }
+      haze(c, 0.14);
       // 2) вдали по середине пещеры — конвейер, по нему едут капсулы с телами
-      { const ry = 470, k = 0.3, [, sy] = lay(0, ry, k, cx, cy), rim = L9.img.saRail;
+      { const k = 0.22, sy = 150 + (fy - 300) * k, rim = L9.img.saRail;
         if (sy > -40 && sy < 420) {
           if (rim) { const rh = 7, rw = rim.width * rh / rim.height; for (let xx = -((cx * k) % rw) - rw; xx < 640; xx += rw) c.drawImage(rim, Math.floor(xx), Math.round(sy - rh / 2), Math.ceil(rw) + 1, rh); }
-          for (let i = 0; i < 8; i++) { const X = ((i * 240 + t * 22) % 1920 + 1920) % 1920 - 300, [px, py] = lay(X, ry, k, cx, cy); if (px > -40 && px < 680) S(c, 'vatA9', 'c' + ((t * 3 + i | 0) % 4), px, py + 55, 0.3, { a: 0.7 }); }
+          for (let i = 0; i < 6; i++) { const X = ((i * 300 + t * 20) % 1800 + 1800) % 1800 - 300, px = X - cx * k; if (px > -40 && px < 680) S(c, 'vatA9', 'c' + ((t * 3 + i | 0) % 4), px, sy + 52, 0.28, { a: 0.65 }); }
         } }
-      haze(c, 0.14);
-      // 3) низ: ряд чанов, капсул и шаровых цистерн (средний план)
-      tileX(c, 'saMid', 600, 335, 0, 1100, 0.42, cx, cy);
-      haze(c, 0.22);
-      // 4) кипящие чаны перед ними
-      for (const [X, ph] of [[150, 0], [560, 1.3], [1010, 2.1]]) { const [px, py] = lay(X, 1050, 0.58, cx, cy); if (px > -120 && px < 760 && py > -20 && py < 460) S(c, 'vatA9', 'v' + ((t * 6 + ph * 3 | 0) % 4), px, py, 0.5); }
-      // 5) ближе: трубы у пола (нижняя часть кадра) — из сопел под давлением бьёт пар; трубы, свисающие с потолка (верх кадра)
-      const pw = 690, ph = 385, r = tileX(c, 'saPipe', pw, ph, 0, 1060, 0.72, cx, cy, 0.6, 1);
-      if (r) { const [x0, yb] = r;
-        for (let n = -1; n < 3; n++) for (const [fx, fy, vi] of [[0.106, 0.69, 0], [0.464, 0.69, 1]]) {
-          const v = M.vent[(vi + (n & 1) * 2) % M.vent.length]; if (v.t < 0) continue;
-          const px = ((x0 % pw) + pw) % pw - pw + n * pw + fx * pw, py = yb - ph + fy * ph; if (px < -60 || px > 700) continue;
-          S(c, 'steam9', 's' + Math.min(7, v.t / 1.3 * 8 | 0), px, py - 26, 0.55, { a: 0.7 }); } }
-      tileX(c, 'saPipe', pw, ph, 345, 230, 0.72, cx, cy, 0, 0.3);
-      haze(c, 0.12);
+      haze(c, 0.16);
+      // 3) средний план: ряд чанов, капсул и шаровых цистерн на своём полу (k 0.35)
+      { const im = L9.img.saMid; if (im) { const h = 270, w = im.width * h / im.height, yb = 318 + (fy - 300) * 0.35; if (yb - h < 360) for (let x = -((cx * 0.35 % w) + w) % w; x < 640; x += w) c.drawImage(im, Math.floor(x), Math.round(yb - h), Math.ceil(w) + 1, h); } }
+      haze(c, 0.24);
+      // 4) кипящие чаны (k 0.5) — редко, на своём полу
+      for (const [X, ph] of [[180, 0], [820, 1.3]]) { const px = X - cx * 0.5 + 160, py = 326 + (fy - 300) * 0.5; if (px > -120 && px < 760 && py < 470) S(c, 'vatA9', 'v' + ((t * 6 + ph * 3 | 0) % 4), px, py, 0.42); }
+      // 5) ближе: трубы у пола (нижняя часть кадра труб, k 0.62) — из сопел бьёт пар; сверху с потолка свисают трубы (верх кадра)
+      const pim = L9.img.saPipe; if (pim) { const w = pim.width / 2, h = pim.height / 2, k = 0.62, yb = 352 + (fy - 300) * k, v0 = 0.62, hh = h * (1 - v0), ox = -((cx * k % w) + w) % w;
+        if (yb - hh < 360) for (let x = ox - w; x < 640; x += w) { c.drawImage(pim, 0, pim.height * v0, pim.width, pim.height * (1 - v0), Math.floor(x), Math.round(yb - hh), Math.ceil(w) + 1, hh);
+          for (const [fx, fy2, vi] of [[0.106, 0.69, 0], [0.464, 0.69, 1]]) { const v = M.vent[(vi + ((x / w | 0) & 1) * 2) % M.vent.length]; if (v.t < 0) continue;
+            S(c, 'steam9', 's' + Math.min(7, v.t / 1.3 * 8 | 0), x + fx * w, yb - hh + (fy2 - v0) * h - 22, 0.5, { a: 0.65 }); } }
+        const yt = 40 + (120 - cy) * k; if (yt < 360 && yt + h * 0.3 > 0) for (let x = ox - w + w / 2; x < 640; x += w) c.drawImage(pim, 0, 0, pim.width, pim.height * 0.3, Math.floor(x), Math.round(yt), Math.ceil(w) + 1, h * 0.3); }
+      haze(c, 0.1);
     };
     // ближний план (быстрее мира): сталактиты у потолка, скальные колонны у стен, камни у пола — части кадра saNear
     M.drawOver = (c, cx, cy) => {
@@ -286,36 +287,62 @@
       part(0, 0, iw * 0.2, ih, -30, 560, 150, 0.5, 0.5); part(iw * 0.8, 0, iw * 0.2, ih, W + 30, 560, 150, 0.5, 0.5);     // колонны у стен
       for (let X = 100; X < W; X += 560) part(iw * 0.25, ih * 0.8, iw * 0.5, ih * 0.2, X, 1010, 420, 0.5, 1);     // камни у пола
     };
-    const isl = (c, s) => { const [fw, fh] = L9.size('isl9', s.fr), k = s.w / fw * 1.04; S(c, 'isl9', s.fr, s.x + s.w / 2, s.y - 6 + fh * k * 0.6, k, { sy: 0.6 }); };
+    const isl = (c, s) => { const [fw, fh] = L9.size('isl9', s.fr), k = s.w / fw * 1.04; S(c, 'isl9', s.fr, s.x + s.w / 2, s.y - 6 + fh * k * 0.85, k, { sy: 0.85 }); };
+    const prop = (c, sh, fr, x, h, o = {}) => { if (!L9D[sh]) return; const [, fh] = L9.size(sh, fr); S(c, sh, fr, x, GY + 3 + (o.dy || 0), h / fh, o); };
+    // мастерская Сани: захламлённая рабочая зона безумного инженера — отдельные предметы (Flow wsp9 / wsq9), в центре люк лифта в полу
+    const drawWS = (c, t, on) => {
+      prop(c, 'wsq9', 'shelf', 470, 150); prop(c, 'wsq9', 'hoist', 742, 165); prop(c, 'wsq9', 'tesla', 830, 135);
+      prop(c, 'wsq9', on ? 'heapOn' : 'heapOff', 578, 140); prop(c, 'wsp9', on ? 'tvOn' : 'tvOff', 690, 70);
+      if (on && (t * 6 | 0) % 3 === 0) prop(c, 'wsq9', 'heapOn', 578, 140, { add: 1, a: 0.25 });
+      prop(c, 'wsq9', 'barrels', 448, 58); prop(c, 'wsq9', 'desk', 528, 74); prop(c, 'wsq9', 'arm', 735, 105); prop(c, 'wsp9', 'scrap', 790, 44); prop(c, 'wsp9', 'crates', 842, 56);
+      if (!M.fin && (t * 9 | 0) % 4 === 0) S(c, 'fxL9', 'spark', 772, GY - 92, 0.5, { add: 1 });     // сварка манипулятора
+    };
+    const drawLift = (c) => {     // куски пола над шахтой разъезжаются в стороны, из шахты поднимается кабина лифта
+      const L = M.lift, op = L ? clamp(L.t / 1, 0, 1) : 0, up = L ? clamp((L.t - 1) / 1.6, 0, 1) : 0, X = WS_X, fl = L9.img.saFloor;
+      if (!L || !fl || !L9D.liftA9) return;
+      const [sw, sh] = L9.size('liftA9', 'shaft'), k = 96 / sw; c.save(); c.beginPath(); c.rect(X - 48, GY - 6, 96, 90); c.clip(); S(c, 'liftA9', 'shaft', X, GY - 6 + sh * k, k); c.restore();
+      if (up > 0) { const [cw, ch] = L9.size('liftA9', 'cage'), kc = 96 / cw, yb = GY + 2 + (1 - up) * ch * kc; c.save(); c.beginPath(); c.rect(X - 70, -500, 140, GY + 4 + 500); c.clip(); S(c, 'liftA9', 'cage', X, yb, kc); c.restore(); }
+      const h = 52, sw2 = fl.width * 48 / (fl.width * h / fl.height);
+      c.drawImage(fl, 0, 0, sw2, fl.height, Math.round(X - 48 - op * 50), GY - 6, 48, h); c.drawImage(fl, fl.width - sw2, 0, sw2, fl.height, Math.round(X + op * 50), GY - 6, 48, h);
+    };
     M.drawMid = (c, P) => {
       const x0 = P.cam.x - 200, x1 = P.cam.x + 840, y0 = P.cam.y - 200, y1 = P.cam.y + 560, vis = (x, y) => x > x0 && x < x1 && y > y0 && y < y1, t = P.t;
       // потолок пещеры
       const ce = L9.img.saCeil; if (ce) { const h = 110, w = ce.width * h / ce.height; for (let x = Math.floor(x0 / w) * w; x < x1; x += w) c.drawImage(ce, Math.floor(x), 40, Math.ceil(w) + 1, h); }
       // мастерская Сани (внизу по центру): телевизоры и люк — в финале с Иксом и открытым ходом
       const on = M.tv > 0.6 || (M.tv > 0 && (t * 14 | 0) % 2);
-      S(c, 'ws9', on ? 'on' : 'off', WS_X, GY + 4, 0.62);
-      // пол
-      const fl = L9.img.saFloor; if (fl) { const h = 86, w = fl.width * h / fl.height; for (let x = Math.floor(x0 / w) * w; x < x1; x += w) c.drawImage(fl, Math.floor(x), GY - 9, Math.ceil(w) + 1, h); }
+      if (L9D.wsq9) drawWS(c, t, on); else S(c, 'ws9', on ? 'on' : 'off', WS_X, GY + 4, 0.62);
+      // пол — тонкая плита (полоса Flow в родном масштабе)
+      const fl = L9.img.saFloor; if (fl) { const h = 52, w = fl.width * h / fl.height; for (let x = Math.floor(x0 / w) * w; x < x1; x += w) c.drawImage(fl, Math.floor(x), GY - 6, Math.ceil(w) + 1, h); }
+      drawLift(c);
       // рельс под потолком
       const rl = L9.img.saRail; if (rl) { const h = 30, w = rl.width * h / rl.height;
         for (const e of RE) { c.save(); c.translate(e.A[0], e.A[1]); if (e.vert) c.rotate(Math.PI / 2); for (let x = -h / 2; x < e.len + h / 2; x += w) c.drawImage(rl, 0, 0, Math.min(1, (e.len + h / 2 - x) / w) * rl.width, rl.height, Math.floor(x), -h / 2, Math.min(Math.ceil(w) + 1, e.len + h / 2 - x), h); c.restore(); } }
       // стойка потолочного аккумулятора
-      const b0 = M.bats.find(b => b.ceil); if (b0 && rl) { const h = 14, len = b0.y - 120; c.save(); c.translate(b0.x, 120); c.rotate(Math.PI / 2); c.drawImage(rl, 0, 0, rl.width * 0.3, rl.height, 0, -h / 2, len - 20, h); c.restore(); }
+      const b0 = M.bats.find(b => b.ceil); if (b0 && rl) { const h = 16, len = b0.y - 56 - 120 + 20; c.save(); c.translate(b0.x, 120); c.rotate(Math.PI / 2); c.drawImage(rl, 0, 0, rl.width * 0.3, rl.height, 0, -h / 2, len - 20, h); c.restore(); }
       // острова, лестницы
       for (const s of ISL) if (s.x < x1 && s.x + s.w > x0) isl(c, s);
-      for (const l of M.ladders) { const [, lh] = L9.size('plat9', 'ladder'); for (let y = l[2]; y > l[1] + lh * 0.5; y -= lh - 2) S(c, 'plat9', 'ladder', l[0], y + 4, 1); S(c, 'plat9', 'ladderTop', l[0], l[1] + 4, 1); }
+      for (const l of M.ladders) { if (L9D.lad9) { const [lw, lh] = L9.size('lad9', 'l'), k = 34 / lw, len = l[2] - l[1] + 22; S(c, 'lad9', 'l', l[0], l[2] + 2, k, { sy: len / (lh * k) }); } else { const [, lh] = L9.size('plat9', 'ladder'); for (let y = l[2]; y > l[1] + lh * 0.5; y -= lh - 2) S(c, 'plat9', 'ladder', l[0], y + 4, 1); S(c, 'plat9', 'ladderTop', l[0], l[1] + 4, 1); } }     // цельная лестница из Flow — без швов
       // аккумуляторы
-      for (const b of M.bats) if (vis(b.x, b.y)) { const fr = b.hp <= 0 ? 'dead' : b.hp <= BAT_HP / 2 ? 'hit' : 'on';
-        S(c, 'bat9', fr, b.x, b.y, 1, { rot: b.ceil ? 0 : b.x < W / 2 ? 0 : 0, flip: b.x > W / 2 });
-        if (b.hp > 0) S(c, 'fxL9', 'spark', b.x, b.y, 0.5 + Math.sin(t * 6 + b.i) * 0.1, { add: 1, a: 0.35 });
-        if (b.fl > 0) { b.fl -= 0.016; S(c, 'bat9', fr, b.x, b.y, 1, { add: 1, a: 0.5, flip: b.x > W / 2 }); } }
+      for (const b of M.bats) if (vis(b.x, b.y)) { const fr = (b.ceil ? 'c' : 'w') + (b.hp <= 0 ? 2 : b.hp <= BAT_HP / 2 ? 1 : 0), o = { flip: b.x > W / 2 }, cx2 = b.x + (b.ceil ? 0 : b.x < W / 2 ? 14 : -14);
+        S(c, 'batW9', fr, b.x, b.y, BAT_K, o);
+        if (b.hp > 0) S(c, 'fxL9', 'spark', cx2, b.y, 0.9 + Math.sin(t * 6 + b.i) * 0.2, { add: 1, a: 0.3 });
+        if (b.hp > 0 && (t * 7 + b.i | 0) % 5 === 0) S(c, 'afx9', 'arc', cx2, b.y - 46, 0.22, { add: 1, a: 0.7 });     // разряд между клеммами
+        if (b.fl > 0) { b.fl -= 0.016; S(c, 'batW9', fr, b.x, b.y, BAT_K, { add: 1, a: 0.45, flip: o.flip }); } }
       // принтеры
       for (const p of M.prn) if (vis(p.x, p.y)) {
-        S(c, 'prn9', p.st === 'wreck' ? 'wreck' : p.st === 'print' ? 'print' : p.st === 'out' ? 'out' : 'idle', p.x, p.y + 2, 0.72);
-        if (p.st === 'print') S(c, 'fxL9', 'spark', p.x + rnd(-14, 14), p.y - 95 + (p.t * 40 % 65), 0.45, { add: 1 });
+        const pf = p.st === 'wreck' ? 'wreck' : p.st === 'out' ? 'out' : 'idle';
+        S(c, 'prnB9', pf, p.x, p.y + PRN_DY, PRN_K);
+        if (p.st === 'print') {     // печать копии Сани послойно снизу вверх: ноги -> туловище с руками -> голова; луч печатающей головки на текущем слое
+          const [, ph] = L9.size('prnB9', 'idle'), H = ph * PRN_K, fy = p.y + PRN_DY - H * 0.335, [, ch] = L9.size('sclone9', 'hit'), k = (H * 0.39) / ch, hh = ch * k, fl2 = L9.PARTS.lab.x < p.x;
+          const q = clamp(p.t / 2.4, 0, 1), pr = q < 0.4 ? q / 0.4 * 0.45 : q < 0.75 ? 0.45 + (q - 0.4) / 0.35 * 0.35 : 0.8 + (q - 0.75) / 0.25 * 0.2, ly = fy - hh * pr;
+          c.save(); c.beginPath(); c.rect(p.x - 40, ly, 80, fy - ly + 2); c.clip(); S(c, 'sclone9', 'hit', p.x, fy, k, { flip: fl2 }); S(c, 'sclone9', 'hit', p.x, fy, k, { add: 1, a: 0.25 * (1 - q), flip: fl2 }); c.restore();
+          if (q < 1) { S(c, 'afx9', 'arc', p.x, ly, 0.24, { add: 1, a: 0.85 }); for (let i = 0; i < 2; i++) S(c, 'fxL9', 'spark', p.x + rnd(-20, 20), ly, 0.35, { add: 1 }); }
+          S(c, 'prnB9', 'idle', p.x, p.y + PRN_DY, PRN_K, { a: 0.18 });     // стекло камеры поверх
+        }
         if (p.st === 'wreck' && (t * 8 | 0) % 3 === 0) S(c, 'fxA9', (t * 10 | 0) % 2 ? 'fire0' : 'fire1', p.x + 8, p.y - 24, 0.7, { add: 1, a: 0.6 });
       }
-      for (const r of M.robots) { S(c, 'props8', 'shadow', r.x, GY + 1, 1.2, { a: 0.4 }); S(c, 'robo9', r.fr, r.x, GY + 2, 0.8); }
+      for (const r of M.robots) { S(c, 'props8', 'shadow', r.x, GY + 1, 1.2, { a: 0.4 }); S(c, 'robo9', r.fr, r.x, GY + 2, 0.7); }
       const s = M.san; if (!s.gone) { S(c, 'props8', 'shadow', s.x, GY + 1, 0.4, { a: 0.5 }); S(c, 'san9', s.fr, s.x, GY + 1, 1, { flip: s.dir < 0 }); }
       // ток: предупреждение (искры по поверхности), молния из сканера, поверхность под током
       const z = M.zap;

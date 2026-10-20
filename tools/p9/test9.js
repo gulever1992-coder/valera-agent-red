@@ -208,13 +208,13 @@ window.__t9 = {
     App.paused = true; Scene.active = false; Scene.dialog = null; lv.partName = 'sanya'; lv.ck = o.ck || 0; lv.done = false; lv.reset(); P = L9.PARTS.lab;
     const log = { deaths: 0, minHp: 100, t: 0, end: false, hits: [], cut: 0, bats: [], webs: 0, zaps: 0, kills0: lv.stats.kills, path: [] };
     // поверхности: -1 пол, 0..8 острова (как ISL в level9sanyaa.js)
-    const SF = { '-1': [0, 1280, 930], 0: [70, 370, 790], 1: [910, 1210, 790], 2: [500, 780, 636], 3: [70, 350, 476], 4: [930, 1210, 476], 5: [405, 495, 712], 6: [785, 875, 712], 7: [375, 465, 556], 8: [815, 905, 556] };
-    const E = [[-1, 0, 340, 'lad'], [0, 5, 360, 'jump', 1], [5, 2, 487, 'jump', 1], [2, 7, 508, 'jump', -1], [7, 3, 383, 'jump', -1], [3, 0, 340, 'walk', 1], [0, -1, 80, 'walk', -1],
-      [-1, 1, 940, 'lad'], [1, 6, 920, 'jump', -1], [6, 2, 793, 'jump', -1], [2, 8, 772, 'jump', 1], [8, 4, 897, 'jump', 1], [4, 8, 935, 'walk', -1], [1, -1, 1200, 'walk', 1], [2, 6, 770, 'walk', 1], [6, -1, 795, 'walk', -1], [5, -1, 415, 'walk', -1], [7, 2, 455, 'walk', 1], [8, 2, 825, 'walk', -1]];
+    const SF = { '-1': [0, 1280, 930], 0: [200, 410, 790], 1: [870, 1080, 790], 2: [535, 745, 636], 3: [200, 410, 476], 4: [870, 1080, 476], 5: [445, 545, 712], 6: [735, 835, 712], 7: [425, 525, 556], 8: [755, 855, 556] };
+    const E = [[-1, 0, 395, 'lad'], [0, 5, 400, 'jump', 1], [5, 2, 538, 'jump', 1], [2, 7, 542, 'jump', -1], [7, 3, 430, 'jump', -1], [3, 7, 405, 'walk', 1], [0, -1, 205, 'walk', -1],
+      [-1, 1, 885, 'lad'], [1, 6, 880, 'jump', -1], [6, 2, 742, 'jump', -1], [2, 8, 738, 'jump', 1], [8, 4, 850, 'jump', 1], [4, 8, 875, 'walk', -1], [1, -1, 1075, 'walk', 1], [2, 5, 540, 'walk', -1], [2, 6, 740, 'walk', 1], [5, -1, 450, 'walk', -1], [6, -1, 830, 'walk', 1], [7, 2, 520, 'walk', 1], [8, 2, 760, 'walk', -1]];
     const surf = () => { for (const k in SF) { const s = SF[k]; if (Math.abs(P.y - s[2]) < 4 && P.x >= s[0] - 3 && P.x <= s[1] + 3) return +k; } return null; };
     const path = (a, b) => { const prev = { [a]: null }, q = [a]; while (q.length) { const u = q.shift(); if (u === b) break; for (const e of E) if (e[0] === u && !(e[1] in prev)) { prev[e[1]] = e; q.push(e[1]); } } const out = []; let v = b; while (prev[v]) { out.unshift(prev[v]); v = prev[v][0]; } return out; };
     // цели: [поверхность, x стойки, направление, прицел]
-    const GOAL = { 3: [0, 105, -1, 'fwd'], 0: [2, 579, 1, 'up'], 1: [3, 105, -1, 'fwd'], 4: [1, 1175, 1, 'fwd'], 2: [4, 1175, 1, 'fwd'] };
+    const GOAL = { 3: [0, 215, -1, 'fwd'], 0: [2, 568, 1, 'up'], 1: [3, 215, -1, 'fwd'], 4: [1, 1065, 1, 'fwd'], 2: [4, 1065, 1, 'fwd'] };
     const ORD = [3, 0, 1, 4, 2];
     let lastHp = P.hp, lastX = P.x, stuckT = 0, jumpCd = 0, edge = null, flip = 0;
     const dt = 1 / 60, max = (o.secs || 360) * 60;
@@ -230,12 +230,14 @@ window.__t9 = {
         else if (edge && !P.onG) { I.down[edge[4] > 0 ? 'right' : 'left'] = true; }
         else {
           if (edge && P.onG && cur !== edge[0]) edge = null;
-          const bi = ORD.find(b => M.bats[b].hp > 0), g = bi != null ? GOAL[bi] : M.tv > 1.6 ? [-1, 680, 1, 'fwd'] : [-1, 640, 1, 'fwd'];
+          const bi = ORD.find(b => M.bats[b].hp > 0), g = bi != null ? GOAL[bi] : M.lift && M.lift.t > 2.8 ? [-1, 640, 1, 'fwd'] : [-1, 560, 1, 'fwd'];
           const foes = P.foes.filter(f => !f.dead && !f.hang && Math.abs(f.x - P.x) < 260 && Math.abs(f.y - P.y) < 40).sort((a, b) => Math.abs(a.x - P.x) - Math.abs(b.x - P.x)), f = foes[0];
           if (f && Math.abs(f.x - P.x) < 160 && Math.random() < skill) {
             I.down[f.x < P.x ? 'left' : 'right'] = true; I.down.punch = true;
             if (Math.abs(f.x - P.x) > 40) { I.down.left = I.down.right = false; P.dir = f.x < P.x ? -1 : 1; }
             if (f.st === 'leap' || f.st === 'jump' || f.st === 'grab') { if (P.rollCd <= 0) I.hit.switch = true; }
+          } else if (M.zap && M.zap.st !== 'bolt' && Math.abs(M.zap.y - P.y) < 4 && P.x >= M.zap.x0 - 10 && P.x <= M.zap.x1 + 10) {     // под ногами ток — уйти с поверхности
+            const goL = P.x - M.zap.x0 < M.zap.x1 - P.x; I.down[goL ? 'left' : 'right'] = true;
           } else if (cur === g[0] || cur == null) {
             const tx = g[1];
             if (Math.abs(P.x - tx) > 5) { I.down.right = tx > P.x; I.down.left = tx < P.x; }

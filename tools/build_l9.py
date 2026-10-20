@@ -656,6 +656,8 @@ if have('l9san_0.jpg'):
 # ---------- часть 4, вертикальная версия (Flow 9:16, 2026-10-20): роботы-враги и фон-слои ----------
 if have('l9rdog_0.jpg'):
     rd = cut('l9rdog_0.jpg', 'm', 6, 2, clean='edge')
+    _a = np.asarray(rd[9]); _red = (_a[..., 0] > 150) & (_a[..., 1] < 120) & (_a[..., 2] < 120); _body = (_a[..., 3] > 0) & ~_red     # кадр «лазер»: луч срезаем — он летит отдельным снарядом
+    _cols = np.where((_a[..., 3] > 0).sum(0) > 20)[0]; rd[9] = rd[9].crop((0, 0, min(rd[9].width, _cols.max() + 6), rd[9].height))
     pack('rdog9', rd, VH * 0.6 / hgt(rd, 0), names=['r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'crouch', 'leap', 'bite', 'laser', 'hit', 'dead'])
     rs = cut('l9rspd_0.jpg', 'm', 4, 3, clean='edge')
     pack('rspd9', rs, VH * 0.55 / hgt(rs, 0), names=['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'crouch', 'jump', 'fire', 'hang', 'hit', 'dead'])
@@ -697,6 +699,34 @@ if have('l9afar_0.jpg'):
         _im = seamless(_st.crop((0, y0, _st.width, y1)), 120)
         _a = np.asarray(_im).copy(); _a[_a[..., 3] < 60, 3] = 0
         Image.fromarray(_a).save(os.path.join(OUT, _n + '.png')); DATA.setdefault('_bgp', {})[_n] = 1; DATA['_bg'][_n] = {'w': _im.width, 'h': _im.height}
+
+# ---------- арена v2 (по отзыву): аккумуляторы на стенах/потолке, принтеры, цельная лестница, предметы мастерской, лифт из пола, клоны с фарфоровым лицом ----------
+if have('l9bbat2_0.jpg'):
+    bw = depurple(cut('l9bbat2_0.jpg', 'm', 2, 3, clean='edge'))
+    pack('batW9', bw, 1.0, anchor='mid', names=['w0', 'w1', 'w2', 'c0', 'c1', 'c2'])
+if have('l9bprn_0.jpg'):
+    pn = cut('l9bprn_0.jpg', 'm', 1, 4, mode='grid', clean='edge')
+    for _k, _im in enumerate(pn):     # сиреневый отсвет фона в стекле камеры -> тёмное бирюзовое стекло
+        _a = np.asarray(_im).copy(); _r, _g, _b = [_a[..., i].astype(int) for i in range(3)]; _pu = (_r > _g * 1.05) & (_b > _g * 1.08) & (_b > 60)
+        _L = _r * 0.3 + _g * 0.59 + _b * 0.11; _a[_pu, 0] = (_L[_pu] * 0.45).clip(0, 255); _a[_pu, 1] = (_L[_pu] * 0.95).clip(0, 255); _a[_pu, 2] = (_L[_pu] * 0.9).clip(0, 255); pn[_k] = trim(Image.fromarray(_a))
+    _al = (np.asarray(pn[3])[..., 3] > 0).sum(0); _e = np.where(_al == 0)[0]     # в кадр обломков попал край открытой дверцы соседнего кадра — отрезаем по пустому столбцу
+    pn[3] = trim(pn[3].crop((int(pn[3].width * 0.14), 0, pn[3].width, pn[3].height))) if not (_e < pn[3].width // 2).any() else pn[3]
+    if len(_e): pn[3] = trim(pn[3].crop((_e[_e < pn[3].width // 2].max() + 1 if (_e < pn[3].width // 2).any() else 0, 0, pn[3].width, pn[3].height)))
+    pack('prnB9', pn, VH * 2.15 / hgt(pn, 0), names=['idle', 'print', 'out', 'wreck'])
+if have('l9blad_0.jpg'):
+    pack('lad9', [trim(rgba_m('l9blad_0.jpg'))], 1.0, names=['l'])
+if have('l9bws_0.jpg'):
+    wp = depurple(cut('l9bws_0.jpg', 'm', 2, 4, clean='edge'))
+    pack('wsp9', wp, 1.0, names=['tvOff', 'tvOn', 'hatch', 'hatchO', 'tools', 'crates', 'scrap', 'cart'])
+if have('l9bws2_0.jpg'):
+    wq = depurple(cut('l9bws2_0.jpg', 'm', 2, 4, clean='edge'))
+    pack('wsq9', wq, 1.0, names=['heapOff', 'heapOn', 'desk', 'shelf', 'arm', 'tesla', 'barrels', 'hoist'])
+if have('l9blift_1.jpg'):
+    lf = depurple(cut('l9blift_1.jpg', 'm', 1, 4, clean='edge'))
+    pack('liftA9', lf, 1.0, names=['plL', 'plR', 'shaft', 'cage'])
+if have('l9sclone3_0.jpg'):
+    s3 = cut('l9sclone3_0.jpg', 'm', 4, 3, clean=True)
+    pack('sclone9', s3, VH * 0.98 / hgt(s3, 0), names=['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'wind', 'punch', 'grab', 'hit', 'fall', 'dead'])
 
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 
