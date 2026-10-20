@@ -8,7 +8,28 @@
 // Арт — Flow (tools/p9/flow9s.js: l9afar/amid/apipe/anear, l9asteam, l9avat, l9aisl, l9astrip, l9aws, l9afx -> build_l9.py).
 (() => {
   const S = L9.spr, clamp = L9.clamp, rnd = L9.rnd, F = () => L9.FOES;
-  const W = 1280, GY = 930, RY = 190, SCAN_H = 134, RX0 = 70, RX1 = 1210, WS_X = 640, DOCK_X = 890;
+  const W = 1280, GY = 930, RY = 190, RM = 600, RB = 790, SCAN_H = 134, WS_X = 640, DOCK_X = 890;
+  // сеть рельсов (по эскизу): под потолком, по середине карты и вертикали у стен — сканер всегда едет к ближайшей к Валере точке
+  const RN = { TL: [40, RY], TR: [1240, RY], ML: [40, RM], MR: [1240, RM], BL: [40, RB], BR: [1240, RB] };
+  const RE = [['TL', 'TR'], ['ML', 'MR'], ['TL', 'ML'], ['ML', 'BL'], ['TR', 'MR'], ['MR', 'BR']].map(([a, b]) => ({ a, b, A: RN[a], B: RN[b], len: Math.hypot(RN[b][0] - RN[a][0], RN[b][1] - RN[a][1]), vert: RN[a][0] === RN[b][0] }));
+  const rPos = (e, f) => [e.A[0] + (e.B[0] - e.A[0]) * f, e.A[1] + (e.B[1] - e.A[1]) * f];
+  const rNear = (x, y) => { let best = null; for (const e of RE) { const dx = e.B[0] - e.A[0], dy = e.B[1] - e.A[1], f = clamp(((x - e.A[0]) * dx + (y - e.A[1]) * dy) / (e.len * e.len), 0, 1), [px, py] = rPos(e, f), d = Math.hypot(px - x, py - y) * (e.vert ? 1.1 : 1); if (!best || d < best.d) best = { e, f, d }; } return best; };
+  const rDist = t => {     // кратчайшие расстояния от узлов сети до точки t (по рельсам)
+    const D = {}; for (const n in RN) D[n] = 1e9; D[t.e.a] = t.f * t.e.len; D[t.e.b] = (1 - t.f) * t.e.len;
+    for (let k = 0; k < 6; k++) for (const e of RE) { D[e.a] = Math.min(D[e.a], D[e.b] + e.len); D[e.b] = Math.min(D[e.b], D[e.a] + e.len); }
+    return D;
+  };
+  const rMove = (s, t, step) => {     // сдвинуть сканер s {e, f} по сети к цели t на step px
+    for (let k = 0; k < 4 && step > 0.01; k++) {
+      if (s.e === t.e) { const d = (t.f - s.f) * s.e.len; const m = clamp(d, -step, step); s.f += m / s.e.len; return; }
+      const D = rDist(t), toA = s.f * s.e.len + D[s.e.a], toB = (1 - s.f) * s.e.len + D[s.e.b], goB = s.f <= 0 ? toB <= toA : s.f >= 1 ? !(toA <= toB) : toB < toA,     // стоим в узле — при равенстве уезжаем с него, а не обратно
+         rest = goB ? (1 - s.f) * s.e.len : s.f * s.e.len;
+      if (rest > step) { s.f += (goB ? step : -step) / s.e.len; return; }
+      step -= rest; const n = goB ? s.e.b : s.e.a;
+      let bestE = null, bestC = 1e9; for (const e of RE) { if (e.a !== n && e.b !== n) continue; const c = e === t.e ? (e.a === n ? t.f : 1 - t.f) * e.len : e.len + D[e.a === n ? e.b : e.a]; if (c < bestC) { bestC = c; bestE = e; } }
+      s.e = bestE; s.f = bestE.a === n ? 0 : 1;
+    }
+  };
   // острова: x, y (настил), ширина, кадр isl9; prn — x принтера
   const ISL = [
     { x: 70, y: 790, w: 300, fr: 'big0', prn: 190 },      // 0 нижний левый (лестница)
@@ -90,7 +111,7 @@
       M.prn = ISL.filter(s => s.prn).map((s, i) => ({ x: s.prn, y: s.y, isl: i, st: SAVE.some(b => BATS[b][2] === i) ? 'wreck' : 'idle', t: rnd(0, 2), cd: rnd(0.5, 2.5) }));
       M.robots = ck > 0 ? [] : [{ fr: 'dogSit', dead: 'dogDead', x: 470, hp: 99, wake: 1 }];
       M.san = { x: WS_X, fr: 'fix0', dir: -1, gone: ck > 0 };
-      M.scan = { x: ck > 0 ? 400 : DOCK_X, bot: ck > 0 ? RY + SCAN_H : GY, fr: ck > 0 ? 'glass' : 'open', cd: 2, dead: 0, vx: 0 };
+      M.scan = { x: ck > 0 ? 400 : DOCK_X, bot: ck > 0 ? RM + SCAN_H : GY, fr: ck > 0 ? 'glass' : 'open', cd: 2, dead: 0, e: RE[1], f: ((ck > 0 ? 400 : DOCK_X) - 40) / 1200 };
       const foes = [['RDog', 1100, GY], ['RSpd', 640, ISL[2].y], ['RSpd', 200, ISL[3].y, 1], ['RSpd', 1080, ISL[4].y, 1], ['RDog', 1050, ISL[1].y]];
       if (ck > 0) foes.push(['RDog', 500, GY]);
       for (const [tp, x, y, ceil] of foes) P.foes.push(new (F()[tp])(M, x, y, ceil ? { ceil: y - 200 } : {}));
@@ -130,16 +151,16 @@
       // сканер с Саней: едет по рельсу к Валере, стреляет плазмой (одна / веер из пяти) или бьёт молнией
       const s = M.scan;
       if (!s.dead) {
-        const tx = clamp(P.x + (P.x < W / 2 ? 110 : -110), RX0, RX1), sp = M.fin ? 40 : 125;
-        s.vx += clamp(tx - s.x, -1, 1) * 260 * dt; s.vx = clamp(s.vx, -sp, sp); if (Math.abs(tx - s.x) < 20) s.vx *= 0.9; s.x = clamp(s.x + s.vx * dt, RX0, RX1); s.bot = RY + SCAN_H;
+        const t = rNear(clamp(P.x + (P.x < W / 2 ? 120 : -120), 40, 1240), P.y - 150), sp = M.fin ? 40 : 150;
+        rMove(s, t, sp * dt); const [rx, ry] = rPos(s.e, s.f); s.x = rx; s.bot = ry + SCAN_H;
         if (!M.fin) {
           s.cd -= dt; s.fr = s.cd < 0.5 || (M.zap && M.zap.st === 'warn') ? 'press' : 'glass';
-          if (s.cd <= 0 && !P.climb && !P.lv.dead) {
+          if (s.cd <= 0 && !P.climb && !P.lv.dead && Math.hypot(P.x - s.x, P.y - 40 - (s.bot - 60)) < 400) {
             const r = Math.random(), a0 = Math.atan2(P.y - 40 - (s.bot - 14), P.x - s.x);
             const shot = (a, sp, dmg) => P.ebul.push({ x: s.x, y: s.bot - 14, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, dmg, draw: ebulDraw('plasma', 0.42) });
             if (r < 0.28 && !M.zap && P.onG && M.zapCd <= 0) { const sf = surfFor(P); if (sf) { M.zap = Object.assign(sf, { st: 'warn', t: 0, bx: P.x }); M.zapCd = 6; Sound.play('warn', 0.6); s.cd = 3.2; } else s.cd = 0.5; }
-            else if (r < 0.62) { for (let i = -2; i <= 2; i++) shot(a0 + i * 0.24, 210, 8); Sound.play('zap'); s.cd = rnd(2, 2.8); }
-            else { shot(a0, 270, 10); Sound.play('zap', 0.7); s.cd = rnd(1.2, 1.9); }
+            else if (r < 0.62) { for (let i = -2; i <= 2; i++) shot(a0 + i * 0.24, 210, 8); Sound.play('zap'); s.cd = rnd(2.6, 3.4); }
+            else { shot(a0, 270, 10); Sound.play('zap', 0.7); s.cd = rnd(1.6, 2.4); }
           }
         }
       } else if (s.vy != null && s.bot < s.floorY) { s.vy += 900 * dt; s.bot = Math.min(s.floorY, s.bot + s.vy * dt); if (s.bot >= s.floorY) { Sound.play('crash'); G.shake(5, 0.3); } }
@@ -212,7 +233,7 @@
       sc.fr = 'glass'; Sound.play('zap'); G.shake(3, 0.4); yield 0.8;
       Sound.play('crane');
       for (const p of M.prn) if (p.st !== 'wreck' && p.isl < 2) { p.st = 'print'; p.t = 0.6; }
-      const top = RY + SCAN_H; while (sc.bot > top) { sc.bot = Math.max(top, sc.bot - 160 * D); yield D; }
+      const top = RM + SCAN_H; while (sc.bot > top) { sc.bot = Math.max(top, sc.bot - 160 * D); yield D; }
       const dg = M.robots.find(r => r.wake); if (dg) { M.robots = M.robots.filter(r => r !== dg); const f = new (F().RDog)(M, dg.x, GY, { wake: 1 }); f.dir = -1; P.foes.push(f); Sound.play('zap'); }
       Sound.play('clank'); yield 0.5; M.camT = null;
     };
@@ -221,45 +242,41 @@
     // ---------- отрисовка: 4 слоя параллакса + анимация (пар из труб, кипящие чаны, капсулы на конвейере) ----------
     const T = () => L9.PARTS.lab.t;
     const lay = (X, Y, k, cx, cy) => [320 + (X - (cx + 320)) * k, 180 + (Y - (cy + 180)) * k];
-    const tileX = (c, n, w, h, X, Ybot, k, cx, cy, sx0 = 0) => {     // слой-лента: повтор по x, низ на высоте Ybot мира (в своей глубине)
-      const im = L9.img[n]; if (!im) return; const [x, y] = lay(X, Ybot, k, cx, cy); if (y < 0 || y - h > 360) return;
-      for (let xx = ((x % w) + w) % w - w; xx < 640; xx += w) c.drawImage(im, Math.floor(xx), Math.round(y - h), Math.ceil(w) + 1, h);
+    // слой-лента: повтор по x; v0..v1 — какая часть картинки по высоте берётся; низ куска на высоте Ybot мира (в своей глубине k)
+    const tileX = (c, n, w, h, X, Ybot, k, cx, cy, v0 = 0, v1 = 1) => {
+      const im = L9.img[n]; if (!im) return; const [x, y] = lay(X, Ybot, k, cx, cy), hh = h * (v1 - v0); if (y < 0 || y - hh > 360) return;
+      for (let xx = ((x % w) + w) % w - w; xx < 640; xx += w) c.drawImage(im, 0, im.height * v0, im.width, im.height * (v1 - v0), Math.floor(xx), Math.round(y - hh), Math.ceil(w) + 1, hh);
       return [x, y];
     };
     const haze = (c, a) => { c.fillStyle = 'rgba(3,8,12,' + a + ')'; c.fillRect(0, 0, 640, 360); };
+    // фон разнесён по высоте, чтобы планы не лезли друг на друга: верх — дальняя пещера и трубы с потолка, середина — пещера и конвейер с капсулами вдали, низ — чаны/цистерны и трубы у пола
     M.drawBack = (c, cx, cy) => {
       c.fillStyle = '#03070a'; c.fillRect(0, 0, 640, 360);
+      const t = T();
       // 1) дальний зал пещеры: цистерны, чаны, капсулы на конвейерах
       const fim = L9.img.saFar; if (fim) { const w = 880, h = fim.height * w / fim.width, [x, y] = lay(640, 560, 0.15, cx, cy); c.drawImage(fim, Math.round(x - w / 2), Math.round(y - h / 2), w, h); }
-      haze(c, 0.2);
-      // 2) средний план: ряд чанов, капсул и шаровых цистерн — два яруса (галереи пещеры); капсулы едут по конвейеру над ними
-      const t = T(), mw = 600, mh = 335;
-      for (const [Yb, off] of [[600, 300], [1100, 0]]) {
-        tileX(c, 'saMid', mw, mh, off, Yb, 0.42, cx, cy);
-        // конвейер с капсулами над ярусом
-        const ry = Yb - 250, [, sy] = lay(0, ry, 0.42, cx, cy); if (sy < -60 || sy > 420) continue;
-        const rim = L9.img.saRail; if (rim) { const rh = 9, rw = rim.width * rh / rim.height; for (let xx = -((cx * 0.42 + off) % rw) - rw; xx < 640; xx += rw) c.drawImage(rim, Math.floor(xx), Math.round(sy - rh / 2), Math.ceil(rw) + 1, rh); }
-        for (let i = 0; i < 9; i++) { const X = ((i * 190 + t * 26 * (off ? -1 : 1) + off) % 1710 + 1710) % 1710 - 200, [px, py] = lay(X, ry, 0.42, cx, cy);
-          if (px > -40 && px < 680) S(c, 'vatA9', 'c' + ((t * 3 + i | 0) % 4), px, py + 75, 0.42, { a: 0.85 }); }
-      }
-      haze(c, 0.26);
-      // 3) кипящие чаны между средним планом и трубами
-      for (const [X, Yb, ph] of [[150, 1050, 0], [560, 1050, 1.3], [1010, 1050, 2.1], [330, 560, 0.7], [860, 560, 1.7]]) {
-        const [px, py] = lay(X, Yb, 0.58, cx, cy); if (px < -120 || px > 760 || py < -20 || py > 460) continue;
-        S(c, 'vatA9', 'v' + ((t * 6 + ph * 3 | 0) % 4), px, py, 0.5);
-      }
-      // 4) ближе: сеть толстых труб с вентилями — из сопел под давлением бьёт пар
-      const pw = 690, ph = 385;
-      for (const [Yb, off] of [[620, 345], [1060, 0]]) {
-        const r = tileX(c, 'saPipe', pw, ph, off, Yb, 0.72, cx, cy); if (!r) continue;
-        const [x0, yb] = r;
-        for (let n = -1; n < 3; n++) for (const [fx, fy, vi] of [[0.106, 0.69, 0], [0.464, 0.69, 1], [0.79, 0.30, 2]]) {
-          const v = M.vent[(vi + (Yb > 800 ? 3 : 0) + (n & 1)) % M.vent.length]; if (v.t < 0) continue;
-          const px = ((x0 % pw) + pw) % pw - pw + n * pw + fx * pw, py = yb - ph + fy * ph; if (px < -60 || px > 700) continue;
-          S(c, 'steam9', 's' + Math.min(7, v.t / 1.3 * 8 | 0), px, py - 26, 0.55, { a: 0.7 });
-        }
-      }
+      haze(c, 0.12);
+      // 2) вдали по середине пещеры — конвейер, по нему едут капсулы с телами
+      { const ry = 470, k = 0.3, [, sy] = lay(0, ry, k, cx, cy), rim = L9.img.saRail;
+        if (sy > -40 && sy < 420) {
+          if (rim) { const rh = 7, rw = rim.width * rh / rim.height; for (let xx = -((cx * k) % rw) - rw; xx < 640; xx += rw) c.drawImage(rim, Math.floor(xx), Math.round(sy - rh / 2), Math.ceil(rw) + 1, rh); }
+          for (let i = 0; i < 8; i++) { const X = ((i * 240 + t * 22) % 1920 + 1920) % 1920 - 300, [px, py] = lay(X, ry, k, cx, cy); if (px > -40 && px < 680) S(c, 'vatA9', 'c' + ((t * 3 + i | 0) % 4), px, py + 55, 0.3, { a: 0.7 }); }
+        } }
       haze(c, 0.14);
+      // 3) низ: ряд чанов, капсул и шаровых цистерн (средний план)
+      tileX(c, 'saMid', 600, 335, 0, 1100, 0.42, cx, cy);
+      haze(c, 0.22);
+      // 4) кипящие чаны перед ними
+      for (const [X, ph] of [[150, 0], [560, 1.3], [1010, 2.1]]) { const [px, py] = lay(X, 1050, 0.58, cx, cy); if (px > -120 && px < 760 && py > -20 && py < 460) S(c, 'vatA9', 'v' + ((t * 6 + ph * 3 | 0) % 4), px, py, 0.5); }
+      // 5) ближе: трубы у пола (нижняя часть кадра) — из сопел под давлением бьёт пар; трубы, свисающие с потолка (верх кадра)
+      const pw = 690, ph = 385, r = tileX(c, 'saPipe', pw, ph, 0, 1060, 0.72, cx, cy, 0.6, 1);
+      if (r) { const [x0, yb] = r;
+        for (let n = -1; n < 3; n++) for (const [fx, fy, vi] of [[0.106, 0.69, 0], [0.464, 0.69, 1]]) {
+          const v = M.vent[(vi + (n & 1) * 2) % M.vent.length]; if (v.t < 0) continue;
+          const px = ((x0 % pw) + pw) % pw - pw + n * pw + fx * pw, py = yb - ph + fy * ph; if (px < -60 || px > 700) continue;
+          S(c, 'steam9', 's' + Math.min(7, v.t / 1.3 * 8 | 0), px, py - 26, 0.55, { a: 0.7 }); } }
+      tileX(c, 'saPipe', pw, ph, 345, 230, 0.72, cx, cy, 0, 0.3);
+      haze(c, 0.12);
     };
     // ближний план (быстрее мира): сталактиты у потолка, скальные колонны у стен, камни у пола — части кадра saNear
     M.drawOver = (c, cx, cy) => {
@@ -280,7 +297,8 @@
       // пол
       const fl = L9.img.saFloor; if (fl) { const h = 86, w = fl.width * h / fl.height; for (let x = Math.floor(x0 / w) * w; x < x1; x += w) c.drawImage(fl, Math.floor(x), GY - 9, Math.ceil(w) + 1, h); }
       // рельс под потолком
-      const rl = L9.img.saRail; if (rl) { const h = 30, w = rl.width * h / rl.height; for (let x = RX0 - 40; x < RX1 + 40; x += w) c.drawImage(rl, Math.floor(x), RY - h / 2, Math.min(Math.ceil(w) + 1, RX1 + 40 - x), h); }
+      const rl = L9.img.saRail; if (rl) { const h = 30, w = rl.width * h / rl.height;
+        for (const e of RE) { c.save(); c.translate(e.A[0], e.A[1]); if (e.vert) c.rotate(Math.PI / 2); for (let x = -h / 2; x < e.len + h / 2; x += w) c.drawImage(rl, 0, 0, Math.min(1, (e.len + h / 2 - x) / w) * rl.width, rl.height, Math.floor(x), -h / 2, Math.min(Math.ceil(w) + 1, e.len + h / 2 - x), h); c.restore(); } }
       // стойка потолочного аккумулятора
       const b0 = M.bats.find(b => b.ceil); if (b0 && rl) { const h = 14, len = b0.y - 120; c.save(); c.translate(b0.x, 120); c.rotate(Math.PI / 2); c.drawImage(rl, 0, 0, rl.width * 0.3, rl.height, 0, -h / 2, len - 20, h); c.restore(); }
       // острова, лестницы
