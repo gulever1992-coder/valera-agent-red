@@ -781,8 +781,8 @@ if have('l9htv_1.jpg'):
 # ---------- 2026-10-22: люк мастерской Сани (l9chatch_0) и подполье арены (l9cunder_1) ----------
 if have('l9chatch_0.jpg'):
     _h = rgba_m('l9chatch_0.jpg')
-    _cl = _h.crop((46, 88, 637, 315)); _op = _h.crop((750, 88, 1342, 567))
-    _ap = [159, 30, 452, 162]     # проём со створками в закрытом кадре (x0, y0, x1, y1); стык створок — по середине
+    _cl = _h.crop((190, 104, 514, 268)); _op = _h.crop((888, 104, 1212, 567))     # только рамка люка со створками (без окружающего пола); открытый — та же рамка + шахта
+    _ap = [15, 14, 308, 146]     # проём со створками в закрытом кадре (x0, y0, x1, y1); стык створок — по середине
     _mx = (_ap[0] + _ap[2]) // 2
     _sl = _cl.crop((_ap[0], _ap[1], _mx, _ap[3])); _sr = _cl.crop((_mx, _ap[1], _ap[2], _ap[3]))
     _fr = [_cl, _op, _sl, _sr]; _W = sum(f.width + 2 for f in _fr) + 2; _H = max(f.height for f in _fr) + 2
@@ -790,20 +790,29 @@ if have('l9chatch_0.jpg'):
     for _f in _fr: _sh.paste(_f, (_x, 1)); _meta.append([_x, 1, _f.width, _f.height, 0, 0]); _x += _f.width + 2
     _sh.save(os.path.join(OUT, 'hatchA9.png')); DATA['hatchA9'] = {'f': _meta, 'n': ['closed', 'open', 'shL', 'shR'], 'ap': _ap}     # якорь — левый верхний угол
     print('hatchA9', _W, _H)
+if have('l9cfloor_0.jpg'):     # прежний пол арены, перерисованный цельно вместе с камнями под ним до низа
+    _u = seamless(Image.open(os.path.join(SRC, 'l9cfloor_0.jpg')).convert('RGB'), 160); _u.save(os.path.join(OUT, 'saFloorT.jpg'), quality=90); DATA['_bg']['saFloorT'] = {'w': _u.width, 'h': _u.height}
 if have('l9cunder_1.jpg'):
     _u = Image.open(os.path.join(SRC, 'l9cunder_1.jpg')).convert('RGB'); _u = _u.crop((0, int(_u.height * 0.17), _u.width, _u.height))
     _u = seamless(_u, 160); _u.save(os.path.join(OUT, 'saUnder.jpg'), quality=90); DATA['_bg']['saUnder'] = {'w': _u.width, 'h': _u.height}
 
 # ---------- часть 6 «ЗАКРЫТАЯ ЧАСТЬ ЗАВОДА» (Flow 2026-10-22) ----------
+def delav(fr):     # сиреневый пар/дым (просвет пурпура сквозь полупрозрачное) -> зеленоватый пар той же яркости
+    out = []
+    for im in fr:
+        a = np.asarray(im).copy(); r_, g_, b_ = [a[..., i].astype(int) for i in range(3)]; pu = (b_ > g_ * 1.08) & (r_ > g_ * 1.02) & (b_ > 60)
+        L_ = (r_ * 0.3 + g_ * 0.59 + b_ * 0.11); a[pu, 0] = (L_[pu] * 0.7).clip(0, 255); a[pu, 1] = (L_[pu] * 1.05).clip(0, 255); a[pu, 2] = (L_[pu] * 0.85).clip(0, 255)
+        out.append(Image.fromarray(a))
+    return out
 if have('l9zfar_1.jpg'):
     _im = seamless(Image.open(os.path.join(SRC, 'l9zfar_1.jpg')).convert('RGB'), 160); _im.save(os.path.join(OUT, 'zFar.jpg'), quality=90); DATA['_bg']['zFar'] = {'w': _im.width, 'h': _im.height}
-    _m = seamless(rgba_m('l9zmid_1.jpg'), 140); _a = np.asarray(_m).copy(); _a[_a[..., 3] < 60, 3] = 0; _a[..., :3] = (_a[..., :3] * 0.72).astype(np.uint8)
+    _m = rgba_m('l9zmid_1.jpg'); _rgb = delav(depurple([_m.convert('RGB')]))[0]; _m = seamless(Image.fromarray(np.dstack([np.asarray(_rgb), np.asarray(_m)[..., 3]])), 140); _a = np.asarray(_m).copy(); _a[_a[..., 3] < 60, 3] = 0; _a[..., :3] = (_a[..., :3] * 0.72).astype(np.uint8)
     Image.fromarray(_a).save(os.path.join(OUT, 'zMid.png')); DATA.setdefault('_bgp', {})['zMid'] = 1; DATA['_bg']['zMid'] = {'w': _m.width, 'h': _m.height}
     _st = rgba_m('l9zstrip_1.jpg'); _b = [(14, 255), (268, 463), (476, 762)]     # замер покрытия по строкам; print('полосы zstrip', _b)
     for _n, (y0, y1) in zip(['zFloor', 'zBridge', 'zCeil'], _b[:3]):
         _s2 = seamless(_st.crop((0, y0, _st.width, y1)), 120); _a = np.asarray(_s2).copy(); _a[_a[..., 3] < 60, 3] = 0
         Image.fromarray(_a).save(os.path.join(OUT, _n + '.png')); DATA.setdefault('_bgp', {})[_n] = 1; DATA['_bg'][_n] = {'w': _s2.width, 'h': _s2.height}
-    _v = cut('l9zvat_1.jpg', 'm', 1, 2, clean='edge'); pack('vatZ9', _v, 1.0, names=['vat', 'spout'])
+    _v = delav(depurple(cut('l9zvat_1.jpg', 'm', 1, 2, clean='edge'))); _v[0] = trim(_v[0].crop((0, int(_v[0].height * 0.13), _v[0].width, _v[0].height))); pack('vatZ9', _v, 1.0, names=['vat', 'spout'])     # пар над чаном срезан (сверху — кипящая жижа)
     _hz = cut('l9zhaz_0.jpg', 'm', 2, 4, clean='edge'); pack('hazZ9', _hz, 1.0, names=['vent', 'ventOn', 'pressUp', 'pressDn', 'drip', 'steam', 'pallet', 'gear'])
     _fx = cut('l9zfx_0.jpg', 'm', 2, 4, clean='edge'); pack('fxZ9', _fx, 0.6, anchor='mid', names=['f0', 'f1', 'f2', 'f3', 'sp0', 'sp1', 'sm0', 'sm1'])
     _se = cut('l9zsem_1.jpg', 'm', 2, 5, clean='edge'); pack('semZ9', _se, VH * 1.04 / hgt(_se, 0), names=['idle', 'talk', 'spread', 'point', 'laugh', 'w0', 'w1', 'fist', 'fold', 'hurt'])

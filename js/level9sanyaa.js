@@ -294,7 +294,6 @@
       const im = L9.img.saNear; if (!im) return; const iw = im.width, ih = im.height, k = 1.3;
       const part = (sx, sy, sw, sh, X, Y, w, ax, ay) => { const h = sh * w / sw, [x, y] = lay(X, Y, k, cx, cy), dx = x - ax * w, dy = y - ay * h; if (dx > 640 || dx + w < 0 || dy > 360 || dy + h < 0) return; c.drawImage(im, sx, sy, sw, sh, Math.round(dx), Math.round(dy), Math.round(w), Math.round(h)); };
       part(0, 0, iw * 0.2, ih, -30, 560, 150, 0.5, 0.5); part(iw * 0.8, 0, iw * 0.2, ih, W + 30, 560, 150, 0.5, 0.5);     // колонны у стен
-      for (let X = 100; X < W; X += 560) part(iw * 0.25, ih * 0.8, iw * 0.5, ih * 0.2, X, 1010, 420, 0.5, 1);     // камни у пола
     };
     const isl = (c, s) => { const [fw, fh] = L9.size('isl9', s.fr), k = s.w / fw * 1.04; S(c, 'isl9', s.fr, s.x + s.w / 2, s.y - 14 + fh * k * 0.85, k, { sy: 0.85 }); };
     const prop = (c, sh, fr, x, h, o = {}) => { if (!L9D[sh]) return; const [, fh] = L9.size(sh, fr); S(c, sh, fr, x, GY + 2 + (o.dy || 0), h / fh, o); };
@@ -309,7 +308,7 @@
     const drawLift = (c, part) => {     // part 'deck' — люк (сразу после пола, под ножками предметов), 'cap' — капсула (перед мастерской)
           // люк в полу мастерской (виден с начала): створки разъезжаются в стороны, из шахты выезжает капсула-лифт, Валера заходит, капсула уходит вниз, люк закрывается
       const d = L9D.hatchA9; if (!d) return;
-      const L = M.lift || { op: 0, up: 0 }, X = WS_X, top = GY - FLY, op = L.op, [cw, ch] = L9.size('hatchA9', 'closed'), k = 46 / ch, q = k * 0.5, x0 = X - cw * k / 2;
+      const L = M.lift || { op: 0, up: 0 }, X = WS_X, top = GY - FLY + 3, op = L.op, [cw] = L9.size('hatchA9', 'closed'), k = 0.405, q = k * 0.5, x0 = X - cw * k / 2;
       const ap = d.ap, ax0 = x0 + ap[0] * q, ay0 = top + ap[1] * q, ax1 = x0 + ap[2] * q, ay1 = top + ap[3] * q, mid = (ax0 + ax1) / 2;
       if (part === 'deck') { if (op <= 0) S(c, 'hatchA9', 'closed', x0, top, k); else { S(c, 'hatchA9', 'open', x0, top, k);
         c.save(); c.beginPath(); c.rect(ax0, ay0 - 2, ax1 - ax0, ay1 - ay0 + 4); c.clip();     // створки уезжают под настил
@@ -331,10 +330,10 @@
       // рельсы (поверх стен) и сканер с Саней — позади всех предметов; в катсцене Саня проходит перед капсулой
       const rl = L9.img.saRail; if (rl) { const h = 30, w = rl.width * h / rl.height;
         for (const e of RE) { const ext = e.vert && (e.b === 'BL' || e.b === 'BR' || e.b === 'DD') ? GY - FLY - e.B[1] : 0, el = e.len + ext; c.save(); c.translate(e.A[0], e.A[1]); if (e.vert) c.rotate(Math.PI / 2); for (let x = -h / 2; x < el + h / 2; x += w) c.drawImage(rl, 0, 0, Math.min(1, (el + h / 2 - x) / w) * rl.width, rl.height, Math.floor(x), -h / 2, Math.min(Math.ceil(w) + 1, el + h / 2 - x), h); c.restore(); } }
-      // под полом до низа локации: камни, трубы, жижа (Flow l9cunder)
-      const un = L9.img.saUnder; if (un) { const h = 240, w = un.width * h / un.height; for (let x = Math.floor(x0 / w) * w; x < x1; x += w) c.drawImage(un, Math.floor(x), GY - FLY + 40, Math.ceil(w) + 1, h); }
-      // пол — тонкая плита (полоса Flow в родном масштабе); ноги стоят на его верхней плоскости
-      const fl = L9.img.saFloor; if (fl) { const h = 52, w = fl.width * h / fl.height; for (let x = Math.floor(x0 / w) * w; x < x1; x += w) c.drawImage(fl, Math.floor(x), GY - FLY, Math.ceil(w) + 1, h); }
+      // пол — цельная картинка Flow: плита с настилом и под ней камни, трубы, жижа до низа локации (масштаб прежней полосы пола)
+      const ft = L9.img.saFloorT, fl = L9.img.saFloor;
+      if (ft) { const h = ft.height * 52 / 216, w = ft.width * h / ft.height; for (let x = Math.floor(x0 / w) * w; x < x1; x += w) c.drawImage(ft, Math.floor(x), GY - FLY, Math.ceil(w) + 1, h); }
+      else if (fl) { const h = 52, w = fl.width * h / fl.height; for (let x = Math.floor(x0 / w) * w; x < x1; x += w) c.drawImage(fl, Math.floor(x), GY - FLY, Math.ceil(w) + 1, h); }
       drawLift(c, 'deck');
       // мастерская Сани — на заднем плане: капсула с Саней ездит перед ней
       if (L9D.wsq9) drawWS(c, t, on); else S(c, 'ws9', on ? 'on' : 'off', WS_X, GY + 4, 0.62);
