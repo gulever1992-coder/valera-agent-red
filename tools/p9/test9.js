@@ -270,4 +270,27 @@ window.__t9 = {
     }
     log.T = Math.round(log.t); log.x = Math.round(P.x); log.y = Math.round(P.y); log.part = lv.partName; log.kills = lv.stats.kills - log.kills0; log.dmgTotal = log.hits.reduce((a, b) => a + b[2], 0); log.hits = log.hits.length; log.cut = Math.round(log.cut); log.path = log.path.slice(0, 30).join(' '); return log;
   },
+  // бой с Семёном (часть 7): дёргать стропу, когда Семён под ковшом; облит — подбежать и стрелять
+  semen(o = {}) {
+    const lv = App.level, I = G.Input, skill = o.skill ?? 0.8; let Q = L9.PARTS.lab;
+    App.paused = true; Scene.active = false; Scene.dialog = null; lv.partName = 'semen'; lv.ck = 0; lv.done = false; lv.reset(); Q = L9.PARTS.lab;
+    const r = { end: null, ph: [], deaths0: lv.stats.deaths, pulls: 0, minHp: 100 };
+    for (let i = 0; i < (o.secs || 480) * 60; i++) {
+      I.down = {}; I.hit = {}; const M = Q.M;
+      if (Scene.active) { if (Scene.dialog && Scene.dialog.t > 1.0) I.hit.jump = true; }
+      else if (lv.dead) {}
+      else if (lv.partName !== 'semen' || lv.done) { r.end = i / 60 | 0; break; }
+      else { const b = M.boss; if (b && !b.dying) {
+        if (b.slime > 0) { const want = b.x + (Q.x < b.x ? -110 : 110); if (Math.abs(Q.x - want) > 20) I.down[want > Q.x ? 'right' : 'left'] = true; else Q.dir = b.x > Q.x ? 1 : -1; I.down.punch = true; }
+        else { const l = M.lad.filter(l => l.st === 'full').sort((a, c) => Math.abs(a.x + 22 - b.x) - Math.abs(c.x + 22 - b.x))[0];
+          if (l) { if (Math.abs(Q.x - l.sl) > 6) I.down[l.sl > Q.x ? 'right' : 'left'] = true; else if (Math.abs(b.x - (l.x + 22)) < 34 && b.fly < 0.1 && Math.random() < skill) { I.hit.up = true; r.pulls++; } else Q.dir = b.x > Q.x ? 1 : -1; }
+          else { const away = Q.x < 480 ? 130 : 800; if (Math.abs(Q.x - away) > 10) I.down[away > Q.x ? 'right' : 'left'] = true; else Q.dir = b.x > Q.x ? 1 : -1; }
+          if ((b.act === 'dash' || b.act === 'punch' && b.stT > 0.3 && b.stT < 0.6) && Math.abs(b.x - Q.x) < 260 && Q.onG && Math.random() < 0.3 * skill) I.hit.jump = true;
+        } } }
+      for (const k in I.hit) if (I.hit[k]) I.down[k] = I.down[k] || false;
+      const p0 = Q.M && Q.M.boss ? Q.M.boss.ph : 0; lv.update(1 / 60); Q = L9.PARTS.lab; if (!lv.dead) r.minHp = Math.min(r.minHp, Q.hp);
+      if (Q.M && Q.M.boss && Q.M.boss.ph !== p0) r.ph.push(Q.M.boss.ph + '@' + (i / 60 | 0));
+    }
+    r.deaths = lv.stats.deaths - r.deaths0; r.minHp = Math.round(r.minHp); r.ph = r.ph.join(' '); return r;
+  },
 };

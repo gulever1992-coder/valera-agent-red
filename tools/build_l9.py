@@ -825,6 +825,17 @@ if have('l9zfar_1.jpg'):
         _cx = _x0 + (xs.min() + xs.max()) // 2; _t = ys.min(); _sz = min(_po.height - _t, (xs.max() - xs.min()) + 10)
         _po.crop((_cx - _sz // 2, _t - 6, _cx + _sz // 2, _t - 6 + _sz)).resize((128, 128), Image.LANCZOS).save(os.path.join(ROOT, 'assets', 'spr', _nm + '.png'))
 
+# ---------- часть 7 «БОСС СЕМЁН» (Flow 2026-10-22) ----------
+if have('l9bsem1_0.jpg'):
+    _s1 = cut('l9bsem1_0.jpg', 'm', 3, 5, clean='edge'); pack('semB9', _s1, VH * 1.04 / hgt(_s1, 9), names=['r0', 'r1', 'r2', 'r3', 'dash', 'armOff', 'aim', 'fireR', 'sky', 'laugh', 'fly0', 'fly1', 'slimed', 'kneel', 'stagger'])
+    _s2 = cut('l9bsem2_0.jpg', 'm', 2, 4, clean='edge'); pack('semP9', _s2, 0.5, anchor='mid', names=['fistO', 'fistC', 'seg', 'rocket', 'bolt', 'jet', 'light', 'drop'])
+    _ar = np.asarray(Image.open(os.path.join(SRC, 'l9barena_1.jpg')).convert('RGB')).copy(); _dk = _ar.max(2) < 60     # тёмные линии сетки ячеек -> пурпур
+    for _y in np.where(_dk.mean(1) > 0.6)[0]: _ar[max(0, _y - 2):_y + 3] = (255, 0, 255)
+    for _x in np.where(_dk.mean(0) > 0.6)[0]: _ar[:, max(0, _x - 2):_x + 3] = (255, 0, 255)
+    Image.fromarray(_ar).save(os.path.join(SRC, '_barena.jpg'), quality=95)
+    _a7 = cut('_barena.jpg', 'm', 2, 4, mode='grid', clean=True); pack('arZ9', _a7, 0.5, names=['ladle', 'ladleTilt', 'ladleEmpty', 'sling', 'slingPull', 'crate', 'barrels', 'plat'])
+    _vs = cut('l9bvsit_0.jpg', 'm', 1, 3, clean='edge'); pack('vSit9', _vs, VH * 0.66 / hgt(_vs, 0), names=['sit', 'belly', 'look'])
+
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 
 if DBG:
