@@ -8,7 +8,7 @@
 // Арт — Flow (tools/p9/flow9s.js: l9afar/amid/apipe/anear, l9asteam, l9avat, l9aisl, l9astrip, l9aws, l9afx -> build_l9.py).
 (() => {
   const S = L9.spr, clamp = L9.clamp, rnd = L9.rnd, F = () => L9.FOES;
-  const W = 1280, GY = 930, RY = 190, RM = 600, RB = 796, SCAN_H = 134, WS_X = 640, DOCK_X = 790, FLY = 16, PRN_K = 1.17, PRN_DY = 13, BAT_K = 0.62;     // PRN_DY: низ кадра принтера — свисающие кабели, основание стоит на настиле
+  const W = 1280, GY = 930, RY = 190, RM = 600, RB = 796, SCAN_H = 134, WS_X = 640, DOCK_X = 790, FLY = 16, PRN_K = 0.6, PRN_DY = 1, BAT_K = 0.52;     // PRN_DY: низ кадра принтера — свисающие кабели, основание стоит на настиле
   // сеть рельсов (по эскизу): под потолком, по середине карты и вертикали у стен — сканер всегда едет к ближайшей к Валере точке
   const RN = { TL: [40, RY], TR: [1240, RY], ML: [40, RM], MR: [1240, RM], BL: [40, RB], BR: [1240, RB], MD: [790, RM], DD: [790, 796] };     // MD-DD — рельс от капсулы в доке вверх
   const RE = [['TL', 'TR'], ['ML', 'MD'], ['MD', 'MR'], ['TL', 'ML'], ['ML', 'BL'], ['TR', 'MR'], ['MR', 'BR'], ['MD', 'DD']].map(([a, b]) => ({ a, b, A: RN[a], B: RN[b], len: Math.hypot(RN[b][0] - RN[a][0], RN[b][1] - RN[a][1]), vert: RN[a][0] === RN[b][0] }));
@@ -43,7 +43,7 @@
   ];
   const LADS = [[395, 790, GY], [885, 790, GY]];
   // аккумуляторы (огромные силовые ячейки): x, y (центр), остров-принтер, на потолке ли
-  const BATS = [[640, 330, 2, 1], [60, 431, 3], [1220, 431, 4], [60, 745, 0], [1220, 745, 1]];
+  const BATS = [[640, 340, 2, 1], [52, 431, 3], [1228, 431, 4], [52, 745, 0], [1228, 745, 1]];
   const BAT_HP = 24;
   let SAVE = [];
 
@@ -120,6 +120,7 @@
       if (ck > 0) lv.say('СТРЕЛЯЙ ПО АККУМУЛЯТОРАМ НА СТЕНАХ И ПОТОЛКЕ!', 3);
       M.vent = [...Array(6)].map(() => ({ t: rnd(-4, 0), sp: rnd(0.9, 1.4) }));
     };
+    M.dmgK = 0.6;     // здоровья у Валеры на арене больше: урон x0.6
     M.camY = gy => gy - 300 - clamp((700 - gy) * 0.25, 0, 60);     // у верхних островов камера выше — видно рельс и потолок
     M.left = () => M.bats.filter(b => b.hp > 0).length;
     M.hazAt = (x, y, P) => {     // пол/остров под током
@@ -273,7 +274,7 @@
       const fim = L9.img.saFar; if (fim) { const h = fim.height / 2, w = fim.width / 2, y = clamp(-12 - (cy - 50) * 0.05, 360 - h, 0); for (let x = -((cx * 0.1 % w) + w) % w; x < 640; x += w) c.drawImage(fim, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); }
       haze(c, 0.14);
       // 2) вдали по середине пещеры — конвейер, по нему едут капсулы с телами
-      { const k = 0.22, sy = 150 + (fy - 300) * k, rim = L9.img.saRail;
+      { const k = 0.22, sy = 36 + (fy - 300) * k, rim = L9.img.saRail;
         if (sy > -40 && sy < 420) {
           if (rim) { const rh = 7, rw = rim.width * rh / rim.height; for (let xx = -((cx * k) % rw) - rw; xx < 640; xx += rw) c.drawImage(rim, Math.floor(xx), Math.round(sy - rh / 2), Math.ceil(rw) + 1, rh); }
           for (let i = 0; i < 6; i++) { const X = ((i * 300 + t * 20) % 1800 + 1800) % 1800 - 300, px = X - cx * k; if (px > -40 && px < 680) S(c, 'vatA9', 'c' + ((t * 3 + i | 0) % 4), px, sy + 52, 0.28, { a: 0.65 }); }
@@ -286,9 +287,6 @@
       { const im = L9.img.saMid; if (im) { const h = 270, w = im.width * h / im.height, yb = 318 + (fy - 300) * 0.35, ox = -((cx * 0.35 % w) + w) % w;
         for (let x = ox; x < 640 + w; x += w) for (const [fx, fy2, vi] of [[0.12, 0.42, 0], [0.62, 0.36, 1], [0.86, 0.4, 2]]) { const v = M.vent[(vi + ((x / w | 0) & 1) * 3) % M.vent.length]; if (v.t < 0) continue;
           S(c, 'steam9', 's' + Math.min(7, v.t / 1.3 * 8 | 0), x + fx * w, yb - h + fy2 * h - 18, 0.42, { a: 0.55 }); } } }
-      // 5) ближе: трубы, свисающие с потолка (верх кадра труб, k 0.62)
-      const pim = L9.img.saPipe; if (pim) { const w = pim.width / 2, h = pim.height / 2, k = 0.62, ox = -((cx * k % w) + w) % w;
-        const yt = 40 + (120 - cy) * k; if (yt < 360 && yt + h * 0.3 > 0) for (let x = ox - w + w / 2; x < 640; x += w) c.drawImage(pim, 0, 0, pim.width, pim.height * 0.3, Math.floor(x), Math.round(yt), Math.ceil(w) + 1, h * 0.3); }
       haze(c, 0.1);
     };
     // ближний план (быстрее мира): сталактиты у потолка, скальные колонны у стен, камни у пола — части кадра saNear

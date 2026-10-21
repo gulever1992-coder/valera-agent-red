@@ -50,7 +50,7 @@
     box() { const h = P.st === 'crouch' || P.st === 'roll' ? PHC : PH; return [P.x - PW, P.y - h, PW * 2, h]; },
     hurt(d, fromX) {
       if (P.inv > 0 || P.st === 'roll' || P.lv.dead) return;
-      P.lv.hurt(Math.ceil(d * 0.7)); if (P.lv.dead) { P.st = 'dead'; return; }     // лаборатория длинная: урон по Валере x0.7
+      P.lv.hurt(Math.ceil(d * 0.7 * (P.M.dmgK || 1))); if (P.lv.dead) { P.st = 'dead'; return; }     // лаборатория длинная: урон по Валере x0.7
       P.st = 'hurt'; P.stT = 0; P.vx = (fromX != null ? Math.sign(P.x - fromX) || -P.dir : -P.dir) * 120; P.vy = -180; P.onG = false; P.climb = null;
     },
     hintAt(s, t = 3) { if (P.hint !== s) { P.hint = s; P.hintT = t; } },

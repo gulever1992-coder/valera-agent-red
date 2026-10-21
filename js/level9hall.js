@@ -7,7 +7,9 @@
   const W = 2300, GY = 330, BIG_X = 1240, TP_X = 1560, GATE_X = 2190, CAP_X = 150;
   // телевизоры: x, кадр стойки, портреты боссов на экранах (по кругу)
   const BOSSES = ['roach', 'vande', 'cmdr7', 'grab', 'kesha', 'leather', 'biker7', 'wiz', 'sanya', 'seller', 'cop', 'denisch', 'maxim', 'stas'];
-  const TVS = [[400, 0], [560, 1], [760, 3], [930, 2], [1700, 1], [1860, 0], [2010, 3]];
+  const TVS = [], TVB = [];
+  for (let x = 330, i = 0; x < 2140; x += 92, i++) if ((x < 1080 || x > 1420) && (x < 1480 || x > 1650)) TVS.push([x, [0, 1, 3, 2, 1, 3, 0, 2][i % 8]]);
+  for (let x = 290, i = 0; x < 2200; x += 70, i++) if (x < 1090 || x > 1410) TVB.push([x, [3, 1, 2, 0, 3, 1][i % 6]]);     // задний ряд — сплошная стена телевизоров
 
   L9.MAPS.hall = () => {
     const LM = L9.MAPS.lab();
@@ -19,7 +21,7 @@
     M.init = (P, lv, ck) => {
       G.portraits = G.portraits || {};
       for (const k of BOSSES) if (!G.portraits[k]) { G.portraits[k] = 1; G.loadImage('assets/spr/p_' + k + '.png').then(im => G.portraits[k] = im, () => { delete G.portraits[k]; }); }
-      M.tvs = TVS.map(([x, f], i) => ({ x, f, hp: 3, i, ph: rnd(0, 6) }));
+      M.tvs = TVS.map(([x, f], i) => ({ x, f, hp: 3, i, ph: rnd(0, 6) })); M.tvb = TVB.map(([x, f], i) => ({ x, f, hp: 1, i: i + 40, ph: rnd(0, 6), back: 1 }));
       M.tp = { x: TP_X, hp: 6 }; M.big = { on: 0, t: 0 };
       M.intro = ck === 0; M.speech = ck > 0; M.cap = ck === 0 ? { y: -160, door: 0, st: 'down' } : null;
       M.picks = [['kefir', 700, GY], ['grenades', 1450, GY], ['pelmeni', 1950, GY]].map(([kind, x, y]) => ({ kind, x, y, t: 0 }));
@@ -87,24 +89,28 @@
       c.fillStyle = '#03070a'; c.fillRect(0, 0, 640, 360);
       const fy = GY - cy;
       const fim = L9.img.haFar; if (fim) { const h = fim.height / 2, w = fim.width / 2, y = clamp(-10 - cy * 0.05, 360 - h, 0); for (let x = -((cx * 0.1 % w) + w) % w; x < 640; x += w) c.drawImage(fim, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); }
-      haze(c, 0.12);
-      const mim = L9.img.haMid; if (mim) { const h = 300, w = mim.width * h / mim.height, yb = fy + 6 + (fy - 300) * -0.3; for (let x = -((cx * 0.4 % w) + w) % w; x < 640; x += w) c.drawImage(mim, Math.floor(x), Math.round(yb - h), Math.ceil(w) + 1, h); }
-      haze(c, 0.34);
+      haze(c, 0.06);
+      const mim = L9.img.haMid; if (mim) { const h = 230, w = mim.width * h / mim.height, yb = fy - 4; for (let x = -((cx * 0.4 % w) + w) % w; x < 640; x += w) c.drawImage(mim, Math.floor(x), Math.round(yb - h), Math.ceil(w) + 1, h); }
+      haze(c, 0.28);
     };
     M.drawMid = (c, P) => {
       const x0 = P.cam.x - 220, x1 = P.cam.x + 860, t = P.t;
       const ce = L9.img.haCeil; if (ce) { const h = 70, w = ce.width * h / ce.height; for (let x = Math.floor(x0 / w) * w; x < x1; x += w) c.drawImage(ce, Math.floor(x), -40, Math.ceil(w) + 1, h); }
       // огромный экран с Иксом
-      { const on = M.big.on && (M.big.t > 0.5 || (t * 14 | 0) % 2), [, bh] = L9.size('bigA9', 'off'), k = 205 / bh; S(c, 'bigA9', on ? 'on' : 'off', BIG_X, GY + 2, k); if (on) S(c, 'bigA9', 'on', BIG_X, GY + 2, k, { add: 1, a: 0.12 + Math.sin(t * 9) * 0.05 }); }
+      { const on = M.big.on && (M.big.t > 0.5 || (t * 14 | 0) % 2), [, bh] = L9.size('bigA9', 'off'), k = 205 / bh, q = k * 0.5, ff = L9D.bigA9.f[0], r = L9D.bigA9.scr;
+        S(c, 'bigA9', 'off', BIG_X, GY + 2, k);
+        const im = G.portraits.mrx; if (on && r && im && im !== 1) { const sx = BIG_X - ff[4] * q + r[0] * q, sy = GY + 2 - ff[5] * q + r[1] * q, sw = r[2] * q, sh = r[3] * q, s2 = Math.min(sw / im.width, sh / im.height) * 0.95;
+          c.save(); c.beginPath(); c.rect(sx, sy, sw, sh); c.clip(); c.fillStyle = '#000'; c.fillRect(sx, sy, sw, sh); c.globalAlpha = 0.9 + Math.sin(t * 13) * 0.08; c.drawImage(im, sx + (sw - im.width * s2) / 2, sy + (sh - im.height * s2) / 2, im.width * s2, im.height * s2); c.restore(); } }
       // пол
       const fl = L9.img.haFloor; if (fl) { const h = 46, w = fl.width * h / fl.height; for (let x = Math.floor(x0 / w) * w; x < x1; x += w) c.drawImage(fl, Math.floor(x), GY - 14, Math.ceil(w) + 1, h); }
       // телевизоры с боссами: портрет в каждом зелёном экране (прямоугольники экранов — из сборки), помехи, разбитые — кадр b*
-      for (const tv of M.tvs) { if (tv.x < x0 || tv.x > x1) continue; const fr = (tv.hp > 0 ? 't' : 'b') + tv.f, [, th] = L9.size('tvA9', 't' + tv.f), k = tvH(tv.f) / th, ff = L9D.tvA9.f[tv.f];
-        S(c, 'tvA9', fr, tv.x, GY + 2, k);
-        if (tv.hp > 0) { const scr = (L9D.tvA9.scr || [])[tv.f] || [], q = k * 0.5, lx = tv.x - ff[4] * q, ty = GY + 2 - ff[5] * q;
+      for (const tv of M.tvb.concat(M.tvs)) { if (tv.x < x0 || tv.x > x1) continue; const fr = (tv.hp > 0 ? 't' : 'b') + tv.f, [, th] = L9.size('tvA9', 't' + tv.f), k = tvH(tv.f) / th * (tv.back ? 0.78 : 1), ff = L9D.tvA9.f[tv.f], gy = GY + (tv.back ? -10 : 2);
+        S(c, 'tvA9', fr, tv.x, gy, k);
+        if (tv.hp > 0) { const scr = (L9D.tvA9.scr || [])[tv.f] || [], q = k * 0.5, lx = tv.x - ff[4] * q, ty = gy - ff[5] * q;
           scr.forEach((r, j) => { const im = G.portraits[BOSSES[(tv.i * 3 + j + ((t / 6 + tv.ph) | 0)) % BOSSES.length]]; if (!im || im === 1) return;
             const sx = lx + r[0] * q, sy = ty + r[1] * q, sw = r[2] * q, sh = r[3] * q;
-            c.save(); c.beginPath(); c.rect(sx, sy, sw, sh); c.clip(); c.fillStyle = '#000'; c.fillRect(sx, sy, sw, sh); const s2 = Math.max(sw / im.width, sh / im.height); c.globalAlpha = 0.85 + Math.sin(t * 20 + j) * 0.08; c.drawImage(im, sx + (sw - im.width * s2) / 2, sy + (sh - im.height * s2) / 2, im.width * s2, im.height * s2); c.globalAlpha = 1; c.restore(); }); } }
+            c.save(); c.beginPath(); c.rect(sx, sy, sw, sh); c.clip(); c.fillStyle = '#000'; c.fillRect(sx, sy, sw, sh); const s2 = Math.max(sw / im.width, sh / im.height); c.globalAlpha = 0.85 + Math.sin(t * 20 + j) * 0.08; c.drawImage(im, sx + (sw - im.width * s2) / 2, sy + (sh - im.height * s2) / 2, im.width * s2, im.height * s2); c.globalAlpha = 1; if (tv.back) { c.fillStyle = 'rgba(3,8,12,0.35)'; c.fillRect(sx, sy, sw, sh); } c.restore(); }); }
+        if (tv.back) S(c, 'tvA9', fr, tv.x, gy, k, { a: 0.3, add: 0 }); }
       // пирамида туалетной бумаги с лицом Валеры
       { const tp = M.tp, fr = tp.hp > 0 ? 'pyr' : 'pile', [, ph] = L9.size('tpA9', 'pyr'), k = 120 / ph; S(c, 'tpA9', fr, tp.x, GY + 2, k); if (tp.spot && tp.hp > 0) S(c, 'fxL9', 'spark', tp.x, GY - 70, 2.2 + Math.sin(t * 4) * 0.2, { add: 1, a: 0.18 }); }
       // капсула-лифт (прибытие)

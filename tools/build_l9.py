@@ -772,6 +772,8 @@ if have('l9htv_1.jpg'):
     _off = _a.copy(); _off[_gr, 0] = 10; _off[_gr, 1] = 18; _off[_gr, 2] = 16
     _on = mrx_screens(Image.fromarray(_a)); _o = np.asarray(_on).copy(); _r, _g, _b2 = [_o[..., i].astype(int) for i in range(3)]; _gr2 = (_g > 120) & (_g > _r * 1.4) & (_g > _b2 * 1.2); _o[_gr2, 0] = 0; _o[_gr2, 1] = 0; _o[_gr2, 2] = 0; _on = Image.fromarray(_o)     # остатки зелёного по краю экрана -> чёрный
     pack('bigA9', [Image.fromarray(_off), _on], 1.0, names=['off', 'on'])
+    _lab, _n2 = _nd.label(_nd.binary_closing(_gr, iterations=2)); _bx = max(_nd.find_objects(_lab), key=lambda q: (q[0].stop - q[0].start) * (q[1].stop - q[1].start))
+    DATA['bigA9']['scr'] = [int(_bx[1].start), int(_bx[0].start), int(_bx[1].stop - _bx[1].start), int(_bx[0].stop - _bx[0].start)]     # экран Икса: портрет вставляется в игре ровно в этот прямоугольник
     tp = cut('l9htp_0.jpg', 'm', 1, 3, clean='edge')
     _a = np.asarray(tp[0]).copy(); _r, _g, _b2 = [_a[..., i].astype(int) for i in range(3)]; _pk = (_r > 170) & (_b2 > 150) & (_g < _r - 25) & (_g < _b2 - 15); _a[_pk, 3] = 0; tp[0] = trim(Image.fromarray(_a))     # розовый конус прожектора (пурпур фона в свете) — убрать, луч рисуем в игре
     pack('tpA9', tp, 1.0, names=['pyr', 'pack', 'pile'])
