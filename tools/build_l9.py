@@ -778,6 +778,44 @@ if have('l9htv_1.jpg'):
     _a = np.asarray(tp[0]).copy(); _r, _g, _b2 = [_a[..., i].astype(int) for i in range(3)]; _pk = (_r > 170) & (_b2 > 150) & (_g < _r - 25) & (_g < _b2 - 15); _a[_pk, 3] = 0; tp[0] = trim(Image.fromarray(_a))     # розовый конус прожектора (пурпур фона в свете) — убрать, луч рисуем в игре
     pack('tpA9', tp, 1.0, names=['pyr', 'pack', 'pile'])
 
+# ---------- 2026-10-22: люк мастерской Сани (l9chatch_0) и подполье арены (l9cunder_1) ----------
+if have('l9chatch_0.jpg'):
+    _h = rgba_m('l9chatch_0.jpg')
+    _cl = _h.crop((46, 88, 637, 315)); _op = _h.crop((750, 88, 1342, 567))
+    _ap = [159, 30, 452, 162]     # проём со створками в закрытом кадре (x0, y0, x1, y1); стык створок — по середине
+    _mx = (_ap[0] + _ap[2]) // 2
+    _sl = _cl.crop((_ap[0], _ap[1], _mx, _ap[3])); _sr = _cl.crop((_mx, _ap[1], _ap[2], _ap[3]))
+    _fr = [_cl, _op, _sl, _sr]; _W = sum(f.width + 2 for f in _fr) + 2; _H = max(f.height for f in _fr) + 2
+    _sh = Image.new('RGBA', (_W, _H), (0, 0, 0, 0)); _x = 1; _meta = []
+    for _f in _fr: _sh.paste(_f, (_x, 1)); _meta.append([_x, 1, _f.width, _f.height, 0, 0]); _x += _f.width + 2
+    _sh.save(os.path.join(OUT, 'hatchA9.png')); DATA['hatchA9'] = {'f': _meta, 'n': ['closed', 'open', 'shL', 'shR'], 'ap': _ap}     # якорь — левый верхний угол
+    print('hatchA9', _W, _H)
+if have('l9cunder_1.jpg'):
+    _u = Image.open(os.path.join(SRC, 'l9cunder_1.jpg')).convert('RGB'); _u = _u.crop((0, int(_u.height * 0.17), _u.width, _u.height))
+    _u = seamless(_u, 160); _u.save(os.path.join(OUT, 'saUnder.jpg'), quality=90); DATA['_bg']['saUnder'] = {'w': _u.width, 'h': _u.height}
+
+# ---------- часть 6 «ЗАКРЫТАЯ ЧАСТЬ ЗАВОДА» (Flow 2026-10-22) ----------
+if have('l9zfar_1.jpg'):
+    _im = seamless(Image.open(os.path.join(SRC, 'l9zfar_1.jpg')).convert('RGB'), 160); _im.save(os.path.join(OUT, 'zFar.jpg'), quality=90); DATA['_bg']['zFar'] = {'w': _im.width, 'h': _im.height}
+    _m = seamless(rgba_m('l9zmid_1.jpg'), 140); _a = np.asarray(_m).copy(); _a[_a[..., 3] < 60, 3] = 0; _a[..., :3] = (_a[..., :3] * 0.72).astype(np.uint8)
+    Image.fromarray(_a).save(os.path.join(OUT, 'zMid.png')); DATA.setdefault('_bgp', {})['zMid'] = 1; DATA['_bg']['zMid'] = {'w': _m.width, 'h': _m.height}
+    _st = rgba_m('l9zstrip_1.jpg'); _b = [(14, 255), (268, 463), (476, 762)]     # замер покрытия по строкам; print('полосы zstrip', _b)
+    for _n, (y0, y1) in zip(['zFloor', 'zBridge', 'zCeil'], _b[:3]):
+        _s2 = seamless(_st.crop((0, y0, _st.width, y1)), 120); _a = np.asarray(_s2).copy(); _a[_a[..., 3] < 60, 3] = 0
+        Image.fromarray(_a).save(os.path.join(OUT, _n + '.png')); DATA.setdefault('_bgp', {})[_n] = 1; DATA['_bg'][_n] = {'w': _s2.width, 'h': _s2.height}
+    _v = cut('l9zvat_1.jpg', 'm', 1, 2, clean='edge'); pack('vatZ9', _v, 1.0, names=['vat', 'spout'])
+    _hz = cut('l9zhaz_0.jpg', 'm', 2, 4, clean='edge'); pack('hazZ9', _hz, 1.0, names=['vent', 'ventOn', 'pressUp', 'pressDn', 'drip', 'steam', 'pallet', 'gear'])
+    _fx = cut('l9zfx_0.jpg', 'm', 2, 4, clean='edge'); pack('fxZ9', _fx, 0.6, anchor='mid', names=['f0', 'f1', 'f2', 'f3', 'sp0', 'sp1', 'sm0', 'sm1'])
+    _se = cut('l9zsem_1.jpg', 'm', 2, 5, clean='edge'); pack('semZ9', _se, VH * 1.04 / hgt(_se, 0), names=['idle', 'talk', 'spread', 'point', 'laugh', 'w0', 'w1', 'fist', 'fold', 'hurt'])
+    _mk = cut('l9zmask_1.jpg', 'm', 2, 4, clean='edge'); pack('maskZ9', _mk, VH * 1.0 / hgt(_mk, 0), names=['k0', 'k1', 'g0', 'g1', 'mk', 'mg', 'hood', 'cloak'])
+    for _n in ('l9zfbA_1.jpg', 'l9zfbB_1.jpg'):
+        _o = 'zfb' + _n[5]; Image.open(os.path.join(SRC, _n)).convert('RGB').save(os.path.join(OUT, _o + '.jpg'), quality=90); DATA['_bg'][_o] = {'w': 1376, 'h': 768}
+    _po = Image.open(os.path.join(SRC, 'l9zpor_0.jpg')).convert('RGB'); _pa = np.asarray(_po).max(2) > 20
+    for _i, _nm in enumerate(['p_semen', 'p_semen2']):
+        _x0, _x1 = _po.width * _i // 2, _po.width * (_i + 1) // 2; ys, xs = np.where(_pa[:, _x0:_x1])
+        _cx = _x0 + (xs.min() + xs.max()) // 2; _t = ys.min(); _sz = min(_po.height - _t, (xs.max() - xs.min()) + 10)
+        _po.crop((_cx - _sz // 2, _t - 6, _cx + _sz // 2, _t - 6 + _sz)).resize((128, 128), Image.LANCZOS).save(os.path.join(ROOT, 'assets', 'spr', _nm + '.png'))
+
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 
 if DBG:

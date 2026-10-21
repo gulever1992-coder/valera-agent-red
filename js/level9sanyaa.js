@@ -306,19 +306,21 @@
       prop(c, 'wsq9', 'barrels', 448, 58); prop(c, 'wsq9', 'desk', 528, 74); prop(c, 'wsq9', 'arm', 735, 105); prop(c, 'wsp9', 'scrap', 790, 44); prop(c, 'wsp9', 'crates', 842, 56);
       if (!M.fin && (t * 9 | 0) % 4 === 0) S(c, 'fxL9', 'spark', 772, GY - 92, 0.5, { add: 1 });     // сварка манипулятора
     };
-    const drawLift = (c) => {     // куски пола разъезжаются, из шахты поднимается футуристичная капсула-лифт, Валера заходит, капсула уходит под пол
-      const L = M.lift, X = WS_X, fl = L9.img.saFloor; if (!L || !fl) return;
-      const top = GY - FLY, op = L.op;
-      if (op > 0 && L9D.liftA9) { const [sw, sh] = L9.size('liftA9', 'shaft'), k = 100 / sw; c.save(); c.beginPath(); c.rect(X - 50 * op, top, 100 * op, 90); c.clip(); S(c, 'liftA9', 'shaft', X, top + sh * k, k); c.restore(); }
-      if (L9D.capL9 && L.up > 0) {
-        const [cw, ch] = L9.size('capL9', 'c0'), kc = 128 / ch, hh = ch * kc, yb = GY + 2 + (1 - L.up) * hh + L.down * (hh + 20), fr = L.door > 0.5 ? 'c2' : L.lit === 2 ? 'c3' : L.lit ? 'c1' : 'c0';
-        c.save(); c.beginPath(); c.rect(X - 90, -500, 180, top + 2 + 500); c.clip();
+    const drawLift = (c, part) => {     // part 'deck' — люк (сразу после пола, под ножками предметов), 'cap' — капсула (перед мастерской)
+          // люк в полу мастерской (виден с начала): створки разъезжаются в стороны, из шахты выезжает капсула-лифт, Валера заходит, капсула уходит вниз, люк закрывается
+      const d = L9D.hatchA9; if (!d) return;
+      const L = M.lift || { op: 0, up: 0 }, X = WS_X, top = GY - FLY, op = L.op, [cw, ch] = L9.size('hatchA9', 'closed'), k = 46 / ch, q = k * 0.5, x0 = X - cw * k / 2;
+      const ap = d.ap, ax0 = x0 + ap[0] * q, ay0 = top + ap[1] * q, ax1 = x0 + ap[2] * q, ay1 = top + ap[3] * q, mid = (ax0 + ax1) / 2;
+      if (part === 'deck') { if (op <= 0) S(c, 'hatchA9', 'closed', x0, top, k); else { S(c, 'hatchA9', 'open', x0, top, k);
+        c.save(); c.beginPath(); c.rect(ax0, ay0 - 2, ax1 - ax0, ay1 - ay0 + 4); c.clip();     // створки уезжают под настил
+        S(c, 'hatchA9', 'shL', ax0 - op * (mid - ax0), ay0, k); S(c, 'hatchA9', 'shR', mid + op * (ax1 - mid), ay0, k); c.restore(); } return; }
+      if (L9D.capL9 && L.up > 0) {     // капсула поднимается из проёма: ниже его нижней кромки не видна
+        const [, cph] = L9.size('capL9', 'c0'), kc = 128 / cph, hh = cph * kc, yb = ay1 + (1 - L.up) * (hh + 6) + L.down * (hh + 6), fr = L.door > 0.5 ? 'c2' : L.lit === 2 ? 'c3' : L.lit ? 'c1' : 'c0';
+        c.save(); c.beginPath(); c.rect(X - 90, -500, 180, ay1 + 500); c.clip();
         if (L.inside) { S(c, 'capL9', 'c2', X, yb, kc); S(c, 'vAim9', 'stand', X, yb - 12, 1); if (L.door < 0.5) S(c, 'capL9', fr, X, yb, kc, { a: 0.7 }); }
         else S(c, 'capL9', fr, X, yb, kc);
         if (L.lit) S(c, 'fxL9', 'spark', X, yb - hh * 0.5, 1.6 + Math.sin(T() * 8) * 0.2, { add: 1, a: 0.25 });
         c.restore(); }
-      const h = 52, sw2 = fl.width * 50 / (fl.width * h / fl.height);
-      c.drawImage(fl, 0, 0, sw2, fl.height, Math.round(X - 50 - op * 52), top, 50, h); c.drawImage(fl, fl.width - sw2, 0, sw2, fl.height, Math.round(X + op * 52), top, 50, h);
     };
     M.drawMid = (c, P) => {
       const x0 = P.cam.x - 200, x1 = P.cam.x + 840, y0 = P.cam.y - 200, y1 = P.cam.y + 560, vis = (x, y) => x > x0 && x < x1 && y > y0 && y < y1, t = P.t;
@@ -329,13 +331,16 @@
       // рельсы (поверх стен) и сканер с Саней — позади всех предметов; в катсцене Саня проходит перед капсулой
       const rl = L9.img.saRail; if (rl) { const h = 30, w = rl.width * h / rl.height;
         for (const e of RE) { const ext = e.vert && (e.b === 'BL' || e.b === 'BR' || e.b === 'DD') ? GY - FLY - e.B[1] : 0, el = e.len + ext; c.save(); c.translate(e.A[0], e.A[1]); if (e.vert) c.rotate(Math.PI / 2); for (let x = -h / 2; x < el + h / 2; x += w) c.drawImage(rl, 0, 0, Math.min(1, (el + h / 2 - x) / w) * rl.width, rl.height, Math.floor(x), -h / 2, Math.min(Math.ceil(w) + 1, el + h / 2 - x), h); c.restore(); } }
+      // под полом до низа локации: камни, трубы, жижа (Flow l9cunder)
+      const un = L9.img.saUnder; if (un) { const h = 240, w = un.width * h / un.height; for (let x = Math.floor(x0 / w) * w; x < x1; x += w) c.drawImage(un, Math.floor(x), GY - FLY + 40, Math.ceil(w) + 1, h); }
       // пол — тонкая плита (полоса Flow в родном масштабе); ноги стоят на его верхней плоскости
       const fl = L9.img.saFloor; if (fl) { const h = 52, w = fl.width * h / fl.height; for (let x = Math.floor(x0 / w) * w; x < x1; x += w) c.drawImage(fl, Math.floor(x), GY - FLY, Math.ceil(w) + 1, h); }
+      drawLift(c, 'deck');
       // мастерская Сани — на заднем плане: капсула с Саней ездит перед ней
       if (L9D.wsq9) drawWS(c, t, on); else S(c, 'ws9', on ? 'on' : 'off', WS_X, GY + 4, 0.62);
       // сканер с Саней — перед мастерской, позади островов и принтеров; в катсцене Саня проходит перед ним
       { const sc = M.scan; if (vis(sc.x, sc.bot)) S(c, 'scan9', sc.fr, sc.x, sc.bot, 1); }
-      drawLift(c);
+      drawLift(c, 'cap');
       // стойка потолочного аккумулятора
       const b0 = M.bats.find(b => b.ceil); if (b0 && rl) { const h = 16, len = b0.y - 56 - 120 + 20; c.save(); c.translate(b0.x, 120); c.rotate(Math.PI / 2); c.drawImage(rl, 0, 0, rl.width * 0.3, rl.height, 0, -h / 2, len - 20, h); c.restore(); }
       // острова, лестницы
