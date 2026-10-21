@@ -1,7 +1,7 @@
 'use strict';
 // ============ ДВИЖОК: экран, ввод, звук, утилиты, частицы, текст ============
 const W = 640, H = 360;
-const G = { W, H, t: 0, dt: 0, debug: false, VER: '588' };
+const G = { W, H, t: 0, dt: 0, debug: false, VER: '589' };
 window.G = G;
 
 const canvas = document.getElementById('game');

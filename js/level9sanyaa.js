@@ -329,14 +329,15 @@
       const on = M.tv > 0.6 || (M.tv > 0 && (t * 14 | 0) % 2);
       // боковые стены от пола до потолка (на них держатся аккумуляторы)
       const wl = L9.img.saWall; if (wl) { const ww = 104, wh = wl.height * ww / wl.width; for (const side of [-1, 1]) for (let y = 40; y < GY + 40; y += wh) { c.save(); c.translate(side < 0 ? 0 : W, 0); c.scale(side < 0 ? 1 : -1, 1); c.drawImage(wl, 0, Math.floor(y), ww, Math.ceil(wh) + 1); c.restore(); } }
+      // пол — тонкая плита (полоса Flow в родном масштабе); ноги стоят на его верхней плоскости
+      const fl = L9.img.saFloor; if (fl) { const h = 52, w = fl.width * h / fl.height; for (let x = Math.floor(x0 / w) * w; x < x1; x += w) c.drawImage(fl, Math.floor(x), GY - FLY, Math.ceil(w) + 1, h); }
+      // мастерская Сани — на заднем плане: капсула с Саней ездит перед ней
+      if (L9D.wsq9) drawWS(c, t, on); else S(c, 'ws9', on ? 'on' : 'off', WS_X, GY + 4, 0.62);
       // рельсы (поверх стен) и сканер с Саней — позади всех предметов; в катсцене Саня проходит перед капсулой
       const rl = L9.img.saRail; if (rl) { const h = 30, w = rl.width * h / rl.height;
         for (const e of RE) { const ext = e.vert && (e.b === 'BL' || e.b === 'BR' || e.b === 'DD') ? GY - FLY - e.B[1] : 0, el = e.len + ext; c.save(); c.translate(e.A[0], e.A[1]); if (e.vert) c.rotate(Math.PI / 2); for (let x = -h / 2; x < el + h / 2; x += w) c.drawImage(rl, 0, 0, Math.min(1, (el + h / 2 - x) / w) * rl.width, rl.height, Math.floor(x), -h / 2, Math.min(Math.ceil(w) + 1, el + h / 2 - x), h); c.restore(); } }
       // сканер с Саней — позади всех предметов (сразу за рельсами); в катсцене Саня проходит перед ним
       { const sc = M.scan; if (vis(sc.x, sc.bot)) S(c, 'scan9', sc.fr, sc.x, sc.bot, 1); }
-      // пол — тонкая плита (полоса Flow в родном масштабе); ноги стоят на его верхней плоскости
-      const fl = L9.img.saFloor; if (fl) { const h = 52, w = fl.width * h / fl.height; for (let x = Math.floor(x0 / w) * w; x < x1; x += w) c.drawImage(fl, Math.floor(x), GY - FLY, Math.ceil(w) + 1, h); }
-      if (L9D.wsq9) drawWS(c, t, on); else S(c, 'ws9', on ? 'on' : 'off', WS_X, GY + 4, 0.62);
       drawLift(c);
       // стойка потолочного аккумулятора
       const b0 = M.bats.find(b => b.ceil); if (b0 && rl) { const h = 16, len = b0.y - 56 - 120 + 20; c.save(); c.translate(b0.x, 120); c.rotate(Math.PI / 2); c.drawImage(rl, 0, 0, rl.width * 0.3, rl.height, 0, -h / 2, len - 20, h); c.restore(); }
