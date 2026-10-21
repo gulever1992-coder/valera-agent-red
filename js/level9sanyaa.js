@@ -144,7 +144,7 @@
         const near = Math.abs(P.x - p.x) < 140 && Math.abs(P.y - p.y) < 10;
         if (p.st === 'idle') { p.cd -= dt; if (p.cd <= 0 && !near && clones < 4 && M.prnCd <= 0 && !M.fin && Math.abs(P.y - p.y) < 330 && Math.abs(P.x - p.x) < 620) { p.st = 'print'; p.t = 0; M.prnCd = 2.6; Sound.play('zap', 0.4); } }
         else if (p.st === 'print' && M.fin) p.st = 'idle';
-        else if (p.st === 'print' && p.t > 2.6) { p.st = 'out'; p.t = 0; const f = new AClone(M, p.x + 8, p.y); f.dir = P.x < p.x ? -1 : 1; P.foes.push(f); Sound.play('door', 0.4); }
+        else if (p.st === 'print' && p.t > 2.6) { p.st = 'out'; p.t = 0; const f = new AClone(M, p.x, p.y); f.dir = P.x < p.x ? -1 : 1; P.foes.push(f); Sound.play('door', 0.4); }
         else if (p.st === 'out' && p.t > 0.6) { p.st = 'idle'; p.cd = rnd(2.2, 3.8); }
       }
       // роботы подбегают из краёв арены, пока их меньше трёх
@@ -277,7 +277,7 @@
       { const k = 0.22, sy = 36 + (fy - 300) * k, rim = L9.img.saRail;
         if (sy > -40 && sy < 420) {
           if (rim) { const rh = 7, rw = rim.width * rh / rim.height; for (let xx = -((cx * k) % rw) - rw; xx < 640; xx += rw) c.drawImage(rim, Math.floor(xx), Math.round(sy - rh / 2), Math.ceil(rw) + 1, rh); }
-          for (let i = 0; i < 6; i++) { const X = ((i * 300 + t * 20) % 1800 + 1800) % 1800 - 300, px = X - cx * k; if (px > -40 && px < 680) S(c, 'vatA9', 'c' + ((t * 3 + i | 0) % 4), px, sy + 52, 0.28, { a: 0.65 }); }
+          for (let i = 0; i < 16; i++) { const X = ((i * 112.5 + t * 20) % 1800 + 1800) % 1800 - 300, px = X - cx * k; if (px > -40 && px < 680) S(c, 'vatA9', 'c' + ((t * 3 + i | 0) % 4), px, sy + 52, 0.28, { a: 0.65 }); }
         } }
       haze(c, 0.16);
       // 3) средний план: ряд чанов, капсул и шаровых цистерн на своём полу (k 0.35)
@@ -293,7 +293,6 @@
     M.drawOver = (c, cx, cy) => {
       const im = L9.img.saNear; if (!im) return; const iw = im.width, ih = im.height, k = 1.3;
       const part = (sx, sy, sw, sh, X, Y, w, ax, ay) => { const h = sh * w / sw, [x, y] = lay(X, Y, k, cx, cy), dx = x - ax * w, dy = y - ay * h; if (dx > 640 || dx + w < 0 || dy > 360 || dy + h < 0) return; c.drawImage(im, sx, sy, sw, sh, Math.round(dx), Math.round(dy), Math.round(w), Math.round(h)); };
-      for (let X = -200; X < W + 400; X += 520) part(iw * 0.18, 0, iw * 0.64, ih * 0.3, X, 150, 540, 0.5, 0.25);     // сталактиты
       part(0, 0, iw * 0.2, ih, -30, 560, 150, 0.5, 0.5); part(iw * 0.8, 0, iw * 0.2, ih, W + 30, 560, 150, 0.5, 0.5);     // колонны у стен
       for (let X = 100; X < W; X += 560) part(iw * 0.25, ih * 0.8, iw * 0.5, ih * 0.2, X, 1010, 420, 0.5, 1);     // камни у пола
     };
@@ -323,20 +322,18 @@
     };
     M.drawMid = (c, P) => {
       const x0 = P.cam.x - 200, x1 = P.cam.x + 840, y0 = P.cam.y - 200, y1 = P.cam.y + 560, vis = (x, y) => x > x0 && x < x1 && y > y0 && y < y1, t = P.t;
-      // потолок пещеры
-      const ce = L9.img.saCeil; if (ce) { const h = 110, w = ce.width * h / ce.height; for (let x = Math.floor(x0 / w) * w; x < x1; x += w) c.drawImage(ce, Math.floor(x), 40, Math.ceil(w) + 1, h); }
       // мастерская Сани (внизу по центру): телевизоры и люк — в финале с Иксом и открытым ходом
       const on = M.tv > 0.6 || (M.tv > 0 && (t * 14 | 0) % 2);
       // боковые стены от пола до потолка (на них держатся аккумуляторы)
       const wl = L9.img.saWall; if (wl) { const ww = 104, wh = wl.height * ww / wl.width; for (const side of [-1, 1]) for (let y = 40; y < GY + 40; y += wh) { c.save(); c.translate(side < 0 ? 0 : W, 0); c.scale(side < 0 ? 1 : -1, 1); c.drawImage(wl, 0, Math.floor(y), ww, Math.ceil(wh) + 1); c.restore(); } }
+      // рельсы (поверх стен) и сканер с Саней — позади всех предметов; в катсцене Саня проходит перед капсулой
+      const rl = L9.img.saRail; if (rl) { const h = 30, w = rl.width * h / rl.height;
+        for (const e of RE) { const ext = e.vert && (e.b === 'BL' || e.b === 'BR' || e.b === 'DD') ? GY - FLY - e.B[1] : 0, el = e.len + ext; c.save(); c.translate(e.A[0], e.A[1]); if (e.vert) c.rotate(Math.PI / 2); for (let x = -h / 2; x < el + h / 2; x += w) c.drawImage(rl, 0, 0, Math.min(1, (el + h / 2 - x) / w) * rl.width, rl.height, Math.floor(x), -h / 2, Math.min(Math.ceil(w) + 1, el + h / 2 - x), h); c.restore(); } }
       // пол — тонкая плита (полоса Flow в родном масштабе); ноги стоят на его верхней плоскости
       const fl = L9.img.saFloor; if (fl) { const h = 52, w = fl.width * h / fl.height; for (let x = Math.floor(x0 / w) * w; x < x1; x += w) c.drawImage(fl, Math.floor(x), GY - FLY, Math.ceil(w) + 1, h); }
       // мастерская Сани — на заднем плане: капсула с Саней ездит перед ней
       if (L9D.wsq9) drawWS(c, t, on); else S(c, 'ws9', on ? 'on' : 'off', WS_X, GY + 4, 0.62);
-      // рельсы (поверх стен) и сканер с Саней — позади всех предметов; в катсцене Саня проходит перед капсулой
-      const rl = L9.img.saRail; if (rl) { const h = 30, w = rl.width * h / rl.height;
-        for (const e of RE) { const ext = e.vert && (e.b === 'BL' || e.b === 'BR' || e.b === 'DD') ? GY - FLY - e.B[1] : 0, el = e.len + ext; c.save(); c.translate(e.A[0], e.A[1]); if (e.vert) c.rotate(Math.PI / 2); for (let x = -h / 2; x < el + h / 2; x += w) c.drawImage(rl, 0, 0, Math.min(1, (el + h / 2 - x) / w) * rl.width, rl.height, Math.floor(x), -h / 2, Math.min(Math.ceil(w) + 1, el + h / 2 - x), h); c.restore(); } }
-      // сканер с Саней — позади всех предметов (сразу за рельсами); в катсцене Саня проходит перед ним
+      // сканер с Саней — перед мастерской, позади островов и принтеров; в катсцене Саня проходит перед ним
       { const sc = M.scan; if (vis(sc.x, sc.bot)) S(c, 'scan9', sc.fr, sc.x, sc.bot, 1); }
       drawLift(c);
       // стойка потолочного аккумулятора
@@ -355,11 +352,10 @@
         const pf = p.st === 'wreck' ? 'wreck' : p.st === 'out' ? 'out' : 'idle';
         S(c, 'prnB9', pf, p.x, p.y + PRN_DY, PRN_K);
         if (p.st === 'print') {     // печать копии Сани послойно снизу вверх: ноги -> туловище с руками -> голова; луч печатающей головки на текущем слое
-          const [, ph] = L9.size('prnB9', 'idle'), H = ph * PRN_K, fy = p.y + PRN_DY - H * 0.335, [, ch] = L9.size('sclone9', 'hit'), k = (H * 0.39) / ch, hh = ch * k, fl2 = L9.PARTS.lab.x < p.x;
+          const [, ph] = L9.size('prnB9', 'idle'), H = ph * PRN_K, fy = p.y + 1, [, ch] = L9.size('sclone9', 'hit'), k = 1, hh = ch * k, fl2 = L9.PARTS.lab.x < p.x;
           const q = clamp(p.t / 2.4, 0, 1), pr = q < 0.4 ? q / 0.4 * 0.45 : q < 0.75 ? 0.45 + (q - 0.4) / 0.35 * 0.35 : 0.8 + (q - 0.75) / 0.25 * 0.2, ly = fy - hh * pr;
-          c.save(); c.beginPath(); c.rect(p.x - 40, ly, 80, fy - ly + 2); c.clip(); S(c, 'sclone9', 'hit', p.x, fy, k, { flip: fl2 }); S(c, 'sclone9', 'hit', p.x, fy, k, { add: 1, a: 0.25 * (1 - q), flip: fl2 }); c.restore();
-          if (q < 1) { S(c, 'afx9', 'arc', p.x, ly, 0.24, { add: 1, a: 0.85 }); for (let i = 0; i < 2; i++) S(c, 'fxL9', 'spark', p.x + rnd(-20, 20), ly, 0.35, { add: 1 }); }
-          S(c, 'prnB9', 'idle', p.x, p.y + PRN_DY, PRN_K, { a: 0.18 });     // стекло камеры поверх
+          c.save(); c.beginPath(); c.rect(p.x - 70, ly, 140, fy - ly + 2); c.clip(); S(c, 'sclone9', 'hit', p.x, fy, k, { flip: fl2 }); S(c, 'sclone9', 'hit', p.x, fy, k, { add: 1, a: 0.25 * (1 - q), flip: fl2 }); c.restore();
+          if (q < 1) { S(c, 'afx9', 'arc', p.x, ly, 0.42, { add: 1, a: 0.85 }); for (let i = 0; i < 3; i++) S(c, 'fxL9', 'spark', p.x + rnd(-26, 26), ly, 0.35, { add: 1 }); }
         }
         if (p.st === 'wreck' && (t * 8 | 0) % 3 === 0) S(c, 'fxA9', (t * 10 | 0) % 2 ? 'fire0' : 'fire1', p.x + 8, p.y - 24, 0.7, { add: 1, a: 0.6 });
       }
@@ -367,7 +363,7 @@
       const s = M.san; if (!s.gone) { S(c, 'props8', 'shadow', s.x, GY + 1, 0.4, { a: 0.5 }); S(c, 'san9', s.fr, s.x, GY + 1, 1, { flip: s.dir < 0 }); }
       // ток: предупреждение (искры по поверхности), молния из сканера, поверхность под током
       const z = M.zap;
-      if (z) { const [aw] = L9.size('afx9', 'arc'), n = Math.max(1, Math.round((z.x1 - z.x0) / (aw * 0.6)));
+      if (z) { const [aw] = L9.size('afx9', 'arc'), n = Math.max(1, Math.ceil((z.x1 - z.x0) / (aw * 0.6 * 0.5)));     // дуги внахлёст — без промежутков
         if (z.st === 'warn') { for (let i = 0; i < n; i++) if (((t * 20 | 0) + i) % 3 === 0) S(c, 'afx9', 'arc', z.x0 + (i + 0.5) * (z.x1 - z.x0) / n, z.y - 4, 0.45, { add: 1, a: 0.5 }); }
         else if (z.st === 'bolt') { const sc = M.scan, [, bh] = L9.size('afx9', 'bolt0'), len = z.y - sc.bot; S(c, 'afx9', 'bolt' + ((t * 30 | 0) % 3), (sc.x + z.bx) / 2, sc.bot + len / 2, 1, { add: 1, sy: len / bh, rot: Math.atan2(z.bx - sc.x, len) * -1 }); }
         else for (let i = 0; i < n; i++) S(c, 'afx9', 'arc', z.x0 + (i + 0.5) * (z.x1 - z.x0) / n, z.y - 6 + ((t * 25 + i) % 2), 0.6, { add: 1, flip: ((t * 12 | 0) + i) % 2 }); }

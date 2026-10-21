@@ -86,7 +86,7 @@
       this.phys(dt);
     }
     phys(dt) { if (this.hang) return; super.phys(dt); }
-    frame() { if (this.dead) return 'dead'; if (this.hang) return 'hang'; if (this.fl > 0) return 'hit'; return ({ crouch: 'crouch', jump: 'jump', fire: 'fire' })[this.st] || (this.vx ? 'w' + ((this.t * 12 | 0) % 6) : 'w0'); }
+    frame() { if (this.dead) return 'crouch'; if (this.hang) return 'hang'; if (this.fl > 0) return 'hit'; return ({ crouch: 'crouch', jump: 'jump', fire: 'crouch' })[this.st] || (this.vx ? 'w' + ((this.t * 12 | 0) % 6) : 'w0'); }     // кадры 'fire' и 'dead' листа rspd9 — по ошибке Flow собака; до перерисовки — кадры паука
   }
   L9.FOES.RDog = RDog; L9.FOES.RSpd = RSpd;
 

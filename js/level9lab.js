@@ -270,7 +270,7 @@
       else if (P.st === 'run') { if (P.aim === 'diag') { sh = 'vRunUD9'; fr = 'u' + run4; } else if (P.aim === 'down') { sh = 'vRunUD9'; fr = 'd' + run4; } else { sh = 'vRun9'; fr = 'r' + run8; } }
       else fr = P.aim === 'diag' ? 'diag' : P.aim === 'up' ? 'up' : P.aim === 'down' ? 'down' : P.fireA > 0 ? 'fire' : 'stand';
       if (P.weap !== 'rifle' && L9D[sh + '_' + P.weap]) sh += '_' + P.weap;     // в руках то оружие, которое подобрал
-      S(c, sh, fr, P.x, P.y + 1, P.st === 'crouch' ? 0.78 : 1, { flip: fl });     // кадры приседа нарезаны почти в рост стоящего — уменьшаем до пропорций
+      S(c, sh, fr, P.x, P.y + 1, 1, { flip: fl });     // присед в том же масштабе, что и стойка (голова и тело не уменьшаются)
     },
     drawBullet(c, b) {
       const a = Math.atan2(b.vy, b.vx);
