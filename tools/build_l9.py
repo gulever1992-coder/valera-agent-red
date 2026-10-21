@@ -836,6 +836,26 @@ if have('l9bsem1_0.jpg'):
     _a7 = cut('_barena.jpg', 'm', 2, 4, mode='grid', clean=True); pack('arZ9', _a7, 0.5, names=['ladle', 'ladleTilt', 'ladleEmpty', 'sling', 'slingPull', 'crate', 'barrels', 'plat'])
     _vs = cut('l9bvsit_0.jpg', 'm', 1, 3, clean='edge'); pack('vSit9', _vs, VH * 0.66 / hgt(_vs, 0), names=['sit', 'belly', 'look'])
 
+# ---------- 2026-10-22: зал славы v2 (груда ТВ до потолка, пол до низа, труба лифта, крест, лестница вниз) ----------
+if have('l9hheap_0.jpg'):
+    from scipy import ndimage as _nd
+    _hp = seamless(Image.open(os.path.join(SRC, 'l9hheap_0.jpg')).convert('RGB'), 160); _a = np.asarray(_hp).copy()
+    _r, _g, _b2 = [_a[..., i].astype(int) for i in range(3)]; _gr = (_g > 150) & (_r < 140) & (_b2 < 150)
+    _lab, _n = _nd.label(_nd.binary_closing(_gr, iterations=2)); _scr = []
+    for _sl in _nd.find_objects(_lab):
+        _y0, _y1, _x0, _x1 = _sl[0].start, _sl[0].stop, _sl[1].start, _sl[1].stop
+        if (_x1 - _x0) >= 34 and (_y1 - _y0) >= 28: _scr.append([int(_x0), int(_y0), int(_x1 - _x0), int(_y1 - _y0)])
+    _a[_gr, 0] = 6; _a[_gr, 1] = 14; _a[_gr, 2] = 12
+    Image.fromarray(_a).save(os.path.join(OUT, 'haHeap.jpg'), quality=90); DATA['_bg']['haHeap'] = {'w': _hp.width, 'h': _hp.height, 'scr': _scr}; print('экранов в груде', len(_scr))
+    _ft = seamless(Image.open(os.path.join(SRC, 'l9hfloor2_0.jpg')).convert('RGB'), 160); _ft.save(os.path.join(OUT, 'haFloorT.jpg'), quality=90); DATA['_bg']['haFloorT'] = {'w': _ft.width, 'h': _ft.height}
+    _o1 = depurple(cut('l9hobj_1.jpg', 'm', 1, 3, clean='edge')); _o0 = cut('l9hobj_0.jpg', 'm', 1, 3, clean='edge')
+    _tb = np.asarray(_o1[0]).copy(); _al = _tb[..., 3] > 0; _gc = np.median(_tb[_al][:, :3], axis=0).astype(np.uint8) // 2
+    for _y in range(_tb.shape[0]):     # прозрачные дыры в стекле трубы (просвет пурпура) -> тёмное бирюзовое стекло
+        _xs = np.where(_al[_y])[0]
+        if len(_xs) > 2: _row = _tb[_y, _xs[0]:_xs[-1] + 1]; _h = _row[..., 3] == 0; _row[_h, :3] = _gc; _row[_h, 3] = 255
+    _o1[0] = Image.fromarray(_tb)
+    pack('hoZ9', [_o1[0], _o0[1], _o0[2]], 0.5, names=['tube', 'cross', 'hole'])
+
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 
 if DBG:
