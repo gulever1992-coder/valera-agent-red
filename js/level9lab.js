@@ -118,7 +118,7 @@
         if (P.onG) { const lf = (M.lifts || []).find(l => P.x >= l.x && P.x < l.x + l.w && Math.abs(P.y - l.y) < 2); if (lf) P.y = lf.y; }
       }
       // пропасть / жижа
-      if (P.y > (M.killAt ? M.killAt(P.x) : M.killY)) { lv.hurt(20); const c = M.cks[P.ck]; if (!lv.dead) { P.x = c[0]; P.y = c[1]; P.vy = 0; } }
+      if (P.y > (M.killAt ? M.killAt(P.x) : M.killY)) { lv.hurt(20); const c = M.cks[P.ck]; if (!lv.dead) { P.x = c[0]; P.y = c[1]; P.vy = 0; M.onFall && M.onFall(P, lv); } }
       if (M.hazAt) { const hz = M.hazAt(P.x, P.y, P); if (hz) P.hurt(hz[0], hz[1]); }
       // чекпоинты
       for (let i = P.ck + 1; i < M.cks.length; i++) if (P.x > M.cks[i][0] - 10 && Math.abs(P.y - M.cks[i][1]) < 200) { P.ck = i; lv.ck = i; Sound.play('checkpoint'); lv.say('КОНТРОЛЬНАЯ ТОЧКА', 1.5); }
@@ -234,9 +234,9 @@
           const fw = fim.width / fim.height * FH; c.save(); c.beginPath();
           const seg = []; let a = r[0]; for (const [n0, n1] of (M.noFloor || []).filter(n => r[1] === 330 && n[1] > r[0] && n[0] < r[0] + r[2]).sort((p, q) => p[0] - q[0])) { if (n0 > a) seg.push([a, n0]); a = Math.max(a, n1); }
           if (a < r[0] + r[2]) seg.push([a, r[0] + r[2]]);
-          for (const [s0, s1] of seg) { const rl = s0 === r[0] && r[3] >= 40 ? 7 : 0, rr = s1 === r[0] + r[2] && r[3] >= 40 ? 7 : 0; c.roundRect(s0, r[1] - 7, s1 - s0, FH, [rl, rr, rr, rl]); }     // на настоящих краях плиты угол скруглён
+          for (const [s0, s1] of seg) { const rl = s0 === r[0] && (r[3] >= 40 || r[4] === 'ledge') ? 7 : 0, rr = s1 === r[0] + r[2] && (r[3] >= 40 || r[4] === 'ledge') ? 7 : 0; c.roundRect(s0, r[1] - 7, s1 - s0, FH, [rl, rr, rr, rl]); }     // на настоящих краях плиты угол скруглён
           c.clip(); for (let x = r[0] - ((r[0] % fw) + fw) % fw; x < r[0] + r[2]; x += fw) c.drawImage(fim, Math.floor(x), r[1] - 7, Math.ceil(fw) + 1, FH); c.restore();
-          if (L9.img.flE9 && r[3] >= 40) for (const [s0, s1] of seg) { const [ew] = L9.size('flE9', 'endL'), k = FH / 48, w = ew * k;     // законченные торцы плиты (скруглённый угол, уголок на болтах)
+          if (L9.img.flE9 && (r[3] >= 40 || r[4] === 'ledge')) for (const [s0, s1] of seg) { const [ew] = L9.size('flE9', 'endL'), k = FH / 48, w = ew * k;     // законченные торцы плиты (скруглённый угол, уголок на болтах)
             if (s1 - s0 > w * 2) { if (s0 === r[0]) S(c, 'flE9', 'endL', s0 + w / 2, r[1] - 7 + FH / 2, k); if (s1 === r[0] + r[2]) S(c, 'flE9', 'endR', s1 - w / 2, r[1] - 7 + FH / 2, k); } } }     // у ленты конвейера торцов нет — там стык
       }
       LAB.drawPillars(c, M, x0, x1, FH);
@@ -292,8 +292,9 @@
     const im = L9.img.pilM9; if (!im) return; const F = L9D.pilM9.f, C = F[0], Sh = F[1], B = F[2], s = 0.5 * 1.1, W = C[2] * s, ch = C[3] * s, sh = Sh[3] * s, bh = B[3] * s, AX = 85 * s, seen = new Set(), bot = P.cam.y + 380;
     c.imageSmoothingEnabled = true;
     for (const r of M.solids) {
-      if (r[4] === 'hide' || r[3] < 40 || r[0] > x1 || r[0] + r[2] < x0) continue;
-      for (let x = Math.ceil((r[0] + 40 - 150) / 300) * 300 + 150; x < r[0] + r[2] - 40; x += 300) {
+      if (r[4] === 'hide' || (r[3] < 40 && r[4] !== 'ledge') || r[0] > x1 || r[0] + r[2] < x0) continue;
+      const xs = r[4] === 'ledge' ? [r[5] ?? r[0] + r[2] / 2] : []; if (!xs.length) for (let x = Math.ceil((r[0] + 40 - 150) / 300) * 300 + 150; x < r[0] + r[2] - 40; x += 300) xs.push(x);     // у уступа одна опора
+      for (const x of xs) {
         if (x < x0 - 60 || x > x1 + 60 || seen.has(x + ':' + r[1])) continue; seen.add(x + ':' + r[1]);
         const y0 = r[1] + FH - 6, fb = LAB.floorBelow(M, x, r[1] + r[3] + 2, 2000, false), end = fb != null ? fb + 3 : bot, sEnd = fb != null ? end - bh + 2 : end, L = x - AX;
         if (end < y0 + 20) continue;

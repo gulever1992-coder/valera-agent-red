@@ -64,7 +64,7 @@
     const T = M.traps; if (!T) return; const t = P.t, x0 = P.cam.x - 120, x1 = P.cam.x + 760, cy = P.cam.y;
     c.imageSmoothingEnabled = true;
     const slice = (sh, n, s0, s1, dx, dy, dw, dh, flip, add, al) => { const F = fr(sh, n), im = L9.img[sh]; if (!im) return; c.save(); if (al != null) c.globalAlpha = al; if (add) c.globalCompositeOperation = 'lighter'; if (flip) { c.translate(dx * 2 + dw, 0); c.scale(-1, 1); } c.drawImage(im, F[0] + F[2] * s0, F[1], F[2] * (s1 - s0), F[3], dx, dy, dw, dh); c.restore(); };
-    for (const [x, fl, f] of T.fcol || []) {      // решётка в полу; перед выбросом — вспышки, потом столб огня
+    for (const [x, fl0, f] of T.fcol || []) { const fl = fl0 + 8;      // решётка в полу; перед выбросом — вспышки, потом столб огня
       if (x < x0 || x > x1) continue; const u = (t + f) % FC_T, k = 0.9;
       if (u > 1.6) { const n = (t * 10 | 0) % 2 ? 'col0' : 'col1', [, h] = L9.size('fire9', n); S(c, 'fire9', n, x, fl + 3 - h * k / 2, k); }
       else { const [, gh] = L9.size('fire9', 'grate'); S(c, 'fire9', 'grate', x, fl + 2 - gh * k / 2, k); if (u > 1.2 && (t * 16 | 0) % 2) { const [, h] = L9.size('fire9', 'col0'); S(c, 'fire9', 'col0', x, fl + 3 - h * 0.3 / 2, 0.3, { a: 0.7 }); } }
