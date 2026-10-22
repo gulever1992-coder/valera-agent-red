@@ -862,6 +862,22 @@ if have('l9shaftw_0.jpg'):
     _w = rgba_m('l9shaftw_0.jpg', (722, 0, 1116, 2000)); _w.save(os.path.join(OUT, 'shaftW9.png'))
     DATA.setdefault('_bgp', {})['shaftW9'] = 1; DATA['_bg']['shaftW9'] = {'w': _w.width, 'h': _w.height}
 
+# ---------- 2026-10-22: часть 7 v2 «БОЙ НАД КОТЛОМ» (Flow: l9kfar/kmid/kcap/kfx/kbridge/kvat/kladle/ksling/ksem) ----------
+def _cells(name, rows, cols, pad=4):     # ячейки сетки без обрезки по содержимому: кадры одного предмета остаются выровненными
+    _a = rgba_m(name); W_, H_ = _a.size
+    return [_a.crop((W_ * i // cols + pad, H_ * j // rows + pad, W_ * (i + 1) // cols - pad, H_ * (j + 1) // rows - pad)) for j in range(rows) for i in range(cols)]
+if have('l9kfar_1.jpg'):
+    _im = seamless(Image.open(os.path.join(SRC, 'l9kfar_1.jpg')).convert('RGB'), 160); _im.save(os.path.join(OUT, 'kFar.jpg'), quality=90); DATA['_bg']['kFar'] = {'w': _im.width, 'h': _im.height}
+    _m = rgba_m('l9kmid_0.jpg'); _m = seamless(Image.fromarray(np.dstack([np.asarray(delav(depurple([_m.convert('RGB')]))[0]), np.asarray(_m)[..., 3]])), 140); _a = np.asarray(_m).copy(); _a[_a[..., 3] < 60, 3] = 0
+    Image.fromarray(_a).save(os.path.join(OUT, 'kMid.png')); DATA.setdefault('_bgp', {})['kMid'] = 1; DATA['_bg']['kMid'] = {'w': _m.width, 'h': _m.height}
+    pack('kCap9', delav(depurple(_cells('l9kcap_0.jpg', 2, 3))), 0.5, anchor='mid', names=['hang', 'open', 'drop', 'empty', 'man', 'splash'])
+    pack('kFx9', delav(depurple(cut('l9kfx_0.jpg', 'm', 2, 4, clean='edge'))), 0.5, anchor='mid', names=['c0', 'c1', 'c2', 'pipe', 'st0', 'st1', 'spl', 'drops'])
+    _b = delav(depurple(cut('l9kbridge_0.jpg', 'm', 2, [1, 2], clean='edge'))); pack('kBr9', _b, 1.0, anchor='mid', names=['bridge', 'pierL', 'pierR'])
+    _v = delav(depurple(cut('l9kvat_0.jpg', 'm', 4, 1, clean='edge'))); pack('kVat9', _v, 1.0, anchor='mid', names=['vat', 's0', 's1', 's2'])
+    pack('kLad9', delav(depurple(_cells('l9kladle_0.jpg', 2, 4))), 0.5, anchor='mid', names=['e', 'q1', 'q2', 'full', 't25', 'pour', 'thin', 'tE'])
+    pack('kSl9', delav(depurple(_cells('l9ksling_0.jpg', 1, 4))), 0.5, anchor='mid', names=['rest', 'mid', 'pull', 'rope'])
+    _se = delav(depurple(cut('l9ksem_0.jpg', 'm', 1, 4, clean='edge'))); pack('kSem9', _se, VH * 1.04 / hgt(_se, 1), names=['pourHit', 'drench', 'kneelS', 'aura'])
+
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 
 if DBG:

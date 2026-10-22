@@ -256,7 +256,7 @@
       for (const w of M.walks) if (!w.gone && !w.own && w[0] < x1 && w[0] + w[2] > x0) LAB.cwLayer(c, M, w, 'F');
     },
     drawValera(c) {
-      if (P.lv.dead && P.lv.dead > 0.3) { S(c, 'vClimb9', 'down', P.x, P.y, 1, { flip: P.dir < 0 }); return; }
+      if (P.lv.dead && P.lv.dead > 0.3 && !P.melted) { S(c, 'vClimb9', 'down', P.x, P.y, 1, { flip: P.dir < 0 }); return; }     // растворившийся в котле — без тела
       if (P.hide) return;     // спрятан картой (например, внутри капсулы-лифта)
       if (P.inv > 0 && (P.t * 16 | 0) % 2 && P.st !== 'hurt') return;
       const fl = P.dir < 0; let sh = 'vAim9', fr = 'stand';
