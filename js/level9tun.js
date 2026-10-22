@@ -161,7 +161,7 @@
       for (const s of P.shots) {
         s.t += dt; s.x += s.vx * dt; s.y += s.vy * dt;
         for (const q of P.o) {
-          if (s.dead || q.dead || q.hp >= 99) continue;    // капсулы со спящими (hp 99) пули не задевают
+          if (s.dead || q.dead || (q.hp >= 99 && q.type !== 'btr')) continue;    // капсулы со спящими (hp 99) пули не задевают; у финального БТР hp 110
           const k = sc(q.y), box = q.type === 'cyb' ? [q.x - 70 * k * q.sz, q.y - 110 * k * q.sz, 140 * k * q.sz, 106 * k * q.sz] : q.type === 'btr' ? [q.x, q.y - 160 * k * BTR_K, 300 * k * BTR_K, 160 * k * BTR_K] : q.type === 'tv' ? [q.x - 28, q.y - 26, 56, 52] : [q.x - 20 * k, q.y - 56 * k, 40 * k, 56 * k];
           if (q.type !== 'tv' && Math.abs(q.y - s.gy) > 40 && q.type !== 'btr') continue;   // пуля летит на своей глубине
           if (s.x > box[0] && s.x < box[0] + box[2] && s.y > box[1] && s.y < box[1] + box[3]) {
