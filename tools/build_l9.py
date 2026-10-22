@@ -857,6 +857,11 @@ if have('l9hheap_0.jpg'):
     _o1[0] = Image.fromarray(_tb)
     pack('hoZ9', [_o1[0], _o0[1], _o0[2]], 0.5, names=['tube', 'cross', 'hole'])
 
+# ---------- 2026-10-22: стена шахты у выхода из наклонного тоннеля (картинка владельца: цепь, двутавр, трубы) ----------
+if have('l9shaftw_0.jpg'):
+    _w = rgba_m('l9shaftw_0.jpg', (722, 0, 1116, 2000)); _w.save(os.path.join(OUT, 'shaftW9.png'))
+    DATA.setdefault('_bgp', {})['shaftW9'] = 1; DATA['_bg']['shaftW9'] = {'w': _w.width, 'h': _w.height}
+
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 
 if DBG:

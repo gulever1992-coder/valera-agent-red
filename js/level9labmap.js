@@ -260,8 +260,12 @@
       const im = L9.img.pipes9; if (!im || Math.abs(x - P.cam.x - 320) > 420) return; const f = L9D.pipes9.f[0], k = 130 / 384, W = f[2] * k, h = f[3] * k;     // три трубы; масштаб прежний (лист был 384 px шириной)
       c.imageSmoothingEnabled = true; for (let y = fy - 2 - h; y + h > P.cam.y - 20; y -= h - 1) c.drawImage(im, f[0], f[1], f[2], f[3], x - 65, y, W, h); c.imageSmoothingEnabled = false;
     };
+    M.drawShaftW = (c, P, x, fy) => {     // стена шахты (картинка владельца): цепь, двутавр, трубы; низ — на полу, вверх до края экрана
+      const im = L9.img.shaftW9; if (!im) return M.drawPipes(c, P, x, fy); if (Math.abs(x - P.cam.x - 320) > 460) return; const W = 120, h = im.height * W / im.width;
+      c.imageSmoothingEnabled = true; for (let y = fy - 2 - h; y + h > P.cam.y - 20; y -= h - 1) c.drawImage(im, x - 65, y, W, h); c.imageSmoothingEnabled = false;
+    };
     M.drawPortal = (c, P) => {
-      M.drawPipes(c, P, M.portalX(), 330); { const fl = M.solids.find(r => r[1] === DY && r[0] <= M.exitX() + 70 && r[0] + r[2] > M.exitX()); M.drawPipes(c, P, Math.max(M.exitX(), fl ? fl[0] + 67 : 0), DY); }     // внизу трубы целиком на плите пола     // вертикальные трубы с жижей закрывают стыки фонов у наклонного спуска и внизу
+      M.drawPipes(c, P, M.portalX(), 330); { const fl = M.solids.find(r => r[1] === DY && r[0] <= M.exitX() + 70 && r[0] + r[2] > M.exitX()); M.drawShaftW(c, P, Math.max(M.exitX(), fl ? fl[0] + 67 : 0), DY); }     // внизу трубы целиком на плите пола     // вертикальные трубы с жижей закрывают стыки фонов у наклонного спуска и внизу
     };
     // наклонный спуск: тоннель повёрнут вдоль рельса (уклон 0.3). Кадр тоннеля: x — вдоль рельса, y — поперёк; fy — где в этом кадре проходит рельс
     M.tunFrame = (c, cx, cy, fn) => {
