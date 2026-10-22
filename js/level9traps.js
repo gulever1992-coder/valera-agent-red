@@ -88,8 +88,9 @@
     for (const s of T.saw || []) {
       const [a, b, fl] = s; if (b < x0 || a > x1) continue; const [tw, th] = L9.size('trap9b', 'track');
       const [, bh] = L9.size('trap9b', 'saw0'), bx = s.bx || a;
-      S(c, 'trap9b', 'saw0', bx, fl - 4 - bh * 2.4 / 2, 2.4, { flip: (t * 14 | 0) % 2 === 0 });
-      c.save(); c.beginPath(); c.rect(a, fl - 20, b - a, 40); c.clip(); for (let x = a; x < b; x += tw * 1.3 - 1) S(c, 'trap9b', 'track', x + tw * 0.65, fl - th * 0.65 + 5, 1.3); c.restore();
+      const ty = fl + 3, gy = ty;     // лента утоплена в пол (центр чуть ниже уровня ног); прорезь — посередине ленты
+      c.save(); c.beginPath(); c.rect(a, fl - 20, b - a, 40); c.clip(); for (let x = a; x < b; x += tw * 1.3 - 1) S(c, 'trap9b', 'track', x + tw * 0.65, ty, 1.3); c.restore();
+      c.save(); c.beginPath(); c.rect(bx - 80, gy - 80, 160, 80); c.clip(); S(c, 'trap9b', 'saw0', bx, gy + 3 - bh * 2.4 / 2, 2.4, { flip: (t * 14 | 0) % 2 === 0 }); c.restore();     // диск выходит из прорези
     }
     // паровой клапан: низ трубы на полу
     for (const [x, fl, f] of T.vent || []) {

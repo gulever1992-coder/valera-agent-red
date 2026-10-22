@@ -271,7 +271,7 @@
     M.drawOver = (c, cx, cy) => {     // передний план спуска: тёмные рёбра крепи поперёк тоннеля, быстрее игрового плана (объём)
       const mid = cx + 320, r = (v, a0, a1) => clamp((v - a0) / (a1 - a0), 0, 1), bI = clamp((cx + 640 - M.portalX()) / 640, 0, 1), bO = clamp((cx + 640 - M.exitX()) / 640, 0, 1); if (bI <= bO) return;
       const fc = M.fgCv || (M.fgCv = document.createElement('canvas')); fc.width = 640; fc.height = 360; const g = fc.getContext('2d');     // рёбра рисуем отдельно и затемняем до силуэта
-      M.tunFrame(g, cx, cy, (fy, along) => { const step = 1100, off = along * 1.4; for (let i = Math.floor((off - 900) / step); i * step < off + 900; i++) S(g, 'arch9', 'pillar', i * step - off, fy + 230, 1.5); });
+      M.tunFrame(g, cx, cy, (fy, along) => { const step = 1100, off = along * 1.4; const [, ph] = L9.size('arch9', 'pillar'), hh = ph * 1.5 - 2; for (let i = Math.floor((off - 900) / step); i * step < off + 900; i++) for (let j = 0; j < 4; j++) S(g, 'arch9', 'pillar', i * step - off, fy + 230 - j * hh, 1.5); });     // ствол повторяется вверх — колонна уходит за край экрана
       g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(3,7,10,0.72)'; g.fillRect(0, 0, 640, 360);
       c.save(); c.beginPath(); c.rect(640 * (1 - bI), 0, 640 * (bI - bO), 360); c.clip(); c.globalAlpha = 0.82; c.drawImage(fc, 0, 0); c.restore();     // чуть просвечивают — Валеру за ребром видно
     };

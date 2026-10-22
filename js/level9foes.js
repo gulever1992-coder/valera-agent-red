@@ -233,10 +233,10 @@
       else if (this.st === 'open') fr = 'open';
       else if (this.st === 'rise') { fr = 'up'; clip = Math.min(1, this.stT / 0.5); }
       else { this.aimA(); fr = this.fireT > 0 && this.aimFr === 'a2' ? 'fire' : this.aimFr; }
-      const [, h] = L9.size('tur9', fr), y = this.y + 4 - h * k / 2;
+      const DY = 16, [, h] = L9.size('tur9', fr), y = this.y + DY - h * k / 2;     // люк лежит на полу: плита люка на уровне пола, а не над ним
       if (clip != null) {      // выезжает из люка: рисуем люк и поднимающуюся турель, обрезанную по полу
-        S(c, 'tur9', 'open', this.x, this.y + 4 - L9.size('tur9', 'open')[1] * k / 2, k);
-        c.save(); c.beginPath(); c.rect(this.x - 60, this.y - 140, 120, 140); c.clip(); S(c, 'tur9', 'up', this.x, y + (1 - clip) * h * k * 0.8, k, { flip }); c.restore(); return;
+        S(c, 'tur9', 'open', this.x, this.y + DY - L9.size('tur9', 'open')[1] * k / 2, k);
+        c.save(); c.beginPath(); c.rect(this.x - 60, this.y - 140, 120, 140 + DY - 6); c.clip(); S(c, 'tur9', 'up', this.x, y + (1 - clip) * h * k * 0.8, k, { flip }); c.restore(); return;
       }
       S(c, 'tur9', fr, this.x, y, k, { flip });
       if (this.fl > 0 && !this.dead) S(c, 'tur9', fr, this.x, y, k, { flip, add: 1, a: 0.45 });
