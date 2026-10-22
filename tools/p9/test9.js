@@ -281,7 +281,7 @@ window.__t9 = {
       else if (lv.dead) {}
       else if (lv.partName !== 'semen' || lv.done) { r.end = i / 60 | 0; break; }
       else { const b = M.boss; if (b && !b.dying) {
-        if (b.slime > 0) { const want = b.x + (Q.x < b.x ? -110 : 110); if (Math.abs(Q.x - want) > 20) I.down[want > Q.x ? 'right' : 'left'] = true; else Q.dir = b.x > Q.x ? 1 : -1; I.down.punch = true; }
+        if (b.slime > 0) { const want = Math.min(410, Math.max(20, b.x + (Q.x < b.x ? -110 : 110))); if (Math.abs(Q.x - want) > 20) I.down[want > Q.x ? 'right' : 'left'] = true; else Q.dir = b.x > Q.x ? 1 : -1; I.down.punch = true; }
         else { const l = M.lad.filter(l => l.st === 'full').sort((a, c) => Math.abs(a.zx - b.x) - Math.abs(c.zx - b.x))[0];
           if (l) { if (Math.abs(Q.x - l.sl) > 6) I.down[l.sl > Q.x ? 'right' : 'left'] = true; else if (Math.abs(b.x - (l.zx)) < 34 && b.fly < 0.1 && Math.random() < skill) { I.hit.up = true; r.pulls++; } else Q.dir = b.x > Q.x ? 1 : -1; }
           else { const away = Q.x < 240 ? 60 : 400; if (Math.abs(Q.x - away) > 10) I.down[away > Q.x ? 'right' : 'left'] = true; else Q.dir = b.x > Q.x ? 1 : -1; }

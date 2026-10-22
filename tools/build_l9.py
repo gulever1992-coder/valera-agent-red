@@ -885,6 +885,11 @@ if have('l9kfloor_1.jpg'):     # по схеме владельца: мости�
 if have('l9kvat2_0.jpg'):     # правки владельца: целый котёл (виден корпус), тяжёлый мостик, новый пол
     pack('kSet9', [trim(f) for f in delav(depurple([rgba_m('l9kvat2_0.jpg'), rgba_m('l9kbr2_0.jpg'), rgba_m('l9kfl2_0.jpg')]))], 0.5, anchor='mid', names=['vat', 'bridge', 'floor'])
 
+if have('l9kfb_1.jpg'):     # правки владельца 2: пол и мостик одной картинкой строго сбоку, мостик без перил; новый туманный средний план
+    pack('kFB9', [trim(f) for f in delav(depurple([rgba_m('l9kfb_1.jpg')]))], 0.5, anchor='mid', names=['fb'])
+    _m = rgba_m('l9kmid2_1.jpg'); _m = seamless(Image.fromarray(np.dstack([np.asarray(delav(depurple([_m.convert('RGB')]))[0]), np.asarray(_m)[..., 3]])), 140); _a = np.asarray(_m).copy(); _a[_a[..., 3] < 60, 3] = 0
+    Image.fromarray(_a).save(os.path.join(OUT, 'kMid2.png')); DATA.setdefault('_bgp', {})['kMid2'] = 1; DATA['_bg']['kMid2'] = {'w': _m.width, 'h': _m.height}
+
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 
 if DBG:
