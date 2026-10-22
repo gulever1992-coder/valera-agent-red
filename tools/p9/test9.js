@@ -284,10 +284,10 @@ window.__t9 = {
         if (b.slime > 0) { const want = b.x + (Q.x < b.x ? -110 : 110); if (Math.abs(Q.x - want) > 20) I.down[want > Q.x ? 'right' : 'left'] = true; else Q.dir = b.x > Q.x ? 1 : -1; I.down.punch = true; }
         else { const l = M.lad.filter(l => l.st === 'full').sort((a, c) => Math.abs(a.zx - b.x) - Math.abs(c.zx - b.x))[0];
           if (l) { if (Math.abs(Q.x - l.sl) > 6) I.down[l.sl > Q.x ? 'right' : 'left'] = true; else if (Math.abs(b.x - (l.zx)) < 34 && b.fly < 0.1 && Math.random() < skill) { I.hit.up = true; r.pulls++; } else Q.dir = b.x > Q.x ? 1 : -1; }
-          else { const away = Q.x < 480 ? 130 : 800; if (Math.abs(Q.x - away) > 10) I.down[away > Q.x ? 'right' : 'left'] = true; else Q.dir = b.x > Q.x ? 1 : -1; }
+          else { const away = Q.x < 240 ? 60 : 400; if (Math.abs(Q.x - away) > 10) I.down[away > Q.x ? 'right' : 'left'] = true; else Q.dir = b.x > Q.x ? 1 : -1; }
           if ((b.act === 'dash' || b.act === 'punch' && b.stT > 0.3 && b.stT < 0.6) && Math.abs(b.x - Q.x) < 260 && Q.onG && Math.random() < 0.3 * skill) I.hit.jump = true;
         } } }
-      if (!Scene.active && !lv.dead && Q.onG) { const d = I.down.right ? 1 : I.down.left ? -1 : 0, nx = Q.x + d * 26; if (d && [[300, 330], [630, 660]].some(([g0, g1]) => nx > g0 - 4 && nx < g1 + 4 && !(Q.x > g0 - 4 && Q.x < g1 + 4))) I.hit.jump = true; }     // щели у мостика — перепрыгнуть
+      if (!Scene.active && !lv.dead && Q.onG) { const d = I.down.right ? 1 : I.down.left ? -1 : 0, nx = Q.x + d * 26; if (d && [].some(([g0, g1]) => nx > g0 - 4 && nx < g1 + 4 && !(Q.x > g0 - 4 && Q.x < g1 + 4))) I.hit.jump = true; }     // щели у мостика — перепрыгнуть
       for (const k in I.hit) if (I.hit[k]) I.down[k] = I.down[k] || false;
       const p0 = Q.M && Q.M.boss ? Q.M.boss.ph : 0; lv.update(1 / 60); Q = L9.PARTS.lab; if (!lv.dead) r.minHp = Math.min(r.minHp, Q.hp);
       if (Q.M && Q.M.boss && Q.M.boss.ph !== p0) r.ph.push(Q.M.boss.ph + '@' + (i / 60 | 0));

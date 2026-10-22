@@ -878,6 +878,10 @@ if have('l9kfar_1.jpg'):
     pack('kSl9', delav(depurple(_cells('l9ksling_0.jpg', 1, 4))), 0.5, anchor='mid', names=['rest', 'mid', 'pull', 'rope'])
     _se = delav(depurple(cut('l9ksem_0.jpg', 'm', 1, 4, clean='edge'))); pack('kSem9', _se, VH * 1.04 / hgt(_se, 1), names=['pourHit', 'drench', 'kneelS', 'aura'])
 
+if have('l9kfloor_1.jpg'):     # по схеме владельца: мостик на опорах в котле, бетонный пол, труба с жижей, лестница
+    _B = [(20, 20, 1150, 395), (20, 410, 715, 755), (785, 400, 1090, 755), (1180, 20, 1330, 755)]
+    pack('kFl9', [trim(f) for f in delav(depurple([rgba_m('l9kfloor_1.jpg', b) for b in _B]))], 1.0, anchor='mid', names=['bridge', 'floor', 'pipe', 'ladder'])
+
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 
 if DBG:

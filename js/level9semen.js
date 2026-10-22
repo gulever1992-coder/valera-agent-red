@@ -8,16 +8,16 @@
 // Финал: Семён шатается и падает в котёл; Валера садится: «Что-то я проголодался.»; из котла: «Валера, я тебе не какой-то там проходнячок.»
 (() => {
   const S = L9.spr, clamp = L9.clamp, rnd = L9.rnd, LP = () => L9.PARTS.lab;
-  const W = 960, GY = 330, PIT0 = 300, PIT1 = 660, BR0 = 330, BR1 = 630, REFILL = 9, DMG_K = 0.85;
+  const W = 720, GY = 330, BR0 = 104, BR1 = 424, LAD_X = 22, VAT_X0 = 92, REFILL = 9, DMG_K = 0.85;     // схема владельца: слева бетонный пол с лестницей, мостик на опорах над котлом, справа — открытый котёл
   const LAD_H = 125, LAD_TOP = GY - 215, LAD_LIP = 31;     // ковш: высота кадра, верх (крюк), смещение струи от центра
-  const LADLES = [{ x: 175, sl: 40 }, { x: 760, sl: 920 }];
+  const LADLES = [{ x: 161, sl: 119 }, { x: 325, sl: 384 }];
   const MID_H = 250, MK = MID_H / 768;     // средний план: высота слоя и масштаб пикселей исходника
   const MID_VATS = [[273, 340], [685, 169], [1110, 374]], MID_CASC = [[268, 540], [1107, 560]], MID_W = 1236;
   const has = (sh, fr) => { const d = L9D[sh]; return d && (!fr || (d.n || []).includes(fr)); };
   const SH = (c, sh, fr, x, y, h, o) => { if (!has(sh, fr)) return; const [, fh] = L9.size(sh, fr); S(c, sh, fr, x, y, h / fh, o); };
   const SW = (c, sh, fr, x, y, w, o) => { if (!has(sh, fr)) return; const [fw] = L9.size(sh, fr); S(c, sh, fr, x, y, w / fw, o); };
-  const inPit = x => x > PIT0 && x < PIT1 && !(x > BR0 && x < BR1);     // щель между пирсом и мостиком
-  const overPit = x => x > PIT0 && x < PIT1;
+  const inPit = x => x > BR1 + 2;     // за краем мостика — открытый котёл
+  const overPit = inPit;
   let Sem = null, PH_SAVE = 1, KEEP = 0;     // после смерти бой продолжается с достигнутой фазы
   const F = () => L9.FOES;
 
@@ -59,8 +59,8 @@
       const a = this.act;
       if (a === 'roar') { this.vx = 0; if (this.stT > 0.8) this.act = 'run'; }
       else if (a === 'run') {
-        if (Math.abs(this.tx - this.x) < 12 || this.stT > 2.2) { this.tx = clamp(P.x + (Math.random() < 0.5 ? -1 : 1) * rnd(120, 300), 50, W - 50); this.stT = 0;
-          const lz = M.lad.find(l => l.st === 'full' && Math.abs(P.x - l.sl) < 50); if (lz && Math.abs(this.tx - lz.zx) < 90 && Math.random() < 0.1 + ph * 0.08) this.tx = clamp(lz.zx + (this.tx < lz.zx ? -140 : 140), 50, W - 50); }
+        if (Math.abs(this.tx - this.x) < 12 || this.stT > 2.2) { this.tx = clamp(P.x + (Math.random() < 0.5 ? -1 : 1) * rnd(100, 220), 30, BR1 - 20); this.stT = 0;
+          const lz = M.lad.find(l => l.st === 'full' && Math.abs(P.x - l.sl) < 50); if (lz && Math.abs(this.tx - lz.zx) < 90 && Math.random() < 0.1 + ph * 0.08) this.tx = clamp(lz.zx + (this.tx < lz.zx ? -110 : 110), 30, BR1 - 20); }
         this.vx = Math.sign(this.tx - this.x) * sp; this.dir = Math.sign(this.vx) || this.dir;
         this.cd -= dt; if (this.cd <= 0) { this.act = this.pick(P); this.stT = 0; this.shot = 0; this.dir = dx < 0 ? -1 : 1; }
       }
@@ -80,25 +80,25 @@
         if (this.stT > 0.5 + n * 0.3) this.done(); }
       else if (a === 'dash') {     // рывок сквозь Валеру (с 3-й фазы — туда и обратно)
         this.vx = this.dir * (340 + ph * 30); if (!this.shot && Math.abs(P.x - this.x) < 26 && Math.abs(P.y - this.y) < 60) { this.shot = 1; P.hurt(12, this.x); }
-        if (this.stT > 0.6 || this.x <= 52 || this.x >= W - 52) { if (ph >= 3 && !this.back) { this.back = 1; this.dir = -this.dir; this.stT = 0.15; this.shot = 0; } else { this.back = 0; this.done(); } } }
+        if (this.stT > 0.6 || this.x <= 30 || this.x >= BR1 - 16) { if (ph >= 3 && !this.back) { this.back = 1; this.dir = -this.dir; this.stT = 0.15; this.shot = 0; } else { this.back = 0; this.done(); } } }
       else if (a === 'light') { this.vx = 0;     // зелёные молнии туда, где Валера
-        if (!this.shot && this.stT > 0.5 - ph * 0.05) { this.shot = 1; const n = 2 + ph; for (let i = 0; i < n; i++) M.strikes.push({ x: clamp(P.x + (i - (n - 1) / 2) * 62 + rnd(-10, 10), 20, W - 20), t: -i * (0.3 - ph * 0.03) }); Sound.play('zap'); }
+        if (!this.shot && this.stT > 0.5 - ph * 0.05) { this.shot = 1; const n = 2 + ph; for (let i = 0; i < n; i++) M.strikes.push({ x: clamp(P.x + (i - (n - 1) / 2) * 62 + rnd(-10, 10), 10, BR1), t: -i * (0.3 - ph * 0.03) }); Sound.play('zap'); }
         if (this.stT > 1.0) this.done(); }
       else if (a === 'summon') { this.vx = 0;
         if (!this.shot && this.stT > 0.6) { this.shot = 1; this.sumCd = 22 - ph * 2; const kinds = [['Hat'], ['Hat', 'Arm'], ['Arm', 'Spit'], ['Crawl', 'Spit'], ['Crawl', 'Spit', 'Hat']][ph - 1];
-          kinds.forEach((k, i) => { const x = i % 2 ? W - 60 : 60; const f = new (F()[k])(this.M, x, GY); f.dir = i % 2 ? -1 : 1; P.foes.push(f); }); Sound.play('warn', 0.6); lv.say(ph >= 4 ? 'МУТАНТЫ!' : 'КИБЕРЗАВОДЧАНЕ!', 1.4); }
+          kinds.forEach((k, i) => { const x = i % 2 ? BR1 - 40 : 40; const f = new (F()[k])(this.M, x, GY); f.dir = i % 2 ? -1 : 1; P.foes.push(f); }); Sound.play('warn', 0.6); lv.say(ph >= 4 ? 'МУТАНТЫ!' : 'КИБЕРЗАВОДЧАНЕ!', 1.4); }
         if (this.stT > 1.1) this.done(); }
       else if (a === 'fly') {     // взлёт на реактивных ботинках, пролёт над ареной с выстрелами вниз
         const T = this.stT, D = 2.6 + ph * 0.3, iv = 0.5 - ph * 0.05; this.fly = T < 0.5 ? T / 0.5 : T < D ? 1 : Math.max(0, 1 - (T - D) / 0.5);
-        this.vx = T > 0.5 && T < D ? this.dir * (190 + ph * 15) : 0; if (this.x <= 70 || this.x >= W - 70) this.dir = this.x <= 70 ? 1 : -1;
+        this.vx = T > 0.5 && T < D ? this.dir * (190 + ph * 15) : 0; if (this.x <= 60 || this.x >= W - 70) this.dir = this.x <= 60 ? 1 : -1;
         if (T > 0.6 && T < D && (T / iv | 0) !== this.lastB) { this.lastB = T / iv | 0; M.eb(this.x, this.y - 10, (P.x - this.x) * 0.5, 260, { kind: 'bolt', dmg: 8 }); Sound.play('zap', 0.3); }
         if (T > D + 0.5) { this.fly = 0; this.done(); } }
       else if (a === 'invis') { this.invT = 2 + ph * 0.6; Sound.play('zap', 0.4); this.done(); this.cd = 0.2; }
       else if (a === 'rain') { this.vx = 0;     // дождь из жижи по всей арене (тени-предупреждения)
-        if (!this.shot && this.stT > 0.5) { this.shot = 1; const n = 8 + ph * 4; for (let i = 0; i < n; i++) M.drops.push({ x: rnd(20, W - 20), t: -i * (0.2 - ph * 0.02) - 0.6, y: -40 }); M.drops.push({ x: P.x, t: -0.7, y: -40 }); }
+        if (!this.shot && this.stT > 0.5) { this.shot = 1; const n = 8 + ph * 4; for (let i = 0; i < n; i++) M.drops.push({ x: rnd(10, W - 60), t: -i * (0.2 - ph * 0.02) - 0.6, y: -40 }); M.drops.push({ x: P.x, t: -0.7, y: -40 }); }
         if (this.stT > 0.9) this.done(); }
-      this.x = clamp(this.x + this.vx * dt, 40, W - 40);
-      this.hop = overPit(this.x) && !(this.x > BR0 + 6 && this.x < BR1 - 6) ? Math.min(1, this.hop + dt * 8) : Math.max(0, this.hop - dt * 8);     // над щелью перепрыгивает
+      this.x = this.fly > 0.3 ? clamp(this.x + this.vx * dt, 24, W - 40) : clamp(this.x + this.vx * dt, 24, BR1 - 12);     // по земле — только пол и мостик; над котлом — лишь в полёте
+      if (this.fly < 0.3 && this.x > BR1 - 12) this.x = Math.max(BR1 - 12, this.x - 300 * dt);
       this.y = GY - this.fly * 120 - this.hop * 18;
     }
     done() { this.act = 'run'; this.stT = 0; this.cd = Math.max(0.15, 1.25 - this.ph * 0.22) + rnd(0, 0.35); this.ext = 0;
@@ -134,12 +134,12 @@
     const LM = L9.MAPS.lab();
     const M = {
       x0: 0, x1: W, y0: -40, y1: 460, killY: 2000,
-      solids: [[0, GY, PIT0, 260, 'hide'], [PIT1, GY, W - PIT1, 260, 'hide'], [BR0, GY, BR1 - BR0, 16, 'hide'], [-40, -300, 40, 900, 'hide'], [W, -300, 40, 900, 'hide']],
-      walks: [], ladders: [], cks: [[110, GY]], picks: [],
+      solids: [[0, GY, BR0, 260, 'hide'], [BR0, GY, BR1 - BR0, 16, 'hide'], [-40, -300, 40, 900, 'hide'], [W, -300, 40, 900, 'hide']],
+      walks: [], ladders: [[LAD_X, GY - 190, GY]], cks: [[60, GY]], picks: [],
     };
     M.killAt = () => M.killY;
     M.dmgK = 0.65;     // долгий бой: урон по Валере x0.75
-    M.camY = gy => clamp(gy, GY - 60, GY) - 236;
+    M.camY = gy => clamp(gy, GY - 90, GY) - 256;
     M.init = (P, lv, ck) => {
       if (!Sem) Sem = mkSem();
       G.portraits = G.portraits || {};
@@ -148,8 +148,8 @@
       M.lad = LADLES.map(l => ({ ...l, zx: l.x + LAD_LIP, st: 'full', t: 0, pull: 0, lvl: 1 }));
       M.caps = []; M.capT = 0.5; M.bubs = [];
       if (!KEEP) PH_SAVE = 1; KEEP = 0; M.boss = new Sem(M, 760, GY); M.boss.ph = PH_SAVE; M.boss.hp = 100 - (PH_SAVE - 1) * 20; P.foes.push(M.boss);
-      M.picks = [['kefir', 480, GY], ['rocket', 120, GY]].map(([kind, x, y]) => ({ kind, x, y, t: 0 })); M.pickT = 22;
-      P.x = 110; P.dir = 1; P.hide = 0; P.melted = 0;
+      M.picks = [['kefir', 270, GY], ['rocket', 60, GY]].map(([kind, x, y]) => ({ kind, x, y, t: 0 })); M.pickT = 22;
+      P.x = 60; P.dir = 1; P.hide = 0; P.melted = 0;
     };
     M.eb = (x, y, vx, vy, o) => LP().ebul.push(Object.assign({ x, y, vx, vy, t: 0, dmg: 10, s: 1,
       draw: (c, e) => { const fr = e.kind === 'rocket' ? 'rocket' : 'bolt'; SH(c, 'semP9', fr, e.x, e.y, fr === 'rocket' ? 12 : 16, { rot: Math.atan2(e.vy, e.vx), add: fr === 'bolt' ? 1 : 0 }); },
@@ -163,12 +163,12 @@
     M.endScript = function* () {     // Семён шатается к щели и падает в котёл; Валера садится на пирс
       const P = LP(), D = 0.016, b = M.boss; M.cut = 1; Scene.dialogTop = true; P.foes = P.foes.filter(f => f === b); P.ebul = []; M.strikes = []; M.drops = [];
       b.fly = 0; b.hop = 0; b.y = GY; b.vis = 1; b.ext = 0; b.slime = 0; b.auraT = 0;
-      const gx = b.x < 480 ? (PIT0 + BR0) / 2 : (BR1 + PIT1) / 2; b.dir = gx > b.x ? 1 : -1; M.camT = clamp(gx - 320, 0, W - 640);
+      const gx = BR1 + 16; b.dir = 1; M.camT = W - 640;     // шатается к краю мостика и падает в котёл
       const spd = Math.max(60, Math.abs(gx - b.x) / 2.4); for (let t = 0; t < 4 && Math.abs(b.x - gx) > 3; t += D) { b.x += b.dir * spd * D; M.semRot = Math.sin(t * 9) * 0.16; M.semFr = (t * 4 | 0) % 2 ? 'stagger' : 'kneel'; yield D; }
       M.semFr = 'stagger'; Sound.play('shout'); let vy = -140;
       for (let t = 0; t < 1.6; t += D) { vy += 900 * D; M.semDy += vy * D; M.semRot += 2.5 * D * b.dir; yield D; if (M.semDy > 90) break; }
       b.gone = true; Sound.play('stomp'); G.shake(6, 0.6); M.splash(b.x, 2.2);
-      yield 1.0; const sx = b.x < 480 ? 210 : 750; M.camT = clamp(sx - 320, 0, W - 640);
+      yield 1.0; const sx = 330; M.camT = W - 640;
       P.st = 'run'; P.dir = sx > P.x ? 1 : -1; for (let t = 0; t < 5 && Math.abs(P.x - sx) > 4; t += D) { P.x += P.dir * 120 * D; if (overPit(P.x)) P.y = GY; yield D; }
       P.st = 'stand'; yield 0.4; P.hide = 1; M.sitFr = 'sit'; Sound.play('land'); yield 1.0; M.sitFr = 'belly';
       yield* Scene.say('valera', 'Что-то я проголодался.', null);
@@ -223,7 +223,7 @@
         else P.hintAt('КОВШ НАПОЛНЯЕТСЯ...', 0.3); }
       for (const k of M.picks) { k.t += dt; if (!k.dead && Math.abs(P.x - k.x) < 22 && Math.abs(P.y - k.y) < 40) LM.take(k, P, lv); }
       M.picks = M.picks.filter(k => !k.dead);
-      M.pickT -= dt; if (M.pickT <= 0 && M.picks.length < 2) { M.pickT = 15; M.picks.push({ kind: ['kefir', 'grenades', 'plasma', 'pies'][rnd(0, 4) | 0], x: [130, 480, 830][rnd(0, 3) | 0], y: GY, t: 0 }); }
+      M.pickT -= dt; if (M.pickT <= 0 && M.picks.length < 2) { M.pickT = 15; M.picks.push({ kind: ['kefir', 'grenades', 'plasma', 'pies'][rnd(0, 4) | 0], x: [50, 250, 400][rnd(0, 3) | 0], y: GY, t: 0 }); }
     };
     M.hazAt = () => null;
     M.shootProps = () => {};
@@ -258,23 +258,28 @@
     };
     M.drawMid = (c, P) => {
       const t = M.t;
-      // котёл под мостиком: кипящая поверхность (3 кадра Flow с перетеканием), пар, лопающиеся пузыри
-      { const vw = 400, [fw, fh] = L9.size('kVat9', 'vat'), k = vw / fw, vy = GY + 46, vh = fh * k; S(c, 'kVat9', 'vat', 480, vy + vh / 2, k);
-        const [sw, sh0] = L9.size('kVat9', 's0'), sk = (vw * 0.9) / sw, ph = t * 2.2, i0 = (ph | 0) % 3, fa = ph % 1;
-        S(c, 'kVat9', 's' + i0, 480, vy + 10, sk); S(c, 'kVat9', 's' + (i0 + 1) % 3, 480, vy + 10, sk, { a: fa });
-        for (let i = 0; i < (M.boil ? 8 : 4); i++) { const u = (t * (M.boil ? 1.4 : 0.5) + i * 0.27) % 1; S(c, 'kFx9', i % 2 ? 'st0' : 'st1', 320 + i * 46 + Math.sin(i * 3 + t) * 10, vy - u * 70, 0.15 + u * 0.35, { a: 0.5 * (1 - u) }); }
-        for (let i = 0; i < 3; i++) { const u = (t * 0.8 + i * 0.41) % 1; if (u < 0.25) S(c, 'kFx9', 'spl', 340 + ((i * 131 + (t * 0.8 | 0) * 77) % 280), vy + 6, 0.14 + u * 0.4, { a: 1 - u * 4 }); } }
-      // пирсы и мостик
-      { const pw = 300 + 16, [fw, fh] = L9.size('kBr9', 'pierL'), k = pw / fw, ph = fh * k, ty = GY - 18;
-        S(c, 'kBr9', 'pierL', PIT0 - pw / 2 + 8, ty + ph / 2, k); S(c, 'kBr9', 'pierR', PIT1 + pw / 2 - 8, ty + ph / 2, k);
-        const bw = BR1 - BR0 + 12, [bfw, bfh] = L9.size('kBr9', 'bridge'), bk = bw / bfw, bh = bfh * bk; S(c, 'kBr9', 'bridge', 480, GY - bh * 0.36 + bh / 2, bk); }
+      // котёл: от края бетонного пола до правого края арены; кипящая поверхность (3 кадра Flow с перетеканием), пар, пузыри
+      const vx0 = VAT_X0, vw = W + 80 - vx0, vcx = vx0 + vw / 2, vy = GY + 50;
+      const surf = a0 => { const [sw] = L9.size('kVat9', 's0'), sk = (vw * 0.93) / sw, ph = t * 2.2, i0 = (ph | 0) % 3, fa = ph % 1;
+        S(c, 'kVat9', 's' + i0, vcx + 8, vy + 10, sk, { a: a0 }); S(c, 'kVat9', 's' + (i0 + 1) % 3, vcx + 8, vy + 10, sk, { a: fa * a0 }); };
+      { const [fw, fh] = L9.size('kVat9', 'vat'), k = vw / fw, vh = fh * k; S(c, 'kVat9', 'vat', vcx, vy + vh / 2 - 6, k); surf(1); }
+      // труба из-под пола: жижа льётся в котёл
+      if (has('kFl9', 'pipe')) { const [pw0, ph0] = L9.size('kFl9', 'pipe'), pk = 58 / ph0; S(c, 'kFl9', 'pipe', BR0 + 18, vy + 4 - 29, pk); }
+      // мостик с перилами: опоры стоят в котле
+      if (has('kFl9', 'bridge')) { const bw = BR1 - BR0 + 10, [bfw, bfh] = L9.size('kFl9', 'bridge'), bk = bw / bfw, bh = bfh * bk; S(c, 'kFl9', 'bridge', (BR0 + BR1) / 2 + 2, GY - bh * 0.26 + bh / 2, bk); }
+      surf(0.9);     // поверхность поверх опор — опоры уходят в жижу
+      for (let i = 0; i < (M.boil ? 9 : 5); i++) { const u = (t * (M.boil ? 1.4 : 0.5) + i * 0.27) % 1; S(c, 'kFx9', i % 2 ? 'st0' : 'st1', vx0 + 40 + i * 70 + Math.sin(i * 3 + t) * 10, vy - u * 70, 0.15 + u * 0.35, { a: 0.5 * (1 - u) }); }
+      for (let i = 0; i < 4; i++) { const u = (t * 0.8 + i * 0.41) % 1; if (u < 0.25) S(c, 'kFx9', 'spl', vx0 + 30 + ((i * 131 + (t * 0.8 | 0) * 77) % (vw - 120)), vy + 6, 0.14 + u * 0.4, { a: 1 - u * 4 }); }
+      // бетонный пол слева и лестница на стене
+      if (has('kFl9', 'floor')) { const [ffw, ffh] = L9.size('kFl9', 'floor'), fk = 150 / ffh, fw2 = ffw * fk; S(c, 'kFl9', 'floor', BR0 + 8 - fw2 / 2, GY - 4 + 75, fk); }
+      if (has('kFl9', 'ladder')) { const [lw, lh] = L9.size('kFl9', 'ladder'), lk = 34 / lw, h2 = lh * lk; for (let y = GY + 2; y > P.cam.y - 40; y -= h2 - 6) S(c, 'kFl9', 'ladder', LAD_X, y - h2 / 2, lk); }
       // ковши: подача жижи по стеклянной трубе сверху, уровень растёт; наклон и струя на арену
       for (const l of M.lad) {
         const cyL = LAD_TOP + LAD_H / 2, px = l.x - 16;
         // трос от крюка вверх и стеклянная труба подачи
         if (has('kSl9', 'rope')) { const [rw, rh] = L9.size('kSl9', 'rope'), rk = 4 / rw * 3; for (let y = LAD_TOP + 4; y > P.cam.y - 60; y -= rh * rk * 0.9) S(c, 'kSl9', 'rope', l.x, y - rh * rk / 2, rk); }
         // стеклянная труба подачи сбоку (с внешней стороны арены), по ней течёт жижа; из носика — струя в ковш, пока он наполняется
-        const sd = l.x < 480 ? -1 : 1, py = LAD_TOP + 14, pe = l.x - sd * 4;
+        const sd = l.x < 243 ? -1 : 1, py = LAD_TOP + 14, pe = l.x - sd * 4;
         if (l.st === 'fill') { const n = 'c' + ((t * 10) | 0) % 3, top = py + 6, bot = cyL + 30 - l.lvl * 24, len = bot - top; S(c, 'kFx9', n, pe + sd * 4, top + len / 2, 0.2, { sy: len / (L9.size('kFx9', n)[1] * 0.2) }); }
         if (has('kFx9', 'pipe')) { const [pw2, ph2] = L9.size('kFx9', 'pipe'), pk = 64 / pw2, seg = pw2 * pk - 4; for (let i = 0; i < 4; i++) S(c, 'kFx9', 'pipe', pe + sd * (seg / 2 + i * seg), py, pk, { flip: sd > 0 });
           for (let i = 0; i < 6; i++) { const u = (t * (l.st === 'fill' ? 0.9 : 0.25) + i / 6) % 1; S(c, 'kFx9', 'drops', pe + sd * (4 * seg) * (1 - u), py + Math.sin(i * 7 + t * 3), 0.05, { a: 0.85 }); } }
@@ -288,10 +293,11 @@
         if (l.st === 'pour' || l.st === 'thin') { const n = 'c' + ((t * 12) | 0) % 3, top = LAD_TOP + LAD_H - 12, len = GY - top, wk = l.st === 'pour' ? 0.46 : 0.18; S(c, 'kFx9', n, l.zx, top + len / 2, wk, { sy: len / (L9.size('kFx9', n)[1] * wk) }); }
         // стропа: шкив, трос, ручка
         if (has('kSl9', 'rest')) { const fr3 = l.pull > 0.35 ? 'pull' : l.pull > 0 ? 'mid' : 'rest', [, sh3] = L9.size('kSl9', fr3), sk = 236 / sh3, cy3 = GY - 42 - (326 / 380 - 0.5) * 236;
-          S(c, 'kSl9', fr3, l.sl - 30 * (l.sl < 480 ? -1 : 1) * 0 + 14, cy3, sk, { flip: l.sl > 480 });
-          if (has('kSl9', 'rope')) { const [rw, rh] = L9.size('kSl9', 'rope'), rk = 0.5; for (let y = cy3 - 236 / 2 + 14; y > P.cam.y - 60; y -= rh * rk * 0.9) S(c, 'kSl9', 'rope', l.sl + 14 + (l.sl > 480 ? -1 : 1) * 2, y - rh * rk / 2, rk); }
-          if (l.st === 'full' && Math.abs(P.x - l.sl) < 70) S(c, 'fxL9', 'spark', l.sl + 14, GY - 48, 0.5 + Math.sin(t * 6) * 0.1, { add: 1, a: 0.6 }); }
-        if (l.st === 'fill') G.text(Math.ceil(REFILL * (1 - l.lvl)) + '', l.sl + 14, GY - 132, { align: 'center', size: 8, color: '#7fe0c0', outline: true });
+          const cut3 = cy3 - 236 / 2 + 236 * 0.31, sg = l.sl > 243 ? -1 : 1, off = { rest: 38, mid: 18, pull: 6 }[fr3] * sk * 0.5;     // трос пары держим на месте, кадры смещены
+          c.save(); c.beginPath(); c.rect(l.sl - 60, cut3, 120, 400); c.clip(); S(c, 'kSl9', fr3, l.sl - sg * off, cy3, sk, { flip: sg < 0 }); c.restore();     // без шкива: только трос и ручка (по схеме)
+          if (has('kSl9', 'rope')) { const [, rh] = L9.size('kSl9', 'rope'), rk = 0.42, rs = 26.5 * rk * 0.5; const st = 184 * rk * 0.5; for (let y = cut3 + 4; y > P.cam.y - 60; y -= st) for (const q of [-1, 1]) S(c, 'kSl9', 'rope', l.sl + q * 23 * sk * 0.5 + rs, y - st / 2 - 4 * rk * 0.5, rk); }     // в кадре троса он занимает строки 100..288
+          if (l.st === 'full' && Math.abs(P.x - l.sl) < 70) S(c, 'fxL9', 'spark', l.sl, GY - 48, 0.5 + Math.sin(t * 6) * 0.1, { add: 1, a: 0.6 }); }
+        if (l.st === 'fill') G.text(Math.ceil(REFILL * (1 - l.lvl)) + '', l.sl, GY - 132, { align: 'center', size: 8, color: '#7fe0c0', outline: true });
       }
       // молнии: метка на полу, затем разряд сверху
       for (const s of M.strikes) { if (s.t < 0) continue; if (s.t < 0.7) { if ((t * 14 | 0) % 2) S(c, 'fxZ9', 'sp0', s.x, GY - 4, 0.3 + s.t * 0.4, { add: 1 }); }
