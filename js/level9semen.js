@@ -8,8 +8,8 @@
 // Финал: Семён шатается и падает в котёл; Валера садится: «Что-то я проголодался.»; из котла: «Валера, я тебе не какой-то там проходнячок.»
 (() => {
   const S = L9.spr, clamp = L9.clamp, rnd = L9.rnd, LP = () => L9.PARTS.lab;
-  const W = 720, GY = 330, BR0 = 104, BR1 = 424, LAD_X = 22, VAT_X0 = 92, REFILL = 9, DMG_K = 0.85;     // схема владельца: слева бетонный пол с лестницей, мостик на опорах над котлом, справа — открытый котёл
-  const LAD_H = 125, LAD_TOP = GY - 215, LAD_LIP = 31;     // ковш: высота кадра, верх (крюк), смещение струи от центра
+  const W = 655, GY = 330, BR0 = 104, BR1 = 424, LAD_X = 22, VAT_X0 = 92, REFILL = 9, DMG_K = 0.85;     // схема владельца: слева бетонный пол с лестницей, мостик на опорах над котлом, справа — открытый котёл
+  const LAD_H = 90, LAD_TOP = GY - 160, LAD_LIP = 22, SLH = 170;     // ковш: высота кадра, верх (крюк), смещение струи от центра
   const LADLES = [{ x: 161, sl: 119 }, { x: 325, sl: 384 }];
   const MID_H = 250, MK = MID_H / 768;     // средний план: высота слоя и масштаб пикселей исходника
   const MID_VATS = [[273, 340], [685, 169], [1110, 374]], MID_CASC = [[268, 540], [1107, 560]], MID_W = 1236;
@@ -139,7 +139,7 @@
     };
     M.killAt = () => M.killY;
     M.dmgK = 0.65;     // долгий бой: урон по Валере x0.75
-    M.camY = gy => clamp(gy, GY - 90, GY) - 256;
+    M.camY = gy => clamp(gy, GY - 90, GY) - 180;
     M.init = (P, lv, ck) => {
       if (!Sem) Sem = mkSem();
       G.portraits = G.portraits || {};
@@ -166,7 +166,7 @@
       const gx = BR1 + 16; b.dir = 1; M.camT = W - 640;     // шатается к краю мостика и падает в котёл
       const spd = Math.max(60, Math.abs(gx - b.x) / 2.4); for (let t = 0; t < 4 && Math.abs(b.x - gx) > 3; t += D) { b.x += b.dir * spd * D; M.semRot = Math.sin(t * 9) * 0.16; M.semFr = (t * 4 | 0) % 2 ? 'stagger' : 'kneel'; yield D; }
       M.semFr = 'stagger'; Sound.play('shout'); let vy = -140;
-      for (let t = 0; t < 1.6; t += D) { vy += 900 * D; M.semDy += vy * D; M.semRot += 2.5 * D * b.dir; yield D; if (M.semDy > 90) break; }
+      for (let t = 0; t < 1.6; t += D) { vy += 900 * D; M.semDy += vy * D; M.semRot += 2.5 * D * b.dir; yield D; if (M.semDy > 110) break; }
       b.gone = true; Sound.play('stomp'); G.shake(6, 0.6); M.splash(b.x, 2.2);
       yield 1.0; const sx = 330; M.camT = W - 640;
       P.st = 'run'; P.dir = sx > P.x ? 1 : -1; for (let t = 0; t < 5 && Math.abs(P.x - sx) > 4; t += D) { P.x += P.dir * 120 * D; if (overPit(P.x)) P.y = GY; yield D; }
@@ -179,9 +179,9 @@
     M.cutUpdate = (dt, P) => { P.t += dt; M.t += dt; M.mech(dt, P, true); M.bgUpd(dt);
       if (M.camT != null) P.cam.x += (clamp(M.camT, 0, W - 640) - P.cam.x) * Math.min(1, dt * 2.5); else P.camera(dt); P.updFx(dt); };
     // всплеск в котле
-    M.splash = (x, s = 1) => { const P = LP(); P.fx.push({ t: 0, sh: 'kCap9', fr: ['splash'], x, y: GY + 36, s: 0.5 * s, life: 0.6 });
-      for (let i = 0; i < 6 * s; i++) P.fx.push({ t: 0, sh: 'kFx9', fr: ['drops'], x: x + rnd(-30, 30) * s, y: GY + 40, vx: rnd(-80, 80), vy: rnd(-280, -140), g: 700, s: rnd(0.12, 0.22), life: 0.9 });
-      P.fx.push({ t: 0, sh: 'kFx9', fr: ['st0'], x, y: GY + 10, vx: 0, vy: -30, s: 0.5 * s, life: 1.2, fade: 1 }); Sound.play('splash'); };
+    M.splash = (x, s = 1) => { const P = LP(); P.fx.push({ t: 0, sh: 'kCap9', fr: ['splash'], x, y: GY + 60, s: 0.5 * s, life: 0.6 });
+      for (let i = 0; i < 6 * s; i++) P.fx.push({ t: 0, sh: 'kFx9', fr: ['drops'], x: x + rnd(-30, 30) * s, y: GY + 62, vx: rnd(-80, 80), vy: rnd(-280, -140), g: 700, s: rnd(0.12, 0.22), life: 0.9 });
+      P.fx.push({ t: 0, sh: 'kFx9', fr: ['st0'], x, y: GY + 40, vx: 0, vy: -30, s: 0.5 * s, life: 1.2, fade: 1 }); Sound.play('splash'); };
     // ---------- механика арены ----------
     M.mech = (dt, P, cut) => {
       for (const l of M.lad) { l.t += dt; l.pull -= dt;
@@ -196,7 +196,7 @@
         else if (l.st === 'fill') { l.lvl = clamp(l.t / REFILL, 0, 1); if (l.lvl >= 1) { l.st = 'full'; l.t = 0; Sound.play('confirm', 0.4); } } }
       for (const s of M.strikes) { s.t += dt; if (!cut && s.t > 0.7 && s.t < 0.95 && Math.abs(P.x - s.x) < 18) P.hurt(12, s.x); if (s.t > 0.7 && s.t - dt <= 0.7) { Sound.play('zap', 0.6); G.shake(2, 0.15); } }
       M.strikes = M.strikes.filter(s => s.t < 1.0);
-      for (const d of M.drops) { d.t += dt; if (d.t > 0) { d.y += (300 + d.t * 600) * dt; const fy = inPit(d.x) ? GY + 40 : GY - 4; if (d.y > fy) { d.dead = 1; P.fx.push({ t: 0, sh: 'kFx9', fr: ['spl'], x: d.x, y: fy, s: 0.2, life: 0.3 }); if (!cut && Math.abs(P.x - d.x) < 16 && Math.abs(P.y - GY) < 30) P.hurt(6, d.x); } } }
+      for (const d of M.drops) { d.t += dt; if (d.t > 0) { d.y += (300 + d.t * 600) * dt; const fy = inPit(d.x) ? GY + 60 : GY - 4; if (d.y > fy) { d.dead = 1; P.fx.push({ t: 0, sh: 'kFx9', fr: ['spl'], x: d.x, y: fy, s: 0.2, life: 0.3 }); if (!cut && Math.abs(P.x - d.x) < 16 && Math.abs(P.y - GY) < 30) P.hurt(6, d.x); } } }
       M.drops = M.drops.filter(d => !d.dead);
       for (const e of P.ebul) if (e.home && e.t > 0.3 && e.t < 2.4) { const ang = Math.atan2(P.y - 40 - e.y, P.x - e.x), sp = Math.hypot(e.vx, e.vy) + 140 * dt, cur = Math.atan2(e.vy, e.vx); let da = ang - cur; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI; const na = cur + clamp(da, -2.2 * dt, 2.2 * dt); e.vx = Math.cos(na) * Math.min(330, sp); e.vy = Math.sin(na) * Math.min(330, sp); }
     };
@@ -214,10 +214,10 @@
     M.update = (dt, P, lv) => {
       M.t += dt; M.bgUpd(dt);
       if (M.cut === 1 && !M.started) { M.started = 1; Scene.run(M.introScript, () => { M.cut = 0; lv.say('ДЁРНИ СТРОПУ — ОБЛЕЙ СЕМЁНА ЖИЖЕЙ!', 3); }); return; }
-      if (M.melt) { M.melt += dt; P.vx = 0; P.vy = 0; P.y = GY + 40; return; }
+      if (M.melt) { M.melt += dt; P.vx = 0; P.vy = 0; P.y = GY + 64; return; }
       M.mech(dt, P, false);
       // упал в котёл — сразу растворяется
-      if (inPit(P.x) && P.y > GY + 26) { M.melt = 0.001; P.hide = 1; P.melted = 1; P.inv = 0; M.splash(P.x, 1.2); for (let i = 0; i < 4; i++) P.fx.push({ t: 0, sh: 'kFx9', fr: ['st1'], x: P.x + rnd(-12, 12), y: GY + 20, vx: 0, vy: -40, s: 0.3, life: 1.4, fade: 1 }); lv.say('ВАЛЕРА РАСТВОРИЛСЯ', 2); lv.hurt(999); return; }
+      if (inPit(P.x) && P.y > GY + 56) { M.melt = 0.001; P.hide = 1; P.melted = 1; P.inv = 0; M.splash(P.x, 1.2); for (let i = 0; i < 4; i++) P.fx.push({ t: 0, sh: 'kFx9', fr: ['st1'], x: P.x + rnd(-12, 12), y: GY + 50, vx: 0, vy: -40, s: 0.3, life: 1.4, fade: 1 }); lv.say('ВАЛЕРА РАСТВОРИЛСЯ', 2); lv.hurt(999); return; }
       for (const l of M.lad) if (Math.abs(P.x - l.sl) < 26 && P.onG) {
         if (l.st === 'full') { P.hintAt('ВВЕРХ — ДЁРНУТЬ СТРОПУ', 0.3); if (G.Input.pressed('up')) { l.st = 'tilt'; l.t = 0; l.pull = 0.6; Sound.play('clank'); } }
         else P.hintAt('КОВШ НАПОЛНЯЕТСЯ...', 0.3); }
@@ -258,42 +258,37 @@
     };
     M.drawMid = (c, P) => {
       const t = M.t;
-      // котёл: от края бетонного пола до правого края арены; кипящая поверхность (3 кадра Flow с перетеканием), пар, пузыри
-      const vx0 = VAT_X0, vw = W + 80 - vx0, vcx = vx0 + vw / 2, vy = GY + 50;
-      const surf = a0 => { const [sw] = L9.size('kVat9', 's0'), sk = (vw * 0.93) / sw, ph = t * 2.2, i0 = (ph | 0) % 3, fa = ph % 1;
-        S(c, 'kVat9', 's' + i0, vcx + 8, vy + 10, sk, { a: a0 }); S(c, 'kVat9', 's' + (i0 + 1) % 3, vcx + 8, vy + 10, sk, { a: fa * a0 }); };
-      { const [fw, fh] = L9.size('kVat9', 'vat'), k = vw / fw, vh = fh * k; S(c, 'kVat9', 'vat', vcx, vy + vh / 2 - 6, k); surf(1); }
-      // труба из-под пола: жижа льётся в котёл
-      if (has('kFl9', 'pipe')) { const [pw0, ph0] = L9.size('kFl9', 'pipe'), pk = 58 / ph0; S(c, 'kFl9', 'pipe', BR0 + 18, vy + 4 - 29, pk); }
-      // мостик с перилами: опоры стоят в котле
-      if (has('kFl9', 'bridge')) { const bw = BR1 - BR0 + 10, [bfw, bfh] = L9.size('kFl9', 'bridge'), bk = bw / bfw, bh = bfh * bk; S(c, 'kFl9', 'bridge', (BR0 + BR1) / 2 + 2, GY - bh * 0.26 + bh / 2, bk); }
-      surf(0.9);     // поверхность поверх опор — опоры уходят в жижу
-      for (let i = 0; i < (M.boil ? 9 : 5); i++) { const u = (t * (M.boil ? 1.4 : 0.5) + i * 0.27) % 1; S(c, 'kFx9', i % 2 ? 'st0' : 'st1', vx0 + 40 + i * 70 + Math.sin(i * 3 + t) * 10, vy - u * 70, 0.15 + u * 0.35, { a: 0.5 * (1 - u) }); }
-      for (let i = 0; i < 4; i++) { const u = (t * 0.8 + i * 0.41) % 1; if (u < 0.25) S(c, 'kFx9', 'spl', vx0 + 30 + ((i * 131 + (t * 0.8 | 0) * 77) % (vw - 120)), vy + 6, 0.14 + u * 0.4, { a: 1 - u * 4 }); }
-      // бетонный пол слева и лестница на стене
-      if (has('kFl9', 'floor')) { const [ffw, ffh] = L9.size('kFl9', 'floor'), fk = 150 / ffh, fw2 = ffw * fk; S(c, 'kFl9', 'floor', BR0 + 8 - fw2 / 2, GY - 4 + 75, fk); }
+      // мостик (опоры уходят в котёл), затем котёл целиком — его край и корпус перекрывают низ опор; над краем кипит жижа
+      const vy = GY + 50;     // верх края котла
+      if (has('kSet9', 'bridge')) { const bw = BR1 - BR0 + 12, [bfw, bfh] = L9.size('kSet9', 'bridge'), bk = bw / bfw, bh = bfh * bk; S(c, 'kSet9', 'bridge', (BR0 + BR1) / 2 + 2, GY - bh * 0.17 + bh / 2, bk); }
+      if (has('kSet9', 'vat')) { const vw = 580, [fw, fh] = L9.size('kSet9', 'vat'), k = vw / fw, vh = fh * k; S(c, 'kSet9', 'vat', 398, vy - vh * 0.13 + vh / 2, k); }
+      for (let i = 0; i < (M.boil ? 9 : 5); i++) { const u = (t * (M.boil ? 1.4 : 0.5) + i * 0.27) % 1; S(c, 'kFx9', i % 2 ? 'st0' : 'st1', 130 + i * 70 + Math.sin(i * 3 + t) * 10, vy - 4 - u * 70, 0.15 + u * 0.35, { a: 0.5 * (1 - u) }); }
+      for (let i = 0; i < 4; i++) { const u = (t * 0.8 + i * 0.41) % 1; if (u < 0.25) S(c, 'kFx9', 'spl', 140 + ((i * 131 + (t * 0.8 | 0) * 77) % 560), vy + 2, 0.14 + u * 0.4, { a: 1 - u * 4 }); }
+      // пол слева, лестница на стене, труба из-под пола льёт жижу в котёл
+      if (has('kSet9', 'floor')) { const fh2 = 200, [ffw, ffh] = L9.size('kSet9', 'floor'), fk = fh2 / ffh, fw2 = ffw * fk; S(c, 'kSet9', 'floor', BR0 + 4 - fw2 / 2, GY - fh2 * 0.13 + fh2 / 2, fk); }
       if (has('kFl9', 'ladder')) { const [lw, lh] = L9.size('kFl9', 'ladder'), lk = 34 / lw, h2 = lh * lk; for (let y = GY + 2; y > P.cam.y - 40; y -= h2 - 6) S(c, 'kFl9', 'ladder', LAD_X, y - h2 / 2, lk); }
+      if (has('kFl9', 'pipe')) { const [, ph0] = L9.size('kFl9', 'pipe'), pk = 44 / ph0; S(c, 'kFl9', 'pipe', BR0 + 10, vy + 4 - 22, pk); }
       // ковши: подача жижи по стеклянной трубе сверху, уровень растёт; наклон и струя на арену
       for (const l of M.lad) {
         const cyL = LAD_TOP + LAD_H / 2, px = l.x - 16;
         // трос от крюка вверх и стеклянная труба подачи
         if (has('kSl9', 'rope')) { const [rw, rh] = L9.size('kSl9', 'rope'), rk = 4 / rw * 3; for (let y = LAD_TOP + 4; y > P.cam.y - 60; y -= rh * rk * 0.9) S(c, 'kSl9', 'rope', l.x, y - rh * rk / 2, rk); }
         // стеклянная труба подачи сбоку (с внешней стороны арены), по ней течёт жижа; из носика — струя в ковш, пока он наполняется
-        const sd = l.x < 243 ? -1 : 1, py = LAD_TOP + 14, pe = l.x - sd * 4;
-        if (l.st === 'fill') { const n = 'c' + ((t * 10) | 0) % 3, top = py + 6, bot = cyL + 30 - l.lvl * 24, len = bot - top; S(c, 'kFx9', n, pe + sd * 4, top + len / 2, 0.2, { sy: len / (L9.size('kFx9', n)[1] * 0.2) }); }
-        if (has('kFx9', 'pipe')) { const [pw2, ph2] = L9.size('kFx9', 'pipe'), pk = 64 / pw2, seg = pw2 * pk - 4; for (let i = 0; i < 4; i++) S(c, 'kFx9', 'pipe', pe + sd * (seg / 2 + i * seg), py, pk, { flip: sd > 0 });
+        const sd = l.x < 243 ? -1 : 1, py = LAD_TOP + 10, pe = l.x - sd * 4;
+        if (l.st === 'fill') { const n = 'c' + ((t * 10) | 0) % 3, top = py + 6, bot = cyL + 22 - l.lvl * 17, len = bot - top; S(c, 'kFx9', n, pe + sd * 4, top + len / 2, 0.2, { sy: len / (L9.size('kFx9', n)[1] * 0.2) }); }
+        if (has('kFx9', 'pipe')) { const [pw2, ph2] = L9.size('kFx9', 'pipe'), pk = 50 / pw2, seg = pw2 * pk - 4; for (let i = 0; i < 4; i++) S(c, 'kFx9', 'pipe', pe + sd * (seg / 2 + i * seg), py, pk, { flip: sd > 0 });
           for (let i = 0; i < 6; i++) { const u = (t * (l.st === 'fill' ? 0.9 : 0.25) + i / 6) % 1; S(c, 'kFx9', 'drops', pe + sd * (4 * seg) * (1 - u), py + Math.sin(i * 7 + t * 3), 0.05, { a: 0.85 }); } }
         // кадр ковша
         let fr = 'full', fr2 = null, fa = 0;
         if (l.st === 'fill') { const q = l.lvl * 3, i0 = Math.min(2, q | 0); fr = ['e', 'q1', 'q2'][i0]; fr2 = ['q1', 'q2', 'full'][i0]; fa = q - i0; }
         else if (l.st === 'tilt') fr = 't25'; else if (l.st === 'pour') fr = 'pour'; else if (l.st === 'thin') fr = 'thin'; else if (l.st === 'tE') fr = 'tE';
         SH(c, 'kLad9', fr, l.x, cyL, LAD_H); if (fr2 && fa > 0.02) SH(c, 'kLad9', fr2, l.x, cyL, LAD_H, { a: fa });
-        if (l.st === 'full' && (t * 3 | 0) % 2) SH(c, 'kFx9', 'drops', l.x - 4, LAD_TOP + 34, 10, { a: 0.6 });
+        if (l.st === 'full' && (t * 3 | 0) % 2) SH(c, 'kFx9', 'drops', l.x - 3, LAD_TOP + 26, 8, { a: 0.6 });
         // струя от носика до пола
-        if (l.st === 'pour' || l.st === 'thin') { const n = 'c' + ((t * 12) | 0) % 3, top = LAD_TOP + LAD_H - 12, len = GY - top, wk = l.st === 'pour' ? 0.46 : 0.18; S(c, 'kFx9', n, l.zx, top + len / 2, wk, { sy: len / (L9.size('kFx9', n)[1] * wk) }); }
+        if (l.st === 'pour' || l.st === 'thin') { const n = 'c' + ((t * 12) | 0) % 3, top = LAD_TOP + LAD_H - 9, len = GY - top, wk = l.st === 'pour' ? 0.34 : 0.14; S(c, 'kFx9', n, l.zx, top + len / 2, wk, { sy: len / (L9.size('kFx9', n)[1] * wk) }); }
         // стропа: шкив, трос, ручка
-        if (has('kSl9', 'rest')) { const fr3 = l.pull > 0.35 ? 'pull' : l.pull > 0 ? 'mid' : 'rest', [, sh3] = L9.size('kSl9', fr3), sk = 236 / sh3, cy3 = GY - 42 - (326 / 380 - 0.5) * 236;
-          const cut3 = cy3 - 236 / 2 + 236 * 0.31, sg = l.sl > 243 ? -1 : 1, off = { rest: 38, mid: 18, pull: 6 }[fr3] * sk * 0.5;     // трос пары держим на месте, кадры смещены
+        if (has('kSl9', 'rest')) { const fr3 = l.pull > 0.35 ? 'pull' : l.pull > 0 ? 'mid' : 'rest', [, sh3] = L9.size('kSl9', fr3), sk = SLH / sh3, cy3 = GY - 42 - (326 / 380 - 0.5) * SLH;
+          const cut3 = cy3 - SLH / 2 + SLH * 0.31, sg = l.sl > 243 ? -1 : 1, off = { rest: 38, mid: 18, pull: 6 }[fr3] * sk * 0.5;     // трос пары держим на месте, кадры смещены
           c.save(); c.beginPath(); c.rect(l.sl - 60, cut3, 120, 400); c.clip(); S(c, 'kSl9', fr3, l.sl - sg * off, cy3, sk, { flip: sg < 0 }); c.restore();     // без шкива: только трос и ручка (по схеме)
           if (has('kSl9', 'rope')) { const [, rh] = L9.size('kSl9', 'rope'), rk = 0.42, rs = 26.5 * rk * 0.5; const st = 184 * rk * 0.5; for (let y = cut3 + 4; y > P.cam.y - 60; y -= st) for (const q of [-1, 1]) S(c, 'kSl9', 'rope', l.sl + q * 23 * sk * 0.5 + rs, y - st / 2 - 4 * rk * 0.5, rk); }     // в кадре троса он занимает строки 100..288
           if (l.st === 'full' && Math.abs(P.x - l.sl) < 70) S(c, 'fxL9', 'spark', l.sl, GY - 48, 0.5 + Math.sin(t * 6) * 0.1, { add: 1, a: 0.6 }); }
@@ -310,7 +305,7 @@
     M.drawOver = (c, cx) => { const t = M.t; fog(c, t, 4, 230, 330, 14, 0.09, 2.6, 1.1, cx); };     // ближняя дымка у пола поверх всего
     M.drawHud = (c) => {     // шкала Семёна: 5 серий
       const b = M.boss; if (!b || M.cut === 1 && !M.started) return;
-      const x = 170, y = 340, w = 300; c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(x - 4, y - 14, w + 8, 24);
+      const x = 170, y = 24, w = 300;     // шкала сверху — котёл внизу не закрыт c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(x - 4, y - 14, w + 8, 24);
       G.text('СЕМЁН · ФАЗА ' + Math.min(5, b.ph), x, y - 11, { size: 8, color: b.slime > 0 ? '#7fff7f' : '#ff7070' });
       c.fillStyle = '#300'; c.fillRect(x, y, w, 7); c.fillStyle = b.slime > 0 ? '#5f5' : '#d33'; c.fillRect(x, y, w * Math.max(0, b.hp) / 100, 7);
       c.fillStyle = '#000'; for (let i = 1; i < 5; i++) c.fillRect(x + w * i / 5 - 1, y, 2, 7);

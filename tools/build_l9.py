@@ -882,6 +882,9 @@ if have('l9kfloor_1.jpg'):     # по схеме владельца: мости�
     _B = [(20, 20, 1150, 395), (20, 410, 715, 755), (785, 400, 1090, 755), (1180, 20, 1330, 755)]
     pack('kFl9', [trim(f) for f in delav(depurple([rgba_m('l9kfloor_1.jpg', b) for b in _B]))], 1.0, anchor='mid', names=['bridge', 'floor', 'pipe', 'ladder'])
 
+if have('l9kvat2_0.jpg'):     # правки владельца: целый котёл (виден корпус), тяжёлый мостик, новый пол
+    pack('kSet9', [trim(f) for f in delav(depurple([rgba_m('l9kvat2_0.jpg'), rgba_m('l9kbr2_0.jpg'), rgba_m('l9kfl2_0.jpg')]))], 0.5, anchor='mid', names=['vat', 'bridge', 'floor'])
+
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 
 if DBG:
