@@ -245,11 +245,12 @@ if have('l9dock_0.jpg'):
         d = np.minimum(np.minimum(xx, w - 1 - xx), np.minimum(yy, h - 1 - yy)).astype(np.float32)
         al = (np.clip(d / fe, 0, 1) * np.clip(ndimage.gaussian_filter(df.astype(np.float32), 2.5) * 1.6, 0, 1) * 255).astype(np.uint8)
         for (out, _), im in zip(group, ims):
-            if out.startswith('dkX'): im = mrx_screens(im, 1.0 if out == 'dkX0' else 0.8)
+            if out.startswith('dkX') and not have('l9dx2_0.jpg'): im = mrx_screens(im, 1.0 if out == 'dkX0' else 0.8)     # с l9dx2 Икс нарисован во Flow прямо в мониторе
             im.putalpha(Image.fromarray(al)); im.save(os.path.join(OUT, out + '.png'))
             DATA.setdefault('_bgp', {})[out] = 1; DATA.setdefault('dockOv', {})[out] = [box[0], box[1], w, h]
     dock_ov((('dkG1', 'l9dg1_1.jpg'), ('dkG2', 'l9dg2_0.jpg'), ('dkG3', 'l9dg3_1.jpg')), (930, 130, 1310, 720), 22)
-    dock_ov((('dkX0', 'l9dx_0.jpg'), ('dkX1', 'l9dx_1.jpg'), ('dkN0', 'l9dn_0.jpg'), ('dkN1', 'l9dn_1.jpg')), (692, 164, 868, 296), 6)
+    _dx = ('l9dx2_0.jpg', 'l9dx2_1.jpg') if have('l9dx2_1.jpg') else ('l9dx_0.jpg', 'l9dx_1.jpg')
+    dock_ov((('dkX0', _dx[0]), ('dkX1', _dx[1]), ('dkN0', 'l9dn_0.jpg'), ('dkN1', 'l9dn_1.jpg')), (692, 164, 868, 296), 6)
 if have('l9capout4_0.jpg'):     # капсула из погони (разбитое стекло): Валера на коленях, встаёт, перешагивает край; пустая капсула гаснет
     cx = cut('l9capout4_0.jpg', 'mf', 2, 4, clean=True)
     pack('capOut9b', cx, CAP_W / cx[5].width, names=['brake', 'kneel', 'stand', 'step', 'empty', 'off', 'smoke', 'dim'])
