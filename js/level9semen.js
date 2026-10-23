@@ -103,33 +103,75 @@
         if (T > D + 0.5) { this.fly = 0; this.done(); } }
       else if (a === 'morph') { this.vx = 0;     // превращение в одного из прошлых боссов
         if (this.stT < dt * 1.5) { Sound.play('zap'); G.shake(3, 0.3); for (let i = 0; i < 5; i++) P.fx.push({ t: 0, sh: 'kFx9', fr: [i % 2 ? 'st0' : 'st1'], x: this.x + rnd(-20, 20), y: this.y - rnd(10, 70), vx: rnd(-30, 30), vy: -20, s: 0.3, life: 0.7, fade: 1 }); }
-        if (this.stT > 0.45) { const f = FORMS[(Math.random() * FORMS.length) | 0]; this.form = f; this.formT = 3.6 + ph * 0.5; this.fcd = 0.6; this.act = 'form'; this.stT = 0; lv.say('СЕМЁН ПРЕВРАТИЛСЯ: ' + f.n + '!', 1.6); } }
-      else if (a === 'form') {     // в облике босса: свой ход и атака
-        const f = this.form, sp2 = f.sp * (1 + ph * 0.1); this.formT -= dt; this.fcd -= dt; this.fa = Math.max(0, (this.fa || 0) - dt);
-        const want = f.kind === 'throw' || f.kind === 'spores' ? P.x + (this.x < P.x ? -170 : 170) : P.x;
-        if (f.kind === 'charge') { if (!this.chg) { this.chg = Math.sign(P.x - this.x) || 1; } this.vx = this.chg * sp2; if (this.x <= 40 || this.x >= BR1 - 20) this.chg = -this.chg; this.dir = this.chg; }
-        else { this.vx = Math.abs(want - this.x) > 10 ? Math.sign(want - this.x) * sp2 : 0; this.dir = P.x < this.x ? -1 : 1; }
-        const near = Math.abs(P.x - this.x) < 46 && Math.abs(P.y - this.y) < 60;
-        if ((f.kind === 'charge' || f.kind === 'smash') && near && this.fcd <= 0) { this.fcd = 0.7; this.fa = 0.3; P.hurt(13, this.x); G.shake(3, 0.2); Sound.play('punch'); }
-        if (f.kind === 'kick') { if (near && this.fcd <= 0) { this.fcd = 0.8; this.fa = 0.35; this.fk = 'kick'; P.hurt(12, this.x); Sound.play('punch'); } else if (this.fcd <= 0) { this.fcd = 1.3 - ph * 0.12; this.fa = 0.35; this.fk = 'shoot'; M.eb(this.x + this.dir * 24, this.y - 52, this.dir * 320, 0, { kind: 'bolt', dmg: 8 }); Sound.play('zap', 0.4); } }
-        if (f.kind === 'throw' && this.fcd <= 0) { this.fcd = 1.1 - ph * 0.1; this.fa = 0.4; M.eb(this.x + this.dir * 16, this.y - 70, (P.x - this.x) * 0.9, -300, { kind: 'rocket', dmg: 10, grav: 0.55 }); Sound.play('throw', 0.6); }
-        if (f.kind === 'spores' && this.fcd <= 0) { this.fcd = 1.4 - ph * 0.12; this.fa = 0.5; for (let i = 0; i < 3; i++) M.eb(this.x, this.y - 60, this.dir * 120, -120 + i * 80, { kind: 'bolt', dmg: 7, home: 1, life: 3 }); Sound.play('zap', 0.5); }
-        if (this.formT <= 0) this.unmorph(); }
+        if (this.stT > 0.45) { const f = FORMS[(Math.random() * FORMS.length) | 0]; this.form = f; this.formT = 5 + ph * 0.6; this.fcd = 0.6; this.fm = 'walk'; this.fmT = 0; this.fjy = 0; this.fjv = 0; this.sniffed = 0; this.shots = 0; this.runDir = 0; this.rayR = null; this.act = 'form'; this.stT = 0; lv.say('СЕМЁН ПРЕВРАТИЛСЯ: ' + f.n + '!', 1.6); } }
+      else if (a === 'form') {     // в облике босса: его же приёмы (как в своих уровнях)
+        const f = this.form, k = f.kind, sp2 = f.sp * (1 + ph * 0.1), dx = P.x - this.x, adx = Math.abs(dx), near = adx < 46 && Math.abs(P.y - this.y) < 60;
+        this.formT -= dt; this.fmT += dt; this.fan = null;
+        const go = (m, an) => { this.fm = m; this.fmT = 0; this.fmN = 0; this.fan = an || null; }, face = () => { this.dir = dx < 0 ? -1 : 1; }, walkTo = (x, s) => { this.vx = Math.abs(x - this.x) > 10 ? Math.sign(x - this.x) * (s || sp2) : 0; };
+        if (this.fjy > 0 || this.fjv) { this.fjv += 1500 * dt; this.fjy = Math.max(0, this.fjy - this.fjv * dt); if (this.fjy <= 0) { this.fjv = 0; this.fjy = 0; } }
+        const m = this.fm || 'walk', T = this.fmT;
+        if (k === 'kesha') {     // Кеша: двоечка рукой и ногой, три выстрела и «патроны!», занюх для силы
+          if (m === 'walk') { walkTo(P.x - Math.sign(dx || 1) * 30); face(); this.fan = Math.abs(this.vx) > 1 ? 'run' : 'stand';
+            if (near && T > 0.3) go('punch', 'punch'); else if (adx > 140 && T > 0.8) go('aim', 'aim'); else if (!this.sniffed && this.hp < this.maxHp && T > 1.2 && Math.random() < dt) { this.sniffed = 1; go('sniff', 'sniff'); lv.say('СЕМЁН-КЕША: ЩА, ЗАНЮХНУ ДЛЯ СИЛЫ...', 1.4); } }
+          else if (m === 'punch') { this.vx = 0; this.fan = 'punch'; if (T > 0.15 && !this.fmN) { this.fmN = 1; Sound.play('punch'); if (near) P.hurt(9, this.x); }
+            if (T > 0.35) { this.fan = 'kick'; if (this.fmN === 1) { this.fmN = 2; Sound.play('punch'); if (adx < 54) { P.hurt(12, this.x); G.shake(3, 0.2); } } } if (T > 0.7) go('walk'); }
+          else if (m === 'aim') { this.vx = 0; face(); this.fan = 'aim'; if (T > 0.4 - ph * 0.04) go('shoot', 'shoot'); }
+          else if (m === 'shoot') { this.vx = 0; this.fan = 'shoot'; if (!this.fmN) { this.fmN = 1; this.shots = (this.shots || 0) + 1; M.eb(this.x + this.dir * 26, this.y - 50, this.dir * 380, 0, { kind: 'bolt', dmg: 9 }); Sound.play('shot', 0.6); }
+            if (T > 0.3) { if (this.shots < 3) go('aim', 'aim'); else { this.shots = 0; go('reload', 'shout'); lv.say('СЕМЁН-КЕША: ПАТРОНЫ! ГДЕ ПАТРОНЫ?!', 1.3); } } }
+          else if (m === 'reload') { this.vx = 0; this.fan = 'shout'; if (T > 1.4 - ph * 0.15) go('walk'); }
+          else if (m === 'sniff') { this.vx = 0; this.fan = 'sniff'; if (T > 1.6) { this.hp = Math.min(this.maxHp, this.hp + 3); Sound.play('pickup', 0.5); lv.say('У-У-УХ! БОДРИТ!', 1.2); this.formT += 1.5; go('walk'); } } }
+        else if (k === 'biker') {     // Байкер: носится от стены к стене с прыжками, радужный луч изо рта, бросок
+          if (m === 'walk') { if (!this.runDir) this.runDir = dx < 0 ? -1 : 1; if (this.x <= 40) this.runDir = 1; else if (this.x >= BR1 - 24) this.runDir = -1;
+            this.vx = this.runDir * (230 + ph * 25); this.dir = this.runDir; this.fan = this.fjy > 0 ? 'jump' : 'run';
+            if (!this.fjy && Math.random() < dt * 0.9) { this.fjv = -470; this.fjy = 0.01; }
+            if (!this.fjy && T > 1.6 && Math.random() < dt * 1.5) { this.vx = 0; if (Math.random() < 0.6) { go('rainbow', 'roar'); Sound.play('zap', 0.8); } else go('throw', 'throw'); } }
+          else if (m === 'rainbow') { this.vx = 0; face(); this.fan = 'roar'; const mx = this.x + this.dir * 12, my = this.y - 100, want = Math.atan2(P.y - 44 - my, P.x - mx);
+            if (this.ray == null || T < 0.05) this.ray = want; let da = want - this.ray; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI; this.ray += clamp(da, -1.1 * dt, 1.1 * dt);
+            this.rayR = T > 0.4 && T < 1.8 + ph * 0.2 ? { x0: mx, y0: my, ang: this.ray, len: 420 } : null;
+            if (this.rayR) { const ux = Math.cos(this.ray), uy = Math.sin(this.ray), px = P.x - mx, py = P.y - 40 - my, along = px * ux + py * uy, off = Math.abs(px * uy - py * ux);
+              if (along > 0 && along < 420 && off < 16 && (this.rayHit || 0) <= 0) { P.hurt(9, this.x); this.rayHit = 0.4; } }
+            this.rayHit = (this.rayHit || 0) - dt; if (T > 2.1 + ph * 0.2) { this.rayR = null; go('walk'); } }
+          else if (m === 'throw') { this.vx = 0; face(); this.fan = 'throw'; if (T > 0.3 && !this.fmN) { this.fmN = 1; M.eb(this.x + this.dir * 16, this.y - 70, dx * 0.9, -300, { kind: 'rocket', dmg: 10, grav: 0.55 }); Sound.play('throw', 0.6); } if (T > 0.7) go('walk'); } }
+        else if (k === 'vande') {     // Ванделорд: мухоморы из-под земли, веер, самонаводящиеся споры, кислотный дождь
+          if (m === 'walk') { walkTo(P.x + (this.x < P.x ? -180 : 180), 110); face(); this.fan = Math.abs(this.vx) > 1 ? 'walk' : 'idle';
+            if (T > 1.1 - ph * 0.1) { const r = Math.random(); if (r < 0.3) { go('quake', 'punchGround'); lv.say('ГРИБЫ, ВСТАВАЙТЕ!', 1.2); } else if (r < 0.55) go('volley', 'beam'); else if (r < 0.8) { go('spore', 'orbA'); lv.say('СПОРА ТЬМЫ!', 1.2); } else go('acid', 'skyArms'); } }
+          else if (m === 'quake') { this.vx = 0; this.fan = 'punchGround'; if (T > 0.35 && !this.fmN) { this.fmN = 1; G.shake(5, 0.3); Sound.play('boom', 0.8); M.quakes.push({ x0: this.x, dir: this.dir, sp: 230 + ph * 20, t: 0, next: 0, pops: [] }); } if (T > 0.8) go('walk'); }
+          else if (m === 'volley') { this.vx = 0; face(); this.fan = 'beam'; if (T > 0.35 && !this.fmN) { this.fmN = 1; const ang = Math.atan2(P.y - 44 - (this.y - 56), dx), n = 4 + ph; for (let i = 0; i < n; i++) { const a2 = ang + (i - (n - 1) / 2) * 0.17; M.eb(this.x + this.dir * 20, this.y - 56, Math.cos(a2) * 260, Math.sin(a2) * 260, { kind: 'bolt', dmg: 8 }); } Sound.play('zap', 0.8); } if (T > 0.8) go('walk'); }
+          else if (m === 'spore') { this.vx = 0; this.fan = 'orbA'; if (T > 0.5 && !this.fmN) { this.fmN = 1; for (let i = 0; i < (ph > 2 ? 3 : 2); i++) M.eb(this.x, this.y - 70, rnd(-60, 60), -90, { kind: 'spore', dmg: 10, home: 1, life: 4.5, draw: (c, e) => { if (Spr.sheets.proj6) Spr.drawC(c, 'proj6', 5, e.x, e.y, Math.atan2(e.vy, e.vx), 0.8); else SH(c, 'semP9', 'bolt', e.x, e.y, 16, { add: 1 }); } }); Sound.play('zap', 1); } if (T > 0.9) go('walk'); }
+          else if (m === 'acid') { this.vx = 0; this.fan = 'skyArms'; if (T > 0.5 && !this.fmN) { this.fmN = 1; for (let i = 0; i < 6 + ph * 2; i++) M.drops.push({ x: rnd(10, BR1), t: -i * 0.18 - 0.6, y: -40 }); M.drops.push({ x: P.x, t: -0.7, y: -40 }); } if (T > 1.0) go('walk'); } }
+        else if (k === 'chief') {     // главарь спецназа: двоечка, рывок, кувырок, очередь из автомата, граната, прыжок с ударом об пол
+          if (m === 'walk') { walkTo(adx > 200 ? P.x : P.x - Math.sign(dx || 1) * 30, sp2); face(); this.fan = Math.abs(this.vx) > 1 ? 'run' : 'stand';
+            if (near && T > 0.25) go('hit', 'punch'); else if (T > 0.7 && Math.random() < dt * 2.2) { const r = Math.random();
+              if (r < 0.3 && adx > 110) go('rush', 'run'); else if (r < 0.55) go('aim', 'aim'); else if (r < 0.75) go('nade', 'grenade'); else { go('slam', 'jump'); this.fjv = -620; this.fjy = 0.01; this.vx = dx * 1.2; Sound.play('jump', 0.6); } } }
+          else if (m === 'hit') { this.vx = 0; this.fan = 'punch'; if (T > 0.15 && !this.fmN) { this.fmN = 1; Sound.play('punch'); if (near) P.hurt(9, this.x); }
+            if (T > 0.35) { this.fan = 'kick'; if (this.fmN === 1) { this.fmN = 2; Sound.play('punch'); if (adx < 54) { P.hurt(13, this.x); G.shake(3, 0.2); this.hitN = (this.hitN || 0) + 1; } } }
+            if (T > 0.7) { if (this.hitN >= 2) { this.hitN = 0; go('roll', 'roll'); } else go('walk'); } }
+          else if (m === 'rush') { this.fan = 'run'; if (!this.fmN) { this.fmN = 1; this.chg = dx < 0 ? -1 : 1; lv.say('ВЗЯТЬ ЕГО!', 1); } this.dir = this.chg; this.vx = this.chg * (330 + ph * 30); if (near && (this.rushHit || 0) <= 0) { P.hurt(14, this.x); this.rushHit = 0.6; G.shake(4, 0.2); Sound.play('punch'); } this.rushHit = (this.rushHit || 0) - dt; if (T > 0.9 || this.x <= 30 || this.x >= BR1 - 16) go('walk'); }
+          else if (m === 'roll') { this.fan = 'roll'; this.vx = -this.dir * 300; if (T > 0.55) go('walk'); }
+          else if (m === 'aim') { this.vx = 0; face(); this.fan = 'aim'; if (T > 0.35) go('burst', 'shoot'); }
+          else if (m === 'burst') { this.vx = 0; this.fan = 'shoot'; const n = 3 + ph; if (this.fmN < n && T > this.fmN * 0.13) { this.fmN++; M.eb(this.x + this.dir * 30, this.y - 54, this.dir * 420, rnd(-20, 20), { kind: 'bolt', dmg: 7 }); Sound.play('shot', 0.5); } if (T > n * 0.13 + 0.3) go('walk'); }
+          else if (m === 'nade') { this.vx = 0; face(); this.fan = 'grenade'; if (T > 0.3 && !this.fmN) { this.fmN = 1; M.eb(this.x + this.dir * 16, this.y - 70, dx * 0.85, -330, { kind: 'rocket', dmg: 12, grav: 0.6 }); Sound.play('throw', 0.6); } if (T > 0.7) go('walk'); }
+          else if (m === 'slam') { this.fan = this.fjy > 0 ? 'jump' : 'land'; if (this.fjy <= 0 && T > 0.15) { this.vx = 0; G.shake(6, 0.35); Sound.play('boom', 0.8); for (const d of [-1, 1]) M.quakes.push({ x0: this.x, dir: d, sp: 300, t: 0, next: 0, pops: [], n: 4, dust: 1 }); go('walk'); } } }
+        if (this.fm !== 'roll') this.roll = 0;
+        if (this.formT <= 0 && !this.fjy) this.unmorph(); }
       else if (a === 'invis') { this.invT = 2 + ph * 0.6; Sound.play('zap', 0.4); this.done(); this.cd = 0.2; }
       else if (a === 'rain') { this.vx = 0;     // дождь из жижи по всей арене (тени-предупреждения)
         if (!this.shot && this.stT > 0.5) { this.shot = 1; const n = 8 + ph * 4; for (let i = 0; i < n; i++) M.drops.push({ x: rnd(10, VAT_R - 10), t: -i * (0.2 - ph * 0.02) - 0.6, y: -40 }); M.drops.push({ x: P.x, t: -0.7, y: -40 }); }
         if (this.stT > 0.9) this.done(); }
       this.x = this.fly > 0.3 ? clamp(this.x + this.vx * dt, 24, VAT_R - 20) : clamp(this.x + this.vx * dt, 24, BR1 - 12);     // по земле — только пол и мостик; над котлом — лишь в полёте
       if (this.fly < 0.3 && this.x > BR1 - 12) this.x = Math.max(BR1 - 12, this.x - 300 * dt);
-      this.y = GY - this.fly * 120 - this.hop * 18;
+      this.y = GY - this.fly * 120 - this.hop * 18 - (this.fjy || 0);
     }
-    unmorph() { const P = LP(); this.form = null; this.chg = 0; this.morphCd = 9 - this.ph; Sound.play('zap', 0.5);
+    unmorph() { const P = LP(); this.form = null; this.fjy = 0; this.fjv = 0; this.rayR = null; this.roll = 0; this.fm = null; this.chg = 0; this.morphCd = 9 - this.ph; Sound.play('zap', 0.5);
       for (let i = 0; i < 5; i++) P.fx.push({ t: 0, sh: 'kFx9', fr: [i % 2 ? 'st0' : 'st1'], x: this.x + rnd(-20, 20), y: this.y - rnd(10, 70), vx: rnd(-30, 30), vy: -20, s: 0.3, life: 0.7, fade: 1 });
       if (this.act === 'form') this.done(); }
     drawForm(c) {     // облик прошлого босса — спрайты из прошлых уровней
       const f = this.form, t = this.t, mv = Math.abs(this.vx) > 1, atk = this.fa > 0, o = { scale: f.sc, alpha: this.vis };
-      if (f.set) Spr.drawAnim(c, f.set, atk ? (this.fk && f.set === 'kesha' ? this.fk : f.atk) : mv ? f.walk : f.idle, t, this.x, this.y + 1, this.dir, o);
-      else { const fr = atk ? f.atkF : mv ? f.walkF[(t * 8 | 0) % f.walkF.length] : f.walkF[0]; Spr.draw(c, f.sheet, fr, this.x, this.y + 1, this.dir * (f.flip ? -1 : 1), o); }
+      if (this.rayR && L4.drawRay) { c.save(); c.globalAlpha = 0.85 + Math.sin(t * 30) * 0.15; L4.drawRay(c, this.rayR, 0, 0, 0.3); c.restore(); }     // радуга Байкера
+      if (f.set) Spr.drawAnim(c, f.set, this.fan || (mv ? f.walk : f.idle), t, this.x, this.y + 1, this.dir, o);
+      else { const fr = atk || this.roll ? f.atkF : mv ? f.walkF[(t * 8 | 0) % f.walkF.length] : f.walkF[0];
+        if (this.roll) { c.save(); c.translate(this.x, this.y - 30); c.rotate(this.dir * -this.roll * Math.PI * 2); Spr.draw(c, f.sheet, fr, 0, 30, this.dir, o); c.restore(); }
+        else Spr.draw(c, f.sheet, fr, this.x, this.y + 1, this.dir * (f.flip ? -1 : 1), o); }
       if (this.formT > 0 && this.formT < 0.6 && (t * 14 | 0) % 2) SH(c, 'semB9', 'laugh', this.x, this.y + 1, 86, { flip: this.dir < 0, a: 0.5 });     // скоро вернётся в себя
     }
     done() { this.act = 'run'; this.stT = 0; this.cd = Math.max(0.15, 1.25 - this.ph * 0.22) + rnd(0, 0.35); this.ext = 0;
@@ -162,11 +204,14 @@
   };
 
   // облики прошлых боссов (спрайты прошлых уровней): Кеша, Байкер, Ванделорд, Королева тараканов, Главарь спецназа
+  if (!Spr.ANIM.chief9) { const A = (sh, fr, fps = 8) => ({ fr: fr.map(i => [sh, i]), fps }), r = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);     // главарь спецназа из ур.7
+    Spr.ANIM.chief9 = { run: A('boss4a', r(0, 7), 11), shoot: A('boss4a', [8, 9], 10), roll: A('boss4a', [11]), aim: A('boss4a', [12]), grenade: A('boss4a', [18]),
+      stand: A('boss4b', [0, 1], 2), taunt: A('boss4b', [2]), prejump: A('boss4b', [4]), jump: A('boss4b', [5]), punch: A('boss4b', [6, 7], 8), kick: A('boss4b', [8]), land: A('boss4b', [10]) }; }
   const FORMS = [
-    { n: 'КЕША', set: 'kesha', idle: 'stand', walk: 'run', atk: 'kick', sc: 1, sp: 150, kind: 'kick' },
-    { n: 'БАЙКЕР', set: 'biker', idle: 'stand', walk: 'run', atk: 'throw', sc: 1, sp: 120, kind: 'throw' },
-    { n: 'ВАНДЕЛОРД', set: 'vande', idle: 'stand', walk: 'run', atk: 'beam', sc: 1, sp: 130, kind: 'spores' },
-    { n: 'ГЛАВАРЬ СПЕЦНАЗА', sheet: 'boss4', walkF: [0, 1], atkF: 2, sc: 0.36, sp: 170, kind: 'smash' },
+    { n: 'КЕША', set: 'kesha', idle: 'stand', walk: 'run', atk: 'kick', sc: 1, sp: 150, kind: 'kesha' },
+    { n: 'БАЙКЕР', set: 'biker', idle: 'stand', walk: 'run', atk: 'throw', sc: 1, sp: 120, kind: 'biker' },
+    { n: 'ВАНДЕЛОРД', set: 'vande', idle: 'stand', walk: 'run', atk: 'beam', sc: 1, sp: 130, kind: 'vande' },
+    { n: 'ГЛАВАРЬ СПЕЦНАЗА', set: 'chief9', idle: 'stand', walk: 'run', sc: 0.95, sp: 170, kind: 'chief' },
   ];
   // иллюзии: враги прошлых уровней; убитые — растворяются, как мираж
   const ILLS = [
@@ -209,7 +254,7 @@
       if (!Sem) Sem = mkSem();
       G.portraits = G.portraits || {};
       for (const k of ['semen', 'semen2']) if (!G.portraits[k]) G.loadImage('assets/spr/p_' + k + '.png').then(im => G.portraits[k] = im, () => {});
-      M.t = 0; M.strikes = []; M.drops = []; M.cut = 1; M.started = 0; M.sitFr = null; M.semRot = 0; M.semDy = 0; M.melt = 0; M.boil = 0;
+      M.t = 0; M.strikes = []; M.drops = []; M.quakes = []; M.cut = 1; M.started = 0; M.sitFr = null; M.semRot = 0; M.semDy = 0; M.melt = 0; M.boil = 0;
       M.lad = LADLES.map(l => { const d = l.sl < l.x ? 1 : -1; return { ...l, d, zx: l.x + d * LAD_LIP, st: 'full', t: 0, pull: 0, lvl: 1 }; });     // носик — в сторону от стропы
       M.caps = []; M.capT = 0.5; M.bubs = []; M.illOn = 0; M.illT = 2; M.dart = null; M.dartPend = 0;
       if (!KEEP) PH_SAVE = 1; KEEP = 0; if (PH_SAVE >= 3) { M.illOn = 1; M.illT = 3; } M.boss = new Sem(M, 760, GY); M.boss.ph = PH_SAVE; M.boss.hp = 100 - (PH_SAVE - 1) * 20; P.foes.push(M.boss);
@@ -226,7 +271,7 @@
     };
     M.finish = () => { Scene.run(M.endScript, () => LP().lv.next()); };
     M.endScript = function* () {     // Семён шатается к щели и падает в котёл; Валера садится на пирс
-      const P = LP(), D = 0.016, b = M.boss; M.cut = 1; Scene.dialogTop = true; P.foes = P.foes.filter(f => f === b); P.ebul = []; M.strikes = []; M.drops = [];
+      const P = LP(), D = 0.016, b = M.boss; M.cut = 1; Scene.dialogTop = true; P.foes = P.foes.filter(f => f === b); P.ebul = []; M.strikes = []; M.drops = []; M.quakes = [];
       b.fly = 0; b.hop = 0; b.y = GY; b.vis = 1; b.ext = 0; b.slime = 0; b.auraT = 0;
       const gx = BR1 + 16; b.dir = 1; M.camT = W - 640;     // шатается к краю мостика и падает в котёл
       const spd = Math.max(60, Math.abs(gx - b.x) / 2.4); for (let t = 0; t < 4 && Math.abs(b.x - gx) > 3; t += D) { b.x += b.dir * spd * D; M.semRot = Math.sin(t * 9) * 0.16; M.semFr = (t * 4 | 0) % 2 ? 'stagger' : 'kneel'; yield D; }
@@ -261,6 +306,11 @@
         else if (l.st === 'fill') { l.lvl = clamp(l.t / REFILL, 0, 1); if (l.lvl >= 1) { l.st = 'full'; l.t = 0; Sound.play('confirm', 0.4); } } }
       for (const s of M.strikes) { s.t += dt; if (!cut && s.t > 0.7 && s.t < 0.95 && Math.abs(P.x - s.x) < 18) P.hurt(12, s.x); if (s.t > 0.7 && s.t - dt <= 0.7) { Sound.play('zap', 0.6); G.shake(2, 0.15); } }
       M.strikes = M.strikes.filter(s => s.t < 1.0);
+      for (const q of M.quakes || []) { q.t += dt; const hd = q.sp * q.t;     // мухоморы из-под земли бегут по полу (приём Ванделорда / волна главаря)
+        while (q.next * 30 < hd && (!q.n || q.next < q.n)) { const x = q.x0 + q.dir * (36 + q.next * 30); q.next++; if (x > 6 && x < BR1 + 4) { q.pops.push({ x, t: 0 }); if (q.dust) P.fx.push({ t: 0, sh: 'fxA9', fr: ['boom0', 'boom1', 'boom2'], x, y: GY - 10, s: 0.35, life: 0.3, add: 1 }); if (q.next % 2) Sound.play('punch', 0.3); } }
+        for (const p of q.pops) { p.t += dt; if (!cut && !p.hit && p.t > 0.08 && p.t < 0.45 && Math.abs(P.x - p.x) < 16 && P.y > GY - 40) { p.hit = 1; P.hurt(9, p.x); } }
+        q.pops = q.pops.filter(p => p.t < 0.8); q.dead = q.pops.length === 0 && (q.n ? q.next >= q.n : hd > 700); }
+      M.quakes = (M.quakes || []).filter(q => !q.dead);
       for (const d of M.drops) { d.t += dt; if (d.t > 0) { d.y += (300 + d.t * 600) * dt; const fy = inPit(d.x) ? GY + 44 : GY - 4; if (d.y > fy) { d.dead = 1; P.fx.push({ t: 0, sh: 'kFx9', fr: ['spl'], x: d.x, y: fy, s: 0.2, life: 0.3 }); if (!cut && Math.abs(P.x - d.x) < 16 && Math.abs(P.y - GY) < 30) P.hurt(6, d.x); } } }
       M.drops = M.drops.filter(d => !d.dead);
       for (const e of P.ebul) if (e.home && e.t > 0.3 && e.t < 2.4) { const ang = Math.atan2(P.y - 40 - e.y, P.x - e.x), sp = Math.hypot(e.vx, e.vy) + 140 * dt, cur = Math.atan2(e.vy, e.vx); let da = ang - cur; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI; const na = cur + clamp(da, -2.2 * dt, 2.2 * dt); e.vx = Math.cos(na) * Math.min(330, sp); e.vy = Math.sin(na) * Math.min(330, sp); }
@@ -302,7 +352,7 @@
     };
     // мини-катсцена: Семён стреляет в Валеру дротиком — начинаются галлюцинации
     M.dartScript = function* () {
-      const P = LP(), b = M.boss, D = 0.016; M.cut = 1; Scene.dialogTop = true; P.ebul = []; M.strikes = []; M.drops = [];
+      const P = LP(), b = M.boss, D = 0.016; M.cut = 1; Scene.dialogTop = true; P.ebul = []; M.strikes = []; M.drops = []; M.quakes = [];
       if (b.form) b.unmorph(); b.fly = 0; b.y = GY; b.act = 'bolt'; b.stT = 0; b.dir = P.x < b.x ? -1 : 1; b.invT = 0; b.vis = 1; P.st = 'stand';
       yield 0.5; Sound.play('throw');
       const [fx, fy] = b.fist(); M.dart = { x: fx + b.dir * 20, y: fy, vx: b.dir * 420 };
@@ -384,6 +434,8 @@
           if (l.st === 'full' && Math.abs(P.x - l.sl) < 70) S(c, 'fxL9', 'spark', l.sl, hy - 6, 0.4 + Math.sin(t * 6) * 0.1, { add: 1, a: 0.6 }); }
         if (l.st === 'fill') G.text(Math.ceil(REFILL * (1 - l.lvl)) + '', l.sl, GY - 100, { align: 'center', size: 8, color: '#7fe0c0', outline: true });
       }
+      for (const q of M.quakes || []) if (!q.dust) for (const p of q.pops) { const k = p.t, fr = k < 0.08 ? 6 : k < 0.18 ? 7 : 8, rise = k < 0.18 ? k / 0.18 : 1, ff = Spr.frame && Spr.frame('vfx6', fr), h = ff ? ff[3] / 2 : 40;
+        c.save(); c.globalAlpha = k > 0.55 ? Math.max(0, 1 - (k - 0.55) / 0.25) : 1; Spr.drawC(c, 'vfx6', fr, p.x, GY + 6 - h * 0.5 * rise, 0, 0.75); c.restore(); }
       // молнии: метка на полу, затем разряд сверху
       for (const s of M.strikes) { if (s.t < 0) continue; if (s.t < 0.7) { if ((t * 14 | 0) % 2) S(c, 'fxZ9', 'sp0', s.x, GY - 4, 0.3 + s.t * 0.4, { add: 1 }); }
         else if (has('semP9', 'light')) { const [, lh] = L9.size('semP9', 'light'), k = 26 / L9.size('semP9', 'light')[0]; const top = P.cam.y - 4, hh = GY - top; S(c, 'semP9', 'light', s.x, top + hh / 2, k, { add: 1, sy: hh / (lh * k), flip: (t * 20 | 0) % 2 }); } }
