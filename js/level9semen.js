@@ -9,8 +9,8 @@
 (() => {
   const S = L9.spr, clamp = L9.clamp, rnd = L9.rnd, LP = () => L9.PARTS.lab;
   const W = 640, GY = 330, BR0 = 110, BR1 = 420, LAD_X = 22, VAT_X0 = 92, REFILL = 9, DMG_K = 0.85;     // схема владельца: слева бетонный пол с лестницей, мостик на опорах над котлом, справа — открытый котёл
-  const LAD_H = 80, LAD_TOP = GY - 176, LAD_LIP = 20, PUL_Y = GY - 168, VAT_R = 600;     // чаны под потолком; блок стропы у потолка     // ковш: высота кадра, верх (крюк), смещение струи от центра
-  const LADLES = [{ x: 165, sl: 124 }, { x: 324, sl: 377 }];
+  const LAD_H = 80, LAD_TOP = GY - 218, LAD_LIP = 20, PUL_Y = GY - 212, VAT_R = 600;     // чаны под потолком; блок стропы у потолка     // ковш: высота кадра, верх (крюк), смещение струи от центра
+  const LADLES = [{ x: 280, sl: 336 }];     // по просьбе владельца — один чан со стропой
   const MID_H = 250, MK = MID_H / 768;     // средний план: высота слоя и масштаб пикселей исходника
   const MID_VATS = [[146, 350], [778, 330]], MID_CASC = [], MID_W = 1236;
   const has = (sh, fr) => { const d = L9D[sh]; return d && (!fr || (d.n || []).includes(fr)); };
@@ -260,7 +260,9 @@
       const t = M.t;
       // пол и мостик — одна картинка Flow строго сбоку (мостик без перил, труба с жижей из пола); затем котёл перекрывает низ опор
       const vy = GY + 50;     // верх края котла
-      if (has('kFB9', 'fb')) { const [fw0, fh0] = L9.size('kFB9', 'fb'), kb = (BR1 - BR0) / (fw0 * 376 / 646), w0 = fw0 * kb, h0 = fh0 * kb; S(c, 'kFB9', 'fb', BR1 - w0 / 2, GY - 2 + h0 / 2, kb); }
+      if (has('kFB9', 'fb')) { const [fw0, fh0] = L9.size('kFB9', 'fb'), kb = (BR1 - BR0) / (fw0 * 374 / 646), w0 = fw0 * kb, h0 = fh0 * kb, ex = BR1 - w0 + w0 * 272 / 646;     // ex — правый край пола в картинке
+        const part = (x0, x1) => { c.save(); c.beginPath(); c.rect(x0, GY - 40, x1 - x0, 400); c.clip(); S(c, 'kFB9', 'fb', BR1 - w0 / 2, GY - 2 + h0 / 2, kb); c.restore(); };
+        part(ex, BR1 + 20); part(-60, ex); }     // мостик выходит из стены пола, а не наплывает на неё
       if (has('kSet9', 'vat')) { const vw = 470, [fw, fh] = L9.size('kSet9', 'vat'), k = vw / fw, vh = fh * k; S(c, 'kSet9', 'vat', 370, vy - vh * 0.13 + vh / 2, k); }
       for (let i = 0; i < (M.boil ? 9 : 5); i++) { const u = (t * (M.boil ? 1.4 : 0.5) + i * 0.27) % 1; S(c, 'kFx9', i % 2 ? 'st0' : 'st1', 160 + i * 52 + Math.sin(i * 3 + t) * 10, vy - 4 - u * 70, 0.15 + u * 0.35, { a: 0.5 * (1 - u) }); }
       for (let i = 0; i < 4; i++) { const u = (t * 0.8 + i * 0.41) % 1; if (u < 0.25) S(c, 'kFx9', 'spl', 170 + ((i * 131 + (t * 0.8 | 0) * 77) % 400), vy + 2, 0.14 + u * 0.4, { a: 1 - u * 4 }); }
