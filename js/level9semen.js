@@ -25,6 +25,8 @@
     for (let y = y0 - segH + ((t * sp * 60) % segH); y < y1; y += segH - 0.5) c.drawImage(im, f[0], sy, f[2], sh, Math.round(x - w / 2), y, w, segH);
     c.restore();
   };
+  WHO.semen = WHO.semen || { name: 'СЕМЁН', color: '#e05050', voice: 120 };
+  WHO.semen2 = WHO.semen2 || WHO.semen;
   let Sem = null, PH_SAVE = 1, KEEP = 0;     // после смерти бой продолжается с достигнутой фазы
   const F = () => L9.FOES;
 
@@ -257,6 +259,7 @@
       M.t = 0; M.strikes = []; M.drops = []; M.quakes = []; M.cut = 1; M.started = 0; M.sitFr = null; M.semRot = 0; M.semDy = 0; M.melt = 0; M.boil = 0;
       M.lad = LADLES.map(l => { const d = l.sl < l.x ? 1 : -1; return { ...l, d, zx: l.x + d * LAD_LIP, st: 'full', t: 0, pull: 0, lvl: 1 }; });     // носик — в сторону от стропы
       M.caps = []; M.capT = 0.5; M.bubs = []; M.illOn = 0; M.illT = 2; M.dart = null; M.dartPend = 0;
+      M.reveal = !KEEP; M.fig = null; M.cloak = null; M.fb = null;     // разоблачение — только при первом входе, после смерти бой сразу
       if (!KEEP) PH_SAVE = 1; KEEP = 0; if (PH_SAVE >= 3) { M.illOn = 1; M.illT = 3; } M.boss = new Sem(M, 760, GY); M.boss.ph = PH_SAVE; M.boss.hp = 100 - (PH_SAVE - 1) * 20; P.foes.push(M.boss);
       M.picks = [['kefir', 270, GY], ['rocket', 60, GY]].map(([kind, x, y]) => ({ kind, x, y, t: 0 })); M.pickT = 22;
       P.x = 60; P.dir = 1; P.hide = 0; P.melted = 0;
@@ -265,7 +268,41 @@
       draw: (c, e) => { const fr = e.kind === 'rocket' ? 'rocket' : 'bolt'; SH(c, 'semP9', fr, e.x, e.y, fr === 'rocket' ? 12 : 16, { rot: Math.atan2(e.vy, e.vx), add: fr === 'bolt' ? 1 : 0 }); },
       onLand: e => { LP().fx.push({ t: 0, sh: 'fxA9', fr: ['boom0', 'boom1', 'boom2'], x: e.x, y: e.y - 6, s: e.kind === 'rocket' ? 0.5 : 0.25, life: 0.3, add: 1 }); } }, o));
     // ---------- сцены ----------
+    const throwMask = (fr, x) => { const P = LP(); P.fx.push({ t: 0, sh: 'maskZ9', fr: [fr], x, y: GY - 72, vx: 70, vy: -300, g: 640, s: 1, life: 1.5, rot: 0.4 }); Sound.play('punch'); G.shake(2, 0.15); };
+    const puff = (x, y, n = 6) => { const P = LP(); for (let i = 0; i < n; i++) P.fx.push({ t: 0, sh: 'fxZ9', fr: ['sm1'], x: x + rnd(-24, 24), y: y + rnd(-50, 10), vx: rnd(-20, 20), vy: rnd(-40, -10), g: 0, s: rnd(0.35, 0.6), life: 1.1, fade: 1 }); };
+    M.revealScript = function* () {     // разоблачение (дословно по ТЗ, перенесено из части «закрытый завод»): Икс -> Кеша -> Граблионок -> Семён; речь с флешбеками
+      const P = LP(), D = 0.016, b = M.boss, MEET = 250; Scene.dialogTop = false;
+      b.vis = 0; b.x = 900; P.vx = 0; P.st = 'stand'; P.dir = 1; P.inv = 0;     // неуязвимость в сцене не убывает — иначе Валера мигает всю сцену
+      const f = M.fig = { sh: 'maskZ9', fr: 'hood', x: MEET + 130, a: 0, dir: -1 };
+      for (let t = 0; t < 1.2; t += D) { f.a = t / 1.2 * 0.55; yield D; }
+      yield* Scene.say('mrx', 'Ну, пора бы раскрыть все карты.', null);
+      Sound.play('door', 0.5); while (f.x > MEET) { f.x -= 55 * D; f.a = Math.min(1, f.a + D * 0.6); f.walk = (f.walk || 0) + D; yield D; } f.walk = 0; f.a = 1;
+      yield 0.4; Sound.play('zap'); G.flash(0.12, '#8f8'); puff(f.x, GY - 40, 8); M.cloak = { x: f.x + 6 }; f.fr = 'k0'; yield 0.9;
+      yield* Scene.say('valera', 'Кеша, не может быть!', null);
+      f.fr = 'k1'; yield 0.9; f.fr = 'k0';
+      P.st = 'run'; while (P.x < f.x - 64) { P.x += 120 * D; yield D; } P.st = 'butt'; P.stT = 0; yield 0.12;
+      throwMask('mk', f.x); f.fr = 'g0'; puff(f.x, GY - 70, 3); yield 0.4; P.st = 'stand'; yield 0.4;
+      yield* Scene.say('valera', 'Это всё был ты?', null);
+      f.fr = 'g1'; yield 1.0; f.fr = 'g0'; yield 0.2;
+      P.st = 'butt'; P.stT = 0; yield 0.12; throwMask('mg', f.x); f.sh = 'semZ9'; f.fr = 'talk'; puff(f.x, GY - 70, 3); yield 0.4; P.st = 'stand';
+      for (let t = 0; t < 0.6; t += D) { P.x -= 90 * D; yield D; }
+      yield 0.5; f.fr = 'laugh'; yield 0.6; f.fr = 'talk';
+      yield* Scene.say('valera', 'Семён, это ты? Ты же большой человек в приёмке завода!', null);
+      M.fb = { img: 'zfbA', t: 0 }; f.fr = 'talk';
+      yield* Scene.say('semen', 'Да, Валера, я всё это время был рядом, изучал тебя, смотрел твои возможности, пытался сломать тебя, унизить, совратить!', null);
+      while (M.fb.t < 7.2) yield D; M.fb = null; f.fr = 'point';
+      yield* Scene.say('semen', 'Я устал быть пешкой на этом заводе, я договорился со столицей, что принесу им все деньги этого города!', null);
+      f.fr = 'fist'; G.shake(2, 0.3);
+      yield* Scene.say('semen2', 'Звёзды на погонах меня изменили!', null);
+      f.fr = 'talk'; M.fb = { img: 'zfbB', t: 0 };
+      yield* Scene.say('semen', 'У меня созрел план, нужно было, правда, Граблионка и Кешу подчинить и устранить…', null);
+      while (M.fb.t < 7.2) yield D; M.fb = null; f.fr = 'laugh'; Sound.play('confirm', 0.5); yield 1.0;
+      yield* Scene.say('valera', 'Я не дам сбыться твоей мечте! Я не продам свою родину!', null);
+      f.fr = 'fist'; yield 0.6;
+      b.x = f.x; b.dir = P.x < b.x ? -1 : 1; b.vis = 1; M.fig = null; M.cloak = null;     // дальше — сам босс на месте фигуры
+    };
     M.introScript = function* () {
+      if (M.reveal) { M.reveal = 0; yield* M.revealScript(); }
       const P = LP(), b = M.boss; Scene.dialogTop = true; P.st = 'stand';
       b.act = 'roar'; b.stT = 0; b.auraT = 1.6; yield 0.3; M.camT = 320; G.shake(3, 0.5); Sound.play('boom', 0.5); yield 1.4; M.camT = null; yield 0.3;
     };
@@ -286,7 +323,7 @@
       yield* Scene.say('semen2', 'Валера, я тебе не какой-то там проходнячок.', null);
       yield 0.6;
     };
-    M.cutUpdate = (dt, P) => { P.t += dt; M.t += dt; M.mech(dt, P, true); M.bgUpd(dt);
+    M.cutUpdate = (dt, P) => { P.t += dt; M.t += dt; if (M.fb) M.fb.t += dt; M.mech(dt, P, true); M.bgUpd(dt);
       if (M.camT != null) P.cam.x += (clamp(M.camT, 0, W - 640) - P.cam.x) * Math.min(1, dt * 2.5); else P.camera(dt); P.updFx(dt); };
     // всплеск в котле
     M.splash = (x, s = 1) => { const P = LP(); P.fx.push({ t: 0, sh: 'kCap9', fr: ['splash'], x, y: GY + 44, s: 0.5 * s, life: 0.6 });
@@ -393,6 +430,8 @@
       fog(c, t, 6, 120, 260, 9, 0.12, 2.0, 0.35, cx);
     };
     M.drawMid = (c, P) => {
+      if (M.cloak) SH(c, 'maskZ9', 'cloak', M.cloak.x, GY + 2, 22);
+      { const f = M.fig; if (f) { const bob = f.walk ? Math.abs(Math.sin(f.walk * 8)) * 2 : 0, h = f.sh === 'semZ9' ? 86 : f.fr === 'hood' ? 92 : 84; SH(c, f.sh, f.fr, f.x, GY + 2 - bob, h, { flip: f.sh === 'semZ9', a: f.a ?? 1 }); } }
       const t = M.t;
       // пол и мостик — одна картинка Flow строго сбоку (мостик без перил, труба с жижей из пола); затем котёл перекрывает низ опор
       const vy = GY + 34;     // верх края котла
@@ -442,7 +481,16 @@
       for (const k of M.picks) { const bob = Math.sin(k.t * 4) * 2; if (k.kind === 'pelmeni' || k.kind === 'kefir' || k.kind === 'pies') Art.item(c, k.kind, k.x, k.y - 14 + bob, 0, 1); else { S(c, 'fxL9', 'spark', k.x, k.y - 14, 0.4, { add: 1 }); S(c, 'pick9', k.kind, k.x, k.y - 16 + bob, 1); } }
     };
     M.drawFront = () => {};
-    M.drawOver = (c, cx) => { const t = M.t; if (M.illOn && has('kDart9', 'h0')) for (let i = 0; i < 3; i++) { const u = (t * 0.07 + i * 0.33) % 1; S(c, 'kDart9', i % 2 ? 'h0' : 'h1', ((i * 230 + t * 18) % 760) - 60, 60 + i * 90 + Math.sin(t + i) * 20, 1.6, { a: 0.07 + 0.04 * Math.sin(t * 2 + i), add: 1, rot: t * 0.2 * (i % 2 ? 1 : -1) }); } fog(c, t, 4, 230, 330, 14, 0.09, 2.6, 1.1, cx); };     // ближняя дымка у пола поверх всего
+    M.drawFb = (c) => {     // флешбеки: панели комикса по очереди, медленный наезд, затемнение по краям
+      const fb = M.fb, im = fb && L9.img[fb.img]; if (!im) return;
+      const t = fb.t, i = Math.min(3, t / 1.8 | 0), u = (t % 1.8) / 1.8, a = clamp(Math.min(t / 0.4, (7.6 - t) / 0.4), 0, 1);
+      const pw = im.width / 2, ph = im.height / 2, sx = (i % 2) * pw, sy = (i / 2 | 0) * ph, z = 1.04 + u * 0.06, dw = 640 * z, dh = 360 * z;
+      c.save(); c.globalAlpha = a; c.fillStyle = '#000'; c.fillRect(0, 0, 640, 360);
+      c.drawImage(im, sx + 4, sy + 4, pw - 8, ph - 8, 320 - dw / 2 - (i % 2 ? 1 : -1) * u * 10, 180 - dh / 2, dw, dh);
+      const g = c.createRadialGradient(320, 180, 120, 320, 180, 380); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(10,6,0,0.75)'); c.fillStyle = g; c.fillRect(0, 0, 640, 360);
+      c.restore();
+    };
+    M.drawOver = (c, cx) => { M.drawFb(c); const t = M.t; if (M.illOn && has('kDart9', 'h0')) for (let i = 0; i < 3; i++) { const u = (t * 0.07 + i * 0.33) % 1; S(c, 'kDart9', i % 2 ? 'h0' : 'h1', ((i * 230 + t * 18) % 760) - 60, 60 + i * 90 + Math.sin(t + i) * 20, 1.6, { a: 0.07 + 0.04 * Math.sin(t * 2 + i), add: 1, rot: t * 0.2 * (i % 2 ? 1 : -1) }); } fog(c, t, 4, 230, 330, 14, 0.09, 2.6, 1.1, cx); };     // ближняя дымка у пола поверх всего
     M.drawHud = (c) => {     // шкала Семёна: 5 серий
       const b = M.boss; if (!b || M.cut === 1 && !M.started) return;
       const x = 420, y = 24, w = 200; c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(x - 4, y - 14, w + 8, 24);     // шкала сверху — котёл внизу не закрыт
