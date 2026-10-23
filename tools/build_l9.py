@@ -964,6 +964,23 @@ if have('l9zdie2_0.jpg'):     # падение Семёна (правка его
 if have('l9kmid2_1.jpg'):     # рельс монорельса (чистый отрезок без ферм и тележек) — тайлится по горизонтали, на нём едут капсулы
     pack('kRail9', depurple([rgba_m('l9kmid2_1.jpg', (586, 41, 715, 84))]), 1.0, anchor='mid', names=['rail'])
 
+# ---------- 2026-10-24: зал славы v3 (эскиз владельца): стена, пол, 3 телевизора с Иксом, 7 колб с уменьшенными боссами ----------
+if have('l9hwall_0.jpg'):
+    _wl = seamless(Image.open(os.path.join(SRC, 'l9hwall_0.jpg')).convert('RGB'), 160); _wl.save(os.path.join(OUT, 'haWall.jpg'), quality=90); DATA['_bg']['haWall'] = {'w': _wl.width, 'h': _wl.height}
+    if have('l9hfl3_0.jpg'):
+        _f3 = seamless(Image.open(os.path.join(SRC, 'l9hfl3_0.jpg')).convert('RGB'), 160); _f3.save(os.path.join(OUT, 'haFloor3.jpg'), quality=90); DATA['_bg']['haFloor3'] = {'w': _f3.width, 'h': _f3.height}
+    _tv = depurple(cut('l9htv4_0.jpg', 'm', 1, 2, clean='edge')); _t0 = np.asarray(_tv[0]).copy(); _r, _g, _b2 = [_t0[..., i].astype(int) for i in range(3)]
+    _gr = (_g > 150) & (_r < 140) & (_b2 < 150) & (_t0[..., 3] > 0); _ys, _xs = np.where(_gr); _H0, _W0 = _gr.shape
+    _scr = [float(_xs.min() / _W0), float(_ys.min() / _H0), float((_xs.max() + 1 - _xs.min()) / _W0), float((_ys.max() + 1 - _ys.min()) / _H0)]
+    _t0[_gr, 0] = 4; _t0[_gr, 1] = 10; _t0[_gr, 2] = 10; _tv[0] = Image.fromarray(_t0)
+    pack('hTv9', _tv, 0.5, anchor='mid', names=['on', 'off']); DATA['hTv9']['scr'] = _scr
+    _fl = depurple(cut('l9hflask_0.jpg', 'm', 1, 2, clean='edge')); pack('hFlask9', _fl[:1], 0.5, names=['f'])
+    _sd = open(os.path.join(ROOT, 'js', 'sprites_data.js'), encoding='utf8').read().split('\n')[1]; _SP = json.JSONDecoder().raw_decode(_sd[_sd.index('{'):])[0]
+    _bs = []
+    for _k, _i in [('n_a', 0), ('roach', 0), ('boss3', 0), ('vandewalk', 0), ('wiz6', 0), ('biker', 0), ('leather7', 0)]:
+        _f = _SP[_k]['f'][_i]; _bs.append(trim(Image.open(os.path.join(ROOT, _SP[_k]['img'])).convert('RGBA').crop((_f[0], _f[1], _f[0] + _f[2], _f[1] + _f[3]))))
+    pack('hBos9', _bs, 1.0, names=['natasha', 'roach', 'toilet', 'vande', 'wiz', 'biker', 'leather'])
+
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 
 if DBG:
