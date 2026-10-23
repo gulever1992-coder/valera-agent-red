@@ -516,6 +516,38 @@ function drawPause(c) {
   G.text('M — звук: ' + (Sound.muted ? 'ВЫКЛ' : 'ВКЛ'), W / 2, 240, { align: 'center', color: '#8a929a' });
 }
 
+// ---------- заставка студии (пока идёт загрузка) ----------
+const SPLASH_MIN = 3.2, SPLASH_FADE = 0.6;
+function splashWord(c, str, y, size, depth) {
+  // объёмные буквы: тёмно-красные слои «выдавливания», сверху яркая грань
+  for (let d = depth; d >= 1; d--) {
+    const k = d / depth;
+    const r = Math.round(90 + 40 * (1 - k));
+    G.text(str, W / 2 + d, y + d, { size, align: 'center', color: `rgb(${r},0,0)`, shadow: false });
+  }
+  G.text(str, W / 2, y, { size, align: 'center', color: '#ff1a1a', shadow: false });
+  c.save();
+  c.beginPath(); c.rect(0, y, W, Math.max(1, Math.round(size * 0.3))); c.clip();
+  G.text(str, W / 2, y, { size, align: 'center', color: '#ff7a6a', shadow: false });
+  c.restore();
+}
+function drawSplash(c) {
+  const t = App.t;
+  let a = Math.min(1, t / 0.7);
+  if (App.splashOut != null) a = Math.max(0, 1 - (t - App.splashOut) / SPLASH_FADE);
+  c.globalAlpha = a;
+  const drop = Math.round(Math.max(0, 1 - t / 0.7) * -24);
+  splashWord(c, 'IZVRASHENIE GAMES', 134 + drop, 32, 5);
+  if (t > 0.6) {
+    c.globalAlpha = a * Math.min(1, (t - 0.6) / 0.5);
+    splashWord(c, 'PRESENT VIDEO GAME', 192, 14, 3);
+  }
+  // мигающая строка загрузки внизу
+  if (App.splashOut == null && t > 1 && Math.floor(t * 2) % 2 === 0)
+    G.text('ЗАГРУЗКА...', W / 2, H - 30, { size: 8, align: 'center', color: '#5a1010', shadow: false });
+  c.globalAlpha = 1;
+}
+
 function draw() {
   const c = ctx;
   c.setTransform(2, 0, 0, 2, 0, 0);
@@ -523,9 +555,7 @@ function draw() {
   c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
   if (G.shakeT > 0) c.translate(Math.round(U.rand(-G.shakeAmt, G.shakeAmt)), Math.round(U.rand(-G.shakeAmt, G.shakeAmt)));
   switch (App.state) {
-    case 'loading':
-      G.text('ЗАГРУЗКА...', W / 2, H / 2, { align: 'center' });
-      break;
+    case 'loading': drawSplash(c); break;
     case 'title': drawTitle(c); break;
     case 'controls': drawControls(c); break;
     case 'difficulty': drawDifficulty(c); break;
@@ -603,5 +633,11 @@ function frame(now) {
   else if (q.has('l2')) startLevel2();
   else if (q.has('boss')) { Sound.unlock(); startLevel1({ boss: true }); }
   else if (q.has('climb')) { startLevel1({ skip: true }); }
-  else { setState('title'); Music.play('title'); }
+  else {
+    // заставка держится минимум SPLASH_MIN секунд, затем гаснет
+    while (App.t < SPLASH_MIN) await new Promise(r => setTimeout(r, 50));
+    App.splashOut = App.t;
+    await new Promise(r => setTimeout(r, SPLASH_FADE * 1000));
+    setState('title'); Music.play('title');
+  }
 })();
