@@ -154,7 +154,6 @@
       if (!this.dying && this.fly < 0.05 && !overPit(this.x)) S(c, 'props8', 'shadow', this.x, GY + 1, 0.8, { a: 0.4 * this.vis });
       SH(c, sh, fr, this.x, this.y + 1 + (this.M.semDy || 0), hh, o);
       if (this.fl > 0) SH(c, sh, fr, this.x, this.y + 1 + (this.M.semDy || 0), hh, Object.assign({}, o, { add: 1, a: 0.5 }));
-      if (this.fly > 0.05) for (const s of [-6, 8]) SH(c, 'semP9', 'jet', this.x + s * this.dir, this.y + 18 + Math.sin(t * 30) * 2, 22 + Math.sin(t * 40) * 4, { add: 1, a: this.vis });
       if (this.ext > 4 && has('semP9', 'seg')) { const [sx, sy] = this.shoulder(), [segW] = L9.size('semP9', 'seg'), k = 9 / L9.size('semP9', 'seg')[1], sw = segW * k;
         for (let d = 10; d < this.ext - 8; d += sw - 2) S(c, 'semP9', 'seg', sx + this.dir * (d + sw / 2), sy, k, { flip: this.dir < 0, a: this.vis });
         const [fx, fy] = this.fist(); SH(c, 'semP9', this.stT < 0.75 ? 'fistO' : 'fistC', fx, fy + 10, 20, { flip: this.dir < 0, a: this.vis }); }
@@ -167,7 +166,6 @@
     { n: 'КЕША', set: 'kesha', idle: 'stand', walk: 'run', atk: 'kick', sc: 1, sp: 150, kind: 'kick' },
     { n: 'БАЙКЕР', set: 'biker', idle: 'stand', walk: 'run', atk: 'throw', sc: 1, sp: 120, kind: 'throw' },
     { n: 'ВАНДЕЛОРД', set: 'vande', idle: 'stand', walk: 'run', atk: 'beam', sc: 1, sp: 130, kind: 'spores' },
-    { n: 'КОРОЛЕВА ТАРАКАНОВ', sheet: 'boss6', walkF: [0, 1, 2, 3], atkF: 4, sc: 0.55, sp: 230, kind: 'charge' },
     { n: 'ГЛАВАРЬ СПЕЦНАЗА', sheet: 'boss4', walkF: [0, 1], atkF: 2, sc: 0.36, sp: 170, kind: 'smash' },
   ];
   // иллюзии: враги прошлых уровней; убитые — растворяются, как мираж
@@ -355,7 +353,7 @@
       const t = M.t;
       // пол и мостик — одна картинка Flow строго сбоку (мостик без перил, труба с жижей из пола); затем котёл перекрывает низ опор
       const vy = GY + 34;     // верх края котла
-      if (has('kFB9', 'fb')) { const [fw0, fh0] = L9.size('kFB9', 'fb'), kb = (BR1 - BR0) / (fw0 * 420 / 680), w0 = fw0 * kb, h0 = fh0 * kb, x0 = BR0 - w0 * 252 / 680; S(c, 'kFB9', 'fb', x0 + w0 / 2, GY - 3 * kb * 0.5 + h0 / 2, kb); }     // пол с мостиком — картинка владельца: стена пола до 252 px, мостик до 672 px
+      if (has('kFB9', 'fb')) { const [fw0, fh0] = L9.size('kFB9', 'fb'), kb = (BR1 - BR0) / (fw0 * 420 / 680), w0 = fw0 * kb, h0 = fh0 * kb, x0 = BR0 - w0 * 252 / 680; S(c, 'kFB9', 'fb', x0 + w0 / 2, GY - 22 * kb * 0.5 + h0 / 2, kb); }     // пол с мостиком — картинка владельца: стена пола до 252 px, мостик до 672 px
       if (has('kSet9', 'vat')) { const vw = 470, [fw, fh] = L9.size('kSet9', 'vat'), k = vw / fw, vh = fh * k; S(c, 'kSet9', 'vat', 370, vy - vh * 0.13 + vh / 2, k); }
       for (let i = 0; i < (M.boil ? 9 : 5); i++) { const u = (t * (M.boil ? 1.4 : 0.5) + i * 0.27) % 1; S(c, 'kFx9', i % 2 ? 'st0' : 'st1', 160 + i * 52 + Math.sin(i * 3 + t) * 10, vy - 4 - u * 70, 0.15 + u * 0.35, { a: 0.5 * (1 - u) }); }
       for (let i = 0; i < 4; i++) { const u = (t * 0.8 + i * 0.41) % 1; if (u < 0.25) S(c, 'kFx9', 'spl', 170 + ((i * 131 + (t * 0.8 | 0) * 77) % 400), vy + 2, 0.14 + u * 0.4, { a: 1 - u * 4 }); }
