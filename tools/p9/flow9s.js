@@ -115,4 +115,6 @@
 
   J.l9kdart = [['labbg.jpg', 'l9px3_1.jpg'], 'KEYL9KDARTX Sprite sheet for a 2D side-view platformer, ' + STY + '. ' + MAG + NOTXT + GRID(1, 4) + '(1) a small hypodermic tranquilizer DART flying horizontally to the right: a glass tube full of glowing green liquid, a steel needle in front, a fluffy green tail; (2) the same dart with a short motion trail; (3) a swirling cloud of glowing green and violet hallucination sparkles, spirals and stars; (4) a second different swirling cloud of hallucination sparkles.'];
 
+  J.l9kbeam = [['labbg.jpg', 'l9px3_1.jpg'], 'KEYL9KBEAMX Sprite sheet for a 2D side-view platformer, ' + STY + '. ' + ORTHO + MAG + NOTXT + 'Exactly 3 separate objects with very wide magenta gaps, every object whole and not cropped. Top row, across the whole width of the image: (1) a long horizontal heavy riveted steel CEILING I-BEAM girder seen strictly from the side, dark teal-grey rusty steel with rivets and bolted plates, its left and right ends cut straight so it can be repeated seamlessly. Bottom row: (2) a heavy steel CRANE TROLLEY that rides on the bottom flange of that beam: small wheels on top, a solid block body, and a big steel HOOK hanging below it on a short chain; (3) a steel PULLEY BRACKET bolted under the beam: a mounting plate on top and a grooved pulley wheel hanging below it.'];
+
 })();

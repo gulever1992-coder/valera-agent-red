@@ -904,8 +904,13 @@ if have('l9kcave_1.jpg'):     # дальний план боя с Семёном
     _dc = _cells('l9kdart_1.jpg', 2, 2, 8); _dd = trim(_dc[0]); _dh = trim(_dc[3])
     pack('kDart9', [_dd, _dd, _dh, _dh], 0.5, anchor='mid', names=['d0', 'd1', 'h0', 'h1'])
 
-if have('l9kfb_user.png'):     # пол с мостиком — картинка владельца (2026-10-23)
-    pack('kFB9', [trim(f) for f in delav(depurple([rgba_m('l9kfb_user.png', (0, 4, 686, 385))]))], 1.0, anchor='mid', names=['fb'])
+if have('l9kfb_user2.png'):     # пол с мостиком — картинка владельца (2026-10-23; _user2 — без трубы со струёй, бок стены затемнён)
+    pack('kFB9', [trim(f) for f in delav(depurple([rgba_m('l9kfb_user2.png', (0, 4, 686, 385))]))], 1.0, anchor='mid', names=['fb'])
+if have('l9kbeam_0.jpg'):     # балка у потолка: концы и середина (тайлится), таль с крюком (на ней висит чан), кронштейн с блоком троса
+    _bm = lambda b: trim(delav(depurple([rgba_m('l9kbeam_0.jpg', b)]))[0])
+    pack('kBeam9', [_bm((28, 48, 300, 316)), _bm((340, 48, 800, 316)), _bm((1060, 48, 1350, 316)), _bm((230, 478, 600, 766)), _bm((955, 360, 1295, 720))], 0.5, anchor='mid', names=['bL', 'bM', 'bR', 'hoist', 'pulley'])
+if have('l9kmid2_1.jpg'):     # рельс монорельса (чистый отрезок без ферм и тележек) — тайлится по горизонтали, на нём едут капсулы
+    pack('kRail9', depurple([rgba_m('l9kmid2_1.jpg', (586, 41, 715, 84))]), 1.0, anchor='mid', names=['rail'])
 
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 

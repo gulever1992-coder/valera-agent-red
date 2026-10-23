@@ -9,10 +9,10 @@
 (() => {
   const S = L9.spr, clamp = L9.clamp, rnd = L9.rnd, LP = () => L9.PARTS.lab;
   const W = 640, GY = 330, BR0 = 110, BR1 = 420, LAD_X = 22, VAT_X0 = 92, REFILL = 9, DMG_K = 0.85;     // схема владельца: слева бетонный пол с лестницей, мостик на опорах над котлом, справа — открытый котёл
-  const LAD_H = 64, LAD_TOP = GY - 232, LAD_LIP = 16, PUL_Y = GY - 222, VAT_R = 600;     // чаны под потолком; блок стропы у потолка     // ковш: высота кадра, верх (крюк), смещение струи от центра
+  const LAD_H = 64, BEAM_T = GY - 228, BEAM_H = 22, HOIST_H = 40, PUL_H = 34, LAD_TOP = BEAM_T + BEAM_H + HOIST_H - 4, LAD_LIP = 16, PUL_Y = BEAM_T + BEAM_H + PUL_H * 0.66, VAT_R = 600;     // балка у потолка: на тали висит чан, на кронштейне — блок троса     // чаны под потолком; блок стропы у потолка     // ковш: высота кадра, верх (крюк), смещение струи от центра
   const LADLES = [{ x: 280, sl: 336 }];     // по просьбе владельца — один чан со стропой
   const MID_H = 250, MK = MID_H / 768;     // средний план: высота слоя и масштаб пикселей исходника
-  const MID_VATS = [[146, 350], [778, 330]], MID_CASC = [], MID_W = 1236;
+  const MID_VATS = [[146, 350], [778, 330]], MID_CASC = [], MID_W = 1236, RAIL_Y = GY - 190;     // RAIL_Y — монорельс у потолка
   const has = (sh, fr) => { const d = L9D[sh]; return d && (!fr || (d.n || []).includes(fr)); };
   const SH = (c, sh, fr, x, y, h, o) => { if (!has(sh, fr)) return; const [, fh] = L9.size(sh, fr); S(c, sh, fr, x, y, h / fh, o); };
   const SW = (c, sh, fr, x, y, w, o) => { if (!has(sh, fr)) return; const [fw] = L9.size(sh, fr); S(c, sh, fr, x, y, w / fw, o); };
@@ -317,13 +317,13 @@
     };
     // фон: капсулы на монорельсе среднего плана (координаты — пиксели исходника kMid)
     M.bgUpd = dt => {
-      M.capT -= dt; if (M.capT <= 0) { M.capT = rnd(1.6, 2.8); M.caps.push({ x: -120, v: rnd(70, 95), tg: MID_VATS[rnd(0, 3) | 0], st: 'go', t: 0 }); }
-      for (const q of M.caps) { q.t += dt;
-        if (q.st === 'go') { q.x += q.v * dt; if (q.tg && Math.abs(q.x - q.tg[0]) < 4) { q.st = 'open'; q.t = 0; } }
-        else if (q.st === 'open' && q.t > 0.45) { q.st = 'fall'; q.t = 0; q.my = 58 + 100; q.vy = 0; }
-        else if (q.st === 'fall') { q.vy += 900 * dt; q.my += q.vy * dt; if (q.my > q.tg[1] + 10) { q.st = 'spl'; q.t = 0; } }
-        else if (q.st === 'spl' && q.t > 0.55) { q.st = 'go'; q.tg = null; q.empty = 1; }
-        if (q.x > MID_W + 140) q.dead = 1; }
+      M.capT -= dt; if (M.capT <= 0) { M.capT = rnd(3.5, 5.5); M.caps.push({ x: -30, v: rnd(38, 52), tg: rnd(450, 570), st: 'go', t: 0 }); }
+      for (const q of M.caps) { q.t += dt;     // капсулы на рельсе у потолка: над котлом раскрываются, человек падает в жижу
+        if (q.st === 'go') { q.x += q.v * dt; if (q.tg && Math.abs(q.x - q.tg) < 2) { q.st = 'open'; q.t = 0; } }
+        else if (q.st === 'open' && q.t > 0.45) { q.st = 'fall'; q.t = 0; q.my = RAIL_Y + 30; q.vy = 0; }
+        else if (q.st === 'fall') { q.vy += 900 * dt; q.my += q.vy * dt; if (q.my > GY + 36) { q.st = 'go'; q.tg = null; q.empty = 1; Sound.play('splash', 0.25);
+          for (let i = 0; i < 3; i++) LP().fx.push({ t: 0, sh: 'kFx9', fr: ['spl'], x: q.x + rnd(-8, 8), y: GY + 30, s: 0.25, life: 0.35 }); } }
+        if (q.x > W + 60) q.dead = 1; }
       M.caps = M.caps.filter(q => !q.dead);
     };
     M.update = (dt, P, lv) => {
@@ -382,20 +382,13 @@
       for (let i = 0; i < 6; i++) { const X = ((i * 190 - cx * 0.15) % 1140 + 1140) % 1140 - 100, u = ((t * 0.1 + i * 0.31) % 1); S(c, 'fxZ9', 'sm0', X, fy - 120 - u * 190, 0.9 + u, { a: 0.2 * (1 - u) }); }
       fog(c, t, 5, 60, 200, 6, 0.10, 2.4, 0.15, cx);
       // средний план: котлы, трубы, монорельс; капсулы едут и сбрасывают людей
-      const mim = null;     // средний план с фермами убран по просьбе владельца — остаётся пещера с дымкой
-       if (mim) { const h = MID_H, w = mim.width * h / mim.height, k = h / mim.height, top = fy - 150,     // верх слоя ниже чана: над ним видна пещера
-        ox = -((cx * 0.42 % w) + w) % w;
-        for (let X = ox - w; X < 640 + w; X += w) {
-          if (X + w < -60 || X > 700) continue;
-          c.drawImage(mim, Math.floor(X), Math.round(top), Math.ceil(w) + 1, h);
-          for (const [vx, vy] of MID_CASC) { const n = 'c' + ((t * 9 + vx) | 0) % 3, len = (768 - vy) * k; S(c, 'kFx9', n, X + vx * k, top + vy * k + len / 2, 0.42, { sy: len / (L9.size('kFx9', n)[1] * 0.42), a: 0.9 }); }
-          MID_VATS.forEach(([vx, vy], i) => { for (let j = 0; j < 2; j++) { const u = (t * 0.25 + i * 0.37 + j * 0.5) % 1; S(c, 'kFx9', j ? 'st0' : 'st1', X + (vx + (j - 0.5) * 90) * k, top + vy * k - 10 - u * 60, 0.25 + u * 0.35, { a: 0.35 * (1 - u) }); } });
-          for (const q of M.caps) { const qx = X + q.x * k, cy0 = top + 58 * k + 16; if (qx < -60 || qx > 700) continue;
-            const fr = q.st === 'open' ? (q.t < 0.22 ? 'hang' : 'open') : q.st === 'fall' && q.t < 0.15 ? 'drop' : q.empty || q.st === 'fall' || q.st === 'spl' ? 'empty' : 'hang';
-            SH(c, 'kCap9', fr, qx, cy0, 34);
-            if (q.st === 'fall' && q.t >= 0.15) SH(c, 'kCap9', 'man', qx, top + q.my * k, 11, { rot: q.t * 3 });
-            if (q.st === 'spl') SH(c, 'kCap9', 'splash', qx, top + q.tg[1] * k - 6, 18 * (0.6 + q.t), { a: 1 - q.t / 0.55 }); }
-        } }
+      // монорельс у потолка (чистый отрезок рельса из старого среднего плана) и капсулы со спящими
+      if (has('kRail9', 'rail')) { const rk = 0.56, [rw] = L9.size('kRail9', 'rail'), tw = rw * rk, ry = RAIL_Y - cy;
+        for (let x = -((cx % tw) + tw) % tw - tw / 2; x < 640 + tw; x += tw) S(c, 'kRail9', 'rail', Math.round(x + tw / 2), ry, rk);
+        for (const q of M.caps) { const qx = q.x - cx; if (qx < -40 || qx > 680) continue;
+          const fr = q.st === 'open' ? (q.t < 0.22 ? 'hang' : 'open') : q.st === 'fall' && q.t < 0.15 ? 'drop' : q.empty || q.st === 'fall' ? 'empty' : 'hang';
+          SH(c, 'kCap9', fr, qx, ry + 22, 34);
+          if (q.st === 'fall' && q.t >= 0.15) SH(c, 'kCap9', 'man', qx, q.my - cy, 13, { rot: q.t * 3 }); } }
       haze(c, 0.22);
       fog(c, t, 6, 120, 260, 9, 0.12, 2.0, 0.35, cx);
     };
@@ -414,8 +407,8 @@
       for (const l of M.lad) {
         const cyL = LAD_TOP + LAD_H / 2, d = l.d, tilt = l.st === 'tilt' || l.st === 'pour' || l.st === 'thin' || l.st === 'tE';
         // патрубок в потолке: пока чан наполняется — струя в него
-        if (has('kFl9', 'pipe')) { const pk = 0.25, ox = l.x - d * 12, py0 = LAD_TOP - 14;
-          c.save(); c.beginPath(); c.rect(ox - 40, py0 - 2, 80, 100 * pk * 0.5 + 2); c.clip(); S(c, 'kFl9', 'pipe', ox + (d > 0 ? -11.6 : 11.6), py0 + 334 * pk * 0.5 / 2, pk, { flip: d < 0 }); c.restore();
+        if (has('kFl9', 'pipe')) { const pk = 0.25, ox = l.x - d * 26, py0 = LAD_TOP - 14;
+          // патрубок убран: наполнение — струя из-за балки
           if (l.st === 'fill') stream(c, ox, P.cam.y - 4, cyL + 16 - l.lvl * 12, 7, t, 0.8); }
         // кадр чана (носик — в сторону от стропы)
         let fr = 'full', fr2 = null, fa = 0;
@@ -427,13 +420,17 @@
         // стропа
         if (has('kSl9', 'rest')) { const sk = 0.42, q = sk * 0.5, sg = l.sl > l.x ? -1 : 1, fx = l.sl - sg * (122 - 84) * q, pul = l.pull > 0 ? Math.min(1, l.pull * 3) : 0;
           const y0 = PUL_Y - 23 * q, hy = GY - 36 + pul * 8, y1 = hy - 350 * q;
-          rope(l.sl, PUL_Y - 2, l.x - d * 20, LAD_TOP + (tilt ? 20 : 30));     // от блока к краю чана
-          for (const qq of [-1, 1]) rope(l.sl + qq * 23 * q, y0 + 112 * q, l.sl + qq * 23 * q, y1 + 258 * q);     // двойной трос вниз
-          c.save(); c.beginPath(); c.rect(l.sl - 30, y0, 60, 118 * q); c.clip(); S(c, 'kSl9', 'rest', fx, y0 + 190 * q, sk, { flip: sg < 0 }); c.restore();     // блок
+          rope(l.sl - 14, PUL_Y - 6, l.x - d * 20, LAD_TOP + (tilt ? 20 : 30));     // от блока к краю чана
+          for (const qq of [-1]) rope(l.sl + qq * 23 * q, PUL_Y, l.sl + qq * 23 * q, y1 + 258 * q);     // трос вниз (правый убран по просьбе владельца)
           c.save(); c.beginPath(); c.rect(l.sl - 30, y1 + 255 * q, 60, 100 * q); c.clip(); S(c, 'kSl9', 'rest', fx, y1 + 190 * q, sk, { flip: sg < 0 }); c.restore();     // кольцо и ручка
           if (l.st === 'full' && Math.abs(P.x - l.sl) < 70) S(c, 'fxL9', 'spark', l.sl, hy - 6, 0.4 + Math.sin(t * 6) * 0.1, { add: 1, a: 0.6 }); }
         if (l.st === 'fill') G.text(Math.ceil(REFILL * (1 - l.lvl)) + '', l.sl, GY - 100, { align: 'center', size: 8, color: '#7fe0c0', outline: true });
       }
+      if (has('kBeam9', 'bM')) { const bw = n => { const [w, h] = L9.size('kBeam9', n); return BEAM_H * w / h; }, yb = BEAM_T + BEAM_H / 2, x0 = 150, x1 = 640;     // балка: концы и тайл середины
+        for (const l of M.lad) { const [hw, hh] = L9.size('kBeam9', 'hoist'); SH(c, 'kBeam9', 'hoist', l.x + 2, BEAM_T + BEAM_H - 2 + HOIST_H / 2, HOIST_H);
+          SH(c, 'kBeam9', 'pulley', l.sl - 13, BEAM_T + BEAM_H - 2 + PUL_H / 2, PUL_H); }
+        const wl = bw('bL'), wm = bw('bM'); SH(c, 'kBeam9', 'bL', x0 + wl / 2, yb, BEAM_H);
+        for (let x = x0 + wl; x < x1; x += wm - 0.5) SH(c, 'kBeam9', 'bM', x + wm / 2, yb, BEAM_H); }
       for (const q of M.quakes || []) if (!q.dust) for (const p of q.pops) { const k = p.t, fr = k < 0.08 ? 6 : k < 0.18 ? 7 : 8, rise = k < 0.18 ? k / 0.18 : 1, ff = Spr.frame && Spr.frame('vfx6', fr), h = ff ? ff[3] / 2 : 40;
         c.save(); c.globalAlpha = k > 0.55 ? Math.max(0, 1 - (k - 0.55) / 0.25) : 1; Spr.drawC(c, 'vfx6', fr, p.x, GY + 6 - h * 0.5 * rise, 0, 0.75); c.restore(); }
       // молнии: метка на полу, затем разряд сверху
