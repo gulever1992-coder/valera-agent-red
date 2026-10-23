@@ -246,8 +246,8 @@
     M.cutUpdate = (dt, P) => { P.t += dt; M.t += dt; M.mech(dt, P, true); M.bgUpd(dt);
       if (M.camT != null) P.cam.x += (clamp(M.camT, 0, W - 640) - P.cam.x) * Math.min(1, dt * 2.5); else P.camera(dt); P.updFx(dt); };
     // всплеск в котле
-    M.splash = (x, s = 1) => { const P = LP(); P.fx.push({ t: 0, sh: 'kCap9', fr: ['splash'], x, y: GY + 60, s: 0.5 * s, life: 0.6 });
-      for (let i = 0; i < 6 * s; i++) P.fx.push({ t: 0, sh: 'kFx9', fr: ['drops'], x: x + rnd(-30, 30) * s, y: GY + 62, vx: rnd(-80, 80), vy: rnd(-280, -140), g: 700, s: rnd(0.12, 0.22), life: 0.9 });
+    M.splash = (x, s = 1) => { const P = LP(); P.fx.push({ t: 0, sh: 'kCap9', fr: ['splash'], x, y: GY + 44, s: 0.5 * s, life: 0.6 });
+      for (let i = 0; i < 6 * s; i++) P.fx.push({ t: 0, sh: 'kFx9', fr: ['drops'], x: x + rnd(-30, 30) * s, y: GY + 46, vx: rnd(-80, 80), vy: rnd(-280, -140), g: 700, s: rnd(0.12, 0.22), life: 0.9 });
       P.fx.push({ t: 0, sh: 'kFx9', fr: ['st0'], x, y: GY + 40, vx: 0, vy: -30, s: 0.5 * s, life: 1.2, fade: 1 }); Sound.play('splash'); };
     // ---------- механика арены ----------
     M.mech = (dt, P, cut) => {
@@ -263,7 +263,7 @@
         else if (l.st === 'fill') { l.lvl = clamp(l.t / REFILL, 0, 1); if (l.lvl >= 1) { l.st = 'full'; l.t = 0; Sound.play('confirm', 0.4); } } }
       for (const s of M.strikes) { s.t += dt; if (!cut && s.t > 0.7 && s.t < 0.95 && Math.abs(P.x - s.x) < 18) P.hurt(12, s.x); if (s.t > 0.7 && s.t - dt <= 0.7) { Sound.play('zap', 0.6); G.shake(2, 0.15); } }
       M.strikes = M.strikes.filter(s => s.t < 1.0);
-      for (const d of M.drops) { d.t += dt; if (d.t > 0) { d.y += (300 + d.t * 600) * dt; const fy = inPit(d.x) ? GY + 60 : GY - 4; if (d.y > fy) { d.dead = 1; P.fx.push({ t: 0, sh: 'kFx9', fr: ['spl'], x: d.x, y: fy, s: 0.2, life: 0.3 }); if (!cut && Math.abs(P.x - d.x) < 16 && Math.abs(P.y - GY) < 30) P.hurt(6, d.x); } } }
+      for (const d of M.drops) { d.t += dt; if (d.t > 0) { d.y += (300 + d.t * 600) * dt; const fy = inPit(d.x) ? GY + 44 : GY - 4; if (d.y > fy) { d.dead = 1; P.fx.push({ t: 0, sh: 'kFx9', fr: ['spl'], x: d.x, y: fy, s: 0.2, life: 0.3 }); if (!cut && Math.abs(P.x - d.x) < 16 && Math.abs(P.y - GY) < 30) P.hurt(6, d.x); } } }
       M.drops = M.drops.filter(d => !d.dead);
       for (const e of P.ebul) if (e.home && e.t > 0.3 && e.t < 2.4) { const ang = Math.atan2(P.y - 40 - e.y, P.x - e.x), sp = Math.hypot(e.vx, e.vy) + 140 * dt, cur = Math.atan2(e.vy, e.vx); let da = ang - cur; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI; const na = cur + clamp(da, -2.2 * dt, 2.2 * dt); e.vx = Math.cos(na) * Math.min(330, sp); e.vy = Math.sin(na) * Math.min(330, sp); }
     };
@@ -283,11 +283,11 @@
       if (M.dartPend && !M.cut && !Scene.active && M.boss && M.boss.slime <= 0) { M.dartPend = 0; Scene.run(M.dartScript, () => { M.cut = 0; M.illOn = 1; M.illT = 1.5; lv.say('ИЛЛЮЗИИ! БЕЙ ИХ — ОНИ РАСТВОРЯЮТСЯ', 2.5); }); return; }
       if (M.illOn) M.illUpd(dt, P, lv);
       if (M.cut === 1 && !M.started) { M.started = 1; Scene.run(M.introScript, () => { M.cut = 0; lv.say('ДЁРНИ СТРОПУ — ОБЛЕЙ СЕМЁНА ЖИЖЕЙ!', 3); }); return; }
-      if (M.melt) { M.melt += dt; P.vx = 0; P.vy = 0; P.y = GY + 64; return; }
+      if (M.melt) { M.melt += dt; P.vx = 0; P.vy = 0; P.y = GY + 48; return; }
       M.mech(dt, P, false);
       if (P.st === 'hurt' && P.vx > 0 && P.x > BR1 - 70) P.vx *= 0.25;     // у края мостика удар почти не отбрасывает в котёл
       // упал в котёл — сразу растворяется
-      if (inPit(P.x) && P.y > GY + 56) { M.melt = 0.001; P.hide = 1; P.melted = 1; P.inv = 0; M.splash(P.x, 1.2); for (let i = 0; i < 4; i++) P.fx.push({ t: 0, sh: 'kFx9', fr: ['st1'], x: P.x + rnd(-12, 12), y: GY + 50, vx: 0, vy: -40, s: 0.3, life: 1.4, fade: 1 }); lv.say('ВАЛЕРА РАСТВОРИЛСЯ', 2); lv.hurt(999); return; }
+      if (inPit(P.x) && P.y > GY + 40) { M.melt = 0.001; P.hide = 1; P.melted = 1; P.inv = 0; M.splash(P.x, 1.2); for (let i = 0; i < 4; i++) P.fx.push({ t: 0, sh: 'kFx9', fr: ['st1'], x: P.x + rnd(-12, 12), y: GY + 50, vx: 0, vy: -40, s: 0.3, life: 1.4, fade: 1 }); lv.say('ВАЛЕРА РАСТВОРИЛСЯ', 2); lv.hurt(999); return; }
       for (const l of M.lad) if (Math.abs(P.x - l.sl) < 26 && P.onG) {
         if (l.st === 'full') { P.hintAt('ВВЕРХ — ДЁРНУТЬ СТРОПУ', 0.3); if (G.Input.pressed('up')) { l.st = 'tilt'; l.t = 0; l.pull = 0.6; Sound.play('clank'); } }
         else P.hintAt('КОВШ НАПОЛНЯЕТСЯ...', 0.3); }
@@ -334,7 +334,7 @@
       for (let i = 0; i < 6; i++) { const X = ((i * 190 - cx * 0.15) % 1140 + 1140) % 1140 - 100, u = ((t * 0.1 + i * 0.31) % 1); S(c, 'fxZ9', 'sm0', X, fy - 120 - u * 190, 0.9 + u, { a: 0.2 * (1 - u) }); }
       fog(c, t, 5, 60, 200, 6, 0.10, 2.4, 0.15, cx);
       // средний план: котлы, трубы, монорельс; капсулы едут и сбрасывают людей
-      const mim = L9.img.kMid2; if (mim) { const h = MID_H, w = mim.width * h / mim.height, k = h / mim.height, top = fy - 92,     // верх слоя ниже чана: над ним видна пещера
+      const mim = L9.img.kMid2; if (mim) { const h = MID_H, w = mim.width * h / mim.height, k = h / mim.height, top = fy - 150,     // верх слоя ниже чана: над ним видна пещера
         ox = -((cx * 0.42 % w) + w) % w;
         for (let X = ox - w; X < 640 + w; X += w) {
           if (X + w < -60 || X > 700) continue;
@@ -353,7 +353,7 @@
     M.drawMid = (c, P) => {
       const t = M.t;
       // пол и мостик — одна картинка Flow строго сбоку (мостик без перил, труба с жижей из пола); затем котёл перекрывает низ опор
-      const vy = GY + 50;     // верх края котла
+      const vy = GY + 34;     // верх края котла
       if (has('kFB9', 'fb')) { const [fw0, fh0] = L9.size('kFB9', 'fb'), kb = (BR1 - BR0) / (fw0 * 420 / 680), w0 = fw0 * kb, h0 = fh0 * kb, x0 = BR0 - w0 * 252 / 680; S(c, 'kFB9', 'fb', x0 + w0 / 2, GY - 3 * kb * 0.5 + h0 / 2, kb); }     // пол с мостиком — картинка владельца: стена пола до 252 px, мостик до 672 px
       if (has('kSet9', 'vat')) { const vw = 470, [fw, fh] = L9.size('kSet9', 'vat'), k = vw / fw, vh = fh * k; S(c, 'kSet9', 'vat', 370, vy - vh * 0.13 + vh / 2, k); }
       for (let i = 0; i < (M.boil ? 9 : 5); i++) { const u = (t * (M.boil ? 1.4 : 0.5) + i * 0.27) % 1; S(c, 'kFx9', i % 2 ? 'st0' : 'st1', 160 + i * 52 + Math.sin(i * 3 + t) * 10, vy - 4 - u * 70, 0.15 + u * 0.35, { a: 0.5 * (1 - u) }); }
