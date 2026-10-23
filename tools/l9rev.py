@@ -31,3 +31,10 @@ def split_cols(im, gap=10, minw=20):     # фигуры в ряд: делим п
             x += 1
         if e - x0 >= minw: c = im.crop((x0, 0, e + 1, im.height)); out.append(c.crop(c.getbbox()))
     return out
+def drop_lines(im, th=4, ln=20):     # убрать тонкие длинные линии (рамки/край, нарисованные Flow) — компоненты толщиной <= th
+    from scipy import ndimage
+    a = np.asarray(im).copy(); lab, n = ndimage.label(a[..., 3] > 40)
+    for i, sl in enumerate(ndimage.find_objects(lab), 1):
+        h, w = sl[0].stop - sl[0].start, sl[1].stop - sl[1].start
+        if (h <= th and w > ln) or (w <= th and h > ln): a[lab == i, 3] = 0
+    return Image.fromarray(a)

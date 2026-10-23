@@ -269,6 +269,8 @@
       else if (P.st === 'crouch') fr = P.aim === 'cdiag' ? 'crouchDiag' : P.fireA > 0 ? 'crouchFire' : 'crouch';
       else if (P.st === 'run') { if (P.aim === 'diag') { sh = 'vRunUD9'; fr = 'u' + run4; } else if (P.aim === 'down') { sh = 'vRunUD9'; fr = 'd' + run4; } else { sh = 'vRun9'; fr = 'r' + run8; } }
       else fr = P.aim === 'diag' ? 'diag' : P.aim === 'up' ? 'up' : P.aim === 'down' ? 'down' : P.fireA > 0 ? 'fire' : 'stand';
+      if (P.weap !== 'rifle' && L9D['vJump9_' + P.weap] && (sh === 'vClimb9' && (fr === 'hit' || fr === 'stagger') || sh === 'vRoll9')) {     // эти кадры есть только с автоматом — берём позы с текущим оружием, чтобы не мигал автомат
+        if (sh === 'vClimb9') { sh = 'vJump9'; fr = 'land'; } else if (fr.startsWith('roll')) { sh = 'vJump9'; fr = ['flip1', 'flip2', 'flip3', 'land'][+fr.slice(4)]; } else { sh = 'vAim9'; fr = 'fire'; } }
       if (P.weap !== 'rifle' && L9D[sh + '_' + P.weap]) sh += '_' + P.weap;     // в руках то оружие, которое подобрал
       S(c, sh, fr, P.x, P.y + 1, 1, { flip: fl });     // присед в том же масштабе, что и стойка (голова и тело не уменьшаются)
     },

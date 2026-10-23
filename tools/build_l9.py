@@ -834,6 +834,8 @@ if have('l9zfar_1.jpg'):
                 _hd += [f.resize((round(f.width * _kk), round(f.height * _kk)), Image.LANCZOS) for f in _fs]
             print('head frames', len(_hd))
         pack('revZ9', _b[:2] + _k[:5] + _g[:5] + [_hk, _hg] + _hd, 1.0, names=['rb', 'rt', 'k0', 'k1', 'k2', 'k3', 'k4', 'g0', 'g1', 'g2', 'g3', 'g4', 'hk', 'hg'] + ['xk1', 'xk2', 'xk3', 'xk4', 'xg1', 'xg2', 'xg3', 'xg4'][:len(_hd)])
+    for _n in ('fa1', 'fa2', 'fb1', 'fb2', 'fb3', 'fb4'):     # новые флешбеки Семёна (по картинке на кадр)
+        if have('l9%s_0.jpg' % _n): Image.open(os.path.join(SRC, 'l9%s_0.jpg' % _n)).convert('RGB').save(os.path.join(OUT, 'zf' + _n + '.jpg'), quality=90); DATA['_bg']['zf' + _n] = {'w': 1376, 'h': 768}
     for _n in ('l9zfbA_1.jpg', 'l9zfbB_1.jpg'):
         _o = 'zfb' + _n[5]; Image.open(os.path.join(SRC, _n)).convert('RGB').save(os.path.join(OUT, _o + '.jpg'), quality=90); DATA['_bg'][_o] = {'w': 1376, 'h': 768}
     _po = Image.open(os.path.join(SRC, 'l9zpor_0.jpg')).convert('RGB'); _pa = np.asarray(_po).max(2) > 20
@@ -897,7 +899,24 @@ if have('l9kfar_1.jpg'):
     pack('kFx9', delav(depurple(cut('l9kfx_0.jpg', 'm', 2, 4, clean='edge'))), 0.5, anchor='mid', names=['c0', 'c1', 'c2', 'pipe', 'st0', 'st1', 'spl', 'drops'])
     _b = delav(depurple(cut('l9kbridge_0.jpg', 'm', 2, [1, 2], clean='edge'))); pack('kBr9', _b, 1.0, anchor='mid', names=['bridge', 'pierL', 'pierR'])
     _v = delav(depurple(cut('l9kvat_0.jpg', 'm', 4, 1, clean='edge'))); pack('kVat9', _v, 1.0, anchor='mid', names=['vat', 's0', 's1', 's2'])
-    pack('kLad9', delav(depurple(_cells('l9kladle_0.jpg', 2, 4))), 0.5, anchor='mid', names=['e', 'q1', 'q2', 'full', 't25', 'pour', 'thin', 'tE'])
+    _lf = delav(depurple(_cells('l9kladle_0.jpg', 2, 4)))
+    def _nohook(im):     # убрать крюк над чаном (висит на цепях до балки); вернуть кадр и x цепей в верхнем ряду
+        from scipy import ndimage
+        a = np.asarray(im.convert('RGBA')).copy(); al = a[..., 3] > 40; lab, n = ndimage.label(al); W = a.shape[1]
+        for i in range(1, n + 1):
+            ys, xs = np.where(lab == i)
+            if ys.min() <= 3 and W * 0.3 < xs.mean() < W * 0.7 and xs.max() - xs.min() < W * 0.3: a[lab == i, 3] = 0
+        return Image.fromarray(a)
+    _lf = [_nohook(f) for f in _lf]
+    pack('kLad9', _lf, 0.5, anchor='mid', names=['e', 'q1', 'q2', 'full', 't25', 'pour', 'thin', 'tE'])
+    _ch = []     # x цепей в верхнем ряду каждого кадра (в пикселях атласа, от левого края кадра)
+    for _f in DATA['kLad9']['f']:
+        _a = np.asarray(Image.open(os.path.join(OUT, 'kLad9.png')).crop((_f[0], _f[1], _f[0] + _f[2], _f[1] + _f[3])))[..., 3] > 40
+        _row = next(r for r in range(_a.shape[0]) if _a[r].any()); _xs = np.where(_a[_row + 1])[0]
+        _g = np.split(_xs, np.where(np.diff(_xs) > 3)[0] + 1); _ch.append([[int(g.mean()) for g in _g if len(g)], _row])
+    DATA['kLad9']['ch'] = _ch
+    _e = Image.open(os.path.join(OUT, 'kLad9.png')).crop(tuple(DATA['kLad9']['f'][0][:2]) + (DATA['kLad9']['f'][0][0] + DATA['kLad9']['f'][0][2], DATA['kLad9']['f'][0][1] + DATA['kLad9']['f'][0][3]))
+    _cx = _ch[0][0][0]; pack('kChain9', [_e.crop((_cx - 5, _ch[0][1], _cx + 6, _ch[0][1] + 24))], 1.0, anchor='mid', names=['link'])     # отрезок цепи — тянется до балки
     pack('kSl9', delav(depurple(_cells('l9ksling_0.jpg', 1, 4))), 0.5, anchor='mid', names=['rest', 'mid', 'pull', 'rope'])
     _se = delav(depurple(cut('l9ksem_0.jpg', 'm', 1, 4, clean='edge'))); pack('kSem9', _se, VH * 1.04 / hgt(_se, 1), names=['pourHit', 'drench', 'kneelS', 'aura'])
 
@@ -928,6 +947,20 @@ if have('l9kbeam_0.jpg'):     # балка у потолка: концы и се
 if os.path.exists(os.path.join(SRC, 'l9fxl_0.jpg')):     # ракета Валеры отдельно, с прозрачным фоном: на листе сложения тёмный корпус пропадал, оставался один хвост пламени
     _im = Image.open(os.path.join(SRC, 'l9fxl_0.jpg')).convert('RGB'); _W, _H = _im.size; _c = np.asarray(_im.crop((4, _H * 2 // 4 + 4, _W // 4 - 4, _H * 3 // 4 - 4))).astype(np.int32)
     _al = np.clip((_c.max(2) - 22) * 10, 0, 255).astype(np.uint8); pack('rocketL9', [trim(Image.fromarray(np.dstack([_c.astype(np.uint8), _al])))], 0.6, anchor='mid', names=['rocket'])
+if have('l9kstrm_0.jpg'):     # сплошной поток жижи (3 кадра, тайлится по высоте) и брызги; бирюзу сдвигаем к салатовому цвету жижи игры
+    import l9rev
+    _a = load('l9kstrm_0.jpg'); _m = key(_a, 'm', grid=False); _st = Image.fromarray(defringe(np.dstack([_a, np.where(_m, 0, 255)]).astype(np.uint8), 'm'))
+    _hsv = np.asarray(_st.convert('RGB').convert('HSV')).copy(); _hsv[..., 0] = (_hsv[..., 0].astype(int) - 36) % 256; _hsv[..., 1] = np.minimum(255, _hsv[..., 1].astype(int) * 11 // 10)
+    _st = Image.fromarray(np.dstack([np.asarray(Image.fromarray(_hsv, 'HSV').convert('RGB')), np.asarray(_st)[..., 3]]))
+    _ss = l9rev.split_cols(_st.crop((0, 0, int(_st.width * 0.63), _st.height)))[:3]; _sp = trim(_st.crop((int(_st.width * 0.63), 0, _st.width, int(_st.height * 0.45))))
+    _sh = min(f.height for f in _ss); _sw = min(f.width for f in _ss); _ss = [f.crop((0, 0, _sw, _sh)) for f in _ss]
+    pack('kStrm9', _ss + [_sp], 0.5, anchor='mid', names=['s0', 's1', 's2', 'splash'])
+if have('l9zdie2_0.jpg'):     # падение Семёна (правка его листа во Flow — лицо своё): шаги, держится за голову -> срыв -> падение
+    import l9rev
+    _a = load('l9zdie2_0.jpg'); _m = key(_a, 'm', grid=False); _im = l9rev.drop_lines(Image.fromarray(defringe(np.dstack([_a, np.where(_m, 0, 255)]).astype(np.uint8), 'm'))); _W, _H = _im.size
+    _t = l9rev.split_cols(_im.crop((0, 0, _W, _H // 2))); _bt = l9rev.split_cols(_im.crop((0, _H // 2, _W, _H)))
+    print('die frames', len(_t), len(_bt)); _df = [_t[0], _t[1], _t[3], _t[4]] + _bt[:4]
+    _dk = 179 / max(f.height for f in _df[:4]); pack('semD9', _df, _dk, anchor='feet', names=['d0', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7'])
 if have('l9kmid2_1.jpg'):     # рельс монорельса (чистый отрезок без ферм и тележек) — тайлится по горизонтали, на нём едут капсулы
     pack('kRail9', depurple([rgba_m('l9kmid2_1.jpg', (586, 41, 715, 84))]), 1.0, anchor='mid', names=['rail'])
 
