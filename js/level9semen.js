@@ -9,7 +9,7 @@
 (() => {
   const S = L9.spr, clamp = L9.clamp, rnd = L9.rnd, LP = () => L9.PARTS.lab;
   const W = 640, GY = 330, BR0 = 110, BR1 = 420, LAD_X = 22, VAT_X0 = 92, REFILL = 9, DMG_K = 0.85;     // схема владельца: слева бетонный пол с лестницей, мостик на опорах над котлом, справа — открытый котёл
-  const LAD_H = 80, LAD_TOP = GY - 218, LAD_LIP = 20, PUL_Y = GY - 212, VAT_R = 600;     // чаны под потолком; блок стропы у потолка     // ковш: высота кадра, верх (крюк), смещение струи от центра
+  const LAD_H = 64, LAD_TOP = GY - 184, LAD_LIP = 16, PUL_Y = GY - 176, VAT_R = 600;     // чаны под потолком; блок стропы у потолка     // ковш: высота кадра, верх (крюк), смещение струи от центра
   const LADLES = [{ x: 280, sl: 336 }];     // по просьбе владельца — один чан со стропой
   const MID_H = 250, MK = MID_H / 768;     // средний план: высота слоя и масштаб пикселей исходника
   const MID_VATS = [[146, 350], [778, 330]], MID_CASC = [], MID_W = 1236;
@@ -18,6 +18,13 @@
   const SW = (c, sh, fr, x, y, w, o) => { if (!has(sh, fr)) return; const [fw] = L9.size(sh, fr); S(c, sh, fr, x, y, w / fw, o); };
   const inPit = x => x > BR1 + 2 && x < VAT_R;     // за краем мостика — открытый котёл
   const overPit = inPit;
+  // бесшовная струя жижи: средняя часть кадра каскада (Flow) повторяется по высоте и смещается вниз — течёт, без стыков и растяжения
+  const stream = (c, x, y0, y1, w, t, sp) => {
+    const im = L9.img.kFx9, d = L9D.kFx9; if (!im || !d || y1 <= y0) return; const f = d.f[d.n.indexOf('c0')], k = w / f[2], sy = f[1] + f[3] * 0.22, sh = f[3] * 0.5, segH = sh * k;
+    c.save(); c.beginPath(); c.rect(x - w, y0, w * 2, y1 - y0); c.clip();
+    for (let y = y0 - segH + ((t * sp * 60) % segH); y < y1; y += segH - 0.5) c.drawImage(im, f[0], sy, f[2], sh, Math.round(x - w / 2), y, w, segH);
+    c.restore();
+  };
   let Sem = null, PH_SAVE = 1, KEEP = 0;     // после смерти бой продолжается с достигнутой фазы
   const F = () => L9.FOES;
 
@@ -33,10 +40,11 @@
       this.hp = Math.max(this.thr(), this.hp - d * DMG_K); this.fl = 0.08; if (Math.random() < 0.35) Sound.play('hit');
       if (this.hp <= this.thr()) this.enrage();
     }
-    drench(t) { this.slime = t; this.slT = 0; this.act = 'run'; this.ext = 0; this.vx = 0; this.invT = 0; this.vis = 1; }
+    drench(t) { if (this.form) this.unmorph(); this.slime = t; this.slT = 0; this.act = 'run'; this.ext = 0; this.vx = 0; this.invT = 0; this.vis = 1; }
     enrage() {     // серия окончена: стряхивает жижу и звереет
       const lv = LP().lv; this.slime = 0; this.ph++; PH_SAVE = Math.min(5, this.ph); G.shake(5, 0.5); Sound.play('boom', 0.6);
       if (this.ph > 5) { this.dying = 1; this.M.finish(); return; }
+      if (this.ph === 3 && !this.M.illOn) this.M.dartPend = 1;     // минус две фазы — дротик и иллюзии
       this.act = 'roar'; this.stT = 0; this.cd = 0.6; this.vis = 1; this.invT = 0; this.auraT = 1.1;
       lv.say(['', '', 'СЕМЁН ЗВЕРЕЕТ!', 'СЕМЁН В ЯРОСТИ!', 'СЕМЁН В БЕШЕНСТВЕ!', 'ПОСЛЕДНИЙ РЫВОК СЕМЁНА!'][this.ph] || 'СЕМЁН ЗВЕРЕЕТ!', 2);
     }
@@ -45,11 +53,11 @@
     pick(P) {     // все способности с первой фазы; с фазой растут вес опасных атак
       const ph = this.ph, fo = P.foes.filter(f => !f.dead && f !== this).length;
       const L = [['punch', 3], ['bolt', 3], ['rocket', 2 + ph * 0.3], ['dash', 2 + ph * 0.3], ['light', 2 + ph * 0.4], ['fly', 1.5 + ph * 0.3], ['rain', 1 + ph * 0.4],
-        ['invis', this.invT > 0 ? 0 : 1 + ph * 0.2], ['summon', this.sumCd <= 0 && fo < 1 + (ph >> 1) ? 2 : 0]];
+        ['invis', this.invT > 0 ? 0 : 1 + ph * 0.2], ['summon', this.sumCd <= 0 && fo < 1 + (ph >> 1) ? 2 : 0], ['morph', this.morphCd > 0 ? 0 : 2.5 + ph * 0.4]];
       let s = L.reduce((a, b) => a + b[1], 0) * Math.random(); for (const [n, w] of L) { s -= w; if (s <= 0) return n; } return 'bolt';
     }
     update(dt, P, lv) {
-      this.t += dt; this.stT += dt; this.fl -= dt; this.sumCd -= dt; this.auraT -= dt;
+      this.t += dt; this.stT += dt; this.fl -= dt; this.sumCd -= dt; this.auraT -= dt; this.morphCd = (this.morphCd || 0) - dt;
       if (this.invT > 0) { this.invT -= dt; this.vis = this.invT > 0 ? 0.12 + Math.abs(Math.sin(this.t * 9)) * 0.1 : 1; }
       if (this.dying || this.M.cut) return;
       const M = this.M, ph = this.ph, sp = 130 + ph * 28, dx = P.x - this.x;
@@ -93,6 +101,20 @@
         this.vx = T > 0.5 && T < D ? this.dir * (190 + ph * 15) : 0; if (this.x <= 60 || this.x >= VAT_R - 40) this.dir = this.x <= 60 ? 1 : -1;
         if (T > 0.6 && T < D && (T / iv | 0) !== this.lastB) { this.lastB = T / iv | 0; M.eb(this.x, this.y - 10, (P.x - this.x) * 0.5, 260, { kind: 'bolt', dmg: 8 }); Sound.play('zap', 0.3); }
         if (T > D + 0.5) { this.fly = 0; this.done(); } }
+      else if (a === 'morph') { this.vx = 0;     // превращение в одного из прошлых боссов
+        if (this.stT < dt * 1.5) { Sound.play('zap'); G.shake(3, 0.3); for (let i = 0; i < 5; i++) P.fx.push({ t: 0, sh: 'kFx9', fr: [i % 2 ? 'st0' : 'st1'], x: this.x + rnd(-20, 20), y: this.y - rnd(10, 70), vx: rnd(-30, 30), vy: -20, s: 0.3, life: 0.7, fade: 1 }); }
+        if (this.stT > 0.45) { const f = FORMS[(Math.random() * FORMS.length) | 0]; this.form = f; this.formT = 3.6 + ph * 0.5; this.fcd = 0.6; this.act = 'form'; this.stT = 0; lv.say('СЕМЁН ПРЕВРАТИЛСЯ: ' + f.n + '!', 1.6); } }
+      else if (a === 'form') {     // в облике босса: свой ход и атака
+        const f = this.form, sp2 = f.sp * (1 + ph * 0.1); this.formT -= dt; this.fcd -= dt; this.fa = Math.max(0, (this.fa || 0) - dt);
+        const want = f.kind === 'throw' || f.kind === 'spores' ? P.x + (this.x < P.x ? -170 : 170) : P.x;
+        if (f.kind === 'charge') { if (!this.chg) { this.chg = Math.sign(P.x - this.x) || 1; } this.vx = this.chg * sp2; if (this.x <= 40 || this.x >= BR1 - 20) this.chg = -this.chg; this.dir = this.chg; }
+        else { this.vx = Math.abs(want - this.x) > 10 ? Math.sign(want - this.x) * sp2 : 0; this.dir = P.x < this.x ? -1 : 1; }
+        const near = Math.abs(P.x - this.x) < 46 && Math.abs(P.y - this.y) < 60;
+        if ((f.kind === 'charge' || f.kind === 'smash') && near && this.fcd <= 0) { this.fcd = 0.7; this.fa = 0.3; P.hurt(13, this.x); G.shake(3, 0.2); Sound.play('punch'); }
+        if (f.kind === 'kick') { if (near && this.fcd <= 0) { this.fcd = 0.8; this.fa = 0.35; this.fk = 'kick'; P.hurt(12, this.x); Sound.play('punch'); } else if (this.fcd <= 0) { this.fcd = 1.3 - ph * 0.12; this.fa = 0.35; this.fk = 'shoot'; M.eb(this.x + this.dir * 24, this.y - 52, this.dir * 320, 0, { kind: 'bolt', dmg: 8 }); Sound.play('zap', 0.4); } }
+        if (f.kind === 'throw' && this.fcd <= 0) { this.fcd = 1.1 - ph * 0.1; this.fa = 0.4; M.eb(this.x + this.dir * 16, this.y - 70, (P.x - this.x) * 0.9, -300, { kind: 'rocket', dmg: 10, grav: 0.55 }); Sound.play('throw', 0.6); }
+        if (f.kind === 'spores' && this.fcd <= 0) { this.fcd = 1.4 - ph * 0.12; this.fa = 0.5; for (let i = 0; i < 3; i++) M.eb(this.x, this.y - 60, this.dir * 120, -120 + i * 80, { kind: 'bolt', dmg: 7, home: 1, life: 3 }); Sound.play('zap', 0.5); }
+        if (this.formT <= 0) this.unmorph(); }
       else if (a === 'invis') { this.invT = 2 + ph * 0.6; Sound.play('zap', 0.4); this.done(); this.cd = 0.2; }
       else if (a === 'rain') { this.vx = 0;     // дождь из жижи по всей арене (тени-предупреждения)
         if (!this.shot && this.stT > 0.5) { this.shot = 1; const n = 8 + ph * 4; for (let i = 0; i < n; i++) M.drops.push({ x: rnd(10, VAT_R - 10), t: -i * (0.2 - ph * 0.02) - 0.6, y: -40 }); M.drops.push({ x: P.x, t: -0.7, y: -40 }); }
@@ -101,11 +123,21 @@
       if (this.fly < 0.3 && this.x > BR1 - 12) this.x = Math.max(BR1 - 12, this.x - 300 * dt);
       this.y = GY - this.fly * 120 - this.hop * 18;
     }
+    unmorph() { const P = LP(); this.form = null; this.chg = 0; this.morphCd = 9 - this.ph; Sound.play('zap', 0.5);
+      for (let i = 0; i < 5; i++) P.fx.push({ t: 0, sh: 'kFx9', fr: [i % 2 ? 'st0' : 'st1'], x: this.x + rnd(-20, 20), y: this.y - rnd(10, 70), vx: rnd(-30, 30), vy: -20, s: 0.3, life: 0.7, fade: 1 });
+      if (this.act === 'form') this.done(); }
+    drawForm(c) {     // облик прошлого босса — спрайты из прошлых уровней
+      const f = this.form, t = this.t, mv = Math.abs(this.vx) > 1, atk = this.fa > 0, o = { scale: f.sc, alpha: this.vis };
+      if (f.set) Spr.drawAnim(c, f.set, atk ? (this.fk && f.set === 'kesha' ? this.fk : f.atk) : mv ? f.walk : f.idle, t, this.x, this.y + 1, this.dir, o);
+      else { const fr = atk ? f.atkF : mv ? f.walkF[(t * 8 | 0) % f.walkF.length] : f.walkF[0]; Spr.draw(c, f.sheet, fr, this.x, this.y + 1, this.dir * (f.flip ? -1 : 1), o); }
+      if (this.formT > 0 && this.formT < 0.6 && (t * 14 | 0) % 2) SH(c, 'semB9', 'laugh', this.x, this.y + 1, 86, { flip: this.dir < 0, a: 0.5 });     // скоро вернётся в себя
+    }
     done() { this.act = 'run'; this.stT = 0; this.cd = Math.max(0.15, 1.25 - this.ph * 0.22) + rnd(0, 0.35); this.ext = 0;
       if (this.ph >= 3 && Math.random() < 0.12 * (this.ph - 2)) this.cd = 0.05; }     // с 3-й фазы атаки идут сериями
     draw(c) {
       if (this.gone) return;
       const t = this.t, a = this.act; let fr = 'r' + ((t * (11 + this.ph) | 0) % 4), sh = 'semB9', hh = 86;
+      if (this.form && !this.dying && this.slime <= 0) { this.drawForm(c); return; }
       if (this.dying) fr = this.M.semFr || 'stagger';
       else if (this.slime > 0) { sh = 'kSem9'; fr = this.slT < 0.55 ? 'pourHit' : this.slime > 1.6 ? 'drench' : 'kneelS'; hh = fr === 'pourHit' ? 122 : fr === 'kneelS' ? 70 : 88; }
       else if (this.auraT > 0) { sh = 'kSem9'; fr = 'aura'; hh = 88; }
@@ -117,7 +149,7 @@
       else if (a === 'dash') fr = 'dash';
       else if (a === 'light' || a === 'rain' || a === 'summon') fr = a === 'summon' ? 'laugh' : 'sky';
       else if (!this.vx) fr = 'laugh';
-      if (sh === 'semB9') hh = fr === 'kneel' ? 66 : fr.startsWith('fly') ? 80 : 86;
+      if (sh === 'semB9') hh = fr === 'kneel' ? 66 : fr.startsWith('fly') ? 80 : fr === 'sky' ? 135 : 86;     // в «sky» над рукой молния — кадр выше
       const o = { flip: this.dir < 0, a: this.vis, rot: this.M.semRot || 0 };
       if (!this.dying && this.fly < 0.05 && !overPit(this.x)) S(c, 'props8', 'shadow', this.x, GY + 1, 0.8, { a: 0.4 * this.vis });
       SH(c, sh, fr, this.x, this.y + 1 + (this.M.semDy || 0), hh, o);
@@ -130,6 +162,41 @@
     }
   };
 
+  // облики прошлых боссов (спрайты прошлых уровней): Кеша, Байкер, Ванделорд, Королева тараканов, Главарь спецназа
+  const FORMS = [
+    { n: 'КЕША', set: 'kesha', idle: 'stand', walk: 'run', atk: 'kick', sc: 1, sp: 150, kind: 'kick' },
+    { n: 'БАЙКЕР', set: 'biker', idle: 'stand', walk: 'run', atk: 'throw', sc: 1, sp: 120, kind: 'throw' },
+    { n: 'ВАНДЕЛОРД', set: 'vande', idle: 'stand', walk: 'run', atk: 'beam', sc: 1, sp: 130, kind: 'spores' },
+    { n: 'КОРОЛЕВА ТАРАКАНОВ', sheet: 'boss6', walkF: [0, 1, 2, 3], atkF: 4, sc: 0.55, sp: 230, kind: 'charge' },
+    { n: 'ГЛАВАРЬ СПЕЦНАЗА', sheet: 'boss4', walkF: [0, 1], atkF: 2, sc: 0.36, sp: 170, kind: 'smash' },
+  ];
+  // иллюзии: враги прошлых уровней; убитые — растворяются, как мираж
+  const ILLS = [
+    { set: 'zomb5', walk: 'walk', atk: 'attack', sp: 70, hp: 6 },     // сумоист
+    { set: 'zomb0', walk: 'walk', atk: 'attack', sp: 100, hp: 4 }, { set: 'zomb2', walk: 'walk', atk: 'attack', sp: 85, hp: 5 },
+    { sheet: 'roach', walkF: [1, 2], atkF: 3, sc: 1, sp: 120, hp: 3 },     // таракан
+    { set: 'gop7', walk: 'walk', atk: 'stand', sp: 110, hp: 4 }, { set: 'bomzh7', walk: 'walk', atk: 'stand', sp: 90, hp: 4 },
+    { set: 'rat7', walk: 'walk', atk: 'slam', sp: 120, hp: 3 }, { set: 'viper', walk: 'walk', atk: 'strike', sp: 80, hp: 3 },
+    { set: 'sailor', walk: 'walk', atk: 'attack', sp: 100, hp: 4 }, { set: 'whip', walk: 'walk', atk: 'attack', sp: 100, hp: 4 },
+  ];
+  let Ill = null;
+  const mkIll = () => class extends F().Foe {
+    constructor(M, x, y, d) { super(M, x, y, { maxHp: d.hp, w: 14, pts: 100 }); this.d = d; this.hp = d.hp; this.cd = 1; this.ap = 0; this.born = 0; this.ill = 1; }
+    get h() { return 74; }
+    ai(dt, P) { this.born += dt; this.cd -= dt; this.ap -= dt; const dx = P.x - this.x;
+      this.vx = Math.abs(dx) > 30 && this.ap <= 0 ? Math.sign(dx) * this.d.sp : 0;
+      if (Math.abs(dx) < 34 && Math.abs(P.y - this.y) < 50 && this.cd <= 0) { this.cd = 1.1; this.ap = 0.35; P.hurt(8, this.x); }
+      this.phys(dt); }
+    die() { this.dead = true; this.dis = 0; Sound.play('zap', 0.5); const lv = LP().lv; lv.stats.kills++; lv.score += 100;
+      for (let i = 0; i < 4; i++) LP().fx.push({ t: 0, sh: has('kDart9', 'h0') ? 'kDart9' : 'fxL9', fr: [has('kDart9', 'h0') ? (i % 2 ? 'h0' : 'h1') : 'spark'], x: this.x + rnd(-14, 14), y: this.y - rnd(10, 60), vx: rnd(-20, 20), vy: -30, s: 0.25, life: 0.8, fade: 1, add: 1 }); }
+    update(dt, P, lv) { if (this.dead) { this.dis += dt; if (this.dis > 0.8) this.gone = true; return; } super.update(dt, P, lv); }
+    draw(c) {     // мерцает как мираж; растворяясь — расползается волнами и тает
+      const d = this.d, t = this.t, u = this.dead ? this.dis / 0.8 : 0, a = (this.dead ? 1 - u : Math.min(1, this.born * 2)) * (0.78 + 0.12 * Math.sin(t * 7));
+      const one = (ox, alpha) => { const o = { alpha }; if (d.set) Spr.drawAnim(c, d.set, this.ap > 0 ? d.atk : Math.abs(this.vx) > 1 ? d.walk : d.walk, t, this.x + ox, this.y + 1, this.dir, o); else Spr.draw(c, d.sheet, this.ap > 0 ? d.atkF : d.walkF[(t * 8 | 0) % d.walkF.length], this.x + ox, this.y + 1, -this.dir, Object.assign(o, { scale: d.sc })); };
+      if (!this.dead) { one(0, a); c.save(); c.globalCompositeOperation = 'lighter'; one(Math.sin(t * 9) * 2, 0.12); c.restore(); return; }
+      for (let i = 0; i < 8; i++) { const y0 = this.y - 90 + i * 12; c.save(); c.beginPath(); c.rect(this.x - 60, y0, 120, 12); c.clip(); one(Math.sin(i * 1.3 + t * 18) * u * 26, a); c.restore(); }
+    }
+  };
   L9.MAPS.semen = () => {
     const LM = L9.MAPS.lab();
     const M = {
@@ -146,8 +213,8 @@
       for (const k of ['semen', 'semen2']) if (!G.portraits[k]) G.loadImage('assets/spr/p_' + k + '.png').then(im => G.portraits[k] = im, () => {});
       M.t = 0; M.strikes = []; M.drops = []; M.cut = 1; M.started = 0; M.sitFr = null; M.semRot = 0; M.semDy = 0; M.melt = 0; M.boil = 0;
       M.lad = LADLES.map(l => { const d = l.sl < l.x ? 1 : -1; return { ...l, d, zx: l.x + d * LAD_LIP, st: 'full', t: 0, pull: 0, lvl: 1 }; });     // носик — в сторону от стропы
-      M.caps = []; M.capT = 0.5; M.bubs = [];
-      if (!KEEP) PH_SAVE = 1; KEEP = 0; M.boss = new Sem(M, 760, GY); M.boss.ph = PH_SAVE; M.boss.hp = 100 - (PH_SAVE - 1) * 20; P.foes.push(M.boss);
+      M.caps = []; M.capT = 0.5; M.bubs = []; M.illOn = 0; M.illT = 2; M.dart = null; M.dartPend = 0;
+      if (!KEEP) PH_SAVE = 1; KEEP = 0; if (PH_SAVE >= 3) { M.illOn = 1; M.illT = 3; } M.boss = new Sem(M, 760, GY); M.boss.ph = PH_SAVE; M.boss.hp = 100 - (PH_SAVE - 1) * 20; P.foes.push(M.boss);
       M.picks = [['kefir', 270, GY], ['rocket', 60, GY]].map(([kind, x, y]) => ({ kind, x, y, t: 0 })); M.pickT = 22;
       P.x = 60; P.dir = 1; P.hide = 0; P.melted = 0;
     };
@@ -213,9 +280,12 @@
     };
     M.update = (dt, P, lv) => {
       M.t += dt; M.bgUpd(dt);
+      if (M.dartPend && !M.cut && !Scene.active && M.boss && M.boss.slime <= 0) { M.dartPend = 0; Scene.run(M.dartScript, () => { M.cut = 0; M.illOn = 1; M.illT = 1.5; lv.say('ИЛЛЮЗИИ! БЕЙ ИХ — ОНИ РАСТВОРЯЮТСЯ', 2.5); }); return; }
+      if (M.illOn) M.illUpd(dt, P, lv);
       if (M.cut === 1 && !M.started) { M.started = 1; Scene.run(M.introScript, () => { M.cut = 0; lv.say('ДЁРНИ СТРОПУ — ОБЛЕЙ СЕМЁНА ЖИЖЕЙ!', 3); }); return; }
       if (M.melt) { M.melt += dt; P.vx = 0; P.vy = 0; P.y = GY + 64; return; }
       M.mech(dt, P, false);
+      if (P.st === 'hurt' && P.vx > 0 && P.x > BR1 - 70) P.vx *= 0.25;     // у края мостика удар почти не отбрасывает в котёл
       // упал в котёл — сразу растворяется
       if (inPit(P.x) && P.y > GY + 56) { M.melt = 0.001; P.hide = 1; P.melted = 1; P.inv = 0; M.splash(P.x, 1.2); for (let i = 0; i < 4; i++) P.fx.push({ t: 0, sh: 'kFx9', fr: ['st1'], x: P.x + rnd(-12, 12), y: GY + 50, vx: 0, vy: -40, s: 0.3, life: 1.4, fade: 1 }); lv.say('ВАЛЕРА РАСТВОРИЛСЯ', 2); lv.hurt(999); return; }
       for (const l of M.lad) if (Math.abs(P.x - l.sl) < 26 && P.onG) {
@@ -224,6 +294,29 @@
       for (const k of M.picks) { k.t += dt; if (!k.dead && Math.abs(P.x - k.x) < 22 && Math.abs(P.y - k.y) < 40) LM.take(k, P, lv); }
       M.picks = M.picks.filter(k => !k.dead);
       M.pickT -= dt; if (M.pickT <= 0 && M.picks.length < 2) { M.pickT = 15; M.picks.push({ kind: ['kefir', 'grenades', 'plasma', 'pies'][rnd(0, 4) | 0], x: [50, 250, 400][rnd(0, 3) | 0], y: GY, t: 0 }); }
+    };
+    // иллюзии: появляются по одной, не больше 3 сразу (с 4-й фазы — до 4)
+    M.illUpd = (dt, P, lv) => {
+      if (!Ill) Ill = mkIll(); M.illT -= dt; const n = P.foes.filter(f => f.ill && !f.dead).length, mx = M.boss && M.boss.ph >= 4 ? 4 : 3;
+      if (M.illT <= 0 && n < mx) { M.illT = rnd(3, 5) - (M.boss ? M.boss.ph * 0.3 : 0); let x = 0; for (let k = 0; k < 6; k++) { x = rnd(30, BR1 - 30); if (Math.abs(x - P.x) > 90) break; }
+        P.foes.push(new Ill(M, x, GY, ILLS[(Math.random() * ILLS.length) | 0])); Sound.play('zap', 0.3);
+        for (let i = 0; i < 3; i++) P.fx.push({ t: 0, sh: has('kDart9', 'h0') ? 'kDart9' : 'fxL9', fr: [has('kDart9', 'h0') ? 'h0' : 'spark'], x: x + rnd(-12, 12), y: GY - rnd(10, 60), vx: 0, vy: -20, s: 0.25, life: 0.6, fade: 1, add: 1 }); }
+    };
+    // мини-катсцена: Семён стреляет в Валеру дротиком — начинаются галлюцинации
+    M.dartScript = function* () {
+      const P = LP(), b = M.boss, D = 0.016; M.cut = 1; Scene.dialogTop = true; P.ebul = []; M.strikes = []; M.drops = [];
+      if (b.form) b.unmorph(); b.fly = 0; b.y = GY; b.act = 'bolt'; b.stT = 0; b.dir = P.x < b.x ? -1 : 1; b.invT = 0; b.vis = 1; P.st = 'stand';
+      yield 0.5; Sound.play('throw');
+      const [fx, fy] = b.fist(); M.dart = { x: fx + b.dir * 20, y: fy, vx: b.dir * 420 };
+      while (M.dart && Math.abs(M.dart.x - P.x) > 8) { M.dart.x += M.dart.vx * D; M.dart.y += ((P.y - 50) - M.dart.y) * 0.08; yield D; }
+      M.dart = null; Sound.play('hurt'); G.flash(0.25, '#7f7'); G.shake(4, 0.4); P.st = 'hurt';
+      for (let i = 0; i < 6; i++) P.fx.push({ t: 0, sh: has('kDart9', 'h0') ? 'kDart9' : 'fxL9', fr: [has('kDart9', 'h0') ? (i % 2 ? 'h0' : 'h1') : 'spark'], x: P.x + rnd(-20, 20), y: P.y - rnd(30, 80), vx: rnd(-30, 30), vy: -20, s: 0.35, life: 1.4, fade: 1, add: 1 });
+      yield 0.6; P.st = 'stand';
+      yield* Scene.say('semen', 'Сладких снов, Валерий. Поздоровайся со старыми друзьями.', null);
+      M.illOn = 1; if (!Ill) Ill = mkIll();
+      for (let i = 0; i < 3; i++) { const x = [40, 220, BR1 - 30][i]; P.foes.push(new Ill(M, x, GY, ILLS[(Math.random() * ILLS.length) | 0])); Sound.play('zap', 0.3); yield 0.35; }
+      yield* Scene.say('valera', 'Чё за... Тараканы? Зомби?! Опять вы?!', null);
+      b.act = 'run'; b.stT = 0;
     };
     M.hazAt = () => null;
     M.shootProps = () => {};
@@ -236,12 +329,13 @@
     M.drawBack = (c, cx, cy) => {
       c.fillStyle = '#030805'; c.fillRect(0, 0, 640, 360); const fy = GY - cy, t = M.t;
       // дальний зал
-      const fim = L9.img.kFar; if (fim) { const h = 400, w = fim.width * h / fim.height, y = clamp(-28 - (cy - 94) * 0.05, 360 - h, 0); for (let x = -((cx * 0.12 % w) + w) % w; x < 640; x += w) c.drawImage(fim, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); }
+      const fim = L9.img.kCave || L9.img.kFar; if (fim) { const h = 330, w = fim.width * h / fim.height, y = -100 - (cy - 150) * 0.05; for (let x = -((cx * 0.12 % w) + w) % w; x < 640; x += w) c.drawImage(fim, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); }     // вдали — пещера (середина кадра с просветом — в видимой полосе над средним планом)
       haze(c, 0.18);
       for (let i = 0; i < 6; i++) { const X = ((i * 190 - cx * 0.15) % 1140 + 1140) % 1140 - 100, u = ((t * 0.1 + i * 0.31) % 1); S(c, 'fxZ9', 'sm0', X, fy - 120 - u * 190, 0.9 + u, { a: 0.2 * (1 - u) }); }
       fog(c, t, 5, 60, 200, 6, 0.10, 2.4, 0.15, cx);
       // средний план: котлы, трубы, монорельс; капсулы едут и сбрасывают людей
-      const mim = L9.img.kMid2; if (mim) { const h = MID_H, w = mim.width * h / mim.height, k = h / mim.height, top = fy + 34 - h, ox = -((cx * 0.42 % w) + w) % w;
+      const mim = L9.img.kMid2; if (mim) { const h = MID_H, w = mim.width * h / mim.height, k = h / mim.height, top = fy - 92,     // верх слоя ниже чана: над ним видна пещера
+        ox = -((cx * 0.42 % w) + w) % w;
         for (let X = ox - w; X < 640 + w; X += w) {
           if (X + w < -60 || X > 700) continue;
           c.drawImage(mim, Math.floor(X), Math.round(top), Math.ceil(w) + 1, h);
@@ -275,14 +369,14 @@
         // патрубок в потолке: пока чан наполняется — струя в него
         if (has('kFl9', 'pipe')) { const pk = 0.25, ox = l.x - d * 12, py0 = LAD_TOP - 14;
           c.save(); c.beginPath(); c.rect(ox - 40, py0 - 2, 80, 100 * pk * 0.5 + 2); c.clip(); S(c, 'kFl9', 'pipe', ox + (d > 0 ? -11.6 : 11.6), py0 + 334 * pk * 0.5 / 2, pk, { flip: d < 0 }); c.restore();
-          if (l.st === 'fill') { const n = 'c' + ((t * 10) | 0) % 3, top = py0 + 100 * pk * 0.5 - 2, bot = cyL + 20 - l.lvl * 15, len = bot - top; S(c, 'kFx9', n, ox, top + len / 2, 0.12, { sy: len / (L9.size('kFx9', n)[1] * 0.12) }); } }
+          if (l.st === 'fill') stream(c, ox, P.cam.y - 4, cyL + 16 - l.lvl * 12, 7, t, 0.8); }
         // кадр чана (носик — в сторону от стропы)
         let fr = 'full', fr2 = null, fa = 0;
         if (l.st === 'fill') { const q = l.lvl * 3, i0 = Math.min(2, q | 0); fr = ['e', 'q1', 'q2'][i0]; fr2 = ['q1', 'q2', 'full'][i0]; fa = q - i0; }
         else if (l.st === 'tilt') fr = 't25'; else if (l.st === 'pour') fr = 'pour'; else if (l.st === 'thin') fr = 'thin'; else if (l.st === 'tE') fr = 'tE';
         SH(c, 'kLad9', fr, l.x, cyL, LAD_H, { flip: d < 0 }); if (fr2 && fa > 0.02) SH(c, 'kLad9', fr2, l.x, cyL, LAD_H, { a: fa, flip: d < 0 });
         if (l.st === 'full' && (t * 3 | 0) % 2) SH(c, 'kFx9', 'drops', l.x - 3 * d, LAD_TOP + 24, 7, { a: 0.6 });
-        if (l.st === 'pour' || l.st === 'thin') { const n = 'c' + ((t * 12) | 0) % 3, top = LAD_TOP + LAD_H - 8, len = GY - top, wk = l.st === 'pour' ? 0.3 : 0.12; S(c, 'kFx9', n, l.zx, top + len / 2, wk, { sy: len / (L9.size('kFx9', n)[1] * wk) }); }
+        if (l.st === 'pour' || l.st === 'thin') stream(c, l.zx, cyL - 6, GY + 2, l.st === 'pour' ? 15 : 6, t, 1.6);     // от носика до пола одной текущей струёй
         // стропа
         if (has('kSl9', 'rest')) { const sk = 0.42, q = sk * 0.5, sg = l.sl > l.x ? -1 : 1, fx = l.sl - sg * (122 - 84) * q, pul = l.pull > 0 ? Math.min(1, l.pull * 3) : 0;
           const y0 = PUL_Y - 23 * q, hy = GY - 36 + pul * 8, y1 = hy - 350 * q;
@@ -295,16 +389,17 @@
       }
       // молнии: метка на полу, затем разряд сверху
       for (const s of M.strikes) { if (s.t < 0) continue; if (s.t < 0.7) { if ((t * 14 | 0) % 2) S(c, 'fxZ9', 'sp0', s.x, GY - 4, 0.3 + s.t * 0.4, { add: 1 }); }
-        else if (has('semP9', 'light')) { const [, lh] = L9.size('semP9', 'light'), k = 26 / L9.size('semP9', 'light')[0]; S(c, 'semP9', 'light', s.x, GY + 2, k, { add: 1, sy: (GY + 30) / (lh * k), flip: (t * 20 | 0) % 2 }); } }
+        else if (has('semP9', 'light')) { const [, lh] = L9.size('semP9', 'light'), k = 26 / L9.size('semP9', 'light')[0]; const top = P.cam.y - 4, hh = GY - top; S(c, 'semP9', 'light', s.x, top + hh / 2, k, { add: 1, sy: hh / (lh * k), flip: (t * 20 | 0) % 2 }); } }
       for (const d of M.drops) { if (d.t < 0) { if (d.t > -0.6 && !inPit(d.x)) S(c, 'props8', 'shadow', d.x, GY + 1, 0.4 + (0.6 + d.t), { a: 0.5 }); continue; } SH(c, 'semP9', 'drop', d.x, d.y, 18); }
+      if (M.dart) SH(c, has('kDart9', 'd0') ? 'kDart9' : 'semP9', has('kDart9', 'd0') ? ((t * 12 | 0) % 2 ? 'd0' : 'd1') : 'bolt', M.dart.x, M.dart.y, 10, { flip: M.dart.vx < 0 });
       if (M.sitFr) SH(c, 'vSit9', M.sitFr, P.x, GY + 2, 56);
       for (const k of M.picks) { const bob = Math.sin(k.t * 4) * 2; if (k.kind === 'pelmeni' || k.kind === 'kefir' || k.kind === 'pies') Art.item(c, k.kind, k.x, k.y - 14 + bob, 0, 1); else { S(c, 'fxL9', 'spark', k.x, k.y - 14, 0.4, { add: 1 }); S(c, 'pick9', k.kind, k.x, k.y - 16 + bob, 1); } }
     };
     M.drawFront = () => {};
-    M.drawOver = (c, cx) => { const t = M.t; fog(c, t, 4, 230, 330, 14, 0.09, 2.6, 1.1, cx); };     // ближняя дымка у пола поверх всего
+    M.drawOver = (c, cx) => { const t = M.t; if (M.illOn && has('kDart9', 'h0')) for (let i = 0; i < 3; i++) { const u = (t * 0.07 + i * 0.33) % 1; S(c, 'kDart9', i % 2 ? 'h0' : 'h1', ((i * 230 + t * 18) % 760) - 60, 60 + i * 90 + Math.sin(t + i) * 20, 1.6, { a: 0.07 + 0.04 * Math.sin(t * 2 + i), add: 1, rot: t * 0.2 * (i % 2 ? 1 : -1) }); } fog(c, t, 4, 230, 330, 14, 0.09, 2.6, 1.1, cx); };     // ближняя дымка у пола поверх всего
     M.drawHud = (c) => {     // шкала Семёна: 5 серий
       const b = M.boss; if (!b || M.cut === 1 && !M.started) return;
-      const x = 420, y = 24, w = 200;     // шкала сверху — котёл внизу не закрыт c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(x - 4, y - 14, w + 8, 24);
+      const x = 420, y = 24, w = 200; c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(x - 4, y - 14, w + 8, 24);     // шкала сверху — котёл внизу не закрыт
       G.text('СЕМЁН · ФАЗА ' + Math.min(5, b.ph), x, y - 11, { size: 8, color: b.slime > 0 ? '#7fff7f' : '#ff7070' });
       c.fillStyle = '#300'; c.fillRect(x, y, w, 7); c.fillStyle = b.slime > 0 ? '#5f5' : '#d33'; c.fillRect(x, y, w * Math.max(0, b.hp) / 100, 7);
       c.fillStyle = '#000'; for (let i = 1; i < 5; i++) c.fillRect(x + w * i / 5 - 1, y, 2, 7);

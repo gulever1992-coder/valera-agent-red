@@ -827,8 +827,15 @@ if have('l9zfar_1.jpg'):
         _po.crop((_cx - _sz // 2, _t - 6, _cx + _sz // 2, _t - 6 + _sz)).resize((128, 128), Image.LANCZOS).save(os.path.join(ROOT, 'assets', 'spr', _nm + '.png'))
 
 # ---------- часть 7 «БОСС СЕМЁН» (Flow 2026-10-22) ----------
+def drop_edge(im):     # убрать куски соседних кадров, касающиеся левого/правого края вырезки
+    from scipy import ndimage
+    a = np.asarray(im).copy(); m = a[..., 3] > 0; lab, n = ndimage.label(m, structure=np.ones((3, 3)))
+    bad = set(lab[:, 0]) | set(lab[:, -1]); bad.discard(0)
+    for i in bad: a[lab == i, 3] = 0
+    return Image.fromarray(a)
 if have('l9bsem1_0.jpg'):
-    _s1 = cut('l9bsem1_0.jpg', 'm', 3, 5, clean='edge'); pack('semB9', _s1, VH * 1.04 / hgt(_s1, 9), names=['r0', 'r1', 'r2', 'r3', 'dash', 'armOff', 'aim', 'fireR', 'sky', 'laugh', 'fly0', 'fly1', 'slimed', 'kneel', 'stagger'])
+    _s1 = cut('l9bsem1_0.jpg', 'm', 3, 5, clean='edge'); _s1[8] = trim(drop_edge(rgba_m('l9bsem1_0.jpg', (860, 140, 1080, 505))))     # «рука к небу»: молния уходила в соседний ряд и обрезалась
+    pack('semB9', _s1, VH * 1.04 / hgt(_s1, 9), names=['r0', 'r1', 'r2', 'r3', 'dash', 'armOff', 'aim', 'fireR', 'sky', 'laugh', 'fly0', 'fly1', 'slimed', 'kneel', 'stagger'])
     _s2 = cut('l9bsem2_0.jpg', 'm', 2, 4, clean='edge'); pack('semP9', _s2, 0.5, anchor='mid', names=['fistO', 'fistC', 'seg', 'rocket', 'bolt', 'jet', 'light', 'drop'])
     _ar = np.asarray(Image.open(os.path.join(SRC, 'l9barena_1.jpg')).convert('RGB')).copy(); _dk = _ar.max(2) < 60     # тёмные линии сетки ячеек -> пурпур
     for _y in np.where(_dk.mean(1) > 0.6)[0]: _ar[max(0, _y - 2):_y + 3] = (255, 0, 255)
@@ -891,6 +898,11 @@ if have('l9kfb_1.jpg'):     # правки владельца 2: пол и мо�
     pack('kFB9', [trim(f) for f in delav(depurple([_fb]))], 0.5, anchor='mid', names=['fb'])
     _m = rgba_m('l9kmid2_1.jpg'); _m = seamless(Image.fromarray(np.dstack([np.asarray(delav(depurple([_m.convert('RGB')]))[0]), np.asarray(_m)[..., 3]])), 140); _a = np.asarray(_m).copy(); _a[_a[..., 3] < 60, 3] = 0
     Image.fromarray(_a).save(os.path.join(OUT, 'kMid2.png')); DATA.setdefault('_bgp', {})['kMid2'] = 1; DATA['_bg']['kMid2'] = {'w': _m.width, 'h': _m.height}
+
+if have('l9kcave_1.jpg'):     # дальний план боя с Семёном — пещера (по просьбе владельца) и дротик с галлюцинациями
+    _im = seamless(Image.open(os.path.join(SRC, 'l9kcave_1.jpg')).convert('RGB'), 160); _im.save(os.path.join(OUT, 'kCave.jpg'), quality=90); DATA['_bg']['kCave'] = {'w': _im.width, 'h': _im.height}
+    _dc = _cells('l9kdart_1.jpg', 2, 2, 8); _dd = trim(_dc[0]); _dh = trim(_dc[3])
+    pack('kDart9', [_dd, _dd, _dh, _dh], 0.5, anchor='mid', names=['d0', 'd1', 'h0', 'h1'])
 
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 
