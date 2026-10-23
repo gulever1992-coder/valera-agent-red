@@ -9,7 +9,7 @@
 (() => {
   const S = L9.spr, clamp = L9.clamp, rnd = L9.rnd, LP = () => L9.PARTS.lab;
   const W = 640, GY = 330, BR0 = 110, BR1 = 420, LAD_X = 22, VAT_X0 = 92, REFILL = 9, DMG_K = 0.85;     // схема владельца: слева бетонный пол с лестницей, мостик на опорах над котлом, справа — открытый котёл
-  const LAD_H = 64, BEAM_T = GY - 228, BEAM_H = 22, HOIST_H = 40, PUL_H = 34, LAD_TOP = BEAM_T + BEAM_H + HOIST_H - 4, LAD_LIP = 16, PUL_Y = BEAM_T + BEAM_H + PUL_H * 0.66, VAT_R = 600;     // балка у потолка: на тали висит чан, на кронштейне — блок троса     // чаны под потолком; блок стропы у потолка     // ковш: высота кадра, верх (крюк), смещение струи от центра
+  const LAD_H = 64, BEAM_T = GY - 228, BEAM_H = 22, HOIST_H = 40, PUL_H = 34, LAD_TOP = BEAM_T + BEAM_H + HOIST_H - 20, LAD_LIP = 16, PUL_Y = BEAM_T + BEAM_H + PUL_H * 0.66, VAT_R = 600;     // балка у потолка: на тали висит чан, на кронштейне — блок троса     // чаны под потолком; блок стропы у потолка     // ковш: высота кадра, верх (крюк), смещение струи от центра
   const LADLES = [{ x: 280, sl: 336 }];     // по просьбе владельца — один чан со стропой
   const MID_H = 250, MK = MID_H / 768;     // средний план: высота слоя и масштаб пикселей исходника
   const MID_VATS = [[146, 350], [778, 330]], MID_CASC = [], MID_W = 1236, RAIL_Y = GY - 190;     // RAIL_Y — монорельс у потолка
@@ -54,8 +54,8 @@
     fist() { const [sx, sy] = this.shoulder(); return [sx + this.dir * this.ext, sy]; }
     pick(P) {     // все способности с первой фазы; с фазой растут вес опасных атак
       const ph = this.ph, fo = P.foes.filter(f => !f.dead && f !== this).length;
-      const L = [['punch', 3], ['bolt', 3], ['rocket', 2 + ph * 0.3], ['dash', 2 + ph * 0.3], ['light', 2 + ph * 0.4], ['fly', 1.5 + ph * 0.3], ['rain', 1 + ph * 0.4],
-        ['invis', this.invT > 0 ? 0 : 1 + ph * 0.2], ['summon', this.sumCd <= 0 && fo < 1 + (ph >> 1) ? 2 : 0], ['morph', this.morphCd > 0 ? 0 : 2.5 + ph * 0.4]];
+      const L = [['punch', 0], ['bolt', 3], ['rocket', 2 + ph * 0.3], ['dash', 2 + ph * 0.3], ['light', 2 + ph * 0.4], ['fly', 1.5 + ph * 0.3], ['rain', 1 + ph * 0.4],
+        ['invis', this.invT > 0 ? 0 : 1 + ph * 0.2], ['summon', this.sumCd <= 0 && fo < 1 + (ph >> 1) ? 2 : 0], ['morph', this.morphCd > 0 ? 0 : 2.5 + ph * 0.4], ['shove', P.x > BR0 + 20 && P.x < BR1 ? 1.4 + ph * 0.3 : 0.3]];     // shove — подбежать и толкнуть с мостика в котёл
       let s = L.reduce((a, b) => a + b[1], 0) * Math.random(); for (const [n, w] of L) { s -= w; if (s <= 0) return n; } return 'bolt';
     }
     update(dt, P, lv) {
@@ -80,6 +80,13 @@
         if (this.stT > T0 && !this.shot) { const [fx, fy] = this.fist(), bx = P.box(); if (fx > bx[0] - 8 && fx < bx[0] + bx[2] + 8 && fy > bx[1] - 8 && fy < bx[1] + bx[3] + 8) { this.shot = 1; P.hurt(12, this.x); G.shake(3, 0.2); Sound.play('punch'); } }
         if (this.stT > T0 + 0.85) this.done();
       }
+      else if (a === 'shove') {     // подбегает слева от Валеры, замах — и толкает рукой к краю мостика (в котёл)
+        if (!this.shot) { const want = P.x - 38, d0 = want - this.x; this.dir = P.x < this.x ? -1 : 1;
+          if (this.fly < 0.3 && Math.abs(d0) > 8 && this.stT < 2.2) this.vx = Math.sign(d0) * (190 + ph * 25); else { this.vx = 0; this.shot = 1; this.stT = 0; this.dir = 1; if (Math.random() < 0.5) lv.say(['ОСВЕЖИСЬ, ВАЛЕРА!', 'ПОПЛАВАЙ!', 'В КОТЁЛ ЕГО!'][rnd(0, 3) | 0], 1.2); } }
+        else { this.vx = 0; this.dir = 1;
+          if (this.shot === 1 && this.stT > 0.45 - ph * 0.04) { this.shot = 2; Sound.play('punch');
+            if (Math.abs(P.x - this.x - 30) < 34 && Math.abs(P.y - this.y) < 50 && P.inv <= 0 && P.st !== 'roll') { P.hurt(7, this.x); P.vx = 270 + ph * 15; P.vy = -220; M.shoveT = 0.7; G.shake(4, 0.25); } }
+          if (this.stT > 1.0) this.done(); } }
       else if (a === 'bolt') { this.vx = 0;
         const n = [1, 2, 3, 3, 5][ph - 1], vol = ph >= 4 ? 2 : 1;
         if (this.shot < vol && this.stT > 0.35 + this.shot * 0.35) { this.shot++; const [sx, sy] = this.fist(), ang = Math.atan2(P.y - 40 - sy, P.x - sx);
@@ -136,9 +143,9 @@
           else if (m === 'throw') { this.vx = 0; face(); this.fan = 'throw'; if (T > 0.3 && !this.fmN) { this.fmN = 1; M.eb(this.x + this.dir * 16, this.y - 70, dx * 0.9, -300, { kind: 'rocket', dmg: 10, grav: 0.55 }); Sound.play('throw', 0.6); } if (T > 0.7) go('walk'); } }
         else if (k === 'vande') {     // Ванделорд: мухоморы из-под земли, веер, самонаводящиеся споры, кислотный дождь
           if (m === 'walk') { walkTo(P.x + (this.x < P.x ? -180 : 180), 110); face(); this.fan = Math.abs(this.vx) > 1 ? 'walk' : 'idle';
-            if (T > 1.1 - ph * 0.1) { const r = Math.random(); if (r < 0.3) { go('quake', 'punchGround'); lv.say('ГРИБЫ, ВСТАВАЙТЕ!', 1.2); } else if (r < 0.55) go('volley', 'beam'); else if (r < 0.8) { go('spore', 'orbA'); lv.say('СПОРА ТЬМЫ!', 1.2); } else go('acid', 'skyArms'); } }
+            if (T > 1.1 - ph * 0.1) { const r = Math.random(); if (r < 0.3) { go('quake', 'punchGround'); lv.say('ГРИБЫ, ВСТАВАЙТЕ!', 1.2); } else if (r < 0.55) go('volley', 'point'); else if (r < 0.8) { go('spore', 'orbA'); lv.say('СПОРА ТЬМЫ!', 1.2); } else go('acid', 'skyArms'); } }
           else if (m === 'quake') { this.vx = 0; this.fan = 'punchGround'; if (T > 0.35 && !this.fmN) { this.fmN = 1; G.shake(5, 0.3); Sound.play('boom', 0.8); M.quakes.push({ x0: this.x, dir: this.dir, sp: 230 + ph * 20, t: 0, next: 0, pops: [] }); } if (T > 0.8) go('walk'); }
-          else if (m === 'volley') { this.vx = 0; face(); this.fan = 'beam'; if (T > 0.35 && !this.fmN) { this.fmN = 1; const ang = Math.atan2(P.y - 44 - (this.y - 56), dx), n = 4 + ph; for (let i = 0; i < n; i++) { const a2 = ang + (i - (n - 1) / 2) * 0.17; M.eb(this.x + this.dir * 20, this.y - 56, Math.cos(a2) * 260, Math.sin(a2) * 260, { kind: 'bolt', dmg: 8 }); } Sound.play('zap', 0.8); } if (T > 0.8) go('walk'); }
+          else if (m === 'volley') { this.vx = 0; face(); this.fan = 'point'; if (T > 0.35 && !this.fmN) { this.fmN = 1; const ang = Math.atan2(P.y - 44 - (this.y - 56), dx), n = 4 + ph; for (let i = 0; i < n; i++) { const a2 = ang + (i - (n - 1) / 2) * 0.17; M.eb(this.x + this.dir * 20, this.y - 56, Math.cos(a2) * 260, Math.sin(a2) * 260, { kind: 'bolt', dmg: 8 }); } Sound.play('zap', 0.8); } if (T > 0.8) go('walk'); }
           else if (m === 'spore') { this.vx = 0; this.fan = 'orbA'; if (T > 0.5 && !this.fmN) { this.fmN = 1; for (let i = 0; i < (ph > 2 ? 3 : 2); i++) M.eb(this.x, this.y - 70, rnd(-60, 60), -90, { kind: 'spore', dmg: 10, home: 1, life: 4.5, draw: (c, e) => { if (Spr.sheets.proj6) Spr.drawC(c, 'proj6', 5, e.x, e.y, Math.atan2(e.vy, e.vx), 0.8); else SH(c, 'semP9', 'bolt', e.x, e.y, 16, { add: 1 }); } }); Sound.play('zap', 1); } if (T > 0.9) go('walk'); }
           else if (m === 'acid') { this.vx = 0; this.fan = 'skyArms'; if (T > 0.5 && !this.fmN) { this.fmN = 1; for (let i = 0; i < 6 + ph * 2; i++) M.drops.push({ x: rnd(10, BR1), t: -i * 0.18 - 0.6, y: -40 }); M.drops.push({ x: P.x, t: -0.7, y: -40 }); } if (T > 1.0) go('walk'); } }
         else if (k === 'chief') {     // главарь спецназа: двоечка, рывок, кувырок, очередь из автомата, граната, прыжок с ударом об пол
@@ -184,10 +191,10 @@
       if (this.form && !this.dying && this.slime <= 0) { this.drawForm(c); return; }
       if (this.dying) fr = this.M.semFr || 'stagger';
       else if (this.slime > 0) { sh = 'kSem9'; fr = this.slT < 0.55 ? 'pourHit' : this.slime > 1.6 ? 'drench' : 'kneelS'; hh = fr === 'pourHit' ? 122 : fr === 'kneelS' ? 70 : 88; }
-      else if (this.auraT > 0) { sh = 'kSem9'; fr = 'aura'; hh = 88; }
       else if (this.fly > 0.05) fr = (t * 8 | 0) % 2 ? 'fly0' : 'fly1';
       else if (a === 'roar') fr = 'laugh';
       else if (a === 'punch') fr = this.stT < 0.3 ? 'aim' : 'armOff';
+      else if (a === 'shove' && this.shot) fr = 'aim';
       else if (a === 'bolt') fr = 'aim';
       else if (a === 'rocket') fr = this.stT > 0.4 ? 'fireR' : 'aim';
       else if (a === 'dash') fr = 'dash';
@@ -259,7 +266,7 @@
       M.t = 0; M.strikes = []; M.drops = []; M.quakes = []; M.cut = 1; M.started = 0; M.sitFr = null; M.semRot = 0; M.semDy = 0; M.melt = 0; M.boil = 0;
       M.lad = LADLES.map(l => { const d = l.sl < l.x ? 1 : -1; return { ...l, d, zx: l.x + d * LAD_LIP, st: 'full', t: 0, pull: 0, lvl: 1 }; });     // носик — в сторону от стропы
       M.caps = []; M.capT = 0.5; M.bubs = []; M.illOn = 0; M.illT = 2; M.dart = null; M.dartPend = 0;
-      M.reveal = !KEEP; M.fig = null; M.cloak = null; M.fb = null;     // разоблачение — только при первом входе, после смерти бой сразу
+      M.reveal = !KEEP; M.peel = null; M.fig = null; M.cloak = null; M.fb = null;     // разоблачение — только при первом входе, после смерти бой сразу
       if (!KEEP) PH_SAVE = 1; KEEP = 0; if (PH_SAVE >= 3) { M.illOn = 1; M.illT = 3; } M.boss = new Sem(M, 760, GY); M.boss.ph = PH_SAVE; M.boss.hp = 100 - (PH_SAVE - 1) * 20; P.foes.push(M.boss);
       M.picks = [['kefir', 270, GY], ['rocket', 60, GY]].map(([kind, x, y]) => ({ kind, x, y, t: 0 })); M.pickT = 22;
       P.x = 60; P.dir = 1; P.hide = 0; P.melted = 0;
@@ -273,19 +280,23 @@
     M.revealScript = function* () {     // разоблачение (дословно по ТЗ, перенесено из части «закрытый завод»): Икс -> Кеша -> Граблионок -> Семён; речь с флешбеками
       const P = LP(), D = 0.016, b = M.boss, MEET = 250; Scene.dialogTop = false;
       b.vis = 0; b.x = 900; P.vx = 0; P.st = 'stand'; P.dir = 1; P.inv = 0;     // неуязвимость в сцене не убывает — иначе Валера мигает всю сцену
-      const f = M.fig = { sh: 'maskZ9', fr: 'hood', x: MEET + 130, a: 0, dir: -1 };
-      for (let t = 0; t < 1.2; t += D) { f.a = t / 1.2 * 0.55; yield D; }
+      // с самого начала стоит спиной: тело Семёна, голова — маска Кеши; поворачивается и сам снимает маски
+      const f = M.fig = { sh: 'revZ9', fr: 'rb', x: MEET, a: 1, dir: -1 };
+      const kr = has('revZ9', 'rb') ? 86 / L9.size('revZ9', 'rb')[1] : 1;
+      const toss = (hfr) => { const P = LP(); P.fx.push({ t: 0, sh: 'revZ9', fr: [hfr], x: f.x - 22, y: GY - 50, vx: -60, vy: -260, g: 640, s: kr, life: 1.4, rot: -0.5 }); Sound.play('throw', 0.5); };
+      const offHead = function* (p, hfr) {     // хватается за голову, снимает её — под ней другая; снятая голова в руке, потом летит в сторону
+        f.fr = p + '1'; Sound.play('punch', 0.3); yield 0.45; f.fr = p + '2'; G.shake(1.5, 0.3); yield 0.5;
+        Sound.play('land', 0.5); puff(f.x, GY - 74, 2); f.fr = p + '3'; yield 0.7; f.fr = p + '4'; yield 0.6; };
+      yield 0.8;
       yield* Scene.say('mrx', 'Ну, пора бы раскрыть все карты.', null);
-      Sound.play('door', 0.5); while (f.x > MEET) { f.x -= 55 * D; f.a = Math.min(1, f.a + D * 0.6); f.walk = (f.walk || 0) + D; yield D; } f.walk = 0; f.a = 1;
-      yield 0.4; Sound.play('zap'); G.flash(0.12, '#8f8'); puff(f.x, GY - 40, 8); M.cloak = { x: f.x + 6 }; f.fr = 'k0'; yield 0.9;
+      f.fr = 'rt'; Sound.play('land', 0.4); yield 0.4; f.fr = 'k0'; yield 0.5;
       yield* Scene.say('valera', 'Кеша, не может быть!', null);
-      f.fr = 'k1'; yield 0.9; f.fr = 'k0';
-      P.st = 'run'; while (P.x < f.x - 64) { P.x += 120 * D; yield D; } P.st = 'butt'; P.stT = 0; yield 0.12;
-      throwMask('mk', f.x); f.fr = 'g0'; puff(f.x, GY - 70, 3); yield 0.4; P.st = 'stand'; yield 0.4;
+      f.fr = 'k2'; yield 0.9; f.fr = 'k1'; yield 0.4;
+      yield* offHead('xk', 'hk');
       yield* Scene.say('valera', 'Это всё был ты?', null);
-      f.fr = 'g1'; yield 1.0; f.fr = 'g0'; yield 0.2;
-      P.st = 'butt'; P.stT = 0; yield 0.12; throwMask('mg', f.x); f.sh = 'semZ9'; f.fr = 'talk'; puff(f.x, GY - 70, 3); yield 0.4; P.st = 'stand';
-      for (let t = 0; t < 0.6; t += D) { P.x -= 90 * D; yield D; }
+      toss('hk'); f.fr = 'g2'; yield 0.9; f.fr = 'g1'; yield 0.4;
+      yield* offHead('xg', 'hg'); toss('hg'); f.sh = 'semZ9'; f.fr = 'talk'; yield 0.4;
+      P.st = 'run'; P.dir = 1; for (let t = 0; t < 0.6; t += D) { P.x -= 70 * D; yield D; } P.st = 'stand';
       yield 0.5; f.fr = 'laugh'; yield 0.6; f.fr = 'talk';
       yield* Scene.say('valera', 'Семён, это ты? Ты же большой человек в приёмке завода!', null);
       M.fb = { img: 'zfbA', t: 0 }; f.fr = 'talk';
@@ -370,7 +381,7 @@
       if (M.cut === 1 && !M.started) { M.started = 1; Scene.run(M.introScript, () => { M.cut = 0; lv.say('ДЁРНИ СТРОПУ — ОБЛЕЙ СЕМЁНА ЖИЖЕЙ!', 3); }); return; }
       if (M.melt) { M.melt += dt; P.vx = 0; P.vy = 0; P.y = GY + 48; return; }
       M.mech(dt, P, false);
-      if (P.st === 'hurt' && P.vx > 0 && P.x > BR1 - 70) P.vx *= 0.25;     // у края мостика удар почти не отбрасывает в котёл
+      M.shoveT = Math.max(0, (M.shoveT || 0) - dt); if (P.st === 'hurt' && P.vx > 0 && P.x > BR1 - 70 && !M.shoveT) P.vx *= 0.25;     // у края мостика удар почти не отбрасывает в котёл
       // упал в котёл — сразу растворяется
       if (inPit(P.x) && P.y > GY + 40) { M.melt = 0.001; P.hide = 1; P.melted = 1; P.inv = 0; M.splash(P.x, 1.2); for (let i = 0; i < 4; i++) P.fx.push({ t: 0, sh: 'kFx9', fr: ['st1'], x: P.x + rnd(-12, 12), y: GY + 50, vx: 0, vy: -40, s: 0.3, life: 1.4, fade: 1 }); lv.say('ВАЛЕРА РАСТВОРИЛСЯ', 2); lv.hurt(999); return; }
       for (const l of M.lad) if (Math.abs(P.x - l.sl) < 26 && P.onG) {
@@ -430,8 +441,6 @@
       fog(c, t, 6, 120, 260, 9, 0.12, 2.0, 0.35, cx);
     };
     M.drawMid = (c, P) => {
-      if (M.cloak) SH(c, 'maskZ9', 'cloak', M.cloak.x, GY + 2, 22);
-      { const f = M.fig; if (f) { const bob = f.walk ? Math.abs(Math.sin(f.walk * 8)) * 2 : 0, h = f.sh === 'semZ9' ? 86 : f.fr === 'hood' ? 92 : 84; SH(c, f.sh, f.fr, f.x, GY + 2 - bob, h, { flip: f.sh === 'semZ9', a: f.a ?? 1 }); } }
       const t = M.t;
       // пол и мостик — одна картинка Flow строго сбоку (мостик без перил, труба с жижей из пола); затем котёл перекрывает низ опор
       const vy = GY + 34;     // верх края котла
@@ -479,6 +488,11 @@
       if (M.dart) SH(c, has('kDart9', 'd0') ? 'kDart9' : 'semP9', has('kDart9', 'd0') ? ((t * 12 | 0) % 2 ? 'd0' : 'd1') : 'bolt', M.dart.x, M.dart.y, 10, { flip: M.dart.vx < 0 });
       if (M.sitFr) SH(c, 'vSit9', M.sitFr, P.x, GY + 2, 56);
       for (const k of M.picks) { const bob = Math.sin(k.t * 4) * 2; if (k.kind === 'pelmeni' || k.kind === 'kefir' || k.kind === 'pies') Art.item(c, k.kind, k.x, k.y - 14 + bob, 0, 1); else { S(c, 'fxL9', 'spark', k.x, k.y - 14, 0.4, { add: 1 }); S(c, 'pick9', k.kind, k.x, k.y - 16 + bob, 1); } }
+      // фигура разоблачения — поверх настила (стоит на мостике, а не за ним)
+      if (M.cloak) SH(c, 'maskZ9', 'cloak', M.cloak.x, GY + 2, 22);
+      { const f = M.fig; if (f) { const bob = f.walk ? Math.abs(Math.sin(f.walk * 8)) * 2 : 0, kr = has('revZ9', 'rb') ? 86 / L9.size('revZ9', 'rb')[1] : 1;     // спрайты разоблачения — в масштабе Семёна (спина = рост 86)
+        if (f.sh === 'revZ9') S(c, 'revZ9', f.fr, f.x, GY + 2 - bob, kr, { flip: f.fr !== 'rb' && f.fr !== 'rt', a: f.a ?? 1 }); else SH(c, f.sh, f.fr, f.x, GY + 2 - bob, 86, { flip: f.sh === 'semZ9', a: f.a ?? 1 });
+        if (M.peel && has('revZ9', M.peel.fr)) { const u = M.peel.t, [, hh] = L9.size('revZ9', M.peel.fr); S(c, 'revZ9', M.peel.fr, f.x - u * 6, GY + 2 - 86 + hh * kr - u * 18, kr, { flip: true, rot: -u * 0.35, a: 1 - Math.max(0, u - 0.7) / 0.3 }); } } }
     };
     M.drawFront = () => {};
     M.drawFb = (c) => {     // флешбеки: панели комикса по очереди, медленный наезд, затемнение по краям

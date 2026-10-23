@@ -816,8 +816,24 @@ if have('l9zfar_1.jpg'):
     _v = delav(depurple(cut('l9zvat_1.jpg', 'm', 1, 2, clean='edge'))); _v[0] = trim(_v[0].crop((0, int(_v[0].height * 0.13), _v[0].width, _v[0].height))); pack('vatZ9', _v, 1.0, names=['vat', 'spout'])     # пар над чаном срезан (сверху — кипящая жижа)
     _hz = cut('l9zhaz_0.jpg', 'm', 2, 4, clean='edge'); pack('hazZ9', _hz, 1.0, names=['vent', 'ventOn', 'pressUp', 'pressDn', 'drip', 'steam', 'pallet', 'gear'])
     _fx = cut('l9zfx_0.jpg', 'm', 2, 4, clean='edge'); pack('fxZ9', _fx, 0.6, anchor='mid', names=['f0', 'f1', 'f2', 'f3', 'sp0', 'sp1', 'sm0', 'sm1'])
-    _se = cut('l9zsem_1.jpg', 'm', 2, 5, clean='edge'); pack('semZ9', _se, VH * 1.04 / hgt(_se, 0), names=['idle', 'talk', 'spread', 'point', 'laugh', 'w0', 'w1', 'fist', 'fold', 'hurt'])
+    _se = cut('l9zbg_0.jpg' if have('l9zbg_0.jpg') else 'l9zsem_1.jpg', 'm', 2, 5, clean='edge'); pack('semZ9', _se, VH * 1.04 / hgt(_se, 0), names=['idle', 'talk', 'spread', 'point', 'laugh', 'w0', 'w1', 'fist', 'fold', 'hurt'])     # l9zbg — правка Flow: механическая рука во всех кадрах
     _mk = cut('l9zmask_1.jpg', 'm', 2, 4, clean='edge'); pack('maskZ9', _mk, VH * 1.0 / hgt(_mk, 0), names=['k0', 'k1', 'g0', 'g1', 'mk', 'mg', 'hood', 'cloak'])
+    if have('l9zak_0.jpg') and have('l9zag_0.jpg') and have('l9zab_0.jpg'):     # разоблачение: Семён с лицом Кеши / Граблионка и спиной — правки его спрайта во Flow (рука везде механическая)
+        import l9rev
+        _th = DATA['semZ9']['f'][0][3]     # рост Семёна в атласе
+        def _row(n):
+            _a = load(n); _m = key(_a, 'm', grid=False); fs = l9rev.split_cols(Image.fromarray(defringe(np.dstack([_a, np.where(_m, 0, 255)]).astype(np.uint8), 'm'))); k = _th / fs[0].height; return [f.resize((round(f.width * k), round(f.height * k)), Image.LANCZOS) for f in fs]     # без перекраски: красный галстук не трогаем
+        _k = _row('l9zak_0.jpg'); _g = _row('l9zag_0.jpg'); _b = _row('l9zab_0.jpg')
+        print('rev frames', len(_k), len(_g), len(_b))
+        _hk, _ = l9rev.head(_k[0], 0.27); _hg, _ = l9rev.head(_g[0], 0.27)
+        _hd = []
+        if have('l9zhd_0.jpg'):     # снятие головы: хватается за голову -> тянет -> под ней другая, снятая голова в руке (2 ряда по 4)
+            _a = load('l9zhd_0.jpg'); _m = key(_a, 'm', grid=False); _im = Image.fromarray(defringe(np.dstack([_a, np.where(_m, 0, 255)]).astype(np.uint8), 'm'))
+            for _r in range(2):
+                _fs = l9rev.split_cols(_im.crop((0, _im.height * _r // 2, _im.width, _im.height * (_r + 1) // 2)))[:4]; _kk = _th / _fs[2].height
+                _hd += [f.resize((round(f.width * _kk), round(f.height * _kk)), Image.LANCZOS) for f in _fs]
+            print('head frames', len(_hd))
+        pack('revZ9', _b[:2] + _k[:5] + _g[:5] + [_hk, _hg] + _hd, 1.0, names=['rb', 'rt', 'k0', 'k1', 'k2', 'k3', 'k4', 'g0', 'g1', 'g2', 'g3', 'g4', 'hk', 'hg'] + ['xk1', 'xk2', 'xk3', 'xk4', 'xg1', 'xg2', 'xg3', 'xg4'][:len(_hd)])
     for _n in ('l9zfbA_1.jpg', 'l9zfbB_1.jpg'):
         _o = 'zfb' + _n[5]; Image.open(os.path.join(SRC, _n)).convert('RGB').save(os.path.join(OUT, _o + '.jpg'), quality=90); DATA['_bg'][_o] = {'w': 1376, 'h': 768}
     _po = Image.open(os.path.join(SRC, 'l9zpor_0.jpg')).convert('RGB'); _pa = np.asarray(_po).max(2) > 20
@@ -909,6 +925,9 @@ if have('l9kfb_user2.png'):     # пол с мостиком — картинк�
 if have('l9kbeam_0.jpg'):     # балка у потолка: концы и середина (тайлится), таль с крюком (на ней висит чан), кронштейн с блоком троса
     _bm = lambda b: trim(delav(depurple([rgba_m('l9kbeam_0.jpg', b)]))[0])
     pack('kBeam9', [_bm((28, 48, 300, 316)), _bm((340, 48, 800, 316)), _bm((1060, 48, 1350, 316)), _bm((230, 478, 600, 766)), _bm((955, 360, 1295, 720))], 0.5, anchor='mid', names=['bL', 'bM', 'bR', 'hoist', 'pulley'])
+if os.path.exists(os.path.join(SRC, 'l9fxl_0.jpg')):     # ракета Валеры отдельно, с прозрачным фоном: на листе сложения тёмный корпус пропадал, оставался один хвост пламени
+    _im = Image.open(os.path.join(SRC, 'l9fxl_0.jpg')).convert('RGB'); _W, _H = _im.size; _c = np.asarray(_im.crop((4, _H * 2 // 4 + 4, _W // 4 - 4, _H * 3 // 4 - 4))).astype(np.int32)
+    _al = np.clip((_c.max(2) - 22) * 10, 0, 255).astype(np.uint8); pack('rocketL9', [trim(Image.fromarray(np.dstack([_c.astype(np.uint8), _al])))], 0.6, anchor='mid', names=['rocket'])
 if have('l9kmid2_1.jpg'):     # рельс монорельса (чистый отрезок без ферм и тележек) — тайлится по горизонтали, на нём едут капсулы
     pack('kRail9', depurple([rgba_m('l9kmid2_1.jpg', (586, 41, 715, 84))]), 1.0, anchor='mid', names=['rail'])
 

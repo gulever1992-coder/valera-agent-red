@@ -276,7 +276,8 @@
       const a = Math.atan2(b.vy, b.vx);
       if (b.w === 'gren') { S(c, 'pick9', 'grenades', b.x, b.y, 0.35, { rot: b.t * 10 }); return; }
       if (b.w === 'seed') { S(c, 'fxL9', 'seed', b.x, b.y, b.stuck ? 0.5 + Math.sin(b.t * 30) * 0.1 : 0.4, { rot: a }); return; }
-      S(c, 'fxL9', b.w === 'plasma' ? 'plasma' : b.w === 'rocket' ? 'rocket' : 'tracer', b.x, b.y, b.w === 'plasma' ? 0.5 : b.w === 'rocket' ? 0.45 : 0.32, { rot: a });
+      if (b.w === 'rocket' && L9D.rocketL9) S(c, 'rocketL9', 'rocket', b.x, b.y, 0.45, { rot: a });     // ракета целиком (корпус + пламя), без сложения цветов
+      else S(c, 'fxL9', b.w === 'plasma' ? 'plasma' : b.w === 'rocket' ? 'rocket' : 'tracer', b.x, b.y, b.w === 'plasma' ? 0.5 : b.w === 'rocket' ? 0.45 : 0.32, { rot: a });
     },
     drawHud(lv, c) {
       const w = WEAP[P.weap];
