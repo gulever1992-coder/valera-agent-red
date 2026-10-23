@@ -9,7 +9,7 @@
 (() => {
   const S = L9.spr, clamp = L9.clamp, rnd = L9.rnd, LP = () => L9.PARTS.lab;
   const W = 640, GY = 330, BR0 = 110, BR1 = 420, LAD_X = 22, VAT_X0 = 92, REFILL = 9, DMG_K = 0.85;     // схема владельца: слева бетонный пол с лестницей, мостик на опорах над котлом, справа — открытый котёл
-  const LAD_H = 64, LAD_TOP = GY - 184, LAD_LIP = 16, PUL_Y = GY - 176, VAT_R = 600;     // чаны под потолком; блок стропы у потолка     // ковш: высота кадра, верх (крюк), смещение струи от центра
+  const LAD_H = 64, LAD_TOP = GY - 232, LAD_LIP = 16, PUL_Y = GY - 222, VAT_R = 600;     // чаны под потолком; блок стропы у потолка     // ковш: высота кадра, верх (крюк), смещение струи от центра
   const LADLES = [{ x: 280, sl: 336 }];     // по просьбе владельца — один чан со стропой
   const MID_H = 250, MK = MID_H / 768;     // средний план: высота слоя и масштаб пикселей исходника
   const MID_VATS = [[146, 350], [778, 330]], MID_CASC = [], MID_W = 1236;
@@ -329,12 +329,13 @@
     M.drawBack = (c, cx, cy) => {
       c.fillStyle = '#030805'; c.fillRect(0, 0, 640, 360); const fy = GY - cy, t = M.t;
       // дальний зал
-      const fim = L9.img.kCave || L9.img.kFar; if (fim) { const h = 330, w = fim.width * h / fim.height, y = -100 - (cy - 150) * 0.05; for (let x = -((cx * 0.12 % w) + w) % w; x < 640; x += w) c.drawImage(fim, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); }     // вдали — пещера (середина кадра с просветом — в видимой полосе над средним планом)
+      const fim = L9.img.kCave || L9.img.kFar; if (fim) { const h = 480, w = fim.width * h / fim.height, y = -112 - (cy - 150) * 0.05; for (let x = -((cx * 0.12 % w) + w) % w; x < 640; x += w) c.drawImage(fim, Math.floor(x), Math.round(y), Math.ceil(w) + 1, h); }     // вдали — пещера (середина кадра с просветом — в видимой полосе над средним планом)
       haze(c, 0.18);
       for (let i = 0; i < 6; i++) { const X = ((i * 190 - cx * 0.15) % 1140 + 1140) % 1140 - 100, u = ((t * 0.1 + i * 0.31) % 1); S(c, 'fxZ9', 'sm0', X, fy - 120 - u * 190, 0.9 + u, { a: 0.2 * (1 - u) }); }
       fog(c, t, 5, 60, 200, 6, 0.10, 2.4, 0.15, cx);
       // средний план: котлы, трубы, монорельс; капсулы едут и сбрасывают людей
-      const mim = L9.img.kMid2; if (mim) { const h = MID_H, w = mim.width * h / mim.height, k = h / mim.height, top = fy - 150,     // верх слоя ниже чана: над ним видна пещера
+      const mim = null;     // средний план с фермами убран по просьбе владельца — остаётся пещера с дымкой
+       if (mim) { const h = MID_H, w = mim.width * h / mim.height, k = h / mim.height, top = fy - 150,     // верх слоя ниже чана: над ним видна пещера
         ox = -((cx * 0.42 % w) + w) % w;
         for (let X = ox - w; X < 640 + w; X += w) {
           if (X + w < -60 || X > 700) continue;
