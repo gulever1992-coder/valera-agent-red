@@ -378,6 +378,10 @@ function drawDifficulty(c) {
   if ((G.t * 2 | 0) % 2) G.text('ENTER — играть     ESC — назад', W / 2, H - 22, { align: 'center', color: '#e8e0c8' });
 }
 
+// обложки уровней 182x150: assets/covers/covN.jpg (кадры из самой игры, сборка py tools/build_covers.py)
+const COVERS = {};
+for (let n = 1; n <= 9; n++) G.loadImage('assets/covers/cov' + n + '.jpg').then(im => { if (im) COVERS[n] = im; });
+
 function drawLevels(c) {
   if (G.img.street) c.drawImage(G.img.street, 0, 0, W, H);
   c.fillStyle = 'rgba(8,10,14,0.72)'; c.fillRect(0, 0, W, H);
@@ -394,7 +398,8 @@ function drawLevels(c) {
     Art.R(c, x, y, cw, ch, 'rgba(20,22,26,0.95)');
     const px = x + 6, py = y + 6, pw = cw - 12, ph = 150;
     c.save(); c.beginPath(); c.rect(px, py, pw, ph); c.clip();
-    if (L.id === 1 && G.bg.hall) { c.drawImage(G.bg.hall, 200, 0, 880, 720, px, py, pw, ph); Spr.draw(c, 'sub', 0, px + pw / 2 + 10, py + 120, 1, { scale: 0.35 }); }
+    if (COVERS[L.id]) c.drawImage(COVERS[L.id], px, py, pw, ph);
+    else if (L.id === 1 && G.bg.hall) { c.drawImage(G.bg.hall, 200, 0, 880, 720, px, py, pw, ph); Spr.draw(c, 'sub', 0, px + pw / 2 + 10, py + 120, 1, { scale: 0.35 }); }
     else if (L.id === 2 && L2.img.sky) { c.drawImage(L2.img.sky, 0, 0, 900, 720, px, py, pw * 1.3, ph * 1.3); if (L2.img.b_shop) c.drawImage(L2.img.b_shop, px + 10, py + 10, pw - 20, (pw - 20) * 0.99); }
     else if (L.id === 4 && L4.img.l4_sq) { const im = L4.img.l4_sq, sh = im.width * ph / pw; c.drawImage(im, 0, (im.height - sh) * 0.6, im.width, sh, px, py, pw, ph); }
     else if (L.id === 5 && L5.img.l5_card) c.drawImage(L5.img.l5_card, 200, 0, 880, 720, px, py, pw, ph);
