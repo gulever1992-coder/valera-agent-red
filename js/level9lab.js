@@ -215,6 +215,7 @@
       for (const f of P.foes) if (!f.behind) f.draw(c);
       P.drawValera(c);
       P.drawRails(c);
+      if (Scene.active && P.bul.length) P.bul = [];     // в катсцене пули не летят — не оставлять их висеть в воздухе
       for (const b of P.bul) P.drawBullet(c, b);
       for (const e of P.ebul) { if (e.draw) e.draw(c, e); else S(c, 'fxL9', e.fr || 'fireball', e.x, e.y, e.s || 0.4, { rot: Math.atan2(e.vy, e.vx) }); }
       for (const f of P.fx) { const i = Math.min(f.fr.length - 1, f.t / f.life * f.fr.length | 0); S(c, f.sh, f.fr[i], f.x, f.y, f.s, { rot: f.rot || 0, add: f.add, a: f.fade ? clamp((f.life - f.t) / (f.life * 0.4), 0, 1) : 1 }); }
