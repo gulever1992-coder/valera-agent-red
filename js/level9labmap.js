@@ -2,6 +2,7 @@
 // solids: [x, y, w, h]; walks: [x, y, w] (мостки, сквозь них можно спрыгнуть); ladders: [x, верх, низ].
 (() => {
   const S = L9.spr, clamp = L9.clamp, rnd = L9.rnd, F = () => L9.FOES;
+  const SW_DX = 90;     // стена шахты у выхода из тоннеля и смена фона на реакторный — левее на столько (владелец 2026-10-24)
   const ZONES = [   // [x0, x1, подпись]
     [0, 2300, 'СКЛАД КАПСУЛ'],
     [2300, 4500, 'КОНВЕЙЕРНЫЙ ЗАЛ'],
@@ -265,7 +266,7 @@
       c.imageSmoothingEnabled = true; for (let y = fy - 2 - h; y + h > P.cam.y - 20; y -= h - 1) c.drawImage(im, x - 65, y, W, h); c.imageSmoothingEnabled = false;
     };
     M.drawPortal = (c, P) => {
-      M.drawPipes(c, P, M.portalX(), 330); { const fl = M.solids.find(r => r[1] === DY && r[0] <= M.exitX() + 70 && r[0] + r[2] > M.exitX()); M.drawShaftW(c, P, Math.max(M.exitX(), fl ? fl[0] + 67 : 0), DY); }     // внизу трубы целиком на плите пола     // вертикальные трубы с жижей закрывают стыки фонов у наклонного спуска и внизу
+      M.drawPipes(c, P, M.portalX(), 330); { const fl = M.solids.find(r => r[1] === DY && r[0] <= M.exitX() + 70 && r[0] + r[2] > M.exitX()); M.drawShaftW(c, P, Math.max(M.exitX(), fl ? fl[0] + 67 : 0) - SW_DX, DY); }     // внизу трубы целиком на плите пола     // вертикальные трубы с жижей закрывают стыки фонов у наклонного спуска и внизу
     };
     // наклонный спуск: тоннель повёрнут вдоль рельса (уклон 0.3). Кадр тоннеля: x — вдоль рельса, y — поперёк; fy — где в этом кадре проходит рельс
     M.tunFrame = (c, cx, cy, fn) => {
@@ -274,7 +275,7 @@
       c.save(); c.translate(320, 180); c.rotate(th); fn(nR - n, along); c.restore();
     };
     M.drawOver = (c, cx, cy) => {     // передний план спуска: тёмные рёбра крепи поперёк тоннеля, быстрее игрового плана (объём)
-      const mid = cx + 320, r = (v, a0, a1) => clamp((v - a0) / (a1 - a0), 0, 1), bI = clamp((cx + 640 - M.portalX()) / 640, 0, 1), bO = clamp((cx + 640 - M.exitX()) / 640, 0, 1); if (bI <= bO) return;
+      const mid = cx + 320, r = (v, a0, a1) => clamp((v - a0) / (a1 - a0), 0, 1), bI = clamp((cx + 640 - M.portalX()) / 640, 0, 1), bO = clamp((cx + 640 - M.exitX() + SW_DX) / 640, 0, 1); if (bI <= bO) return;
       const fc = M.fgCv || (M.fgCv = document.createElement('canvas')); fc.width = 640; fc.height = 360; const g = fc.getContext('2d');     // рёбра рисуем отдельно и затемняем до силуэта
       M.tunFrame(g, cx, cy, (fy, along) => { const step = 1100, off = along * 1.4; const [, ph] = L9.size('arch9', 'pillar'), hh = ph * 1.5 - 2; for (let i = Math.floor((off - 900) / step); i * step < off + 900; i++) for (let j = 0; j < 4; j++) S(g, 'arch9', 'pillar', i * step - off, fy + 230 - j * hh, 1.5); });     // ствол повторяется вверх — колонна уходит за край экрана
       g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(3,7,10,0.72)'; g.fillRect(0, 0, 640, 360);
@@ -288,7 +289,7 @@
       c.fillStyle = 'rgba(2,6,10,0.22)'; c.fillRect(0, 0, 640, 360);
       // фоны зон: шахта с ярусами у подъёмника, наклонный тоннель, зал реактора — плавно сменяют общий план; по вертикали свой параллакс
       const ramp = (v, a0, a1) => clamp((v - a0) / (a1 - a0), 0, 1), mid = cx + 320;
-      const bI = clamp((cx + 640 - M.portalX()) / 640, 0, 1), bO = clamp((cx + 640 - M.exitX()) / 640, 0, 1), cI = bO;
+      const bI = clamp((cx + 640 - M.portalX()) / 640, 0, 1), bO = clamp((cx + 640 - M.exitX() + SW_DX) / 640, 0, 1), cI = bO;
       const wA = 0, wB = bI * (1 - bO), wC = cI;
       // фон зоны не просвечивает сквозь соседний, а сменяет его «шторкой»: видимая полоса экрана от 640*(1-вход) до 640*(1-выход), край мягкий (40 px)
       // наклонный спуск — тоннель как в погоне: дальняя стена и свод с трубами отдельными слоями (свой параллакс по x и y — объём)
