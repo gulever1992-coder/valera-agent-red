@@ -9,7 +9,7 @@
   const W = 640, GY = 330, CAP_X = 64, FL_X = 200, FL_DX = 56, FL_H = 92, TV_X = [216, 368, 520], TV_W = 112, LAD_X = 606, FLOOR_K = 46 / 154, FL_UP = 18;
   // все враги Валеры по игре — на экранах груды, перечёркнуты
   // v3 (эскиз владельца 2026-10-24): на стене три телевизора — на них говорит Икс; ниже ряд из 7 колб с уменьшенными боссами
-  const FLASKS = ['natasha', 'roach', 'toilet', 'vande', 'wiz', 'biker', 'leather'];
+  const FLASKS = ['natasha', 'roach', 'toilet', 'wiz', 'biker', 'leather'], FL_XS = [186, 236, 286, 450, 500, 550];     // посередине между колбами — стол с бумагой
   const BOSSES = ['roach', 'vande', 'cmdr7', 'grab', 'kesha', 'leather', 'biker7', 'wiz', 'sanya', 'seller', 'cop', 'denisch', 'maxim', 'stas'];
   const has = (sh, fr) => { const d = L9D[sh]; return d && (!fr || (d.n || []).includes(fr)); };
   const SH = (c, sh, fr, x, y, h, o) => { if (!has(sh, fr)) return; const [, fh] = L9.size(sh, fr); S(c, sh, fr, x, y, h / fh, o); };
@@ -82,7 +82,9 @@
             c.save(); c.beginPath(); c.rect(sx, sy, sw, sh); c.clip(); c.fillStyle = 'rgba(6,12,14,' + (tp ? 1 : 0.94) + ')'; c.fillRect(sx, sy, sw, sh);
             if (tp) SH(c, 'tpA9', 'pack', x, sy + sh * 0.95, sh * 0.88); c.restore(); } }); }
       // ряд колб с уменьшенными боссами
-      for (let i = 0; i < FLASKS.length; i++) drawFlask(c, FL_X + i * FL_DX, i, t);
+      for (let i = 0; i < FLASKS.length; i++) drawFlask(c, FL_XS[i], i, t);
+      // посередине — стол с туалетной бумагой Валеры; когда Икс про неё говорит — светится
+      if (has('hTab9', 't')) { SH(c, 'hTab9', 't', TV_X[1], GY + 2, 128); if (M.tpSpot) S(c, 'fxL9', 'spark', TV_X[1], GY - 60, 2.2 + Math.sin(t * 4) * 0.2, { add: 1, a: 0.2 }); }
       // стеклянная труба лифта от потолка до пола и капсула в ней
       if (has('hoZ9', 'tube')) { const [tw, th] = L9.size('hoZ9', 'tube'), k = 64 / tw, hh = th * k; for (let y = GY + 6; y > -120; y -= hh - 2) S(c, 'hoZ9', 'tube', CAP_X, y, k); }
       const cp = M.cap; if (cp) { const [, ch] = L9.size('capL9', 'c0'), kc = 128 / ch, fr = cp.door > 0.5 ? 'c2' : 'c1';

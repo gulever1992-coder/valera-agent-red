@@ -977,6 +977,9 @@ if have('l9hwall_0.jpg'):
     if have('l9htv5_0.jpg'):     # v4: лицо Икса нарисовано прямо на экранах (3 кадра: ухмылка, говорит, наклонился ближе)
         pack('hTv9', depurple(cut('l9htv5_0.jpg', 'm', 1, 3, clean='edge')), 0.5, anchor='mid', names=['f0', 'f1', 'f2']); DATA['hTv9']['scr'] = [0.055, 0.133, 0.89, 0.645]
     _fl = depurple(cut('l9hflask_0.jpg', 'm', 1, 2, clean='edge')); pack('hFlask9', _fl[:1], 0.5, names=['f'])
+    if have('l9htable_0.jpg'):     # стол с туалетной бумагой посередине зала; розовый луч прожектора (пурпур сквозь свет) убираем
+        _tb = np.asarray(cut('l9htable_0.jpg', 'm', 1, 2, clean='edge')[0]).copy(); _r, _g, _b2 = [_tb[..., i].astype(int) for i in range(3)]
+        _tb[(_r > _g * 1.25) & (_b2 > _g * 1.25), 3] = 0; pack('hTab9', [trim(Image.fromarray(_tb))], 0.5, names=['t'])     # стол с туалетной бумагой посередине зала
     _sd = open(os.path.join(ROOT, 'js', 'sprites_data.js'), encoding='utf8').read().split('\n')[1]; _SP = json.JSONDecoder().raw_decode(_sd[_sd.index('{'):])[0]
     _bs = []
     for _k, _i in [('n_a', 0), ('roach', 0), ('boss3', 0), ('vandewalk', 0), ('wiz6', 0), ('biker', 0), ('leather7', 0)]:
