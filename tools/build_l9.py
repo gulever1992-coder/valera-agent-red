@@ -982,9 +982,9 @@ if have('l9hwall_0.jpg'):
         _tb[(_r > _g * 1.25) & (_b2 > _g * 1.25), 3] = 0; pack('hTab9', [trim(Image.fromarray(_tb))], 0.5, names=['t'])     # стол с туалетной бумагой посередине зала
     _sd = open(os.path.join(ROOT, 'js', 'sprites_data.js'), encoding='utf8').read().split('\n')[1]; _SP = json.JSONDecoder().raw_decode(_sd[_sd.index('{'):])[0]
     _bs = []
-    for _k, _i in [('n_a', 0), ('roach', 0), ('boss3', 0), ('vandewalk', 0), ('wiz6', 0), ('biker', 0), ('leather7', 0)]:
+    for _k, _i in [('kesha_a', 0), ('n_a', 0), ('biker', 0), ('vandewalk', 0), ('deno7', 0), ('dench7', 0)]:
         _f = _SP[_k]['f'][_i]; _bs.append(trim(Image.open(os.path.join(ROOT, _SP[_k]['img'])).convert('RGBA').crop((_f[0], _f[1], _f[0] + _f[2], _f[1] + _f[3]))))
-    pack('hBos9', _bs, 1.0, names=['natasha', 'roach', 'toilet', 'vande', 'wiz', 'biker', 'leather'])
+    pack('hBos9', _bs, 1.0, names=['kesha', 'natasha', 'biker', 'vande', 'deniso', 'denisch'])
 
 open(os.path.join(ROOT, 'js', 'l9_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l9.py — не править руками\nwindow.L9D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 

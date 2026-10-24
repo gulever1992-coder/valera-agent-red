@@ -6,10 +6,10 @@
 (() => {
   const S = L9.spr, clamp = L9.clamp, rnd = L9.rnd;
   // v4 (2026-10-24): весь зал — один экран; Валера и колбы стоят посередине дорожки (пол поднят на FL_UP)
-  const W = 640, GY = 330, CAP_X = 64, FL_X = 200, FL_DX = 56, FL_H = 92, TV_X = [216, 368, 520], TV_W = 112, LAD_X = 606, FLOOR_K = 46 / 154, FL_UP = 18;
+  const W = 640, GY = 330, CAP_X = 64, FL_X = 200, FL_DX = 56, FL_H = 80, TV_X = [216, 368, 520], TV_W = 112, LAD_X = 618, FLOOR_K = 46 / 154, FL_UP = 18;
   // все враги Валеры по игре — на экранах груды, перечёркнуты
   // v3 (эскиз владельца 2026-10-24): на стене три телевизора — на них говорит Икс; ниже ряд из 7 колб с уменьшенными боссами
-  const FLASKS = ['natasha', 'roach', 'toilet', 'wiz', 'biker', 'leather'], FL_XS = [186, 236, 286, 450, 500, 550];     // посередине между колбами — стол с бумагой
+  const FLASKS = ['kesha', 'natasha', 'biker', 'vande', 'deniso', 'denisch'], FL_XS = [166, 224, 282, 446, 504, 562];     // посередине между колбами — стол с бумагой
   const BOSSES = ['roach', 'vande', 'cmdr7', 'grab', 'kesha', 'leather', 'biker7', 'wiz', 'sanya', 'seller', 'cop', 'denisch', 'maxim', 'stas'];
   const has = (sh, fr) => { const d = L9D[sh]; return d && (!fr || (d.n || []).includes(fr)); };
   const SH = (c, sh, fr, x, y, h, o) => { if (!has(sh, fr)) return; const [, fh] = L9.size(sh, fr); S(c, sh, fr, x, y, h / fh, o); };
@@ -33,7 +33,7 @@
       P.hide = 1; P.x = CAP_X; P.y = GY; P.dir = 1; M.camT = 0;
       Sound.play('crane'); while (c.y < GY) { c.y = Math.min(GY, c.y + 220 * D); yield D; } Sound.play('clank'); G.shake(3, 0.3);
       yield 0.4; Sound.play('door'); for (let t = 0; t < 0.6; t += D) { c.door = t / 0.6; yield D; } c.door = 1;
-      P.hide = 0; P.st = 'run'; while (P.x < CAP_X + 70) { P.x += 120 * D; yield D; } P.st = 'stand';
+      P.hide = 0; P.st = 'run'; while (P.x < CAP_X + 56) { P.x += 120 * D; yield D; } P.st = 'stand';
       for (let t = 0; t < 0.6; t += D) { c.door = 1 - t / 0.6; yield D; } c.door = 0; c.st = 'up'; Sound.play('crane');
       yield 0.3; Sound.play('zap'); M.big.on = 0.01; yield 1.0;
       yield 0.6;
@@ -64,7 +64,7 @@
     const drawFlask = (c, x, i, t) => {
       if (!has('hFlask9', 'f')) return; const [, fh] = L9.size('hFlask9', 'f'), h = FL_H, k = h / fh, top = GY - 4 - h;
       S(c, 'hFlask9', 'f', x, GY - 4, k);
-      const b = FLASKS[i]; if (has('hBos9', b)) { const bh = b === 'toilet' ? 42 : 35, bob = Math.sin(t * 1.3 + i * 1.7) * 1.5;
+      const b = FLASKS[i]; if (has('hBos9', b)) { const bh = b === 'biker' ? 33 : 30, bob = Math.sin(t * 1.3 + i * 1.7) * 1.5;
         SH(c, 'hBos9', b, x, top + h * 0.56 + bob, bh, { a: 0.9, flip: i % 2 === 1 }); }
       S(c, 'hFlask9', 'f', x, GY - 4, k, { a: 0.38 });
     };
@@ -84,7 +84,7 @@
       // ряд колб с уменьшенными боссами
       for (let i = 0; i < FLASKS.length; i++) drawFlask(c, FL_XS[i], i, t);
       // посередине — стол с туалетной бумагой Валеры; когда Икс про неё говорит — светится
-      if (has('hTab9', 't')) { SH(c, 'hTab9', 't', TV_X[1], GY + 2, 128); if (M.tpSpot) S(c, 'fxL9', 'spark', TV_X[1], GY - 60, 2.2 + Math.sin(t * 4) * 0.2, { add: 1, a: 0.2 }); }
+      if (has('hTab9', 't')) { SH(c, 'hTab9', 't', 364, GY + 2, 112); if (M.tpSpot) S(c, 'fxL9', 'spark', TV_X[1], GY - 60, 2.2 + Math.sin(t * 4) * 0.2, { add: 1, a: 0.2 }); }
       // стеклянная труба лифта от потолка до пола и капсула в ней
       if (has('hoZ9', 'tube')) { const [tw, th] = L9.size('hoZ9', 'tube'), k = 64 / tw, hh = th * k; for (let y = GY + 6; y > -120; y -= hh - 2) S(c, 'hoZ9', 'tube', CAP_X, y, k); }
       const cp = M.cap; if (cp) { const [, ch] = L9.size('capL9', 'c0'), kc = 128 / ch, fr = cp.door > 0.5 ? 'c2' : 'c1';
