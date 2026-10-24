@@ -983,7 +983,8 @@ if have('l9hwall_0.jpg'):
     _t0[_gr, 0] = 4; _t0[_gr, 1] = 10; _t0[_gr, 2] = 10; _tv[0] = Image.fromarray(_t0)
     if not have('l9htv5_0.jpg'): pack('hTv9', _tv, 0.5, anchor='mid', names=['on', 'off']); DATA['hTv9']['scr'] = _scr
     if have('l9htv5_0.jpg'):     # v4: лицо Икса нарисовано прямо на экранах (3 кадра: ухмылка, говорит, наклонился ближе)
-        pack('hTv9', depurple(cut('l9htv5_0.jpg', 'm', 1, 3, clean='edge')), 0.5, anchor='mid', names=['f0', 'f1', 'f2']); DATA['hTv9']['scr'] = [0.055, 0.133, 0.89, 0.645]
+        _t5 = [trim(f) for f in depurple(cut('l9htv5_0.jpg', 'm', 1, 3, clean='edge'))]; _t5 = [f.resize(_t5[0].size, Image.LANCZOS) for f in _t5]     # кадры к одному размеру — рамка не прыгает при смене лица
+        pack('hTv9', _t5, 0.5, anchor='mid', names=['f0', 'f1', 'f2']); DATA['hTv9']['scr'] = [0.055, 0.133, 0.89, 0.645]
     _fl = depurple(cut('l9hflask_0.jpg', 'm', 1, 2, clean='edge')); pack('hFlask9', _fl[:1], 0.5, names=['f'])
     if have('l9htable_0.jpg'):     # стол с туалетной бумагой посередине зала; розовый луч прожектора (пурпур сквозь свет) убираем
         _tb = np.asarray(cut('l9htable_0.jpg', 'm', 1, 2, clean='edge')[0]).copy(); _r, _g, _b2 = [_tb[..., i].astype(int) for i in range(3)]

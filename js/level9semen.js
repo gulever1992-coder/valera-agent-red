@@ -253,7 +253,8 @@
     update(dt, P, lv) { if (this.dead) { this.dis += dt; if (this.dis > 0.8) this.gone = true; return; } super.update(dt, P, lv); }
     draw(c) {     // мерцает как мираж; растворяясь — расползается волнами и тает
       const d = this.d, t = this.t, u = this.dead ? this.dis / 0.8 : 0, a = (this.dead ? 1 - u : Math.min(1, this.born * 2)) * (0.78 + 0.12 * Math.sin(t * 7));
-      const one = (ox, alpha) => { const o = { alpha }, S0 = Spr.ANIM[d.set] || {}, idle = S0.stand ? 'stand' : S0.idle ? 'idle' : d.walk; if (d.set) Spr.drawAnim(c, d.set, this.ap > 0 ? d.atk : Math.abs(this.vx) > 1 ? d.walk : idle, this.ap > 0 ? 0.35 - this.ap : t, this.x + ox, this.y + 1, this.dir, o); else Spr.draw(c, d.sheet, this.ap > 0 ? d.atkF : d.walkF[(t * 8 | 0) % d.walkF.length], this.x + ox, this.y + 1, -this.dir, Object.assign(o, { scale: d.sc })); };
+      const one = (ox, alpha) => { const o = { alpha }, S0 = Spr.ANIM[d.set] || {}, idle = S0.stand ? 'stand' : S0.idle ? 'idle' : d.walk; const an = this.ap > 0 ? d.atk : Math.abs(this.vx) > 1 ? d.walk : idle, zw = /^zomb\d/.test(d.set || '') && an === d.walk;     // зомби ур.4: всего 2 кадра ходьбы — ковыляют с покачиванием, как на ур.4
+        if (d.set) Spr.drawAnim(c, d.set, an, this.ap > 0 ? 0.35 - this.ap : t, this.x + ox, this.y + 1 - (zw ? Math.abs(Math.sin(t * 11)) * 3 : 0), this.dir, zw ? Object.assign(o, { rot: Math.sin(t * 11) * 0.07 }) : o); else Spr.draw(c, d.sheet, this.ap > 0 ? d.atkF : d.walkF[(t * 8 | 0) % d.walkF.length], this.x + ox, this.y + 1, -this.dir, Object.assign(o, { scale: d.sc })); };
       if (!this.dead) { one(0, a); c.save(); c.globalCompositeOperation = 'lighter'; one(Math.sin(t * 9) * 2, 0.12); c.restore(); return; }
       for (let i = 0; i < 8; i++) { const y0 = this.y - 90 + i * 12; c.save(); c.beginPath(); c.rect(this.x - 60, y0, 120, 12); c.clip(); one(Math.sin(i * 1.3 + t * 18) * u * 26, a); c.restore(); }
     }

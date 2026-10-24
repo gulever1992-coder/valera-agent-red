@@ -76,7 +76,7 @@
       // три телевизора на стене: на экранах — зловещее лицо Икса (нарисовано во Flow); когда он говорит — кадры чередуются
       if (has('hTv9', 'f0')) { const [tw, th] = L9.size('hTv9', 'f0'), k = TV_W / tw, d = Scene.dialog, talk = d && d.who === 'mrx' && d.shown < d.text.length, r = L9D.hTv9.scr;
         TV_X.forEach((x, j) => { const on = M.big.on && (M.big.t > 0.5 + j * 0.15 || (t * 14 | 0) % 2), y = GY - 200, tp = j === 1 && M.tpSpot;
-          const fr = talk ? (((t * 7 + j * 1.3) | 0) % 2 ? 'f1' : 'f0') : (Math.sin(t * 0.7 + j * 2) > 0.85 ? 'f2' : 'f0');
+          const fr = talk ? (((t * 4 + j * 1.3) | 0) % 2 ? 'f1' : 'f0') : (Math.sin(t * 0.7 + j * 2) > 0.85 ? 'f2' : 'f0');
           S(c, 'hTv9', fr, x, y, k);
           if (!on || tp) { const fw = tw * k, fh = th * k, sx = x - fw / 2 + r[0] * fw, sy = y - fh / 2 + r[1] * fh, sw = r[2] * fw, sh = r[3] * fh;     // выключен / показывает бумагу с Валерой
             c.save(); c.beginPath(); c.rect(sx, sy, sw, sh); c.clip(); c.fillStyle = 'rgba(6,12,14,' + (tp ? 1 : 0.94) + ')'; c.fillRect(sx, sy, sw, sh);
