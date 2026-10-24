@@ -404,7 +404,7 @@
     M.drawShaft = (c, L, second) => {
       const cxl = L.x + L.w / 2, wTop = LIFT_TOP - 235, [, wh] = L9.size('lift9', 'winch'), wb = wTop + wh * LK, carTop = L.y - L9D.lift9.carDeck * 0.5 * LK;
       strip(c, 'lift9', 'post', L.x + 21, wb - 6, 338, LK); strip(c, 'lift9', 'post', L.x + L.w - 14, wb - 6, 338, LK);     // направляющие стоят на полу
-      if (!second) L9.LAB.drawColumn(c, 5232, LIFT_TOP - 250, 338, 1.1);     // торец шахты: колонна от потолка до пола там, где кончается нижний ярус
+      // колонна-торец шахты у x=5232 убрана по просьбе владельца (2026-10-24)
       strip(c, 'lift9', 'cable', cxl + 3, wb - 4, carTop + 4, LK);     // тросы — точно над креплениями кабины (у кабины и лебёдки они на 3 px правее центра)
       S(c, 'lift9', 'winch', cxl, wTop + wh * LK / 2, LK);
     };
