@@ -327,7 +327,8 @@
     c.imageSmoothingEnabled = true;
     for (const [nm, px] of w.parts) {
       const f = d.f[L9.N.cw9[nm + L]], dw = f[2] * 0.5, x = Math.floor(px) - 0.5, lgx = px + g.legs[nm];
-      const fy = LAB.floorBelow(M, lgx, w[1] + 8, 900, false), solid = fy != null && !(M.noFloor || []).some(n => lgx > n[0] - 12 && lgx < n[1] + 12) && !(M.pits || []).some(p => lgx > p[0] - 12 && lgx < p[1] + 12);
+      const fy = LAB.floorBelow(M, lgx, w[1] + 8, w[1] + 400, false),     // пол ищем под самим мостком (в реакторной пол на 1230 — раньше предел 900 обрезал опоры и лестницу)
+        solid = fy != null && !(M.noFloor || []).some(n => lgx > n[0] - 12 && lgx < n[1] + 12) && !(M.pits || []).some(p => lgx > p[0] - 12 && lgx < p[1] + 12);
       const sy = k => f[1] + k * 2;      // логич. y внутри кадра -> пиксели листа
       if (L === 'F') { c.drawImage(im, f[0], f[1], f[2], f[3], x, top, dw + 1, f[3] * 0.5); continue; }
       if (!solid) {      // подвес над чаном: ствол опоры от настила вверх за край экрана, ног нет; над конвейером подвеса нет — настил держат соседние ноги
