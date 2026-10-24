@@ -308,12 +308,12 @@
       P.st = 'run'; P.dir = 1; for (let t = 0; t < 0.6; t += D) { P.x -= 70 * D; yield D; } P.st = 'stand';
       yield 0.5; f.fr = 'laugh'; yield 0.6; f.fr = 'talk';
       yield* Scene.say('valera', 'Семён, это ты? Ты же большой человек в приёмке завода!', null);
-      M.fb = { imgs: ['zffa1', 'zffa2'], per: 3.6, t: 0 }; f.fr = 'talk';     // воспоминания (текст владельца 2026-10-23)
+      M.fb = { imgs: ['zffa1', 'zffa2'], per: 3.6, t: 0 }; f.fr = 'talk'; Scene.dialogTop = true;     // реплики сверху, картинка целиком под окном     // воспоминания (текст владельца 2026-10-23)
       yield* Scene.say('semen', 'Я устал от этого города, от этого завода! Мне нужно большего! Я захотел переехать в столицу! Но мне предложили контракт — продать город, выжать из него все соки!', null);
       while (M.fb.t < 7.2) yield D; M.fb = null; f.fr = 'fist'; G.shake(2, 0.3); yield 0.4;
       f.fr = 'talk'; M.fb = { imgs: ['zffb1', 'zffb2', 'zffb3', 'zffb4'], per: 3.2, t: 0 };
       yield* Scene.say('semen', 'Всё должно было быть идеально! Я устранил твоих друзей, чтобы подобраться к тебе, изучить тебя и уничтожить, Валера!', null);
-      while (M.fb.t < 12.8) yield D; M.fb = null; f.fr = 'laugh'; Sound.play('confirm', 0.5); yield 1.0;
+      while (M.fb.t < 12.8) yield D; M.fb = null; Scene.dialogTop = false; f.fr = 'laugh'; Sound.play('confirm', 0.5); yield 1.0;
       yield* Scene.say('valera', 'Я не дам сбыться твоей мечте! Я не продам свою родину!', null);
       f.fr = 'fist'; yield 0.6;
       b.x = f.x; b.dir = P.x < b.x ? -1 : 1; b.vis = 1; M.fig = null; M.cloak = null;     // дальше — сам босс на месте фигуры
@@ -511,7 +511,10 @@
       const fb = M.fb; if (fb && fb.imgs) {     // картинки по очереди: медленный наезд, мягкая смена
         const n = fb.imgs.length, T = fb.per * n, i = Math.min(n - 1, fb.t / fb.per | 0), u = (fb.t - i * fb.per) / fb.per, a0 = clamp(Math.min(fb.t / 0.4, (T + 0.4 - fb.t) / 0.4), 0, 1);
         c.save(); c.globalAlpha = a0; c.fillStyle = '#000'; c.fillRect(0, 0, 640, 360);
-        const pic = (k, al, uu) => { const im = L9.img[fb.imgs[k]]; if (!im) return; const z = 1.03 + uu * 0.05, dw = 640 * z, dh = 360 * z; c.globalAlpha = a0 * al; c.drawImage(im, 320 - dw / 2 - (k % 2 ? 1 : -1) * uu * 8, 180 - dh / 2, dw, dh); };
+        const top = Scene.dialogTop ? 94 : 0, ah = 360 - top, cy = top + ah / 2;     // окно реплик сверху — картинка целиком ниже него, лица не перекрыты
+        const pic = (k, al, uu) => { const im = L9.img[fb.imgs[k]]; if (!im) return; const z = 1.03 + uu * 0.05, dh = ah * z, dw = top ? dh * im.width / im.height : 640 * z, ox = (k % 2 ? 1 : -1) * uu * 8;
+          if (top) { c.globalAlpha = a0 * al * 0.3; c.drawImage(im, 0, top - 40, 640, 640 * im.height / im.width); }     // по бокам — та же картинка, приглушённая
+          c.globalAlpha = a0 * al; c.drawImage(im, 320 - dw / 2 - ox, cy - dh / 2, dw, dh); };
         pic(i, 1, u); if (i < n - 1 && u > 0.85) pic(i + 1, (u - 0.85) / 0.15, 0);
         c.globalAlpha = a0; const g = c.createRadialGradient(320, 180, 120, 320, 180, 380); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(10,6,0,0.7)'); c.fillStyle = g; c.fillRect(0, 0, 640, 360); c.restore(); return; }
       const im = fb && L9.img[fb.img]; if (!im) return;
