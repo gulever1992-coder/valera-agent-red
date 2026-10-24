@@ -308,10 +308,10 @@
       P.st = 'run'; P.dir = 1; for (let t = 0; t < 0.6; t += D) { P.x -= 70 * D; yield D; } P.st = 'stand';
       yield 0.5; f.fr = 'laugh'; yield 0.6; f.fr = 'talk';
       yield* Scene.say('valera', 'Семён, это ты? Ты же большой человек в приёмке завода!', null);
-      M.fb = { imgs: ['zffa1', 'zffa2'], per: 3.6, t: 0 }; f.fr = 'talk'; Scene.dialogTop = true;     // реплики сверху, картинка целиком под окном     // воспоминания (текст владельца 2026-10-23)
+      M.fb = { imgs: ['zffa1', 'zffa2'], top: [1, 0], per: 3.6, t: 0 }; f.fr = 'talk';     // окно реплик сверху или снизу — где не закрывает головы (top по картинкам)     // воспоминания (текст владельца 2026-10-23)
       yield* Scene.say('semen', 'Я устал от этого города, от этого завода! Мне нужно большего! Я захотел переехать в столицу! Но мне предложили контракт — продать город, выжать из него все соки!', null);
       while (M.fb.t < 7.2) yield D; M.fb = null; f.fr = 'fist'; G.shake(2, 0.3); yield 0.4;
-      f.fr = 'talk'; M.fb = { imgs: ['zffb1', 'zffb2', 'zffb3', 'zffb4'], per: 3.2, t: 0 };
+      f.fr = 'talk'; M.fb = { imgs: ['zffb1', 'zffb2', 'zffb3', 'zffb4'], top: [0, 0, 1, 0], per: 3.2, t: 0 };
       yield* Scene.say('semen', 'Всё должно было быть идеально! Я устранил твоих друзей, чтобы подобраться к тебе, изучить тебя и уничтожить, Валера!', null);
       while (M.fb.t < 12.8) yield D; M.fb = null; Scene.dialogTop = false; f.fr = 'laugh'; Sound.play('confirm', 0.5); yield 1.0;
       yield* Scene.say('valera', 'Я не дам сбыться твоей мечте! Я не продам свою родину!', null);
@@ -511,10 +511,8 @@
       const fb = M.fb; if (fb && fb.imgs) {     // картинки по очереди: медленный наезд, мягкая смена
         const n = fb.imgs.length, T = fb.per * n, i = Math.min(n - 1, fb.t / fb.per | 0), u = (fb.t - i * fb.per) / fb.per, a0 = clamp(Math.min(fb.t / 0.4, (T + 0.4 - fb.t) / 0.4), 0, 1);
         c.save(); c.globalAlpha = a0; c.fillStyle = '#000'; c.fillRect(0, 0, 640, 360);
-        const top = Scene.dialogTop ? 94 : 0, ah = 360 - top, cy = top + ah / 2;     // окно реплик сверху — картинка целиком ниже него, лица не перекрыты
-        const pic = (k, al, uu) => { const im = L9.img[fb.imgs[k]]; if (!im) return; const z = 1.03 + uu * 0.05, dh = ah * z, dw = top ? dh * im.width / im.height : 640 * z, ox = (k % 2 ? 1 : -1) * uu * 8;
-          if (top) { c.globalAlpha = a0 * al * 0.3; c.drawImage(im, 0, top - 40, 640, 640 * im.height / im.width); }     // по бокам — та же картинка, приглушённая
-          c.globalAlpha = a0 * al; c.drawImage(im, 320 - dw / 2 - ox, cy - dh / 2, dw, dh); };
+        if (fb.top) Scene.dialogTop = !!fb.top[i];
+        const pic = (k, al, uu) => { const im = L9.img[fb.imgs[k]]; if (!im) return; const z = 1.03 + uu * 0.05, dw = 640 * z, dh = 360 * z; c.globalAlpha = a0 * al; c.drawImage(im, 320 - dw / 2 - (k % 2 ? 1 : -1) * uu * 8, 180 - dh / 2, dw, dh); };
         pic(i, 1, u); if (i < n - 1 && u > 0.85) pic(i + 1, (u - 0.85) / 0.15, 0);
         c.globalAlpha = a0; const g = c.createRadialGradient(320, 180, 120, 320, 180, 380); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(10,6,0,0.7)'); c.fillStyle = g; c.fillRect(0, 0, 640, 360); c.restore(); return; }
       const im = fb && L9.img[fb.img]; if (!im) return;
@@ -528,10 +526,11 @@
     M.drawOver = (c, cx) => { M.drawFb(c); const t = M.t; if (M.illOn && has('kDart9', 'h0')) for (let i = 0; i < 3; i++) { const u = (t * 0.07 + i * 0.33) % 1; S(c, 'kDart9', i % 2 ? 'h0' : 'h1', ((i * 230 + t * 18) % 760) - 60, 60 + i * 90 + Math.sin(t + i) * 20, 1.6, { a: 0.07 + 0.04 * Math.sin(t * 2 + i), add: 1, rot: t * 0.2 * (i % 2 ? 1 : -1) }); } fog(c, t, 4, 230, 330, 14, 0.09, 2.6, 1.1, cx); };     // ближняя дымка у пола поверх всего
     M.drawHud = (c) => {     // шкала Семёна: 5 серий
       const b = M.boss; if (!b || M.cut === 1 && !M.started) return;
-      const x = 420, y = 24, w = 200; c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(x - 4, y - 14, w + 8, 24);     // шкала сверху — котёл внизу не закрыт
-      G.text('СЕМЁН · ФАЗА ' + Math.min(5, b.ph), x, y - 11, { size: 8, color: b.slime > 0 ? '#7fff7f' : '#ff7070' });
-      c.fillStyle = '#300'; c.fillRect(x, y, w, 7); c.fillStyle = b.slime > 0 ? '#5f5' : '#d33'; c.fillRect(x, y, w * Math.max(0, b.hp) / 100, 7);
-      c.fillStyle = '#000'; for (let i = 1; i < 5; i++) c.fillRect(x + w * i / 5 - 1, y, 2, 7);
+      const x = 162, y = 360 - 24, w = 316;     // снизу, как у прошлых боссов (ур.4, 6)
+      c.fillStyle = '#111'; c.fillRect(x - 2, y - 2, w + 4, 16); c.fillStyle = '#3a1010'; c.fillRect(x, y, w, 12);
+      c.fillStyle = b.slime > 0 ? '#5f5' : b.hp < 40 ? '#ff3020' : '#d83040'; c.fillRect(x, y, Math.round(w * Math.max(0, b.hp) / 100), 12);
+      c.fillStyle = '#111'; for (let i = 1; i < 5; i++) c.fillRect(x + Math.round(w * i / 5), y, 1, 12);
+      G.text('СЕМЁН · ФАЗА ' + Math.min(5, b.ph), 320, 360 - 40, { align: 'center', color: b.slime > 0 ? '#9fff9f' : '#ffb080', outline: true });
     };
     return M;
   };
