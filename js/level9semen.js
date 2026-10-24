@@ -466,7 +466,7 @@
         // патрубок в потолке: пока чан наполняется — струя в него
         if (has('kFl9', 'pipe')) { const pk = 0.25, ox = l.x - d * 26, py0 = LAD_TOP - 14;
           // патрубок убран: наполнение — струя из-за балки
-          if (l.st === 'fill') stream(c, ox, P.cam.y - 4, cyL + 16 - l.lvl * 12, 7, t, 0.8); }
+          if (l.st === 'fill') stream(c, l.x, P.cam.y - 4, cyL + 16 - l.lvl * 12, 7, t, 0.8); }     // сверху ровно в ведро (за передней стенкой)
         // кадр чана (носик — в сторону от стропы)
         let fr = 'full', fr2 = null, fa = 0;
         if (l.st === 'fill') { const q = l.lvl * 3, i0 = Math.min(2, q | 0); fr = ['e', 'q1', 'q2'][i0]; fr2 = ['q1', 'q2', 'full'][i0]; fa = q - i0; }
@@ -474,9 +474,9 @@
         { const D9 = L9D.kLad9, i9 = L9.N.kLad9 ? L9.N.kLad9[fr] : D9.n.indexOf(fr), f9 = D9.f[i9], c9 = D9.ch && D9.ch[i9];     // цепи чана тянутся до балки (крюк и таль убраны)
           if (f9 && c9 && has('kChain9', 'link')) { const kk = LAD_H / f9[3], xs = [c9[0][0], c9[0][c9[0].length - 1]], y0 = cyL + (c9[1] - f9[5]) * kk, lh = 24 * kk;
             for (const cx9 of xs) { const wx = l.x + (cx9 - f9[4]) * kk * (d < 0 ? -1 : 1); for (let y = y0 - lh / 2 + 1; y > BEAM_T + BEAM_H - lh / 2; y -= lh - 0.5) S(c, 'kChain9', 'link', wx, y, kk * 2); } } }
+        if (l.st === 'pour' || l.st === 'thin') stream(c, l.zx, cyL + 2, GY - 2, l.st === 'pour' ? 15 : 6, t, 1.6);     // из ведра до пола: верх струи прячется за ведром — видно, что течёт из него
         SH(c, 'kLad9', fr, l.x, cyL, LAD_H, { flip: d < 0 }); if (fr2 && fa > 0.02) SH(c, 'kLad9', fr2, l.x, cyL, LAD_H, { a: fa, flip: d < 0 });
         if (l.st === 'full' && (t * 3 | 0) % 2) SH(c, 'kFx9', 'drops', l.x - 3 * d, LAD_TOP + 24, 7, { a: 0.6 });
-        if (l.st === 'pour' || l.st === 'thin') stream(c, l.zx, cyL - 6, GY + 2, l.st === 'pour' ? 15 : 6, t, 1.6);     // от носика до пола одной текущей струёй
         // стропа
         if (has('kSl9', 'rest')) { const sk = 0.42, q = sk * 0.5, sg = l.sl > l.x ? -1 : 1, fx = l.sl - sg * (122 - 84) * q, pul = l.pull > 0 ? Math.min(1, l.pull * 3) : 0;
           const y0 = PUL_Y - 23 * q, hy = GY - 36 + pul * 8, y1 = hy - 350 * q;

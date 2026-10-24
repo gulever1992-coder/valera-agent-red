@@ -404,6 +404,10 @@ for w in ('pist', 'mini', 'plasma', 'rocket', 'seed'):
 # ---------- 2026-10-17 (2): враги с целыми кадрами, пол с законченным низом, рука-разгрузчик ----------
 if have('l9eHat2_1.jpg'):
     eh = cut('l9eHat2_1.jpg', 'm', 2, [8, 6], clean='edge')     # по промежуткам: бутылка в присяде остаётся в руке, а не прилипает к соседнему кадру
+    from scipy import ndimage as _nd     # кадр броска: протянутая рука с бутылкой резалась по границе ячейки — берём фигуру целиком (самая большая связная область)
+    _a = load('l9eHat2_1.jpg'); _rg = defringe(np.dstack([_a, np.where(key(_a, 'm'), 0, 255)]).astype(np.uint8), 'm')[384:768, 170:560].copy()
+    _lb, _nn = _nd.label(_rg[..., 3] > 0); _sz = _nd.sum(_rg[..., 3] > 0, _lb, range(1, _nn + 1)); _rg[_lb != int(np.argmax(_sz)) + 1, 3] = 0
+    eh[9] = trim(Image.fromarray(_rg))
     pack('eHat9', eh, VH * 1.02 / hgt(eh, 0), names=['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'wind', 'throw', 'crouch', 'jump', 'hit', 'dead'])
 if have('l9eArm2_0.jpg'):
     ea = cut_blobs('l9eArm2_0.jpg', 'm', 2, grow=6)
@@ -853,6 +857,9 @@ def drop_edge(im):     # убрать куски соседних кадров, 
     return Image.fromarray(a)
 if have('l9bsem1_0.jpg'):
     _s1 = cut('l9bsem1_0.jpg', 'm', 3, 5, clean='edge'); _s1[8] = trim(drop_edge(rgba_m('l9bsem1_0.jpg', (860, 140, 1080, 505))))     # «рука к небу»: молния уходила в соседний ряд и обрезалась
+    _fr7 = np.asarray(_s1[7]).copy(); _r, _g, _b2 = [_fr7[..., i].astype(int) for i in range(3)]     # кадр выстрела: убрать нарисованную ракету справа от вспышки (владелец 2026-10-24)
+    _grn = (_g > _r + 40) & (_g > _b2 + 20) & (_fr7[..., 3] > 0); _gx = np.where(_grn.any(0))[0]
+    if len(_gx): _x0 = int(_gx[0] + (_gx[-1] - _gx[0]) * 0.55); _cut = np.zeros_like(_grn); _cut[:, _x0:] = True; _fr7[_cut & ~_grn, 3] = 0; _s1[7] = trim(Image.fromarray(_fr7))
     pack('semB9', _s1, VH * 1.04 / hgt(_s1, 9), names=['r0', 'r1', 'r2', 'r3', 'dash', 'armOff', 'aim', 'fireR', 'sky', 'laugh', 'fly0', 'fly1', 'slimed', 'kneel', 'stagger'])
     _s2 = cut('l9bsem2_0.jpg', 'm', 2, 4, clean='edge'); pack('semP9', _s2, 0.5, anchor='mid', names=['fistO', 'fistC', 'seg', 'rocket', 'bolt', 'jet', 'light', 'drop'])
     _ar = np.asarray(Image.open(os.path.join(SRC, 'l9barena_1.jpg')).convert('RGB')).copy(); _dk = _ar.max(2) < 60     # тёмные линии сетки ячеек -> пурпур
@@ -940,7 +947,8 @@ if have('l9kcave_1.jpg'):     # дальний план боя с Семёном
     pack('kDart9', [_dd, _dd, _dh, _dh], 0.5, anchor='mid', names=['d0', 'd1', 'h0', 'h1'])
 
 if have('l9kfb_user2.png'):     # пол с мостиком — картинка владельца (2026-10-23; _user2 — без трубы со струёй, бок стены затемнён)
-    pack('kFB9', [trim(f) for f in delav(depurple([rgba_m('l9kfb_user2.png', (0, 4, 686, 385))]))], 1.0, anchor='mid', names=['fb'])
+    _kf = 'l9kfb_user3.png' if have('l9kfb_user3.png') else 'l9kfb_user2.png'     # _user3: тень на боку стены под мостиком плавно сходит на нет — без ровного стыка (2026-10-24)
+    pack('kFB9', [trim(f) for f in delav(depurple([rgba_m(_kf, (0, 4, 686, 385))]))], 1.0, anchor='mid', names=['fb'])
 if have('l9kbeam_0.jpg'):     # балка у потолка: концы и середина (тайлится), таль с крюком (на ней висит чан), кронштейн с блоком троса
     _bm = lambda b: trim(delav(depurple([rgba_m('l9kbeam_0.jpg', b)]))[0])
     pack('kBeam9', [_bm((28, 48, 300, 316)), _bm((340, 48, 800, 316)), _bm((1060, 48, 1350, 316)), _bm((230, 478, 600, 766)), _bm((955, 360, 1295, 720))], 0.5, anchor='mid', names=['bL', 'bM', 'bR', 'hoist', 'pulley'])
