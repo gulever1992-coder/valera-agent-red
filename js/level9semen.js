@@ -230,7 +230,7 @@
   // иллюзии: враги прошлых уровней; убитые — растворяются, как мираж
   const ILLS = [
     { set: 'zomb5', walk: 'walk', atk: 'attack', sp: 70, hp: 6 },     // сумоист
-    { set: 'zomb0', walk: 'walk', atk: 'attack', sp: 100, hp: 4 }, { set: 'zomb2', walk: 'walk', atk: 'attack', sp: 85, hp: 5 },
+    { set: 'zomb0', walk: 'walk', atk: 'attack', sp: 100, hp: 4 }, { set: 'zomb6', walk: 'walk', atk: 'attack', sp: 85, hp: 5 },     // zomb2 (вышибала) убран: в ударе у него другой зомби
     { sheet: 'roach', walkF: [1, 2], atkF: 3, sc: 1, sp: 120, hp: 3 },     // таракан
     { set: 'gop9i', walk: 'walk', atk: 'attack', sp: 110, hp: 4 }, { set: 'bomzh9i', walk: 'walk', atk: 'attack', sp: 90, hp: 4 }, { set: 'alk9i', walk: 'walk', atk: 'attack', sp: 95, hp: 4 },     // гопник/бомж/алкаш ур.7: 6 кадров ходьбы + удар
     { set: 'rat7', walk: 'walk', atk: 'slam', sp: 120, hp: 3 }, { set: 'viper', walk: 'walk', atk: 'strike', sp: 80, hp: 3 },
