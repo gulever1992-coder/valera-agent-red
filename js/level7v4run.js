@@ -283,7 +283,7 @@ V4.Run = class {
     this.items = [];
     wd.cam.x = U.clamp(x - W / 2, 0, Math.max(0, D.w - W)); wd.cam.y = 0;
     this.cp = { id, x, face }; this.saved = { flags: Object.assign({}, this.flags), ko: new Set(this.ko) };
-    if (D.music !== false) Music.play(this.enemies.length ? 'boss' : 'stealth');
+    if (D.music !== false) Music.play(this.enemies.length ? 'fight' : 'stealth');
     if (this.arrive) { const a = this.arrive; this.arrive = null; a(pl, this); }
     this.boss = null; this.bossHint = 0; this.bossWon = false; this.cardDrop = null; this.arrow = null;
     if (D.onLoad) D.onLoad(this);

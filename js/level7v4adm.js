@@ -315,8 +315,8 @@
     drawMid: (c, cx, r) => { const d = r.hpDrop, im = V4.img.pr_kefir, z = (window.V4_PROPS || {}).kefir; if (d && im && z) { c.fillStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(d.x, V4.GY + 1, z[0] * 0.5, 2.5, 0, 0, 6.3); c.fill(); c.drawImage(im, Math.round(d.x - z[0] / 2), d.y - z[1] + (d.y >= V4.GY ? Math.sin(G.t * 4) * 1.5 - 2 : 0), z[0], z[1]); } },
     onLoad: r => { const pl = r.player; r.hpT = 0; r.hpDrop = null; r.arrow = null; r.lift = null; r.hidePlayer = false; r.camLock = false; r.cp = { id: 'FB', x: 270, face: 1 }; r.saved = { flags: Object.assign({}, r.flags), ko: new Set(r.ko) };
       if (r.flags.bossDone) { r.boss = null; return; } r.boss = new V4.Chief(500, r); r.bossWon = false;
-      if (r.level.chiefSeen) { r.boss.set('idle'); Music.play('boss'); r.bossHint = 5; } else { r.level.chiefSeen = true; r.level.playOnMap(function* () { const b = r.boss; r.camLock = true; pl.facing = 1; b.set('wait', 'stand'); b.facing = -1; yield 0.7;
-        yield* say4('cmdr7', 'И это буду я. Потанцуем, стропальщик.', b, 2.6); b.set('wait', 'taunt'); yield 0.6; G.hint = null; b.set('idle'); Music.play('boss'); r.bossHint = 7; }); } },
+      if (r.level.chiefSeen) { r.boss.set('idle'); Music.play('boss:7b'); r.bossHint = 5; } else { r.level.chiefSeen = true; r.level.playOnMap(function* () { const b = r.boss; r.camLock = true; pl.facing = 1; b.set('wait', 'stand'); b.facing = -1; yield 0.7;
+        yield* say4('cmdr7', 'И это буду я. Потанцуем, стропальщик.', b, 2.6); b.set('wait', 'taunt'); yield 0.6; G.hint = null; b.set('idle'); Music.play('boss:7b'); r.bossHint = 7; }); } },
     update: (dt, r) => { const b = r.boss; if (b && b.state === 'ko' && !r.level.scene && !r.bossWon) { r.bossWon = true; r.level.playOnMap(function* () { const pl = r.player; r.camLock = true; b.bullets = []; b.nades = []; b.smokes = []; yield 1.0;
         yield* say4('cmdr7', 'Ох... Кто ж знал, что стропальщики... так бьют...', b, 2.6); yield* say4('valera', 'Отдыхай, Главный. Мне ещё в главный зал — на собрание.', pl, 2.6);
         r.flags.bossDone = 1; r.flags.fAt = 0; Music.play('stealth'); r.go('F', window.V4_LAYF.xc - 120, 'Этаж 1', 1); }); }

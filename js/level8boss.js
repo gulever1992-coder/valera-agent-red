@@ -200,7 +200,7 @@
           yield* Scene.say('stas', 'Мы с Максом тоже подъедем!');
           yield* Scene.say('maxim', 'Картошки на всех хватит!');
           yield* Scene.say('valera', 'Цирк уехал, клоуны остались. Ну, подходи по одному.');
-        }, () => { const r = new Rooster(lv), s = new Spider(lv); lv.foes.push(s, r); lv.bars = [r, s]; lv.A.on = true; lv.A.roo = r; lv.A.spi = s; lv.say('ДВА БОССА. УВОРАЧИВАЙСЯ!', 2.5); try { Music.play('alarm'); } catch (e) {} });
+        }, () => { const r = new Rooster(lv), s = new Spider(lv); lv.foes.push(s, r); lv.bars = [r, s]; lv.A.on = true; lv.A.roo = r; lv.A.spi = s; lv.say('ДВА БОССА. УВОРАЧИВАЙСЯ!', 2.5); try { Music.play('boss'); } catch (e) {} });
       }], [1e9, () => {}]];
     },
     update(lv, dt) {

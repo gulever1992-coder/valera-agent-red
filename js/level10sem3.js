@@ -102,8 +102,12 @@
     // видимость части: варианты (ладонь/кулак), каналы (пасть открыта, свечение глаз), ф-я o.alpha(part) от игры
     alpha(R, q, st, o) {
       const p = q.p; if (p.hide) return 0;
-      if (p.grp && (st.vars[p.grp] ?? R.grpDef[p.grp]) !== p.var) return 0;
-      let a = p.a ?? 1; const m = sm(((st.ch.mouth || 0) - 0.45) / 0.1);
+      let a = p.a ?? 1;
+      if (p.grp) {     // вариант группы; при смене позы старая растворяется, новая проявляется (st.xf от игры)
+        const cur = st.vars[p.grp] ?? R.grpDef[p.grp], x = st.xf && st.xf[p.grp];
+        if (p.var === cur) { if (x) a *= clamp(x.t / x.d * 2, 0, 1); }
+        else if (x && p.var === x.from) a *= 1 - sm(x.t / x.d); else return 0;
+      } const m = sm(((st.ch.mouth || 0) - 0.45) / 0.1);
       if (p.show === 'mouth') a *= m; else if (p.show === 'mouth0') a *= 1 - m; else if (p.show === 'eye') a *= clamp(st.ch.eye || 0, 0, 1);
       if (o && o.alpha) a *= o.alpha(p);
       return a;
@@ -190,6 +194,23 @@
       c.restore();
     },
     // CCD: цепочка костей тянет кончик (tipLocal — точка в покое последней кости) к цели tq (модель)
+    // рука для IK: целая нарисованная поза (часть с hand) — крутится вся от плеча; иначе старая цепочка костей до кисти
+    armIK(R, side, vars) {
+      const D = R.D, ch = (D.roles || {})['arm' + side]; if (!ch || !ch.length || !R.B[ch[0]]) return null;
+      const g = 'arm' + side, v = (vars || {})[g] ?? R.grpDef[g], p = D.parts.find(q => q.grp === g && q.var === v && q.hand);
+      if (p) return { chain: [ch[0]], tip: p.hand, lim: 35 };
+      if (ch.length < 2 || !R.B[ch[ch.length - 1]]) return null; const e = R.B[ch[ch.length - 1]]; return { chain: ch.slice(0, -1), tip: [e.x, e.y] };
+    },
+    // o: lim — предел поворота целой руки (°), st — [мин, макс] растяжения (рука «летит на зрителя» — крупнее)
+    reach(R, pose, side, vars, tq, it = 6, o = {}) {
+      const a = Core.armIK(R, side, vars); if (!a) return; const id = a.chain[0], lim = o.lim ?? a.lim, r0 = lim ? (pose[id] || {}).r || 0 : 0;
+      Core.ccd(R, pose, a.chain, a.tip, tq, it);
+      if (lim) { const q = pose[id]; q.r = clamp(q.r, r0 - lim, r0 + lim); }
+      if (o.st && a.lim) {
+        const q = pose[id] || (pose[id] = { r: 0, x: 0, y: 0, s: 1 }), M = Core.mats(R, pose), b = R.B[id], pv = ap(M[id], [b.x, b.y]), tp = ap(M[id], a.tip);
+        const k = Math.hypot(tq[0] - pv[0], tq[1] - pv[1]) / Math.max(1, Math.hypot(tp[0] - pv[0], tp[1] - pv[1])); q.s = clamp((q.s ?? 1) * k, o.st[0], o.st[1]);
+      }
+    },
     ccd(R, pose, chain, tipLocal, tq, it = 8) {
       for (let n = 0; n < it; n++) for (let j = chain.length - 1; j >= 0; j--) {
         const M = Core.mats(R, pose), b = R.B[chain[j]], pv = ap(M[chain[j]], [b.x, b.y]), tp = ap(M[chain[chain.length - 1]], tipLocal);
@@ -223,7 +244,7 @@
       if (k === 'hose') { const h = this.role('hose') || []; const id = h[h.length - 1]; return id ? this.W(id, R.B[id].t) : this.P('belly'); }
       if (k[0] === 'l' && k[1] === 'g') { const ch = (this.role('legs') || [])[+k[2]]; if (!ch) return this.P('belly'); const j = k.length > 3 ? +k[4] : 4;
         if (j >= ch.length) { const id = ch[ch.length - 1]; return this.W(id, R.B[id].t); } const id = ch[Math.max(0, j)]; return this.W(id, [R.B[id].x, R.B[id].y]); }
-      if ((k === 'hL' || k === 'hR') && !(D.pts || {})[k]) { const ch = this.role(k === 'hL' ? 'armL' : 'armR') || []; const id = ch[ch.length - 1]; if (id) return this.W(id, [R.B[id].x, R.B[id].y]); }
+      if ((k === 'hL' || k === 'hR') && !(D.pts || {})[k]) { const a = Core.armIK(R, k[1], (this.st || {}).vars); if (a) return this.W(a.chain[a.chain.length - 1], a.tip); }
       const q = (D.pts || {})[k] || (D.pts || {}).belly; if (!q) return [this.x, this.y - this.H / 2];
       return this.W(q.b, [q.x, q.y]);
     }
@@ -236,11 +257,17 @@
       let pose = Core.base(D, t, this.pose, this.poseT, st);
       const fade = clip.fade ?? 0.25; if (this.prev && this.poseT < fade) pose = Core.blend(this.prev, pose, sm(this.poseT / fade));
       const q = id => pose[id] || (pose[id] = { r: 0, x: 0, y: 0, s: 1 });
+      // смена позы рук (вариантов) — растворение за f.xf с (по умолчанию 0.12)
+      this.vc = this.vc || {}; this.xf = this.xf || {};
+      for (const g in R.grpDef) { const v = st.vars[g] ?? R.grpDef[g];
+        if (this.vc[g] != null && this.vc[g] !== v) this.xf[g] = { from: this.vc[g], t: 0, d: f.xf ?? 0.12 };
+        this.vc[g] = v; const x = this.xf[g]; if (x) { x.t += dt; if (x.t >= x.d) delete this.xf[g]; } }
+      st.xf = this.xf;
       // качка на волне и дыхание
       const bob = D.bob || {}, root = R.order[0], torso = this.role('torso') || 'torso';
       q(root).x += Math.sin(t * 0.55) * (bob.x ?? 4); q(root).y += Math.sin(t * 1.3) * (bob.y ?? 5); if (R.B[torso]) q(torso).r += Math.sin(t * 0.8) * (bob.r ?? 1.4);
       if (f.shake) { q(root).x += Math.sin(t * 53) * 3; q(root).y += Math.sin(t * 61) * 2; if (R.B[this.role('head') || 'head']) q(this.role('head') || 'head').r += Math.sin(t * 47) * 3;     // рёв: всё тело трясётся
-        for (const s of ['armL', 'armR']) { const ch = this.role(s); if (ch && ch[1] && R.B[ch[1]]) q(ch[1]).r += Math.sin(t * (s === 'armL' ? 37 : 41)) * 6; } }
+        for (const s of ['armL', 'armR']) { const ch = this.role(s), b = ch && (ch[1] || ch[0]); if (b && R.B[b]) q(b).r += Math.sin(t * (s === 'armL' ? 37 : 41)) * 6; } }
       // каналы: пасть, глаза; наложения атак, идущих одновременно
       const O = this.ovr || {}, k = clamp(dt * 12, 0, 1);
       this.v.mouth = lerp(this.v.mouth, clamp(Math.max(st.ch.mouth || 0, O.mouth || 0), 0, 1), k);
@@ -255,8 +282,8 @@
       if (R.B[gun]) { if (this.gunT) { const lx = this.lookX(this.gunT), fl = lx < 0 ? -1 : 1; q(gun).fx = fl; if (f.gun) q(gun).r += clamp(Math.abs(lx) * 22, 0, 22) * fl; } q(gun).s *= (this.gunK || 1) * (1 + this.mgRec * 0.05); }
       // IK рук (хлопок, хватание)
       if (f.ik) for (const s of ['L', 'R']) {
-        if (!f.ik.includes(s)) continue; const tg = s === 'L' ? this.aimL : (this.aimR || this.aimL), ch = this.role('arm' + s); if (!tg || !ch || ch.length < 2) continue;
-        const end = R.B[ch[ch.length - 1]]; Core.ccd(R, pose, ch.slice(0, -1), [end.x, end.y], this.toModel(tg), 6);
+        if (!f.ik.includes(s)) continue; const tg = s === 'L' ? this.aimL : (this.aimR || this.aimL); if (!tg) continue;
+        Core.reach(R, pose, s, st.vars, this.toModel(tg), 6, { lim: f.ikLim, st: f.ikSt });
       }
       this.legUpd(dt, pose);
       this.hoseUpd(dt, pose, O.hose || f.hose);
@@ -305,7 +332,7 @@
       const b0 = R.B[ch[0]], par = b0.p && R.B[b0.p] ? b0.p : null;
       const Mp = par ? Core.mats(R, pose)[par] : ID, root = [b0.x, b0.y]; let tq = null, L = 0; for (const id of ch) L += R.B[id].len;
       const toPar = p => ap(inv(Mp), this.toModel(p));
-      if (mode === 'up') tq = [root[0] + (this.hoseT ? clamp((toPar(this.hoseT)[0] - root[0]) * 0.3, -160, 160) : 0), this.D.top - 220];
+      const hk = this.D.water - this.D.top; if (mode === 'up') tq = [root[0] + (this.hoseT ? clamp((toPar(this.hoseT)[0] - root[0]) * 0.3, -0.17 * hk, 0.17 * hk) : 0), this.D.top - 0.24 * hk];
       else if (hit && this.hoseT) tq = toPar(this.hoseT);
       const stretch = tq ? clamp(dist(root, tq) / L * 1.05, 1, 2.4) : 1;
       if (tq) { let px = root[0], py = root[1];

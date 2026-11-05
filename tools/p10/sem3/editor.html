@@ -108,8 +108,8 @@ function curPose() {
   const c = D.clips[clip];
   if (clip[0] === '+') { Core.sample(D.clips.idle, 0, pose, st); Core.sample(c, T, pose, st, 1, true); const m = c.c || {}; for (const k in m) st.ch[k] = Core.keyAt(m[k], T, c.len, c.loop)[1]; }
   else pose = Core.base(D, clip === 'idle' ? T : 0, clip, T, st);
-  const ik = (c.f || {}).ik; if (ik && ikView && !(drag && drag.fn)) for (const sd of ['L', 'R']) { if (!ik.includes(sd)) continue; const ch = (D.roles || {})['arm' + sd]; if (!ch || ch.length < 2 || !R.B[ch[ch.length - 1]]) continue;     // как в игре: кисти к цели перед животом
-    const end = R.B[ch[ch.length - 1]], tq = [D.cx + (sd === 'L' ? -150 : 150), D.water - 245]; Core.ccd(R, pose, ch.slice(0, -1), [end.x, end.y], tq, 6); }
+  const ik = (c.f || {}).ik; if (ik && ikView && !(drag && drag.fn)) for (const sd of ['L', 'R']) { if (!ik.includes(sd)) continue;     // как в игре: кисти к цели перед животом
+    const hh = D.water - D.top, tq = [D.cx + (sd === 'L' ? -0.16 : 0.16) * hh, D.water - 0.27 * hh]; Core.reach(R, pose, sd, st.vars, tq, 6, { lim: c.f.ikLim, st: c.f.ikSt }); }
   return { pose, st, M: Core.mats(R, pose) };
 }
 
@@ -124,6 +124,7 @@ function loop(now) {
     if (!(view.k > 0) && rc.width > 10) fit();
     if (playing) { const c = D.clips[clip]; T += dt; if (T > c.len) T = c.loop ? T % c.len : (playing = false, c.len); }
     draw(dt); if (tab === 'anim') drawTL();
+    if (playing && tab === 'anim') { const s = document.getElementById('aT'); if (s && document.activeElement !== s) { s.value = T; s.nextElementSibling.textContent = T.toFixed(2); } }
   }
   requestAnimationFrame(loop);
 }

@@ -57,6 +57,10 @@
     under: () => !!P.dive,     // под водой — неуязвим к хлопку, шлангу, лазеру; шары теряют цель
     onSurface: () => !P.dive,
     raftUnder(x, y0, y1) { return P.rafts.find(r => !r.sink && x > r.x - r.w / 2 && x < r.x + r.w / 2 && r.top >= y0 && r.top <= y1); },
+    // волна от кулака: бежит в обе стороны по всем рядам, поднимает плоты; бьёт стоящего/плывущего (прыжок или нырок спасают)
+    slamWave(x, big = 1) { const v = (AT().waveV ?? 150) * (1 + P.B.seg * 0.15); for (const d of [-1, 1]) P.waves.push({ x, d, v, t: 0, a: big, h: 0, hit: 0 });
+      for (const dx of [-12, 0, 12]) P.fx.push({ k: 'splash', x: x + dx, y: P.WY, t: 0, life: 0.7, big: 1 }); },
+    waveLift(x) { let h = 0; for (const w of P.waves) { const u = (x - w.x) / 26; h += w.h * Math.exp(-u * u); } return h * (AT().waveLift ?? 9); },
     sinkRaftAt(x, w) { for (const r of P.rafts) if (!r.sink && Math.abs(r.x - x) < r.w / 2 + w) { r.sink = 0.01; P.fx.push({ k: 'boom', x: r.x, y: r.top, t: 0, life: 0.5, s: 0.4 }); } },
     // ---------------- Валера ----------------
     updValera(lv, dt) {
@@ -106,8 +110,8 @@
       if (k === 'laser') { a.dir = P.x < 320 ? -1 : 1; a.x0 = a.dir < 0 ? 660 : -20; a.x1 = a.dir < 0 ? -20 : 660; Sound.play('warn', 0.5); }     // идёт на Валеру с дальней стороны
       if (k === 'hose') { a.n = AT().hoseN[sg]; a.i = 0; a.st = 'up'; a.tx = P.x; Sound.play('warn', 0.4);
         if (Math.random() < (AT().sweepP ?? 0.35)) { a.sweep = 1; a.dir = P.x < 320 ? 1 : -1; a.x0 = a.dir > 0 ? -30 : 670; a.x1 = a.dir > 0 ? 670 : -30; a.tx = a.x0; } }     // вариант: шланг метёт по воде перед зрителем
-      if (k === 'smash') { a.st = 'up'; a.tx = P.x; Sound.play('warn', 0.6); }
-      if (k === 'clap') { a.st = 'up'; P.lv.say('НЫРЯЙ!', 1.2); Sound.play('warn', 0.8); }
+      if (k === 'smash') { a.st = 'up'; a.n = (AT().smashN ?? [2, 3, 4])[sg] ?? 3; a.side = Math.random() < 0.5 ? 'L' : 'R'; Sound.play('warn', 0.6); if ((P.hintW = (P.hintW || 0) + 1) <= 2) P.lv.say('ВОЛНА — ПРЫГАЙ!', 1.2); }
+      if (k === 'clap') { a.st = 'up'; a.i = 0; a.n = sg >= 2 ? 2 : 1; a.tx = P.x; a.ty = P.y; P.lv.say('НЫРЯЙ!', 1.2); Sound.play('warn', 0.8); }
       if (k === 'plasma') Sound.play('warn', 0.3);
       P.atks.push(a);
     },
@@ -135,18 +139,15 @@
         if (a.st === 'done') { R.ovr.hose = null; R.hoseT = null; return true; }
         return false;
       }
-      if (a.k === 'smash') {     // по видео: кулаки сцеплены над головой -> обрушиваются вперёд на плот Валеры (тень предупреждает)
-        const T2 = AT(), tw = T2.smashWarn ?? 0.9;
-        if (a.st === 'up') { a.pose = 'smashUp'; if (a.t < tw * 0.7) { a.tx = lerp(a.tx, P.x, clamp(dt * 6, 0, 1)); a.ty = P.raft ? P.raft.top : WY; }
-          if (!a.mark) { a.mark = { x: a.tx, t: 0, life: 9 }; P.marks.push(a.mark); } a.mark.x = a.tx; a.mark.y = a.ty;
-          if (a.t > tw) { a.st = 'hit'; a.t = 0; } }
-        else if (a.st === 'hit') {     // по видео (11.5–14.7 с): кулаки бьют ПООЧЕРЁДНО серией, каждый удар — туда, где Валера (метка догоняет)
-          a.pose = 'smash'; const per = T2.smashPer ?? 0.3, n = (T2.smashN ?? [3, 4, 5])[P.B.seg] ?? 4, k = Math.floor(a.t / per), y = (a.ty || WY) - 48;
-          R.aimL = [a.tx - 9, y]; R.aimR = [a.tx + 9, y];
-          if (k < n) { if (a.k2 !== k) { a.k2 = k; a.hit = 0; } a.tx = lerp(a.tx, P.x, clamp(dt * 3, 0, 1)); a.ty = P.raft ? P.raft.top : WY; if (a.mark) { a.mark.x = a.tx; a.mark.y = a.ty; } }
-          if (k >= 1 && k <= n && !a.hit) { a.hit = 1; G.shake(10, 0.35); Sound.play('boom'); P.fx.push({ k: 'splash', x: a.tx, y: WY, t: 0, life: 0.7, big: 1 }); P.sinkRaftAt(a.tx, 10);
-            if (Math.abs(P.x - a.tx) < (T2.smashR ?? 42) && P.onSurface()) P.hurt(T2.smashDmg ?? 24, 'hose'); }
-          if (a.t > per * (n + 1) + 0.2) { if (a.mark) a.mark.life = 0; return true; } }
+      if (a.k === 'smash') {     // кулаки по воде: замах обоими -> попеременно левым/правым (последний — двумя) -> от каждого удара волны в обе стороны: перепрыгнуть или поднырнуть
+        const T2 = AT(), tw = T2.smashWarn ?? 0.9, per = T2.smashPer ?? 0.62;
+        if (a.st === 'up') { a.pose = 'smashUp'; if (a.t > tw) { a.st = 'hit'; a.t = 0; a.k2 = -1; } return false; }
+        const k = Math.floor(a.t / per), u = a.t - k * per;
+        if (k >= a.n) { a.pose = 'idle'; return a.t > a.n * per + 0.25; }
+        const side = k === a.n - 1 && sg >= 1 ? 'B' : (k % 2 ? (a.side === 'L' ? 'R' : 'L') : a.side);
+        a.pose = 'pound' + side; if (a.k2 !== k) { a.k2 = k; a.hit = 0; }
+        if (!a.hit && u > 0.09) { a.hit = 1; G.shake(side === 'B' ? 14 : 9, 0.4); Sound.play('boom');
+          for (const sd of side === 'B' ? ['L', 'R'] : [side]) P.slamWave(clamp(R.P('h' + sd)[0], 20, 620), side === 'B' ? 1.3 : 1); }
         return false;
       }
       if (a.k === 'hose') {
@@ -159,13 +160,20 @@
         if (a.st === 'done') { R.ovr.hose = null; R.hoseT = null; return true; }
         return false;
       }
-      if (a.k === 'clap') {
-        // руки вверх ладонями (предупреждение) -> в стороны к воде -> хлопок у воды в центре -> волна по всей воде
-        const sm = C().sem;
-        if (a.st === 'up') { a.pose = 'clapUp'; if (a.t > T.clapWarn) { a.st = 'out'; a.t = 0; } }
-        else if (a.st === 'out') { a.st = 'clap'; a.t = 0; }     // (старый промежуточный «в стороны» не нужен — руки летят на зрителя сразу)
-        else if (a.st === 'clap') { a.pose = 'clap'; R.aimL = [sm.x - 38, sm.y - 62]; R.aimR = [sm.x + 38, sm.y - 62]; if (a.t > 0.3 && !a.hit) { a.hit = 1; G.shake(14, 0.7); G.flash(0.06, '#fff'); Sound.play('boom'); P.waves.push({ x: sm.x, r: 0, hit: 0 }); P.fx.push({ k: 'splash', x: sm.x, y: sm.y, t: 0, life: 0.7, big: 1 }); }
-          if (a.t > 0.85) return true; }
+      if (a.k === 'clap') {     // хлопок-давилка: ладони вверх (тень на Валере) -> руки летят к нему раскрытыми -> схлопываются (спасает нырок) -> растирают -> назад
+        const T2 = AT(), tw = (T2.clapWarn ?? 1) * (a.i ? 0.7 : 1), aim = (sp, dy) => { R.aimL = [a.tx - sp, a.ty - dy]; R.aimR = [a.tx + sp, a.ty - dy]; };
+        if (a.st === 'up') { a.pose = 'clapUp';
+          if (a.t < tw * 0.8 && !P.dive) { const k = clamp(dt * 5, 0, 1); a.tx = lerp(a.tx, P.x, k); a.ty = lerp(a.ty, P.y, k); }
+          if (!a.mark) { a.mark = { x: a.tx, t: 0, life: 9 }; P.marks.push(a.mark); } a.mark.x = a.tx; a.mark.y = a.ty + 4;
+          if (a.t > tw) { a.st = 'swing'; a.t = 0; Sound.play('jump', 0.6); } }
+        else if (a.st === 'swing') { a.pose = 'clapOpen'; aim(lerp(110, 70, a.t / 0.24), 16); if (a.t > 0.24) { a.st = 'shut'; a.t = 0; } }
+        else if (a.st === 'shut') { a.pose = 'clapShut'; aim(5 + (a.t > 0.12 ? Math.sin(a.t * 38) * 3 : 0), 12);
+          if (!a.hit) { a.hit = 1; G.shake(16, 0.6); G.flash(0.06, '#fff'); Sound.play('boom'); P.sinkRaftAt(a.tx, 2);
+            for (const dx of [-14, 0, 14]) P.fx.push({ k: 'splash', x: a.tx + dx, y: Math.max(WY, a.ty), t: 0, life: 0.7, big: 1 });
+            if (Math.abs(P.x - a.tx) < (T2.clapR ?? 40) && !P.dive) { P.hurt(T2.clapDmg ?? 30, 'clap'); if (P.inv <= 0 || P.hurtT > 0.2) P.lv.say('РАЗДАВИЛ!', 0.9); } }
+          if (Math.random() < dt * 14) P.fx.push({ k: 'foam', x: a.tx + rnd(-16, 16), y: Math.max(WY, a.ty) + rnd(-2, 4), t: 0, life: 0.5, s: 0.25 });
+          if (a.t > 0.55) { a.st = 'back'; a.t = 0; if (a.mark) a.mark.life = 0; } }
+        else if (a.st === 'back') { a.pose = 'clapBack'; if (a.t > 0.45) { if (++a.i < a.n) { a.st = 'up'; a.t = 0; a.hit = 0; a.mark = null; a.tx = P.x; a.ty = P.y; Sound.play('warn', 0.6); } else return true; } }
         return false;
       }
       return true;
@@ -188,7 +196,7 @@
       // течение: плоты; гранатомёт — на одном из плотов, пока не подобран
       P.spawnT = (P.spawnT || 0) - dt; if (P.spawnT <= 0) { P.spawnT = rnd(L.raftEvery[0], L.raftEvery[1]); const nr = P.addRaft(L.raftX0 ?? -60); if (!P.gun && (!P.gunRaft || P.gunRaft.x > 660 || P.gunRaft.sink)) P.gunRaft = nr; }
       if (!P.gun && P.gunRaft && P.raft === P.gunRaft && P.onG && Math.abs(P.x - P.gunRaft.x) < P.gunRaft.w * 0.45) { P.gun = true; P.gunRaft = null; Sound.play('pickup'); lv.say('ГРАНАТОМЁТ! СТРЕЛЯЙ ПО СТАНЦИЯМ', 2); }
-      for (const r of P.rafts) { r.x += r.vx * dt; r.bob += dt * 2; r.top = r.ly - r.h * L.raftTop + Math.sin(r.bob) * 1.5 + r.sink * 40; if (r.sink) r.sink += dt * 0.8; }
+      for (const r of P.rafts) { r.x += r.vx * dt; r.bob += dt * 2; r.top = r.ly - r.h * L.raftTop + Math.sin(r.bob) * 1.5 + r.sink * 40 - P.waveLift(r.x) * r.s; if (r.sink) r.sink += dt * 0.8; }
       P.rafts = P.rafts.filter(r => r.x < 720 && r.sink < 1.5);
       // станции и лапы: пока хоть одна подключена — щит
       for (const s of P.stations) {
@@ -216,6 +224,11 @@
         else if (R.ovr.pose) pose = R.ovr.pose;
         else if (P.atks.some(a => a.k === 'laser')) pose = 'laser'; else if (P.atks.some(a => a.k === 'plasma')) pose = 'plasma';
       }
+      // в паузах дразнится: бьёт себя в грудь, тычет пальцем в Валеру, рычит
+      P.tauntCd = (P.tauntCd ?? 3) - dt;
+      if (P.taunt) { P.taunt.t += dt; if (pose !== 'idle' || P.taunt.t > P.taunt.len) P.taunt = null; else pose = P.taunt.k; }
+      else if (pose === 'idle' && B.hp > 0 && P.tauntCd <= 0) { const k = ['chest', 'point', 'chest', 'roar'][(Math.random() * 4) | 0]; P.taunt = { k, t: 0, len: k === 'point' ? 2.2 : k === 'roar' ? 1.2 : 1.6 }; P.tauntCd = rnd(3.5, 7);
+        if (k === 'point') lv.say(['ТЫ СЛЕДУЮЩИЙ, ВАЛЕРКА!', 'РАЗДАВЛЮ КАК МУХУ!', 'ИДИ СЮДА!'][(Math.random() * 3) | 0], 1.6); else Sound.play('stomp', 0.4); }
       if (P.roarT > 0) { P.roarT -= dt; if (pose === 'idle') pose = 'roar'; }
       if (B.hp <= 0) pose = 'hurt';
       R.setPose(pose); R.update(dt);
@@ -235,8 +248,11 @@
       }
       P.balls = P.balls.filter(b => !b.dead);
       // волна хлопка бежит по воде от центра: задевает всё на поверхности (спасает только нырок)
-      for (const w of P.waves) { w.r += dt * 620; if (!w.hit && Math.abs(P.x - w.x) < w.r && Math.abs(P.x - w.x) > w.r - 40) { w.hit = 1; if (P.onSurface()) P.hurt(T.clapDmg, 'clap'); } if (Math.random() < dt * 30) for (const sx of [-1, 1]) P.fx.push({ k: 'splash', x: w.x + sx * w.r, y: WY, t: 0, life: 0.3 }); }
-      P.waves = P.waves.filter(w => w.r < 700);
+      for (const w of P.waves) { w.t += dt; w.x += w.d * w.v * dt; w.h = clamp(w.t / 0.35, 0, 1) * w.a * (w.x < -20 || w.x > 660 ? 0.5 : 1);
+        if (!w.hit && w.h > 0.5 && Math.abs(P.x - w.x) < 12 && !P.dive && (P.onG || P.swim) && !(P.climbT > 0)) { w.hit = 1; P.hurt(AT().waveDmg ?? 16, 'wave');
+          P.fx.push({ k: 'splash', x: P.x, y: P.y, t: 0, life: 0.5, big: 1 }); if (P.onG) { P.onG = false; P.raft = null; P.vy = -150; P.x += w.d * 20; } }
+        if (Math.random() < dt * 10) P.fx.push({ k: 'foam', x: w.x + rnd(-10, 10), y: P.WY + rnd(0, 46), t: 0, life: 0.5, s: 0.22 }); }
+      P.waves = P.waves.filter(w => w.x > -90 && w.x < 730);
       // миньоны
       P.minT -= dt; if (P.minT <= 0 && B.hp > 0) { P.minT = T.minionEvery * rnd(0.7, 1.3); if (P.foes.filter(f => !f.dead).length < T.minions[B.seg]) { const sp = R.P(Math.random() < 0.5 ? 'legL' : 'legR'), k = ['bat', 'eye', 'bat', 'worm', 'blob'][(Math.random() * 5) | 0]; P.foes.push(new L10.Minion(k, clamp(sp[0], 30, 610), Math.min(sp[1], 200), { env: P.env })); } }
       for (const f of P.foes) f.update(dt); P.foes = P.foes.filter(f => !f.gone);
@@ -258,6 +274,9 @@
       for (const f of P.fx) f.t += dt; P.fx = P.fx.filter(f => f.t < f.life);
       for (const m of P.marks) m.t += dt; P.marks = P.marks.filter(m => m.t < m.life);
     },
+    drawWaves(c, ln) { if (!P.waves.length || !L10.has('wave10')) return;
+      for (const w of P.waves) { if (w.h < 0.05) continue; const f = w.t < 0.18 ? 'w0' : ['w1', 'w2', 'w1', 'w3'][((w.t * 5) | 0) % 4];
+        S(c, 'wave10', f, w.x, ln.y + 7 * ln.k, (AT().waveS ?? 0.42) * ln.k * (0.5 + 0.5 * w.h), { flip: w.d < 0, a: Math.min(1, w.h * 1.5) }); } },
     drawBeam(c, from, to, k = 'laser', th = 8) { const [x0, y0] = from, [x1, y1] = to, a = Math.atan2(y1 - y0, x1 - x0), L = Math.hypot(x1 - x0, y1 - y0), f = L10.fr('fx10', k); if (!f) return; c.save(); c.globalCompositeOperation = 'lighter'; c.translate(x0, y0); c.rotate(a); c.imageSmoothingEnabled = true; c.drawImage(L10.img.fx10, f[0], f[1], f[2], f[3], 0, -th / 2, L, th); c.restore(); },
     // лапа со спины к станции: кольчатая лента tent10, по ней бежит ток, пока подключена
     drawLeg(c, s) {
@@ -319,7 +338,10 @@
           if (L10.has('fx10') && ly.foam !== 0) { const bx = R.box(), n = 20; for (let i = 0; i < n; i++) { const u = (i + 0.5) / n, x = bx[0] + bx[2] * (0.03 + 0.94 * u) + Math.sin(t * 1.3 + i * 2) * 5; S(c, 'fx10', 'splash', x, sm.y + 1 + (i % 2) * 4, 0.2 + 0.05 * Math.sin(t * 2.1 + i * 1.7), { add: 1, a: 0.5 + 0.2 * Math.sin(t * 3 + i), sy: 0.4 }); } }     // пена у пояса — нет резкого шва
           break; }
         case 'laser': for (const a of P.atks) if (a.k === 'laser') { const e1 = R.P('e'), e2 = R.P('e2'); if (a.warn) { c.save(); c.globalAlpha = 0.35 + 0.3 * Math.sin(P.t * 30); c.fillStyle = '#ff3020'; c.fillRect(Math.min(a.x0, a.x1), WY - 3, 680, 2); c.restore(); P.drawBeam(c, e1, [a.x0 - 14, WY - 4], 'laser', 2); P.drawBeam(c, e2, [a.x0 + 14, WY - 4], 'laser', 2); } else { P.drawBeam(c, e1, [a.x - 14, WY - 4]); P.drawBeam(c, e2, [a.x + 14, WY - 4]); if (L10.has('fx10')) S(c, 'fx10', 'lhit', a.x, WY - 6, 0.4, { add: 1 }); } } break;
-        case 'rafts': P.rafts.sort((a, b) => a.ly - b.ly); for (const r of P.rafts) S(c, C().raftSheet, 'raft' + r.n, r.x, r.top + r.h * C().raftTop + C().raftSub, r.s, { a: 1 - r.sink * 0.6 }); break;
+        case 'rafts': { P.rafts.sort((a, b) => a.ly - b.ly); const RS = r => S(c, C().raftSheet, 'raft' + r.n, r.x, r.top + r.h * C().raftTop + C().raftSub, r.s, { a: 1 - r.sink * 0.6 });
+          const lanes = [{ y: WY, k: 0.62 }].concat(C().lanes.slice().sort((a, b) => a.y - b.y)); let i = 0;
+          for (const ln of lanes) { P.drawWaves(c, ln); for (; i < P.rafts.length && P.rafts[i].ly <= ln.y + 1; i++) RS(P.rafts[i]); }
+          for (; i < P.rafts.length; i++) RS(P.rafts[i]); break; }
         case 'hose': if (R.hoseW > 0.3 && (R.ovr || {}).hose !== 'up') R.drawHoseOnly(c); break;     // шланг, вылетевший из воды к цели, — поверх воды и плотов
         case 'actors':
           if (!P.gun && P.gunRaft) { const r = P.gunRaft, b = Math.sin(P.t * 4) * 2; S9(c, 'fxL9', 'spark', r.x, r.top - 14, 0.45 + Math.sin(P.t * 5) * 0.08, { add: 1 }); S9(c, 'pick9', 'rocket', r.x, r.top - 10 + b, 0.6); }

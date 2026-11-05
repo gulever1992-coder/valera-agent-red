@@ -637,6 +637,7 @@ L5.Level = class {
   startRaceSetup() {
     const pl = this.pl; this.trains = []; this.heli = null; this.heliDone = {}; this.heliCrashDone = false; for (const r of (L5.world.rails || [])) { r.done = false; r.bar = 0; }
     this.mode = 'count'; this.raceStarted = true; this.race = { t: 3.4, last: 4, done: false };
+    Music.play('boss');
     this.cars = this.cars.filter(c => c === pl); this.wrecks = []; this.bullets = []; this.ebullets = []; this.clouds = []; L5.fxs.length = 0; FX.list = [];
     const a = L5.at(L5.S_RACE, { lane: 24 }), b = L5.at(L5.S_RACE, { lane: -24 });
     pl.x = a.x; pl.y = a.y; pl.ang = a.ang; pl.vx = pl.vy = 0; pl.hp = pl.maxhp; pl.dead = false; pl.s = L5.S_RACE; pl.invul = 0; pl.air = 0; pl.nitro = 0; pl.maxMul = 1; pl.flatT = 0; // старт гонки без ускорения: ни нитро, ни остатков бонусов
