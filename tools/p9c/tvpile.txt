@@ -1,0 +1,9 @@
+Generate ONE pixel-art game sprite sheet for a 2D side-scrolling platformer. Art style: EXACTLY like the reference C:/Users/gulev/CRM/valera-game/art_src/l9/l9px3_1.jpg (open it): detailed fine-grained pixel-art painting, no black outlines, worn grimy metal, cold teal-green light against deep blue-black shadows, warm amber accents. The villain on the screens must look EXACTLY like C:/Users/gulev/CRM/valera-game/art_src/l9/ref_mrx512.png (open it): a dark shadowy man with glowing red eyes and a wide white evil grin.
+Flat solid pure magenta #FF00FF background (RGB 255,0,255), no shadows, no floor line, no text, no letters, no logos, no grid lines.
+Layout: 1 row x 4 columns, equal cells, wide magenta margins, nothing cut off. ALL FOUR cells show EXACTLY THE SAME object in the same position and size, only the screens differ:
+A messy HEAP of old boxy CRT television sets of many different sizes stacked on the floor on top of each other: a big wooden console TV at the bottom, two medium TVs on it, small portable TVs with antennas on top, some slightly tilted, tangled cables hanging down. About 6-7 TVs in the heap, the heap is wider than tall.
+Cell 1: all screens show grey-green static noise.
+Cell 2: EVERY screen shows the villain's face, tinted green like an old monitor.
+Cell 3: EVERY screen shows the villain laughing with open mouth.
+Cell 4: the same heap smashed: broken glass screens, sparks, a little grey smoke.
+Output ONE image, saved as PNG at C:/Users/gulev/CRM/valera-game/art_src/l9/l9tvpile.png and print the final path. Do not ask questions.

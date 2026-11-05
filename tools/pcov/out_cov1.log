@@ -1,0 +1,2133 @@
+Reading additional input from stdin...
+2026-10-20T19:36:11.421954Z ERROR codex_skills_extension::loader::host: skills scan reached its traversal limit (root: file:///C:/Users/gulev/.codex/skills)
+2026-10-20T19:36:11.876373Z ERROR codex_core::session::session: failed to load skill C:\Users\gulev\.codex\skills\clone-site\SKILL.md: invalid YAML: found character that cannot start any token at line 4 column 1, while scanning for the next token
+2026-10-20T19:36:11.876413Z ERROR codex_core::session::session: failed to load skill C:\Users\gulev\.codex\skills\content-eval\SKILL.md: invalid YAML: found character that cannot start any token at line 4 column 1, while scanning for the next token
+2026-10-20T19:36:11.876420Z ERROR codex_core::session::session: failed to load skill C:\Users\gulev\.codex\skills\conversion-ops\SKILL.md: missing YAML frontmatter delimited by ---
+2026-10-20T19:36:11.876424Z ERROR codex_core::session::session: failed to load skill C:\Users\gulev\.codex\skills\growth-engine\SKILL.md: missing YAML frontmatter delimited by ---
+2026-10-20T19:36:11.876427Z ERROR codex_core::session::session: failed to load skill C:\Users\gulev\.codex\skills\lead-dossier\SKILL.md: invalid YAML: found character that cannot start any token at line 4 column 1, while scanning for the next token
+2026-10-20T19:36:11.876431Z ERROR codex_core::session::session: failed to load skill C:\Users\gulev\.codex\skills\revenue-intelligence\SKILL.md: missing YAML frontmatter delimited by ---
+2026-10-20T19:36:11.876435Z ERROR codex_core::session::session: failed to load skill C:\Users\gulev\.codex\skills\sales-pipeline\SKILL.md: missing YAML frontmatter delimited by ---
+2026-10-20T19:36:11.876438Z ERROR codex_core::session::session: failed to load skill C:\Users\gulev\.codex\skills\sales-playbook\SKILL.md: missing YAML frontmatter delimited by ---
+2026-10-20T19:36:11.876442Z ERROR codex_core::session::session: failed to load skill C:\Users\gulev\.codex\skills\seo-ops\SKILL.md: missing YAML frontmatter delimited by ---
+2026-10-20T19:36:11.876446Z ERROR codex_core::session::session: failed to load skill C:\Users\gulev\.codex\skills\short-form-pipeline\SKILL.md: missing YAML frontmatter delimited by ---
+2026-10-20T19:36:11.876450Z ERROR codex_core::session::session: failed to load skill C:\Users\gulev\.codex\skills\team-ops\SKILL.md: missing YAML frontmatter delimited by ---
+2026-10-20T19:36:11.876454Z ERROR codex_core::session::session: failed to load skill C:\Users\gulev\.codex\skills\video-caption-generator\SKILL.md: invalid YAML: found character that cannot start any token at line 4 column 1, while scanning for the next token
+2026-10-20T19:36:11.876459Z ERROR codex_core::session::session: failed to load skill C:\Users\gulev\.codex\skills\video-clip-pipeline\SKILL.md: missing YAML frontmatter delimited by ---
+OpenAI Codex v0.154.0
+--------
+workdir: C:\Users\gulev\CRM\valera-game
+model: gpt-5.6-terra
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: medium
+reasoning summaries: none
+session id: 01a15ad0-6ae4-7793-af3d-b816fd55bdaf
+--------
+user
+Generate ONE square 1:1 (1024x1024) detailed retro 16-bit pixel-art game LEVEL COVER illustration, rich atmospheric lighting, same art style and detail level as the reference C:/Users/gulev/CRM/valera-game/assets/l8/card.jpg (open it, style only). The hero VALERA must look EXACTLY like the reference C:/Users/gulev/CRM/valera-game/art_src/l7/pick_valera.jpg (open it: same face, hair, orange hoodie, jeans, proportions). Fictional setting in a gloomy northern post-Soviet 2000s town. Strict rules: NO text, NO letters, NO logos, NO flags, NO real symbols or emblems, NO UI/HUD, no frame or border; full-bleed square composition, main subject centered so it survives a slight crop. Mood: action-comedy, mysterious, no spoilers of bosses.
+Scene: a huge northern shipyard at grey dawn: tall harbour cranes, a dark submarine hull in a flooded dry dock, steam, seagulls, wet concrete. Valera small in the foreground seen from behind-three-quarter, walking through the open shipyard gate on his first workday, lunchbox in hand. Cold blue-grey palette with warm orange work lights.
+Output ONE image, saved as PNG at C:/Users/gulev/CRM/valera-game/art_src/covers/cov1.png and print the final path. Do not ask questions.
+2026-10-20T19:36:12.712741Z ERROR codex_skills_extension::loader::host: skills scan reached its traversal limit (root: file:///C:/Users/gulev/.codex/skills)
+warning: Exceeded skills context budget. All skill descriptions were removed and 1340 additional skills were not included in the model-visible skills list.
+codex
+Использую навык генерации изображений: сначала сверю оба референса по стилю и внешности Валеры, затем создам единственную обложку без текста и сохраню её по указанному пути.
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw 'C:\\Users\\gulev\\.codex\\skills\\.system\\imagegen\\SKILL.md'" in C:\Users\gulev\CRM\valera-game
+ succeeded in 351ms:
+---
+name: "imagegen"
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset rather than repo-native code or vector. Do not use when the task is better handled by editing existing SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in HTML/CSS/canvas."
+---
+
+# Image Generation Skill
+
+Generates or edits images for the current project (for example website assets, game assets, UI mockups, product mockups, wireframes, logo design, photorealistic images, or infographics).
+
+## Top-level modes and rules
+
+This skill has exactly two top-level modes:
+
+- **Default built-in tool mode (preferred):** built-in `image_gen` tool for image generation, editing, and transparent-image requests. Does not require `OPENAI_API_KEY`.
+- **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for or confirms the CLI/API/model path. Requires `OPENAI_API_KEY`.
+
+Within CLI fallback, the CLI exposes three subcommands:
+
+- `generate`
+- `edit`
+- `generate-batch`
+
+Rules:
+- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Do not switch to CLI fallback for ordinary quality, size, or file-path control.
+- For transparent images, ask built-in `image_gen` for a transparent background and preserve the generated alpha.
+- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`; ask the user first unless they explicitly requested `gpt-image-1.5`.
+- The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate assets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per requested asset or variant.
+- If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires `OPENAI_API_KEY`. Proceed only if the user explicitly asks for that fallback.
+- If the user explicitly asks for CLI mode, use the bundled `scripts/image_gen.py` workflow. Do not create one-off SDK runners.
+- Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
+
+Built-in save-path policy:
+- In built-in tool mode, Codex saves generated images under `$CODEX_HOME/*` by default.
+- Do not describe or rely on OS temp as the default built-in destination.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific location is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
+- Save-path precedence in built-in mode:
+  1. If the user names a destination, move or copy the selected output there.
+  2. If the image is meant for the current project, move or copy the final selected image into the workspace before finishing.
+  3. If the image is only for preview or brainstorming, render it inline; the underlying file can remain at the default `$CODEX_HOME/*` path.
+- Never leave a project-referenced asset only at the default `$CODEX_HOME/*` path.
+- Do not overwrite an existing asset unless the user explicitly asked for replacement; otherwise create a sibling versioned filename such as `hero-v2.png` or `item-icon-edited.png`.
+
+Shared prompt guidance for both modes lives in `references/prompting.md` and `references/sample-prompts.md`.
+
+Fallback-only docs/resources for CLI mode:
+- `references/cli.md`
+- `references/image-api.md`
+- `references/codex-network.md`
+- `scripts/image_gen.py`
+
+## When to use
+- Generate a new image (concept art, product shot, cover, website hero)
+- Generate a new image using one or more reference images for style, composition, or mood
+- Edit an existing image (inpainting, lighting or weather transformations, background replacement, object removal, compositing, transparent background)
+- Produce many assets or variants for one task
+
+## When not to use
+- Extending or matching an existing SVG/vector icon set, logo system, or illustration library inside the repo
+- Creating simple shapes, diagrams, wireframes, or icons that are better produced directly in SVG, HTML/CSS, or canvas
+- Making a small project-local asset edit when the source file already exists in an editable native format
+- Any task where the user clearly wants deterministic code-native output instead of a generated bitmap
+
+## Decision tree
+
+Think about two separate questions:
+
+1. **Intent:** is this a new image or an edit of an existing image?
+2. **Execution strategy:** is this one asset or many assets/variants?
+
+Intent:
+- If the user wants to modify an existing image while preserving parts of it, treat the request as **edit**.
+- If the user provides images only as references for style, composition, mood, or subject guidance, treat the request as **generate**.
+- If the user provides no images, treat the request as **generate**.
+
+Built-in edit semantics:
+- Built-in edit mode is for images already visible in the conversation context, such as attached images or images generated earlier in the thread.
+- If the user wants to edit a local image file with the built-in tool, first load it with built-in `view_image` tool so the image is visible in the conversation context, then proceed with the built-in edit flow.
+- Do not promise arbitrary filesystem-path editing through the built-in tool.
+- If a local file still needs direct file-path control, masks, or other explicit CLI-only parameters, use the explicit CLI fallback only when the user asks for it.
+- For edits, preserve invariants aggressively and save non-destructively by default.
+
+Execution strategy:
+- In the built-in default path, produce many assets or variants by issuing one `image_gen` call per requested asset or variant.
+- In the CLI fallback path, use the CLI `generate-batch` subcommand only when the user explicitly chose CLI mode and needs many prompts/assets.
+- For many distinct assets, do not use `n` as a substitute for separate prompts. `n` is for variants of one prompt; distinct assets need distinct built-in calls or distinct CLI `generate-batch` jobs.
+
+Assume the user wants a new image unless they clearly ask to change an existing one.
+
+## Workflow
+1. Decide the top-level mode: built-in by default, including transparent-output requests; fallback CLI only if explicitly requested or confirmed.
+2. Decide the intent: `generate` or `edit`.
+3. Decide whether the output is preview-only or meant to be consumed by the current project.
+4. Decide the execution strategy: single asset vs repeated built-in calls vs CLI `generate-batch`.
+5. Collect inputs up front: prompt(s), exact text (verbatim), constraints/avoid list, and any input images.
+6. For every input image, label its role explicitly:
+   - reference image
+   - edit target
+   - supporting insert/style/compositing input
+7. If the edit target is only on the local filesystem and you are staying on the built-in path, inspect it with `view_image` first so the image is available in conversation context.
+8. If the user asked for a photo, illustration, sprite, product image, banner, or other explicitly raster-style asset, use `image_gen` rather than substituting SVG/HTML/CSS placeholders. If the request is for an icon, logo, or UI graphic that should match existing repo-native SVG/vector/code assets, prefer editing those directly instead.
+9. Augment the prompt based on specificity:
+   - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative requirements.
+   - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
+10. Use the built-in `image_gen` tool by default.
+11. For transparent-output requests, ask built-in `image_gen` for a transparent background and preserve the generated alpha channel.
+12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
+13. Iterate with a single targeted change, then re-check.
+14. For preview-only work, render the image inline; the underlying file may remain at the default `$CODEX_HOME/generated_images/...` path.
+15. For project-bound work, move or copy the selected artifact into the workspace and update any consuming code or references. Never leave a project-referenced asset only at the default `$CODEX_HOME/generated_images/...` path.
+16. For batches or multi-asset requests, persist every requested deliverable final in the workspace unless the user explicitly asked to keep outputs preview-only. Discarded variants do not need to be kept unless requested.
+17. If the user explicitly chooses or confirms the CLI fallback, then use the fallback-only docs for model, quality, size, `input_fidelity`, masks, output format, output paths, and network setup.
+18. Always report the final saved path(s) for any workspace-bound asset(s), plus the final prompt or prompt set and whether the built-in tool or fallback CLI mode was used.
+
+## Transparent image requests
+
+Ask built-in `image_gen` for a genuinely transparent background and preserve its alpha.
+
+## Prompt augmentation
+
+Reformat user prompts into a structured, production-oriented spec. Make the user's goal clearer and more actionable, but do not blindly add detail.
+
+Treat this as prompt-shaping guidance, not a closed schema. Use only the lines that help, and add a short extra labeled line when it materially improves clarity.
+
+### Specificity policy
+
+Use the user's prompt specificity to decide how much augmentation is appropriate:
+
+- If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
+- If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.
+
+Allowed augmentations:
+- composition or framing hints
+- polish level or intended-use hints
+- practical layout guidance
+- reasonable scene concreteness that supports the stated request
+
+Not allowed augmentations:
+- extra characters or objects that are not implied by the request
+- brand names, slogans, palettes, or narrative beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Use-case taxonomy (exact slugs)
+
+Classify each request into one of these buckets and keep the slug consistent across prompts and references.
+
+Generate:
+- photorealistic-natural вЂ” candid/editorial lifestyle scenes with real texture and natural lighting.
+- product-mockup вЂ” product/packaging shots, catalog imagery, merch concepts.
+- ui-mockup вЂ” app/web interface mockups and wireframes; specify the desired fidelity.
+- infographic-diagram вЂ” diagrams/infographics with structured layout and text.
+- scientific-educational вЂ” classroom explainers, scientific diagrams, and learning visuals with required labels and accuracy constraints.
+- ads-marketing вЂ” campaign concepts and ad creatives with audience, brand position, scene, and exact tagline/copy.
+- productivity-visual вЂ” slide, chart, workflow, and data-heavy business visuals.
+- logo-brand вЂ” logo/mark exploration, vector-friendly.
+- illustration-story вЂ” comics, childrenвЂ™s book art, narrative scenes.
+- stylized-concept вЂ” style-driven concept art, 3D/stylized renders.
+- historical-scene вЂ” period-accurate/world-knowledge scenes.
+
+Edit:
+- text-localization вЂ” translate/replace in-image text, preserve layout.
+- identity-preserve вЂ” try-on, person-in-scene; lock face/body/pose.
+- precise-object-edit вЂ” remove/replace a specific element (including interior swaps).
+- lighting-weather вЂ” time-of-day/season/atmosphere changes only.
+- background-extraction вЂ” transparent background / clean cutout. Ask built-in `image_gen` for actual transparency.
+- style-transfer вЂ” apply reference style while changing subject/scene.
+- compositing вЂ” multi-image insert/merge with matched lighting/perspective.
+- sketch-to-render вЂ” drawing/line art to photoreal render.
+
+## Shared prompt schema
+
+Use the following labeled spec as shared prompt scaffolding for both top-level modes:
+
+```text
+Use case: <taxonomy slug>
+Asset type: <where the asset will be used>
+Primary request: <user's main prompt>
+Input images: <Image 1: role; Image 2: role> (optional)
+Scene/backdrop: <environment>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D/etc>
+Composition/framing: <wide/close/top-down; placement>
+Lighting/mood: <lighting + mood>
+Color palette: <palette notes>
+Materials/textures: <surface details>
+Text (verbatim): "<exact text>"
+Constraints: <must keep/must avoid>
+Avoid: <negative constraints>
+```
+
+Notes:
+- `Asset type` and `Input images` are prompt scaffolding, not dedicated CLI flags.
+- `Scene/backdrop` refers to the visual setting. It is not the same as the fallback CLI `background` parameter, which controls output transparency behavior.
+- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong in the CLI path only. Do not treat them as built-in `image_gen` tool arguments.
+
+Augmentation rules:
+- Keep it short.
+- Add only the details needed to improve the prompt materially.
+- For edits, explicitly list invariants (`change only X; keep Y unchanged`).
+- If any critical detail is missing and blocks success, ask a question; otherwise proceed.
+
+## Examples
+
+### Generation example (hero image)
+```text
+Use case: product-mockup
+Asset type: landing page hero
+Primary request: a minimal hero image of a ceramic coffee mug
+Style/medium: clean product photography
+Composition/framing: wide composition with usable negative space for page copy if needed
+Lighting/mood: soft studio lighting
+Constraints: no logos, no text, no watermark
+```
+
+### Edit example (invariants)
+```text
+Use case: precise-object-edit
+Asset type: product photo background replacement
+Primary request: replace only the background with a warm sunset gradient
+Constraints: change only the background; keep the product and its edges unchanged; no text; no watermark
+```
+
+## Prompting best practices
+- Structure prompt as scene/backdrop -> subject -> details -> constraints.
+- Include intended use (ad, UI mock, infographic) to set the mode and polish level.
+- Use camera/composition language for photorealism.
+- Only use SVG/vector stand-ins when the user explicitly asked for vector output or a non-image placeholder.
+- Quote exact text and specify typography + placement.
+- For tricky words, spell them letter-by-letter and require verbatim rendering.
+- For multi-image inputs, reference images by index and describe how they should be used.
+- For edits, repeat invariants every iteration to reduce drift.
+- Iterate with single-change follow-ups.
+- If the prompt is generic, add only the extra detail that will materially help.
+- If the prompt is already detailed, normalize it instead of expanding it.
+- For CLI fallback only, see `references/cli.md` and `references/image-api.md` for model, `quality`, `input_fidelity`, masks, output format, and output-path guidance.
+- For transparent images, ask built-in `image_gen` for actual transparency and preserve its alpha.
+
+More principles shared by both modes: `references/prompting.md`.
+Copy/paste specs shared by both modes: `references/sample-prompts.md`.
+
+## Guidance by asset type
+Asset-type templates (website assets, game assets, wireframes, logo) are consolidated in `references/sample-prompts.md`.
+
+## gpt-image-2 guidance for CLI fallback
+
+The fallback CLI defaults to `gpt-image-2`.
+
+- Use `gpt-image-2` for new CLI/API workflows unless the user confirms a different model.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user explicitly requested that model.
+- `gpt-image-2` always uses high fidelity for image inputs; do not set `input_fidelity` with this model.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- Use `quality low` for fast drafts, thumbnails, and quick iterations. Use `medium`, `high`, or `auto` for final assets, dense text, diagrams, identity-sensitive edits, or high-resolution outputs.
+- Square images are typically fastest to generate. Use `1024x1024` for fast square drafts.
+- If the user asks for 4K-style output, use `3840x2160` for landscape or `2160x3840` for portrait.
+- `gpt-image-2` size may be `auto` or `WIDTHxHEIGHT` if all constraints hold: max edge `<= 3840px`, both edges multiples of `16px`, long-to-short ratio `<= 3:1`, total pixels between `655,360` and `8,294,400`.
+
+Popular `gpt-image-2` sizes:
+- `1024x1024` square
+- `1536x1024` landscape
+- `1024x1536` portrait
+- `2048x2048` 2K square
+- `2048x1152` 2K landscape
+- `3840x2160` 4K landscape
+- `2160x3840` 4K portrait
+- `auto`
+
+## Fallback CLI mode only
+
+### Temp and output conventions
+These conventions apply only to the CLI fallback. They do not describe built-in `image_gen` output behavior.
+- Use `tmp/imagegen/` for intermediate files (for example JSONL batches); delete them when done.
+- Write final artifacts under `output/imagegen/`.
+- Use `--out` or `--out-dir` to control output paths; keep filenames stable and descriptive.
+
+### Dependencies
+Prefer `uv` for dependency management in this repo.
+
+Required Python package:
+```bash
+uv pip install openai
+```
+
+Optional for image inspection and downscaling:
+```bash
+uv pip install pillow
+```
+
+Portability note:
+- If you are using the installed skill outside this repo, install dependencies into that environment with its package manager.
+- In uv-managed environments, `uv pip install ...` remains the preferred path.
+
+### Environment
+- `OPENAI_API_KEY` must be set for live API calls.
+- Do not ask the user for `OPENAI_API_KEY` when using the built-in `image_gen` tool.
+- Never ask the user to paste the full key in chat. Ask them to set it locally and confirm when ready.
+
+If the key is missing, give the user these steps:
+1. Create an API key in the OpenAI platform UI: https://platform.openai.com/api-keys
+2. Set `OPENAI_API_KEY` as an environment variable in their system.
+3. Offer to guide them through setting the environment variable for their OS/shell if needed.
+
+If installation is not possible in this environment, tell the user which dependency is missing and how to install it into their active environment.
+
+### Script-mode notes
+- CLI commands + examples: `references/cli.md`
+- API parameter quick reference: `references/image-api.md`
+- Network approvals / sandbox settings for CLI mode: `references/codex-network.md`
+
+## Reference map
+- `references/prompting.md`: shared prompting principles for both modes.
+- `references/sample-prompts.md`: shared copy/paste prompt recipes for both modes.
+- `references/cli.md`: fallback-only CLI usage via `scripts/image_gen.py`.
+- `references/image-api.md`: fallback-only API/CLI parameter reference.
+- `references/codex-network.md`: fallback-only network/sandbox troubleshooting for CLI mode.
+- `scripts/image_gen.py`: fallback-only CLI implementation. Use only when the user explicitly chooses or confirms CLI mode.
+
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Item 'C:\\Users\\gulev\\CRM\\valera-game\\assets\\l8\\card.jpg','C:\\Users\\gulev\\CRM\\valera-game\\art_src\\l7\\pick_valera.jpg' | Select-Object FullName,Length" in C:\Users\gulev\CRM\valera-game
+ succeeded in 324ms:
+
+FullName                                                  Length
+--------                                                  ------
+C:\Users\gulev\CRM\valera-game\assets\l8\card.jpg         268848
+C:\Users\gulev\CRM\valera-game\art_src\l7\pick_valera.jpg 728929
+
+
+
+mcp: codex_apps/higgsfield.media_upload_and_confirm started
+mcp: codex_apps/higgsfield.media_upload_and_confirm (failed)
+MCP tool call requires approval, but approval policy is never
+codex
+Референсы проверены: визуальный язык — детализированный 16‑битный пиксель-арт с насыщенным светом; Валера — коренастый парень с растрёпанными каштановыми волосами, щетиной, оранжевым худи и синими джинсами. Сейчас создаю сцену с этими закреплёнными признаками.
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg --files 'art_src' | rg 'covers|cov1|shipyard'" in C:\Users\gulev\CRM\valera-game
+ succeeded in 352ms:
+art_src\covers\cov2.png
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg --files | rg -i 'dock|ship|crane|submarine|harbour|yard|port|sea|l[0-9]'" in C:\Users\gulev\CRM\valera-game
+ succeeded in 641ms:
+L9_CONCEPT.md
+L8_TZ.md
+L8_CONCEPT.md
+L7_v4_PLAN.md
+L7_v4_CONCEPT.md
+L7_CONCEPT.md
+_old\l7v2\tools\l7_prompts.md
+_old\l7v2\tools\build_l7.py
+_old\l7v2\spr\worker7.png
+_old\l7v2\spr\spz7.png
+_old\l7v2\spr\p_boss7.png
+_old\l7v2\spr\props7.png
+_old\l7v2\spr\chop7.png
+_old\l7v2\spr\boss7.png
+_old\l7v2\js\level7scenes.js
+_old\l7v2\js\level7.js
+tools\portraits_l8fix.py
+tools\portraits_l7fix.py
+tools\portraits_fix.py
+js\level9tun.js
+js\level9traps.js
+js\level9sanyav.js
+js\level9sanya.js
+js\level9movers.js
+js\level9labmap.js
+js\level9lab.js
+js\level9foes.js
+js\level9arrive.js
+js\level9.js
+js\level8map2.js
+js\level8map.js
+js\level8boss.js
+js\level8.js
+js\level7v4scenes.js
+js\level7v4run.js
+js\level7v4maps.js
+js\level7v4in.js
+js\level7v4hall.js
+js\level7v4adm.js
+js\level7v4.js
+js\level7scenes.js
+js\level7run.js
+js\level7mg.js
+js\level7map.js
+js\level7.js
+js\level6scenes.js
+js\level6run.js
+js\level6foes.js
+js\level6boss.js
+js\level6.js
+js\level5world.js
+js\level5scenes.js
+js\level5render.js
+js\level5logic.js
+js\level5extra.js
+js\level5ent.js
+js\level5.js
+js\level4.js
+js\level3.js
+js\level2.js
+js\level1.js
+js\l9_data.js
+js\l8_data.js
+js\l7v4_van_data.js
+js\l7v4_props.js
+js\l7v4_hall_data.js
+js\l7v4_adm_props.js
+_old\l7v2\assets\sky.jpg
+_old\l7v2\assets\road.jpg
+_old\l7v2\assets\mid.png
+_old\l7v2\assets\ground.jpg
+_old\l7v2\assets\far.png
+_old\l7v2\assets\comic_van.jpg
+_old\l7v2\assets\comic_stage.jpg
+_old\l7v2\assets\comic_shout.jpg
+_old\l7v2\assets\comic_raid.jpg
+_old\l7v2\assets\comic_gate.jpg
+_old\l7v2\assets\card.jpg
+tools\p8\up\cranePhoto.jpg
+tools\p8\up\crane8ref.jpg
+_old\l7v2\assets\arena.jpg
+_old\l7\tools\l7_objs.py
+_old\l7\tools\build_l7.py
+_old\l7\js\level7scenes.js
+_old\l7\js\level7run.js
+_old\l7\js\level7mg.js
+_old\l7\js\level7map.js
+_old\l7\js\level7.js
+assets\l5_hq.jpg
+assets\l5_facades.webp
+assets\l5_facades.png
+assets\l5_elev.webp
+assets\l5_elev.png
+assets\l5_comic_end2.jpg
+assets\l5_comic_end1.jpg
+assets\l5_cliff_bg.webp
+assets\l5_cliff_bg.jpg
+assets\l5_card.webp
+assets\l5_card.jpg
+assets\l4_sq.webp
+assets\l4_sq.jpg
+assets\l1_floor.jpg
+assets\l1_cab.png
+assets\l5_tiles.webp
+assets\l5_tiles.png
+assets\l5_roofs.webp
+assets\l5_roofs.png
+assets\l5_rail.webp
+assets\l5_rail.png
+assets\l5_kop.webp
+assets\l5_kop.png
+assets\l6_card.jpg
+tools\p7v4\well1.png
+tools\p7v4\shell4ref.png
+tools\p7v4\shell3ref.png
+tools\p7v4\shell2ref.png
+tools\p7v4\shell1ref.png
+tools\p7v4\ref_cmd_l2.jpg
+tools\p7v4\hall1.png
+tools\p7v4\hall1.jpg
+_old\l7\assets\yard.png
+_old\l7\assets\sky.jpg
+_old\l7\assets\room_stairs.jpg
+_old\l7\assets\room_server.jpg
+_old\l7\assets\room_security.jpg
+_old\l7\assets\room_reception.jpg
+_old\l7\assets\room_hall.jpg
+_old\l7\assets\room_director.jpg
+_old\l7\assets\room_deputy2.jpg
+_old\l7\assets\room_deputy.jpg
+_old\l7\assets\room_corridor.jpg
+_old\l7\assets\room_canteen.jpg
+_old\l7\assets\room_archive.jpg
+_old\l7\assets\room_accounting.jpg
+_old\l7\assets\road.jpg
+_old\l7\assets\gr_yard.jpg
+_old\l7\assets\gr_alley.jpg
+_old\l7\assets\facade.png
+_old\l7\assets\comic_van.jpg
+_old\l7\assets\comic_stage.jpg
+_old\l7\assets\comic_gate.jpg
+_old\l7\assets\card.jpg
+_old\l7\assets\alley.png
+assets\l6\sky_forest.webp
+assets\l6\sky_forest.jpg
+assets\l6\sky_dunes.webp
+assets\l6\sky_dunes.jpg
+assets\l6\sky_bog.webp
+assets\l6\sky_bog.jpg
+assets\l6\sky.webp
+assets\l6\sky.jpg
+assets\l6\mg_forest.webp
+assets\l6\mg_forest.png
+assets\l6\mg_dunes.webp
+assets\l6\mg_dunes.png
+assets\l6\mg_bog.webp
+assets\l6\mg_bog.png
+assets\l6\layers.json
+assets\l6\heli.webp
+assets\l6\heli.jpg
+assets\l6\gr_sand.webp
+assets\l6\gr_sand.jpg
+assets\l6\gr_forest.jpg
+assets\l6\gr_bog.jpg
+assets\l6\forest.webp
+assets\l6\forest.png
+assets\l6\fg.webp
+assets\l6\fg.png
+assets\l6\far.webp
+assets\l6\far.png
+assets\l6\dunes.webp
+assets\l7_card.jpg
+assets\l6\dunes.png
+assets\l6\dunefar.webp
+assets\l6\dunefar.png
+assets\l6\city.webp
+assets\l6\city.png
+assets\l6\bog.webp
+assets\l6\bog.png
+assets\l6\bgf.jpg
+assets\l6\bgd.webp
+assets\l6\bgd.jpg
+assets\l6\bgb.webp
+assets\l6\bgb.jpg
+assets\l6\arena.webp
+assets\l6\arena.jpg
+assets\l5_tiles2.webp
+assets\l5_tiles2.png
+tools\l7v4_stairs2.py
+tools\l7v4_stairs.py
+tools\l7v4_shop.py
+tools\l7v4_sheets.json
+tools\l7v4_sew_ladder.py
+tools\l7v4_rooms.py
+tools\l7v4_parkwire.py
+tools\l7v4_parkfix.py
+tools\l7v4_mg.py
+tools\l7v4_hallref.py
+tools\l7v4_hall.py
+tools\l7v4_floorref.py
+tools\l7v4_corner.py
+tools\l7v4_climbfix.py
+tools\l7v4_cabin.py
+tools\cs_l2.png
+tools\build_l9.py
+tools\build_l8.py
+tools\build_l7v4.py
+tools\build_l7.py
+tools\build_l6.py
+tools\build_l5.py
+assets\l7\yard.jpg
+assets\l7\wall1b.jpg
+assets\l7\wall1.jpg
+assets\l7\van_in.webp
+assets\l7\van_in.jpg
+assets\l7\sewer.jpg
+assets\l7\road2.jpg
+assets\l7\road.jpg
+assets\l7\plaza.jpg
+assets\l7\parking.jpg
+assets\l7\mrx_box.jpg
+assets\l7\hall.webp
+assets\l7\hall.jpg
+assets\l7\corr2.webp
+assets\l7\corr2.jpg
+assets\l7\corr.webp
+assets\l7\corr.jpg
+assets\l7v4\cabin.webp
+assets\l7v4\cabin.png
+assets\l7v4\afhall.webp
+assets\l7v4\afhall.jpg
+assets\l7v4\af4_open.webp
+assets\l7v4\af4_open.png
+assets\l7v4\af4.webp
+assets\l7v4\af4.png
+assets\l7v4\af3.webp
+assets\l7v4\af3.png
+assets\l7v4\af2.webp
+assets\l7v4\af2.png
+assets\l7v4\af1_open.webp
+assets\l7v4\af1_open.png
+assets\l7v4\af1.webp
+assets\l7v4\af1.png
+assets\l7v4\admin.webp
+assets\l7v4\admin.png
+assets\l7v4\aboss.webp
+assets\l7v4\aboss.jpg
+assets\l7v4\corr1.jpg
+assets\l7v4\corr0.webp
+assets\l7v4\corr0.jpg
+assets\l7v4\corner_b.webp
+assets\l7v4\corner_b.png
+assets\l7v4\corner.webp
+assets\l7v4\corner.png
+assets\l7v4\campole.webp
+assets\l7v4\campole.png
+assets\l7v4\camhead.webp
+assets\l7v4\camhead.png
+assets\l7v4\fl1.png
+assets\l7v4\fence.webp
+assets\l7v4\fence.png
+assets\l7v4\far.webp
+assets\l7v4\far.png
+assets\l7v4\corr1.webp
+assets\l7v4\fl2.webp
+assets\l7v4\fl2.png
+assets\l7v4\fl1.webp
+assets\l7v4\fl3.webp
+assets\l7v4\fl3.png
+assets\l7v4\fl4.png
+assets\l9\arch9.png
+assets\l9\arch9.webp
+L9_TZ.md
+assets\l7v4\fl4.webp
+tmp\up9\l9vrun_0.jpg
+tmp\up9\l9vrunud_0.jpg
+tmp\up9\l9vroll2_0.jpg
+tmp\up9\l9vrage2_0.jpg
+tmp\up9\l9vjump2_0.jpg
+tmp\up9\l9vclimb2_1.jpg
+tmp\up9\l9vat_1.jpg
+tmp\up9\l9vaim3_0.jpg
+tmp\up9\l9tv_0.jpg
+tmp\up9\l9train_1.jpg
+tmp\up9\l9ref_tun1.jpg
+tmp\up9\l9ref_sanya.jpg
+tmp\up9\l9ref_san.jpg
+tmp\up9\l9ref_robo.jpg
+tmp\up9\l9ref_chr.jpg
+tmp\up9\l9ref_capE.jpg
+tmp\up9\l9ref_cap.jpg
+tmp\up9\l9pod_1.jpg
+tmp\up9\l9penA_1.jpg
+tmp\up9\l9hcop2_0.jpg
+tmp\up9\l9hcap_1.jpg
+tmp\up9\l9eHat_1.jpg
+tmp\up9\l9dock_0.jpg
+tmp\up9\l9cyb_1.jpg
+tmp\up9\l9cwsketch.png
+assets\l8\zombE1.webp
+assets\l8\zombE1.png
+assets\l8\zombE0.webp
+assets\l8\zombE0.png
+assets\l8\zombD0.webp
+assets\l8\zombD0.png
+assets\l8\zombC1.webp
+assets\l8\zombC1.png
+assets\l8\zombC0.webp
+assets\l8\zombC0.png
+assets\l8\zombB1.webp
+assets\l8\zombB1.png
+assets\l8\zombB0.webp
+assets\l8\zombB0.png
+assets\l8\zombA1.webp
+assets\l8\zombA1.png
+assets\l8\zombA0.webp
+assets\l8\zombA0.png
+assets\l8\wreck8.webp
+assets\l8\wreck8.png
+assets\l8\wall8.webp
+assets\l8\wall8.png
+assets\l8\van8.webp
+assets\l8\van8.png
+assets\l8\valS8.webp
+assets\l8\valS8.png
+assets\l8\val8.webp
+assets\l8\val8.png
+assets\l8\tun3.webp
+assets\l8\tun3.jpg
+assets\l8\tun2.webp
+assets\l8\tun2.jpg
+assets\l8\tun1.webp
+assets\l8\tun1.jpg
+assets\l8\tun0.webp
+assets\l8\tun0.jpg
+assets\l8\truck8.webp
+assets\l8\truck8.png
+assets\l8\tech.webp
+assets\l8\tech.jpg
+assets\l8\spi8.webp
+assets\l8\spi8.png
+assets\l8\shield8.webp
+assets\l8\shield8.png
+assets\l8\roo8.webp
+assets\l8\roo8.png
+assets\l8\prTech8.webp
+assets\l8\prTech8.png
+assets\l8\props8.webp
+assets\l8\props8.png
+assets\l8\prBack8.webp
+assets\l8\prBack8.png
+assets\l8\mon3.webp
+assets\l8\mon3.jpg
+assets\l8\mon2.webp
+assets\l8\mon2.jpg
+assets\l8\mon1.webp
+assets\l8\mon1.jpg
+assets\l8\mon0.webp
+assets\l8\mon0.jpg
+assets\l8\mega8.webp
+assets\l8\mega8.png
+assets\l8\max8.webp
+assets\l8\max8.png
+assets\l8\labbg.webp
+assets\l8\labbg.jpg
+assets\l8\hall.webp
+assets\l8\hall.jpg
+assets\l8\fxE8.webp
+assets\l8\fxE8.png
+assets\l8\fxD8.webp
+assets\l8\fxD8.png
+assets\l8\fxC8.webp
+assets\l8\fxC8.png
+assets\l8\fx8.webp
+assets\l8\fx8.png
+assets\l8\fgTech8.webp
+assets\l8\fgTech8.png
+assets\l8\fgHall8.webp
+assets\l8\fgHall8.png
+assets\l8\fgBack8.webp
+assets\l8\fgBack8.png
+assets\l8\fall3.webp
+assets\l8\fall3.jpg
+assets\l8\fall2.webp
+assets\l8\fall2.jpg
+assets\l8\fall1.webp
+assets\l8\fall1.jpg
+assets\l8\fall0.webp
+assets\l8\fall0.jpg
+assets\l8\dock.webp
+assets\l8\dock.jpg
+assets\l8\dazed8.webp
+assets\l8\dazed8.png
+assets\l8\crk4.webp
+assets\l8\crk4.jpg
+assets\l8\crk3.webp
+assets\l8\crk3.jpg
+assets\l8\crk2.webp
+assets\l8\crk2.jpg
+assets\l8\crk1.webp
+assets\l8\crk1.jpg
+assets\l8\crk0.webp
+assets\l8\crk0.jpg
+tmp\l9_dbg4.jpg
+assets\l8\craneN8.webp
+tmp\l9_dbg3.jpg
+assets\l8\craneN8.png
+tmp\l9_dbg2.jpg
+assets\l8\craneB8.webp
+tmp\l9_dbg.jpg
+assets\l8\craneB8.png
+tmp\l9_cs4.jpg
+assets\l8\craneA8.webp
+tmp\l9_cs3.jpg
+tmp\l9_cs2.jpg
+tmp\l9_cs1.jpg
+assets\l8\craneA8.png
+assets\l8\cmdRun8.webp
+assets\l8\cmdRun8.png
+assets\l8\cmdR8.webp
+assets\l8\cmdR8.png
+assets\l8\cmdG8.webp
+assets\l8\cmdG8.png
+assets\l8\cmdAdv8.webp
+assets\l8\cmdAdv8.png
+assets\l8\card.jpg
+assets\l8\cap1.webp
+assets\l8\cap1.jpg
+assets\l8\cap0.webp
+assets\l8\cap0.jpg
+assets\l8\brk7.jpg
+assets\l8\brk6.jpg
+assets\l8\brk5.jpg
+assets\l8\brk4.jpg
+assets\l8\brk3.jpg
+assets\l8\brk2.jpg
+assets\l8\brk1.webp
+assets\l8\brk1.jpg
+assets\l8\brk0.webp
+assets\l8\brk0.jpg
+assets\l8\bossbg.webp
+assets\l8\bossbg.jpg
+assets\l8\boom8.webp
+assets\l8\boom8.png
+assets\l8\batt8.webp
+assets\l8\batt8.png
+assets\l8\back.webp
+assets\l8\back.jpg
+assets\l9\cave2.webp
+assets\l9\cave2.jpg
+assets\l9\cave1.webp
+assets\l9\cave1.jpg
+assets\l9\capOut9b.webp
+assets\l9\capOut9b.png
+assets\l9\capOut9.webp
+assets\l9\capOut9.png
+assets\l9\capC9.webp
+assets\l9\capC9.png
+assets\l9\capB9.webp
+assets\l9\capB9.png
+assets\l9\capA9.webp
+assets\l9\capA9.png
+assets\l9\cap9.webp
+assets\l9\cap9.png
+assets\l9\btr9.webp
+assets\l9\btr9.png
+assets\l9\body9.webp
+assets\l9\body9.png
+assets\l9\bgC.webp
+assets\l9\bgC.jpg
+assets\l9\bgB.webp
+assets\l9\bgB.jpg
+assets\l9\bgA.webp
+assets\l9\bgA.jpg
+assets\l9\belt9b.webp
+assets\l9\belt9b.png
+assets\l9\belt9.webp
+assets\l9\belt9.png
+assets\l9\bat9.webp
+assets\l9\bat9.png
+assets\l9\dock9.webp
+assets\l9\dock9.jpg
+assets\l9\dkX1.webp
+assets\l9\dkX1.png
+assets\l9\dkX0.webp
+assets\l9\dkX0.png
+assets\l9\dkN1.webp
+assets\l9\dkN1.png
+assets\l9\dkN0.webp
+assets\l9\dkN0.png
+assets\l9\dkG3.webp
+assets\l9\dkG3.png
+assets\l9\dkG2.webp
+assets\l9\dkG2.png
+assets\l9\dkG1.webp
+assets\l9\dkG1.png
+assets\l9\cybC9.webp
+assets\l9\cybC9.png
+assets\l9\cybB9.webp
+assets\l9\cybB9.png
+assets\l9\cybA9.webp
+assets\l9\cybA9.png
+assets\l9\cw9.webp
+assets\l9\cw9.png
+assets\l9\cover9.webp
+assets\l9\cover9.png
+assets\l9\conv9.webp
+assets\l9\conv9.png
+assets\l9\col9.webp
+assets\l9\col9.png
+assets\l9\chain9.webp
+assets\l9\chain9.png
+assets\l9\fxA9.webp
+assets\l9\fxA9.jpg
+assets\l9\floor9.webp
+assets\l9\floor9.jpg
+assets\l9\flE9.webp
+assets\l9\flE9.png
+assets\l9\fire9.webp
+assets\l9\fire9.png
+assets\l9\fgT9.webp
+assets\l9\fgT9.png
+assets\l9\fgj9.webp
+assets\l9\fgj9.png
+assets\l9\eWeld9.webp
+assets\l9\eWeld9.png
+assets\l9\eSuper9.webp
+assets\l9\eSuper9.png
+assets\l9\eStump9.webp
+assets\l9\eStump9.png
+assets\l9\eSpit9.webp
+assets\l9\eSpit9.png
+assets\l9\eHat9.webp
+assets\l9\eHat9.png
+assets\l9\eFly9.webp
+assets\l9\eFly9.png
+assets\l9\eCrawl9.webp
+assets\l9\eCrawl9.png
+assets\l9\eArm9.webp
+assets\l9\eArm9.png
+assets\l9\drez9.webp
+assets\l9\drez9.png
+assets\l9\henC9.png
+assets\l9\henB9.webp
+assets\l9\henB9.png
+assets\l9\henA9.webp
+assets\l9\henA9.png
+assets\l9\hcop9.webp
+assets\l9\hcop9.png
+assets\l9\hcap9.webp
+assets\l9\hcap9.png
+assets\l9\hbar9.webp
+assets\l9\hbar9.png
+assets\l9\gate9.webp
+assets\l9\gate9.png
+assets\l9\fxL9.webp
+assets\l9\fxL9.jpg
+assets\l9\lab1c.jpg
+assets\l9\lab1b.webp
+assets\l9\lab1b.jpg
+assets\l9\lab1a.webp
+assets\l9\lab1a.jpg
+assets\l9\inc9.webp
+assets\l9\inc9.png
+assets\l9\henC9.webp
+assets\l9\lab2a.jpg
+assets\l9\lab1d.webp
+assets\l9\lab1d.jpg
+assets\l9\lab1c.webp
+assets\l9\lab2b.jpg
+assets\l9\lab2a.webp
+assets\l9\lab2b.webp
+tmp\imagegen\l5_tiles.png
+tmp\imagegen\l5_props.png
+tmp\imagegen\l5_decals.png
+tools\p7\b03_yard.txt
+tools\p7\e01_portraits.txt
+assets\l7v4\wiper.webp
+assets\l7v4\wiper.png
+assets\l7v4\wing.webp
+assets\l7v4\wing.png
+assets\l7v4\van_wheels.webp
+assets\l7v4\van_wheels.png
+tools\l9lib.py
+tools\l7_sheets.json
+tools\l7v5_rooms.py
+tools\l7v5_hall.py
+tools\l7v5_adm.py
+tools\l7v4_wing.py
+tools\l7v4_well.py
+tools\l7v4_van.py
+tools\l7v4_towerref.py
+tools\l7v4_tower.py
+tools\l7v4_stref.py
+tools\l7v4_stair_rail.py
+assets\l7v4\van_empty.webp
+assets\l7v4\van_empty.png
+assets\l7v4\van_big.webp
+assets\l7v4\van_big.png
+assets\l7v4\vanin.webp
+assets\l7v4\vanin.jpg
+assets\l7v4\tw_win5.webp
+assets\l7v4\tw_win5.png
+assets\l7v4\tw_win4.webp
+assets\l7v4\tw_win4.png
+assets\l7v4\tw_win3.webp
+assets\l7v4\tw_win3.png
+assets\l7v4\tw_win2.webp
+assets\l7v4\tw_win2.png
+assets\l7v4\tw_win1.webp
+assets\l7v4\tw_win1.png
+assets\l7v4\tw_win0.webp
+assets\l7v4\tw_win0.png
+assets\l7v4\tw_sign.webp
+assets\l7v4\tw_sign.png
+assets\l7v4\tw_cam.png
+assets\l7v4\st_well_fg.webp
+assets\l7v4\st_well_fg.png
+assets\l7v4\st_well.webp
+assets\l7v4\hl_sign.png
+assets\l7v4\st_well.jpg
+assets\l7v4\st_wall.webp
+assets\l7v4\hl_scan.webp
+assets\l7v4\st_wall.jpg
+assets\l7v4\hl_scan.png
+assets\l7v4\st_plat.webp
+assets\l7v4\hl_locker.webp
+assets\l7v4\st_plat.png
+assets\l7v4\hl_locker.png
+assets\l7v4\st_lamp.webp
+assets\l7v4\st_lamp.png
+assets\l7v4\hl_lift.webp
+assets\l7v4\st_floor.webp
+assets\l7v4\hl_lift.png
+assets\l7v4\st_floor.png
+assets\l7v4\hl_hook.webp
+assets\l7v4\st_flight.webp
+assets\l7v4\hl_hook.png
+assets\l7v4\st_flight.png
+assets\l7v4\hl_chain.png
+assets\l7v4\st_door1.webp
+assets\l7v4\hl_cam.png
+assets\l7v4\st_door1.png
+assets\l7v4\hl_box.png
+assets\l7v4\st_door0.webp
+assets\l7v4\st_door0.png
+assets\l7v4\hl_belt.webp
+assets\l7v4\st_box.webp
+assets\l7v4\hl_belt.png
+assets\l7v4\st_box.png
+assets\l7v4\hhands.webp
+assets\l7v4\stair_rail.webp
+assets\l7v4\hhands.png
+assets\l7v4\stair_rail.png
+assets\l7v4\hguests.webp
+assets\l7v4\stair.webp
+assets\l7v4\hguests.png
+assets\l7v4\stair.jpg
+assets\l7v4\hc1.webp
+assets\l7v4\st2_land.webp
+assets\l7v4\st2_land.png
+assets\l7v4\hc1.png
+assets\l7v4\st2_lamp.png
+assets\l7v4\hc0.webp
+assets\l7v4\st2_gate.webp
+assets\l7v4\hc0.png
+assets\l7v4\st2_gate.png
+assets\l7v4\st2_crate.png
+assets\l7v4\hall_fg.webp
+assets\l7v4\st2_cam.png
+assets\l7v4\hall_fg.png
+assets\l7v4\st2_brick.webp
+assets\l7v4\st2_brick.png
+assets\l7v4\hall_dr2.webp
+assets\l7v4\st2_beam.webp
+assets\l7v4\hall_dr2.png
+assets\l7v4\hall_dr1.webp
+assets\l7v4\hall_dr1.png
+assets\l7v4\hallscr.webp
+assets\l7v4\hallscr.png
+assets\l7v4\hall.webp
+assets\l7v4\hall.jpg
+assets\l7v4\st2_beam.png
+assets\l7v4\st2_barrel.webp
+assets\l7v4\st2_barrel.png
+assets\l7v4\sky.webp
+assets\l7v4\sky.jpg
+assets\l7v4\shopfar.webp
+assets\l7v4\shopfar.png
+assets\l7v4\mg1.jpg
+assets\l7v4\shopdoor_r.png
+assets\l7v4\mg0.webp
+assets\l7v4\shopdoor_l.png
+assets\l7v4\mg0.jpg
+assets\l7v4\shopcap.webp
+assets\l7v4\shopcap.png
+assets\l7v4\liftp.webp
+assets\l7v4\shopbig.webp
+assets\l7v4\liftp.jpg
+assets\l7v4\shopbig.jpg
+assets\l7v4\liftd4.png
+assets\l7v4\shop.webp
+assets\l7v4\liftd3.png
+assets\l7v4\shop.png
+assets\l7v4\liftd2.png
+assets\l7v4\sew_ladder.webp
+assets\l7v4\liftd1.png
+assets\l7v4\sew_ladder.png
+assets\l7v4\sewer2.jpg
+assets\l7v4\sewer.webp
+assets\l7v4\liftc4.png
+assets\l7v4\liftc3.png
+assets\l7v4\liftc2.png
+assets\l7v4\liftc1.png
+assets\l7v4\kpp.webp
+assets\l7v4\kpp.png
+assets\l7v4\hzomb.webp
+assets\l7v4\hzomb.png
+assets\l7v4\hz1.webp
+assets\l7v4\sewer.jpg
+assets\l7v4\hz1.png
+assets\l7v4\scaff.webp
+assets\l7v4\hz0.webp
+assets\l7v4\scaff.png
+assets\l7v4\hz0.png
+assets\l7v4\roomB3.webp
+assets\l7v4\hslides.webp
+assets\l7v4\roomB3.jpg
+assets\l7v4\roomB2.webp
+assets\l7v4\hslides.jpg
+assets\l7v4\roomB2.jpg
+assets\l7v4\hshoot.webp
+assets\l7v4\roomB1.webp
+assets\l7v4\hshoot.png
+assets\l7v4\roomB1.jpg
+assets\l7v4\hrear.webp
+assets\l7v4\roomB0.webp
+assets\l7v4\hrear.jpg
+assets\l7v4\roomB0.jpg
+assets\l7v4\roomA3.webp
+assets\l7v4\hrap.webp
+assets\l7v4\roomA3.jpg
+assets\l7v4\hrap.png
+assets\l7v4\roomA2.webp
+assets\l7v4\roomA2.jpg
+assets\l7v4\hmrx.webp
+assets\l7v4\roomA1.webp
+assets\l7v4\hmrx.jpg
+assets\l7v4\roomA1.jpg
+assets\l7v4\hl_sign.webp
+assets\l7v4\roomA0.webp
+assets\l7v4\roomA0.jpg
+assets\l7v4\roofopen.webp
+assets\l7v4\roofopen.png
+assets\l7v4\roof.webp
+assets\l7v4\roof.png
+assets\l7v4\mgw_plug2.png
+assets\l7v4\mgw_plug1.webp
+assets\l7v4\mgw_plug1.png
+assets\l7v4\mgw_plug0.webp
+assets\l7v4\mgw_plug0.png
+assets\l7v4\mgw_panel.webp
+assets\l7v4\mgw_panel.jpg
+assets\l7v4\mgw_lamp.png
+assets\l7v4\mgw_hand.webp
+assets\l7v4\mgw_hand.png
+assets\l7v4\mgs.webp
+assets\l7v4\mgs.jpg
+assets\l7v4\mgp.webp
+assets\l7v4\mgp.jpg
+assets\l7v4\mgl_b.webp
+assets\l7v4\mgl_b.jpg
+assets\l7v4\mgl_a.webp
+assets\l7v4\mgl_a.jpg
+assets\l7v4\mgk.webp
+assets\l7v4\mgk.jpg
+assets\l7v4\mg2.webp
+assets\l7v4\road.webp
+assets\l7v4\mg2.jpg
+assets\l7v4\road.png
+assets\l7v4\mg1.webp
+assets\l7v4\mgw_spark.png
+assets\l7v4\mgw_sock2.webp
+assets\l7v4\mgw_sock2.png
+assets\l7v4\mgw_sock1.webp
+assets\l7v4\mgw_sock1.png
+assets\l7v4\mgw_sock0.webp
+assets\l7v4\mgw_sock0.png
+assets\l7v4\mgw_plug2.webp
+assets\l7v4\mgw_wire2.png
+assets\l7v4\mgw_wire1.png
+assets\l7v4\mgw_wire0.png
+assets\l7v4\mgw_spark.webp
+assets\l7v4\park.png
+assets\l7v4\pa\trolley.png
+assets\l7v4\pa\splash.png
+assets\l7v4\pa\sleep1.png
+assets\l7v4\pa\sleep0.png
+assets\l7v4\pr\wall.png
+assets\l7v4\pa\puddle.png
+assets\l7v4\pa\pipe_x.png
+assets\l7v4\pa\pipe_v.png
+assets\l7v4\pa\pipe_s.png
+assets\l7v4\pr\toolbox.png
+assets\l7v4\pa\pipe_g.png
+assets\l7v4\pa\pipe_e.png
+assets\l7v4\pr\spool.png
+assets\l7v4\pa\pick.png
+assets\l7v4\pa\luggage.png
+assets\l7v4\pr\sacks.png
+assets\l7v4\pa\jet1.webp
+assets\l7v4\pr\roll.png
+assets\l7v4\pa\jet1.png
+assets\l7v4\pr\rail.png
+assets\l7v4\pa\jet0.webp
+assets\l7v4\pr\laundry.png
+assets\l7v4\pa\jet0.png
+assets\l7v4\pr\las_top_off.png
+assets\l7v4\pr\las_top.png
+assets\l7v4\pa\globe.png
+assets\l7v4\pr\las_bot_off.png
+assets\l7v4\pa\ficus.png
+assets\l7v4\pa\cooler.png
+assets\l7v4\pr\las_bot.png
+assets\l7v4\pa\chair.png
+assets\l7v4\pr\kefir.png
+assets\l7v4\pa\card_y.png
+assets\l7v4\pr\handcart.png
+assets\l7v4\pa\card_r.png
+assets\l7v4\pr\gas.png
+assets\l7v4\pa\card_g.png
+assets\l7v4\pa\card_b.png
+assets\l7v4\pr\door2.webp
+assets\l7v4\pa\boxes.png
+assets\l7v4\pr\door2.png
+assets\l7v4\pa\armchair.png
+assets\l7v4\pr\door1.png
+assets\l7v4\pa\anchor.png
+assets\l7v4\pr\door0.webp
+assets\l7v4\pa\acab2.webp
+assets\l7v4\pr\door0.png
+assets\l7v4\pa\acab2.png
+assets\l7v4\pr\crates.png
+assets\l7v4\pa\acab1.webp
+assets\l7v4\pr\can.png
+assets\l7v4\pa\acab1.png
+assets\l7v4\pr\cables.webp
+assets\l7v4\pa\acab0.webp
+assets\l7v4\pr\cables.png
+assets\l7v4\pa\acab0.png
+assets\l7v4\pr\cab2.webp
+assets\l7v4\pr\cab2.png
+assets\l7v4\pr\cab1.webp
+assets\l7v4\pr\cab1.png
+assets\l7v4\pr\cab0.webp
+assets\l7v4\pr\cab0.png
+assets\l7v4\pr\barrier.png
+assets\l7v4\pr\barrels.png
+assets\l7v4\pr\badge.png
+assets\l7v4\park.webp
+assets\l9\lift9b.webp
+assets\l9\lift9b.png
+assets\l9\lift9.webp
+assets\l9\lift9.png
+assets\l9\labFloor.webp
+assets\l9\labFloor.png
+assets\l9\lab5b.webp
+assets\l9\lab5b.jpg
+assets\l9\lab5a.webp
+assets\l9\lab5a.jpg
+assets\l9\lab4b.jpg
+assets\l9\lab4a.jpg
+assets\l9\lab3b.webp
+assets\l9\lab3b.jpg
+assets\l9\lab3a.webp
+assets\l9\lab3a.jpg
+assets\l9\pil9.png
+assets\l9\pick9.webp
+assets\l9\pick9.png
+assets\l9\part9.webp
+assets\l9\part9.png
+assets\l9\mid9.webp
+assets\l9\mid9.png
+assets\l9\mech9.webp
+assets\l9\mech9.png
+assets\l9\pipes9.webp
+assets\l9\pipes9.png
+assets\l9\pilM9.webp
+assets\l9\pilM9.png
+assets\l9\pil9.webp
+assets\l9\plat9.webp
+assets\l9\plat9.png
+assets\l9\prn9.webp
+assets\l9\prn9.png
+assets\l9\prop9.png
+assets\l9\prop9.webp
+assets\l9\scan9.webp
+assets\l9\scan9.png
+assets\l9\san9.webp
+assets\l9\san9.png
+assets\l9\rx3.webp
+assets\l9\rx3.png
+assets\l9\rx2.webp
+assets\l9\rx2.png
+assets\l9\rx1.webp
+assets\l9\rx1.jpg
+assets\l9\rspd9.webp
+assets\l9\rspd9.png
+assets\l9\robo9.webp
+assets\l9\robo9.png
+assets\l9\rdog9.webp
+assets\l9\rdog9.png
+assets\l9\rcbCeil.webp
+assets\l9\rcbCeil.png
+assets\l9\rcaWall.webp
+assets\l9\rcaWall.jpg
+assets\l9\rcaMid.webp
+assets\l9\rcaMid.png
+assets\l9\px3.webp
+assets\l9\px3.png
+assets\l9\px2.webp
+assets\l9\px2.png
+assets\l9\px1.jpg
+assets\l9\sxMid.png
+assets\l9\sxFarB.webp
+assets\l9\sxFarB.jpg
+assets\l9\sxFarA.webp
+assets\l9\sxFarA.jpg
+assets\l9\srail9.png
+assets\l9\sleep9.webp
+assets\l9\sleep9.png
+assets\l9\shbCeil.webp
+assets\l9\shbCeil.png
+assets\l9\shaWall.webp
+assets\l9\shaWall.jpg
+assets\l9\sclone9.webp
+assets\l9\sclone9.png
+assets\l9\trap9a.png
+assets\l9\train9.webp
+assets\l9\tank9.png
+assets\l9\train9.png
+assets\l9\sxNear.webp
+assets\l9\tank9.webp
+assets\l9\sxNear.png
+assets\l9\sxMid.webp
+assets\l9\trn9.png
+assets\l9\tun1.webp
+assets\l9\trap9b.webp
+assets\l9\tun1.jpg
+assets\l9\trap9b.png
+assets\l9\trn9.webp
+assets\l9\trap9a.webp
+assets\l9\tun2a.webp
+assets\l9\tun2b.jpg
+assets\l9\tun2a.jpg
+assets\l9\tun3a.jpg
+assets\l9\tun2b.webp
+assets\l9\tun3a.webp
+assets\l9\tun3b.jpg
+assets\l9\wTun1.webp
+assets\l9\wTun1.jpg
+assets\l9\wSta2.webp
+assets\l9\wSta2.jpg
+assets\l9\wSta1.webp
+assets\l9\wSta1.jpg
+assets\l9\wPip2.webp
+assets\l9\wPip2.jpg
+assets\l9\wPip1.webp
+assets\l9\wPip1.jpg
+assets\l9\wLock.webp
+assets\l9\wLock.jpg
+assets\l9\walk9n.webp
+assets\l9\walk9n.png
+assets\l9\walk9.webp
+assets\l9\walk9.png
+assets\l9\vRunUD9_seed.webp
+assets\l9\vRunUD9_seed.png
+assets\l9\vRunUD9_rocket.webp
+assets\l9\vRunUD9_rocket.png
+assets\l9\vRunUD9_plasma.webp
+assets\l9\vRunUD9_plasma.png
+assets\l9\vRunUD9_pist.webp
+assets\l9\vRunUD9_pist.png
+assets\l9\vRunUD9_mini.webp
+assets\l9\vRunUD9_mini.png
+assets\l9\vRunUD9.webp
+assets\l9\vRunUD9.png
+assets\l9\vRun9_seed.webp
+assets\l9\vRun9_seed.png
+assets\l9\vRun9_rocket.webp
+assets\l9\vRun9_rocket.png
+assets\l9\vRun9_plasma.webp
+assets\l9\vRun9_plasma.png
+assets\l9\vRun9_pist.webp
+assets\l9\vRun9_pist.png
+assets\l9\vRun9_mini.webp
+assets\l9\vRun9_mini.png
+assets\l9\vRun9.webp
+assets\l9\vRun9.png
+assets\l9\vRoll9.webp
+assets\l9\vRoll9.png
+assets\l9\vRage9.webp
+assets\l9\vRage9.png
+assets\l9\vJump9_seed.webp
+assets\l9\vJump9_seed.png
+assets\l9\vJump9_rocket.webp
+assets\l9\vJump9_rocket.png
+assets\l9\vJump9_plasma.webp
+assets\l9\vJump9_plasma.png
+assets\l9\vJump9_pist.webp
+assets\l9\vJump9_pist.png
+assets\l9\vJump9_mini.webp
+assets\l9\vJump9_mini.png
+assets\l9\vJump9.webp
+assets\l9\vJump9.png
+assets\l9\via9.webp
+assets\l9\via9.png
+assets\l9\vClimb9.webp
+assets\l9\vClimb9.png
+assets\l9\vatP9.webp
+assets\l9\vatP9.png
+assets\l9\vatD9.webp
+assets\l9\vatD9.png
+assets\l9\vat9.webp
+assets\l9\vat9.png
+assets\l9\vAim9_seed.webp
+assets\l9\vAim9_seed.png
+assets\l9\vAim9_rocket.webp
+assets\l9\vAim9_rocket.png
+assets\l9\vAim9_plasma.webp
+assets\l9\vAim9_plasma.png
+assets\l9\vAim9_pist.webp
+assets\l9\vAim9_pist.png
+assets\l9\vAim9_mini.webp
+assets\l9\vAim9_mini.png
+assets\l9\vAim9.webp
+assets\l9\vAim9.png
+assets\l9\unload9.webp
+assets\l9\unload9.png
+assets\l9\tvp9.webp
+assets\l9\tvp9.png
+assets\l9\tv9.webp
+assets\l9\tv9.png
+assets\l9\tur9.webp
+assets\l9\tur9.png
+assets\l9\tunWall.webp
+assets\l9\tunWall.jpg
+assets\l9\tunFloor.webp
+assets\l9\tunFloor.png
+assets\l9\tunCeil.webp
+assets\l9\tunCeil.png
+assets\l9\tun5.webp
+assets\l9\tun5.jpg
+assets\l9\tun3b.webp
+assets\spr\l5cars.png
+assets\spr\l4fx2.webp
+assets\spr\l4fx2.png
+assets\spr\l4fx.webp
+assets\spr\l4fx.png
+assets\spr\l4c.webp
+assets\spr\l4c.png
+assets\spr\l4b.webp
+assets\spr\l4b.png
+assets\spr\l4a.webp
+assets\spr\l4a.png
+assets\spr\l5cars3.webp
+assets\spr\l5cars3.png
+assets\spr\l5cars2.webp
+assets\spr\l5cars2.png
+assets\spr\l5cars.webp
+assets\spr\l5endzone.png
+assets\spr\l5dec.webp
+assets\spr\l5dec.png
+assets\spr\l5endzone.webp
+assets\spr\l5fx.png
+tools\p5\out_q22_portraits.log
+tools\p5\q22_portraits.txt
+tools\p5\patch_port.js
+assets\spr\l5vrear.webp
+assets\spr\l5vrear.png
+assets\spr\l5vips.webp
+assets\spr\l5vips.png
+assets\spr\l5trees2.webp
+assets\spr\l5trees2.png
+assets\spr\l5spike.webp
+assets\spr\l5spike.png
+assets\spr\l5sign.webp
+assets\spr\l5sign.png
+assets\spr\l5shad.webp
+assets\spr\l5shad.png
+assets\spr\l5roof.webp
+assets\spr\l5roof.png
+assets\spr\l5props2.webp
+assets\spr\l5props2.png
+assets\spr\l5props.webp
+assets\spr\l5props.png
+assets\spr\l5msd.webp
+assets\spr\l5msd.png
+assets\spr\l5lights.webp
+assets\spr\l5lights.png
+assets\spr\l5life.webp
+assets\spr\l5life.png
+assets\spr\l5leaf.png
+assets\spr\l5kop.webp
+assets\spr\l5kop.png
+assets\spr\l5hole.webp
+assets\spr\l5hole.png
+assets\spr\l5gas.webp
+assets\spr\l5gas.png
+assets\spr\l5fx.webp
+assets\spr\l5waste.webp
+assets\spr\l5waste.png
+assets\spr\l5walkB2.webp
+assets\spr\l5walkB2.png
+assets\spr\l5walkB1.webp
+assets\spr\l5walkB1.png
+assets\spr\l5walkA.webp
+assets\spr\l5walkA.png
+tools\p7\k10_port.txt
+assets\spr\stall3.webp
+assets\spr\stall3.png
+tools\p7\out_k10_port.log
+tools\p7\out_b03_yard.log
+_old\l7v2\assets\b\stalin3.png
+_old\l7v2\assets\b\stalin2.png
+_old\l7v2\assets\b\stalin1.png
+_old\l7v2\assets\b\square.png
+_old\l7v2\assets\b\pipes.png
+_old\l7v2\assets\b\pier.png
+_old\l7v2\assets\b\gate.png
+_old\l7v2\assets\b\garages.png
+_old\l7v2\assets\b\factory.png
+_old\l7v2\assets\b\crane.png
+_old\l7v2\assets\b\containers.png
+_old\l7v2\assets\b\colonnade.png
+assets\spr\val4.png
+assets\spr\val4.webp
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -Recurse -File 'tools\\p8' | Select-Object -ExpandProperty FullName" in C:\Users\gulev\CRM\valera-game
+ succeeded in 286ms:
+C:\Users\gulev\CRM\valera-game\tools\p8\flow8.js
+C:\Users\gulev\CRM\valera-game\tools\p8\flow8b.js
+C:\Users\gulev\CRM\valera-game\tools\p8\flow8c.js
+C:\Users\gulev\CRM\valera-game\tools\p8\flow8d.js
+C:\Users\gulev\CRM\valera-game\tools\p8\megaref.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\natasha8.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\roo8ref.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\savek.js
+C:\Users\gulev\CRM\valera-game\tools\p8\scene8.js
+C:\Users\gulev\CRM\valera-game\tools\p8\spi8ref.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\test8.js
+C:\Users\gulev\CRM\valera-game\tools\p8\van8.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\up\arena8.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\up\backEnd8.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\up\brkBurst8.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\up\brkHole8.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\up\cradle8ref.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\up\crane8ref.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\up\cranePhoto.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\up\nat1ref.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\up\nat2ref.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\up\natFace.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\up\pick_max.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\up\pick_stas.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\up\pick_valera.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\up\roo8ref.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\up\spi8ref.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\up\van8.jpg
+C:\Users\gulev\CRM\valera-game\tools\p8\up\wallR8.jpg
+
+apply patch
+patch: completed
+C:\Users\gulev\CRM\valera-game\tmp_draw_cov1.py
+diff --git a/tmp_draw_cov1.py b/tmp_draw_cov1.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..284ee37cdbc41f3e068e09a20d20a0eb2831f20c
+--- /dev/null
++++ b/tmp_draw_cov1.py
+@@ -0,0 +1,102 @@
++from PIL import Image, ImageDraw
++import random
++
++random.seed(18)
++W=256
++im=Image.new('RGB',(W,W),'#13232d'); d=ImageDraw.Draw(im)
++# dawn sky bands
++d.rectangle((0,0,255,58), fill='#71828b')
++d.rectangle((0,32,255,66), fill='#5c6e78')
++for _ in range(90):
++    x=random.randrange(W); y=random.randrange(2,82)
++    c=random.choice(['#8fa0a5','#455966','#6b7d84','#a3adb0'])
++    d.rectangle((x,y,x+random.randrange(1,9),y+random.randrange(1,2)),fill=c)
++# distant blocks and roofline
++for x in range(-8,260,random.randrange(15,25)):
++    h=random.randrange(8,22); d.rectangle((x,62-h,x+random.randrange(14,29),62),fill='#263943')
++    d.rectangle((x+2,63-h,x+random.randrange(11,23),64-h),fill='#4d6166')
++# cranes behind dock
++def crane(x,y,flip=1):
++    col='#26383e'; edge='#547078'; hi='#718b8c'
++    d.polygon([(x,y),(x+5*flip,y),(x+18*flip,104),(x+12*flip,104)],fill=col)
++    d.line((x+2*flip,y,x+15*flip,104),fill=hi,width=1)
++    d.line((x+4*flip,y,x+15*flip,104),fill='#15262d',width=2)
++    d.line((x,y+4,x+48*flip,y+4),fill=edge,width=3)
++    d.line((x+2*flip,y+7,x+44*flip,y+7),fill=col,width=2)
++    d.line((x+37*flip,y+8,x+37*flip,79),fill='#1e3037',width=1)
++    d.line((x+37*flip,79,x+43*flip,79),fill='#c87931',width=2)
++crane(20,15,1); crane(219,25,-1); crane(160,7,1)
++# dock walls / open gate
++d.polygon([(0,83),(56,73),(72,160),(0,187)],fill='#263b43')
++d.polygon([(255,83),(202,73),(184,160),(255,187)],fill='#263b43')
++for side in [0,1]:
++    for i in range(18):
++        x=(random.randrange(0,67) if side==0 else random.randrange(191,256)); y=random.randrange(86,175)
++        d.rectangle((x,y,x+random.randrange(1,5),y+1),fill=random.choice(['#405b60','#182c34','#5d7374']))
++# steel gate posts framing entrance, no signage
++for x in (17,226):
++    d.rectangle((x,55,x+11,176),fill='#17282e'); d.rectangle((x+2,58,x+4,173),fill='#49636a')
++    d.rectangle((x-2,53,x+13,58),fill='#243a40'); d.rectangle((x-4,174,x+15,180),fill='#16262d')
++    d.rectangle((x+4,85,x+8,91),fill='#d27a31'); d.rectangle((x+3,86,x+9,89),fill='#ffbd59')
++# dry dock water, hull
++d.polygon([(66,87),(193,87),(217,168),(38,168)],fill='#0c2029')
++d.polygon([(76,95),(180,95),(201,145),(54,145)],fill='#102c36')
++# submarine body
++d.ellipse((78,89,184,141),fill='#17262d',outline='#08151b',width=2)
++d.rectangle((91,105,173,132),fill='#17262d')
++d.polygon([(79,112),(58,125),(81,133)],fill='#1c3037')
++d.polygon([(179,108),(198,119),(181,130)],fill='#142229')
++d.rectangle((126,80,147,99),fill='#1d3036'); d.rectangle((130,77,143,84),fill='#31454a')
++for x in range(90,178,12): d.line((x,113,x+6,132),fill='#2b4146')
++d.line((66,143,193,143),fill='#567078',width=1)
++# warm work lights and glow
++for x,y in [(55,80),(202,84),(119,75),(150,78)]:
++    d.rectangle((x-2,y-2,x+2,y+2),fill='#d06e2c');d.point((x,y),fill='#fff0a0')
++    for r,c in [(7,'#805233'),(4,'#bd6b30')]: d.rectangle((x-r,y-r,x+r,y+r),outline=c)
++# wet concrete foreground
++d.polygon([(0,166),(255,166),(255,255),(0,255)],fill='#1c3038')
++for y in [179,197,220,246]: d.line((0,y,255,y),fill='#29434b')
++for x in range(-40,310,20): d.line((128,164,x,256),fill='#29424a')
++for _ in range(80):
++    x=random.randrange(256); y=random.randrange(168,255)
++    c=random.choice(['#36545a','#27464e','#4e6568','#172a32'])
++    d.rectangle((x,y,x+random.randrange(1,7),y+random.choice([0,1])),fill=c)
++# puddles/reflections
++for box in [(8,209,75,216),(169,222,240,230),(90,237,157,242)]:
++    d.ellipse(box,fill='#183a46',outline='#47656a')
++    x1,y1,x2,y2=box; d.line((x1+8,(y1+y2)//2,x2-9,(y1+y2)//2),fill='#a26533')
++# steam clouds in pixel clusters
++for cx,cy in [(71,93),(193,90),(160,70)]:
++    for _ in range(18):
++        x=cx+random.randrange(-12,13); y=cy-random.randrange(0,25)
++        d.rectangle((x,y,x+random.randrange(2,7),y+random.randrange(1,4)),fill=random.choice(['#91a1a2','#71878b','#596f75']))
++# distant gulls
++for x,y in [(38,31),(204,44),(184,35)]:
++    d.line((x-3,y,x,y-1),fill='#d3d9d4');d.line((x,y-1,x+3,y),fill='#d3d9d4')
++# exact Valera back-facing sprite, chroma-keyed from supplied sheet
++src=Image.open('art_src/l7/pick_valera.jpg').convert('RGB').crop((850,18,1012,257))
++px=src.load()
++for yy in range(src.height):
++  for xx in range(src.width):
++    r,g,b=px[xx,yy]
++    if g>135 and g>r*1.45 and g>b*1.35: px[xx,yy]=(0,0,0)
++mask=src.convert('RGBA')
++data=mask.load()
++for yy in range(mask.height):
++  for xx in range(mask.width):
++    if data[xx,yy][:3]==(0,0,0): data[xx,yy]=(0,0,0,0)
++mask=mask.resize((66,97),Image.Resampling.NEAREST)
++# shadow, character center, warm rim
++d.ellipse((93,229,166,244),fill='#0a171d')
++im.paste(mask,(96,148),mask)
++d=ImageDraw.Draw(im)
++# lunchbox in hand, metal with warm catchlight
++d.rectangle((153,207,170,220),fill='#1a2b31',outline='#090f13',width=2)
++d.rectangle((155,209,168,218),fill='#52656a');d.line((156,211,167,211),fill='#bd7939')
++d.arc((157,202,166,212),180,355,fill='#71898b',width=2)
++# hard pixel highlights / rain
++for _ in range(54):
++    x=random.randrange(256); y=random.randrange(60,256)
++    d.point((x,y),fill=random.choice(['#77a0a0','#507980','#a6c0b8']))
++# upscale art without border
++im.resize((1024,1024),Image.Resampling.NEAREST).save('art_src/covers/cov1.png')
+
+diff --git a/tmp_draw_cov1.py b/tmp_draw_cov1.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..284ee37cdbc41f3e068e09a20d20a0eb2831f20c
+--- /dev/null
++++ b/tmp_draw_cov1.py
+@@ -0,0 +1,102 @@
++from PIL import Image, ImageDraw
++import random
++
++random.seed(18)
++W=256
++im=Image.new('RGB',(W,W),'#13232d'); d=ImageDraw.Draw(im)
++# dawn sky bands
++d.rectangle((0,0,255,58), fill='#71828b')
++d.rectangle((0,32,255,66), fill='#5c6e78')
++for _ in range(90):
++    x=random.randrange(W); y=random.randrange(2,82)
++    c=random.choice(['#8fa0a5','#455966','#6b7d84','#a3adb0'])
++    d.rectangle((x,y,x+random.randrange(1,9),y+random.randrange(1,2)),fill=c)
++# distant blocks and roofline
++for x in range(-8,260,random.randrange(15,25)):
++    h=random.randrange(8,22); d.rectangle((x,62-h,x+random.randrange(14,29),62),fill='#263943')
++    d.rectangle((x+2,63-h,x+random.randrange(11,23),64-h),fill='#4d6166')
++# cranes behind dock
++def crane(x,y,flip=1):
++    col='#26383e'; edge='#547078'; hi='#718b8c'
++    d.polygon([(x,y),(x+5*flip,y),(x+18*flip,104),(x+12*flip,104)],fill=col)
++    d.line((x+2*flip,y,x+15*flip,104),fill=hi,width=1)
++    d.line((x+4*flip,y,x+15*flip,104),fill='#15262d',width=2)
++    d.line((x,y+4,x+48*flip,y+4),fill=edge,width=3)
++    d.line((x+2*flip,y+7,x+44*flip,y+7),fill=col,width=2)
++    d.line((x+37*flip,y+8,x+37*flip,79),fill='#1e3037',width=1)
++    d.line((x+37*flip,79,x+43*flip,79),fill='#c87931',width=2)
++crane(20,15,1); crane(219,25,-1); crane(160,7,1)
++# dock walls / open gate
++d.polygon([(0,83),(56,73),(72,160),(0,187)],fill='#263b43')
++d.polygon([(255,83),(202,73),(184,160),(255,187)],fill='#263b43')
++for side in [0,1]:
++    for i in range(18):
++        x=(random.randrange(0,67) if side==0 else random.randrange(191,256)); y=random.randrange(86,175)
++        d.rectangle((x,y,x+random.randrange(1,5),y+1),fill=random.choice(['#405b60','#182c34','#5d7374']))
++# steel gate posts framing entrance, no signage
++for x in (17,226):
++    d.rectangle((x,55,x+11,176),fill='#17282e'); d.rectangle((x+2,58,x+4,173),fill='#49636a')
++    d.rectangle((x-2,53,x+13,58),fill='#243a40'); d.rectangle((x-4,174,x+15,180),fill='#16262d')
++    d.rectangle((x+4,85,x+8,91),fill='#d27a31'); d.rectangle((x+3,86,x+9,89),fill='#ffbd59')
++# dry dock water, hull
++d.polygon([(66,87),(193,87),(217,168),(38,168)],fill='#0c2029')
++d.polygon([(76,95),(180,95),(201,145),(54,145)],fill='#102c36')
++# submarine body
++d.ellipse((78,89,184,141),fill='#17262d',outline='#08151b',width=2)
++d.rectangle((91,105,173,132),fill='#17262d')
++d.polygon([(79,112),(58,125),(81,133)],fill='#1c3037')
++d.polygon([(179,108),(198,119),(181,130)],fill='#142229')
++d.rectangle((126,80,147,99),fill='#1d3036'); d.rectangle((130,77,143,84),fill='#31454a')
++for x in range(90,178,12): d.line((x,113,x+6,132),fill='#2b4146')
++d.line((66,143,193,143),fill='#567078',width=1)
++# warm work lights and glow
++for x,y in [(55,80),(202,84),(119,75),(150,78)]:
++    d.rectangle((x-2,y-2,x+2,y+2),fill='#d06e2c');d.point((x,y),fill='#fff0a0')
++    for r,c in [(7,'#805233'),(4,'#bd6b30')]: d.rectangle((x-r,y-r,x+r,y+r),outline=c)
++# wet concrete foreground
++d.polygon([(0,166),(255,166),(255,255),(0,255)],fill='#1c3038')
++for y in [179,197,220,246]: d.line((0,y,255,y),fill='#29434b')
++for x in range(-40,310,20): d.line((128,164,x,256),fill='#29424a')
++for _ in range(80):
++    x=random.randrange(256); y=random.randrange(168,255)
++    c=random.choice(['#36545a','#27464e','#4e6568','#172a32'])
++    d.rectangle((x,y,x+random.randrange(1,7),y+random.choice([0,1])),fill=c)
++# puddles/reflections
++for box in [(8,209,75,216),(169,222,240,230),(90,237,157,242)]:
++    d.ellipse(box,fill='#183a46',outline='#47656a')
++    x1,y1,x2,y2=box; d.line((x1+8,(y1+y2)//2,x2-9,(y1+y2)//2),fill='#a26533')
++# steam clouds in pixel clusters
++for cx,cy in [(71,93),(193,90),(160,70)]:
++    for _ in range(18):
++        x=cx+random.randrange(-12,13); y=cy-random.randrange(0,25)
++        d.rectangle((x,y,x+random.randrange(2,7),y+random.randrange(1,4)),fill=random.choice(['#91a1a2','#71878b','#596f75']))
++# distant gulls
++for x,y in [(38,31),(204,44),(184,35)]:
++    d.line((x-3,y,x,y-1),fill='#d3d9d4');d.line((x,y-1,x+3,y),fill='#d3d9d4')
++# exact Valera back-facing sprite, chroma-keyed from supplied sheet
++src=Image.open('art_src/l7/pick_valera.jpg').convert('RGB').crop((850,18,1012,257))
++px=src.load()
++for yy in range(src.height):
++  for xx in range(src.width):
++    r,g,b=px[xx,yy]
++    if g>135 and g>r*1.45 and g>b*1.35: px[xx,yy]=(0,0,0)
++mask=src.convert('RGBA')
++data=mask.load()
++for yy in range(mask.height):
++  for xx in range(mask.width):
++    if data[xx,yy][:3]==(0,0,0): data[xx,yy]=(0,0,0,0)
++mask=mask.resize((66,97),Image.Resampling.NEAREST)
++# shadow, character center, warm rim
++d.ellipse((93,229,166,244),fill='#0a171d')
++im.paste(mask,(96,148),mask)
++d=ImageDraw.Draw(im)
++# lunchbox in hand, metal with warm catchlight
++d.rectangle((153,207,170,220),fill='#1a2b31',outline='#090f13',width=2)
++d.rectangle((155,209,168,218),fill='#52656a');d.line((156,211,167,211),fill='#bd7939')
++d.arc((157,202,166,212),180,355,fill='#71898b',width=2)
++# hard pixel highlights / rain
++for _ in range(54):
++    x=random.randrange(256); y=random.randrange(60,256)
++    d.point((x,y),fill=random.choice(['#77a0a0','#507980','#a6c0b8']))
++# upscale art without border
++im.resize((1024,1024),Image.Resampling.NEAREST).save('art_src/covers/cov1.png')
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python .\\tmp_draw_cov1.py; Remove-Item -LiteralPath .\\tmp_draw_cov1.py; Get-Item .\\art_src\\covers\\cov1.png | Select-Object FullName,Length" in C:\Users\gulev\CRM\valera-game
+ exited 1 in 388ms:
+Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Apps > Advanced app settings > App execution aliases.
+Get-Item : Cannot find path 'C:\Users\gulev\CRM\valera-game\art_src\covers\cov1.png' because it does not exist.
+At line:2 char:73
++ ... alPath .\tmp_draw_cov1.py; Get-Item .\art_src\covers\cov1.png | Selec ...
++                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\gulev\...covers\cov1.png:String) [Get-Item], ItemNotFoundExcep 
+   tion
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetItemCommand
+ 
+
+diff --git a/tmp_draw_cov1.py b/tmp_draw_cov1.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..284ee37cdbc41f3e068e09a20d20a0eb2831f20c
+--- /dev/null
++++ b/tmp_draw_cov1.py
+@@ -0,0 +1,102 @@
++from PIL import Image, ImageDraw
++import random
++
++random.seed(18)
++W=256
++im=Image.new('RGB',(W,W),'#13232d'); d=ImageDraw.Draw(im)
++# dawn sky bands
++d.rectangle((0,0,255,58), fill='#71828b')
++d.rectangle((0,32,255,66), fill='#5c6e78')
++for _ in range(90):
++    x=random.randrange(W); y=random.randrange(2,82)
++    c=random.choice(['#8fa0a5','#455966','#6b7d84','#a3adb0'])
++    d.rectangle((x,y,x+random.randrange(1,9),y+random.randrange(1,2)),fill=c)
++# distant blocks and roofline
++for x in range(-8,260,random.randrange(15,25)):
++    h=random.randrange(8,22); d.rectangle((x,62-h,x+random.randrange(14,29),62),fill='#263943')
++    d.rectangle((x+2,63-h,x+random.randrange(11,23),64-h),fill='#4d6166')
++# cranes behind dock
++def crane(x,y,flip=1):
++    col='#26383e'; edge='#547078'; hi='#718b8c'
++    d.polygon([(x,y),(x+5*flip,y),(x+18*flip,104),(x+12*flip,104)],fill=col)
++    d.line((x+2*flip,y,x+15*flip,104),fill=hi,width=1)
++    d.line((x+4*flip,y,x+15*flip,104),fill='#15262d',width=2)
++    d.line((x,y+4,x+48*flip,y+4),fill=edge,width=3)
++    d.line((x+2*flip,y+7,x+44*flip,y+7),fill=col,width=2)
++    d.line((x+37*flip,y+8,x+37*flip,79),fill='#1e3037',width=1)
++    d.line((x+37*flip,79,x+43*flip,79),fill='#c87931',width=2)
++crane(20,15,1); crane(219,25,-1); crane(160,7,1)
++# dock walls / open gate
++d.polygon([(0,83),(56,73),(72,160),(0,187)],fill='#263b43')
++d.polygon([(255,83),(202,73),(184,160),(255,187)],fill='#263b43')
++for side in [0,1]:
++    for i in range(18):
++        x=(random.randrange(0,67) if side==0 else random.randrange(191,256)); y=random.randrange(86,175)
++        d.rectangle((x,y,x+random.randrange(1,5),y+1),fill=random.choice(['#405b60','#182c34','#5d7374']))
++# steel gate posts framing entrance, no signage
++for x in (17,226):
++    d.rectangle((x,55,x+11,176),fill='#17282e'); d.rectangle((x+2,58,x+4,173),fill='#49636a')
++    d.rectangle((x-2,53,x+13,58),fill='#243a40'); d.rectangle((x-4,174,x+15,180),fill='#16262d')
++    d.rectangle((x+4,85,x+8,91),fill='#d27a31'); d.rectangle((x+3,86,x+9,89),fill='#ffbd59')
++# dry dock water, hull
++d.polygon([(66,87),(193,87),(217,168),(38,168)],fill='#0c2029')
++d.polygon([(76,95),(180,95),(201,145),(54,145)],fill='#102c36')
++# submarine body
++d.ellipse((78,89,184,141),fill='#17262d',outline='#08151b',width=2)
++d.rectangle((91,105,173,132),fill='#17262d')
++d.polygon([(79,112),(58,125),(81,133)],fill='#1c3037')
++d.polygon([(179,108),(198,119),(181,130)],fill='#142229')
++d.rectangle((126,80,147,99),fill='#1d3036'); d.rectangle((130,77,143,84),fill='#31454a')
++for x in range(90,178,12): d.line((x,113,x+6,132),fill='#2b4146')
++d.line((66,143,193,143),fill='#567078',width=1)
++# warm work lights and glow
++for x,y in [(55,80),(202,84),(119,75),(150,78)]:
++    d.rectangle((x-2,y-2,x+2,y+2),fill='#d06e2c');d.point((x,y),fill='#fff0a0')
++    for r,c in [(7,'#805233'),(4,'#bd6b30')]: d.rectangle((x-r,y-r,x+r,y+r),outline=c)
++# wet concrete foreground
++d.polygon([(0,166),(255,166),(255,255),(0,255)],fill='#1c3038')
++for y in [179,197,220,246]: d.line((0,y,255,y),fill='#29434b')
++for x in range(-40,310,20): d.line((128,164,x,256),fill='#29424a')
++for _ in range(80):
++    x=random.randrange(256); y=random.randrange(168,255)
++    c=random.choice(['#36545a','#27464e','#4e6568','#172a32'])
++    d.rectangle((x,y,x+random.randrange(1,7),y+random.choice([0,1])),fill=c)
++# puddles/reflections
++for box in [(8,209,75,216),(169,222,240,230),(90,237,157,242)]:
++    d.ellipse(box,fill='#183a46',outline='#47656a')
++    x1,y1,x2,y2=box; d.line((x1+8,(y1+y2)//2,x2-9,(y1+y2)//2),fill='#a26533')
++# steam clouds in pixel clusters
++for cx,cy in [(71,93),(193,90),(160,70)]:
++    for _ in range(18):
++        x=cx+random.randrange(-12,13); y=cy-random.randrange(0,25)
++        d.rectangle((x,y,x+random.randrange(2,7),y+random.randrange(1,4)),fill=random.choice(['#91a1a2','#71878b','#596f75']))
++# distant gulls
++for x,y in [(38,31),(204,44),(184,35)]:
++    d.line((x-3,y,x,y-1),fill='#d3d9d4');d.line((x,y-1,x+3,y),fill='#d3d9d4')
++# exact Valera back-facing sprite, chroma-keyed from supplied sheet
++src=Image.open('art_src/l7/pick_valera.jpg').convert('RGB').crop((850,18,1012,257))
++px=src.load()
++for yy in range(src.height):
++  for xx in range(src.width):
++    r,g,b=px[xx,yy]
++    if g>135 and g>r*1.45 and g>b*1.35: px[xx,yy]=(0,0,0)
++mask=src.convert('RGBA')
++data=mask.load()
++for yy in range(mask.height):
++  for xx in range(mask.width):
++    if data[xx,yy][:3]==(0,0,0): data[xx,yy]=(0,0,0,0)
++mask=mask.resize((66,97),Image.Resampling.NEAREST)
++# shadow, character center, warm rim
++d.ellipse((93,229,166,244),fill='#0a171d')
++im.paste(mask,(96,148),mask)
++d=ImageDraw.Draw(im)
++# lunchbox in hand, metal with warm catchlight
++d.rectangle((153,207,170,220),fill='#1a2b31',outline='#090f13',width=2)
++d.rectangle((155,209,168,218),fill='#52656a');d.line((156,211,167,211),fill='#bd7939')
++d.arc((157,202,166,212),180,355,fill='#71898b',width=2)
++# hard pixel highlights / rain
++for _ in range(54):
++    x=random.randrange(256); y=random.randrange(60,256)
++    d.point((x,y),fill=random.choice(['#77a0a0','#507980','#a6c0b8']))
++# upscale art without border
++im.resize((1024,1024),Image.Resampling.NEAREST).save('art_src/covers/cov1.png')
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Get-Command py,python3,node -ErrorAction SilentlyContinue | Select-Object Name,Source' in C:\Users\gulev\CRM\valera-game
+ succeeded in 194ms:
+
+Name        Source                                                        
+----        ------                                                        
+py.exe      C:\Users\gulev\AppData\Local\Microsoft\WindowsApps\py.exe     
+python3.exe C:\Users\gulev\AppData\Local\Microsoft\WindowsApps\python3.exe
+node.exe    C:\Program Files\nodejs\node.exe                              
+
+
+
+diff --git a/tmp_draw_cov1.py b/tmp_draw_cov1.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..284ee37cdbc41f3e068e09a20d20a0eb2831f20c
+--- /dev/null
++++ b/tmp_draw_cov1.py
+@@ -0,0 +1,102 @@
++from PIL import Image, ImageDraw
++import random
++
++random.seed(18)
++W=256
++im=Image.new('RGB',(W,W),'#13232d'); d=ImageDraw.Draw(im)
++# dawn sky bands
++d.rectangle((0,0,255,58), fill='#71828b')
++d.rectangle((0,32,255,66), fill='#5c6e78')
++for _ in range(90):
++    x=random.randrange(W); y=random.randrange(2,82)
++    c=random.choice(['#8fa0a5','#455966','#6b7d84','#a3adb0'])
++    d.rectangle((x,y,x+random.randrange(1,9),y+random.randrange(1,2)),fill=c)
++# distant blocks and roofline
++for x in range(-8,260,random.randrange(15,25)):
++    h=random.randrange(8,22); d.rectangle((x,62-h,x+random.randrange(14,29),62),fill='#263943')
++    d.rectangle((x+2,63-h,x+random.randrange(11,23),64-h),fill='#4d6166')
++# cranes behind dock
++def crane(x,y,flip=1):
++    col='#26383e'; edge='#547078'; hi='#718b8c'
++    d.polygon([(x,y),(x+5*flip,y),(x+18*flip,104),(x+12*flip,104)],fill=col)
++    d.line((x+2*flip,y,x+15*flip,104),fill=hi,width=1)
++    d.line((x+4*flip,y,x+15*flip,104),fill='#15262d',width=2)
++    d.line((x,y+4,x+48*flip,y+4),fill=edge,width=3)
++    d.line((x+2*flip,y+7,x+44*flip,y+7),fill=col,width=2)
++    d.line((x+37*flip,y+8,x+37*flip,79),fill='#1e3037',width=1)
++    d.line((x+37*flip,79,x+43*flip,79),fill='#c87931',width=2)
++crane(20,15,1); crane(219,25,-1); crane(160,7,1)
++# dock walls / open gate
++d.polygon([(0,83),(56,73),(72,160),(0,187)],fill='#263b43')
++d.polygon([(255,83),(202,73),(184,160),(255,187)],fill='#263b43')
++for side in [0,1]:
++    for i in range(18):
++        x=(random.randrange(0,67) if side==0 else random.randrange(191,256)); y=random.randrange(86,175)
++        d.rectangle((x,y,x+random.randrange(1,5),y+1),fill=random.choice(['#405b60','#182c34','#5d7374']))
++# steel gate posts framing entrance, no signage
++for x in (17,226):
++    d.rectangle((x,55,x+11,176),fill='#17282e'); d.rectangle((x+2,58,x+4,173),fill='#49636a')
++    d.rectangle((x-2,53,x+13,58),fill='#243a40'); d.rectangle((x-4,174,x+15,180),fill='#16262d')
++    d.rectangle((x+4,85,x+8,91),fill='#d27a31'); d.rectangle((x+3,86,x+9,89),fill='#ffbd59')
++# dry dock water, hull
++d.polygon([(66,87),(193,87),(217,168),(38,168)],fill='#0c2029')
++d.polygon([(76,95),(180,95),(201,145),(54,145)],fill='#102c36')
++# submarine body
++d.ellipse((78,89,184,141),fill='#17262d',outline='#08151b',width=2)
++d.rectangle((91,105,173,132),fill='#17262d')
++d.polygon([(79,112),(58,125),(81,133)],fill='#1c3037')
++d.polygon([(179,108),(198,119),(181,130)],fill='#142229')
++d.rectangle((126,80,147,99),fill='#1d3036'); d.rectangle((130,77,143,84),fill='#31454a')
++for x in range(90,178,12): d.line((x,113,x+6,132),fill='#2b4146')
++d.line((66,143,193,143),fill='#567078',width=1)
++# warm work lights and glow
++for x,y in [(55,80),(202,84),(119,75),(150,78)]:
++    d.rectangle((x-2,y-2,x+2,y+2),fill='#d06e2c');d.point((x,y),fill='#fff0a0')
++    for r,c in [(7,'#805233'),(4,'#bd6b30')]: d.rectangle((x-r,y-r,x+r,y+r),outline=c)
++# wet concrete foreground
++d.polygon([(0,166),(255,166),(255,255),(0,255)],fill='#1c3038')
++for y in [179,197,220,246]: d.line((0,y,255,y),fill='#29434b')
++for x in range(-40,310,20): d.line((128,164,x,256),fill='#29424a')
++for _ in range(80):
++    x=random.randrange(256); y=random.randrange(168,255)
++    c=random.choice(['#36545a','#27464e','#4e6568','#172a32'])
++    d.rectangle((x,y,x+random.randrange(1,7),y+random.choice([0,1])),fill=c)
++# puddles/reflections
++for box in [(8,209,75,216),(169,222,240,230),(90,237,157,242)]:
++    d.ellipse(box,fill='#183a46',outline='#47656a')
++    x1,y1,x2,y2=box; d.line((x1+8,(y1+y2)//2,x2-9,(y1+y2)//2),fill='#a26533')
++# steam clouds in pixel clusters
++for cx,cy in [(71,93),(193,90),(160,70)]:
++    for _ in range(18):
++        x=cx+random.randrange(-12,13); y=cy-random.randrange(0,25)
++        d.rectangle((x,y,x+random.randrange(2,7),y+random.randrange(1,4)),fill=random.choice(['#91a1a2','#71878b','#596f75']))
++# distant gulls
++for x,y in [(38,31),(204,44),(184,35)]:
++    d.line((x-3,y,x,y-1),fill='#d3d9d4');d.line((x,y-1,x+3,y),fill='#d3d9d4')
++# exact Valera back-facing sprite, chroma-keyed from supplied sheet
++src=Image.open('art_src/l7/pick_valera.jpg').convert('RGB').crop((850,18,1012,257))
++px=src.load()
++for yy in range(src.height):
++  for xx in range(src.width):
++    r,g,b=px[xx,yy]
++    if g>135 and g>r*1.45 and g>b*1.35: px[xx,yy]=(0,0,0)
++mask=src.convert('RGBA')
++data=mask.load()
++for yy in range(mask.height):
++  for xx in range(mask.width):
++    if data[xx,yy][:3]==(0,0,0): data[xx,yy]=(0,0,0,0)
++mask=mask.resize((66,97),Image.Resampling.NEAREST)
++# shadow, character center, warm rim
++d.ellipse((93,229,166,244),fill='#0a171d')
++im.paste(mask,(96,148),mask)
++d=ImageDraw.Draw(im)
++# lunchbox in hand, metal with warm catchlight
++d.rectangle((153,207,170,220),fill='#1a2b31',outline='#090f13',width=2)
++d.rectangle((155,209,168,218),fill='#52656a');d.line((156,211,167,211),fill='#bd7939')
++d.arc((157,202,166,212),180,355,fill='#71898b',width=2)
++# hard pixel highlights / rain
++for _ in range(54):
++    x=random.randrange(256); y=random.randrange(60,256)
++    d.point((x,y),fill=random.choice(['#77a0a0','#507980','#a6c0b8']))
++# upscale art without border
++im.resize((1024,1024),Image.Resampling.NEAREST).save('art_src/covers/cov1.png')
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Get-Command magick,convert,ffmpeg -ErrorAction SilentlyContinue | Select-Object Name,Source' in C:\Users\gulev\CRM\valera-game
+ exited 1 in 249ms:
+
+Name        Source                                                                                                     
+----        ------                                                                                                     
+convert.exe C:\WINDOWS\system32\convert.exe                                                                            
+ffmpeg.exe  C:\Users\gulev\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe...
+
+
+
+diff --git a/tmp_draw_cov1.py b/tmp_draw_cov1.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..284ee37cdbc41f3e068e09a20d20a0eb2831f20c
+--- /dev/null
++++ b/tmp_draw_cov1.py
+@@ -0,0 +1,102 @@
++from PIL import Image, ImageDraw
++import random
++
++random.seed(18)
++W=256
++im=Image.new('RGB',(W,W),'#13232d'); d=ImageDraw.Draw(im)
++# dawn sky bands
++d.rectangle((0,0,255,58), fill='#71828b')
++d.rectangle((0,32,255,66), fill='#5c6e78')
++for _ in range(90):
++    x=random.randrange(W); y=random.randrange(2,82)
++    c=random.choice(['#8fa0a5','#455966','#6b7d84','#a3adb0'])
++    d.rectangle((x,y,x+random.randrange(1,9),y+random.randrange(1,2)),fill=c)
++# distant blocks and roofline
++for x in range(-8,260,random.randrange(15,25)):
++    h=random.randrange(8,22); d.rectangle((x,62-h,x+random.randrange(14,29),62),fill='#263943')
++    d.rectangle((x+2,63-h,x+random.randrange(11,23),64-h),fill='#4d6166')
++# cranes behind dock
++def crane(x,y,flip=1):
++    col='#26383e'; edge='#547078'; hi='#718b8c'
++    d.polygon([(x,y),(x+5*flip,y),(x+18*flip,104),(x+12*flip,104)],fill=col)
++    d.line((x+2*flip,y,x+15*flip,104),fill=hi,width=1)
++    d.line((x+4*flip,y,x+15*flip,104),fill='#15262d',width=2)
++    d.line((x,y+4,x+48*flip,y+4),fill=edge,width=3)
++    d.line((x+2*flip,y+7,x+44*flip,y+7),fill=col,width=2)
++    d.line((x+37*flip,y+8,x+37*flip,79),fill='#1e3037',width=1)
++    d.line((x+37*flip,79,x+43*flip,79),fill='#c87931',width=2)
++crane(20,15,1); crane(219,25,-1); crane(160,7,1)
++# dock walls / open gate
++d.polygon([(0,83),(56,73),(72,160),(0,187)],fill='#263b43')
++d.polygon([(255,83),(202,73),(184,160),(255,187)],fill='#263b43')
++for side in [0,1]:
++    for i in range(18):
++        x=(random.randrange(0,67) if side==0 else random.randrange(191,256)); y=random.randrange(86,175)
++        d.rectangle((x,y,x+random.randrange(1,5),y+1),fill=random.choice(['#405b60','#182c34','#5d7374']))
++# steel gate posts framing entrance, no signage
++for x in (17,226):
++    d.rectangle((x,55,x+11,176),fill='#17282e'); d.rectangle((x+2,58,x+4,173),fill='#49636a')
++    d.rectangle((x-2,53,x+13,58),fill='#243a40'); d.rectangle((x-4,174,x+15,180),fill='#16262d')
++    d.rectangle((x+4,85,x+8,91),fill='#d27a31'); d.rectangle((x+3,86,x+9,89),fill='#ffbd59')
++# dry dock water, hull
++d.polygon([(66,87),(193,87),(217,168),(38,168)],fill='#0c2029')
++d.polygon([(76,95),(180,95),(201,145),(54,145)],fill='#102c36')
++# submarine body
++d.ellipse((78,89,184,141),fill='#17262d',outline='#08151b',width=2)
++d.rectangle((91,105,173,132),fill='#17262d')
++d.polygon([(79,112),(58,125),(81,133)],fill='#1c3037')
++d.polygon([(179,108),(198,119),(181,130)],fill='#142229')
++d.rectangle((126,80,147,99),fill='#1d3036'); d.rectangle((130,77,143,84),fill='#31454a')
++for x in range(90,178,12): d.line((x,113,x+6,132),fill='#2b4146')
++d.line((66,143,193,143),fill='#567078',width=1)
++# warm work lights and glow
++for x,y in [(55,80),(202,84),(119,75),(150,78)]:
++    d.rectangle((x-2,y-2,x+2,y+2),fill='#d06e2c');d.point((x,y),fill='#fff0a0')
++    for r,c in [(7,'#805233'),(4,'#bd6b30')]: d.rectangle((x-r,y-r,x+r,y+r),outline=c)
++# wet concrete foreground
++d.polygon([(0,166),(255,166),(255,255),(0,255)],fill='#1c3038')
++for y in [179,197,220,246]: d.line((0,y,255,y),fill='#29434b')
++for x in range(-40,310,20): d.line((128,164,x,256),fill='#29424a')
++for _ in range(80):
++    x=random.randrange(256); y=random.randrange(168,255)
++    c=random.choice(['#36545a','#27464e','#4e6568','#172a32'])
++    d.rectangle((x,y,x+random.randrange(1,7),y+random.choice([0,1])),fill=c)
++# puddles/reflections
++for box in [(8,209,75,216),(169,222,240,230),(90,237,157,242)]:
++    d.ellipse(box,fill='#183a46',outline='#47656a')
++    x1,y1,x2,y2=box; d.line((x1+8,(y1+y2)//2,x2-9,(y1+y2)//2),fill='#a26533')
++# steam clouds in pixel clusters
++for cx,cy in [(71,93),(193,90),(160,70)]:
++    for _ in range(18):
++        x=cx+random.randrange(-12,13); y=cy-random.randrange(0,25)
++        d.rectangle((x,y,x+random.randrange(2,7),y+random.randrange(1,4)),fill=random.choice(['#91a1a2','#71878b','#596f75']))
++# distant gulls
++for x,y in [(38,31),(204,44),(184,35)]:
++    d.line((x-3,y,x,y-1),fill='#d3d9d4');d.line((x,y-1,x+3,y),fill='#d3d9d4')
++# exact Valera back-facing sprite, chroma-keyed from supplied sheet
++src=Image.open('art_src/l7/pick_valera.jpg').convert('RGB').crop((850,18,1012,257))
++px=src.load()
++for yy in range(src.height):
++  for xx in range(src.width):
++    r,g,b=px[xx,yy]
++    if g>135 and g>r*1.45 and g>b*1.35: px[xx,yy]=(0,0,0)
++mask=src.convert('RGBA')
++data=mask.load()
++for yy in range(mask.height):
++  for xx in range(mask.width):
++    if data[xx,yy][:3]==(0,0,0): data[xx,yy]=(0,0,0,0)
++mask=mask.resize((66,97),Image.Resampling.NEAREST)
++# shadow, character center, warm rim
++d.ellipse((93,229,166,244),fill='#0a171d')
++im.paste(mask,(96,148),mask)
++d=ImageDraw.Draw(im)
++# lunchbox in hand, metal with warm catchlight
++d.rectangle((153,207,170,220),fill='#1a2b31',outline='#090f13',width=2)
++d.rectangle((155,209,168,218),fill='#52656a');d.line((156,211,167,211),fill='#bd7939')
++d.arc((157,202,166,212),180,355,fill='#71898b',width=2)
++# hard pixel highlights / rain
++for _ in range(54):
++    x=random.randrange(256); y=random.randrange(60,256)
++    d.point((x,y),fill=random.choice(['#77a0a0','#507980','#a6c0b8']))
++# upscale art without border
++im.resize((1024,1024),Image.Resampling.NEAREST).save('art_src/covers/cov1.png')
+

@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Конструктор моря</title>
+<style>
+  :root { --bg: #15191d; --panel: #1f252b; --line: #333c44; --text: #dfe6ec; --dim: #8b98a5; --acc: #ffcc33; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 13px/1.35 system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  header { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; padding: 8px 10px; background: var(--panel); border-bottom: 1px solid var(--line); }
+  .grp { display: flex; gap: 4px; align-items: center; }
+  button, select, input[type=number] { background: #2b333b; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 5px 9px; font: inherit; cursor: pointer; }
+  input[type=number] { width: 76px; cursor: text; padding: 3px 6px; }
+  button:hover { border-color: #56636f; }
+  button.on { background: var(--acc); color: #111; border-color: var(--acc); font-weight: 600; }
+  button.go { background: #2f7d3a; border-color: #3d9b4a; font-weight: 600; }
+  label { color: var(--dim); }
+  main { flex: 1; display: flex; min-height: 0; }
+  #wrap { flex: 1; position: relative; min-width: 0; overflow: hidden; }
+  #cv { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; }
+  #gameBox { position: absolute; left: 10px; top: 10px; width: 960px; height: 540px; }
+  #ifr { position: absolute; inset: 0; width: 960px; height: 540px; border: 0; background: #000; }
+  #ov { position: absolute; inset: 0; width: 960px; height: 540px; cursor: default; }
+  aside { width: 400px; max-width: 42vw; border-left: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; gap: 8px; padding: 10px; overflow: auto; }
+  #pv { width: 100%; aspect-ratio: 16 / 10; background: #26343c; border-radius: 6px; }
+  .list div { display: flex; gap: 6px; align-items: center; padding: 2px 0; }
+  .row { display: grid; grid-template-columns: 1fr 120px 52px; gap: 6px; align-items: center; padding: 3px 0; border-bottom: 1px solid #262d33; }
+  .row span { color: var(--dim); font-size: 12px; }
+  .row b { font-weight: 500; }
+  #status { color: var(--dim); white-space: pre-wrap; font: 12px/1.3 ui-monospace, monospace; max-height: 150px; overflow: auto; }
+  .hint { color: var(--dim); font-size: 12px; }
+  .hint b { color: var(--text); }
+  h4 { margin: 8px 0 2px; color: var(--acc); font-weight: 600; }
+</style>
+</head>
+<body>
+<header>
+  <div class="grp" id="tabs">
+    <button data-t="art" class="on">🎨 Арт</button>
+    <button data-t="scene">🌊 Сцена</button>
+    <button data-t="atk">⚔️ Атаки</button>
+    <button data-t="rig">🦴 Риг</button>
+  </div>
+  <div class="grp" id="artGrp"><button data-m="erase" class="on">🧽 Стереть</button><button data-m="add">🖌️ Вернуть из исходника</button><label>Кисть</label><input id="brush" type="range" min="2" max="80" value="14"><span id="brushV">14</span></div>
+  <div class="grp" id="rigGrp" hidden><button data-r="joints" class="on">Суставы</button><button data-r="regions">Где делится тело</button><select id="reg"></select></div>
+  <div class="grp" id="sceneGrp" hidden><label><input type="checkbox" id="freeze"> стоп-кадр</label></div>
+  <div class="grp"><button id="undo">↶ Отменить</button><button id="fit">⤢ Целиком</button></div>
+  <div class="grp"><button id="build" class="go">✅ Сохранить и посмотреть</button></div>
+</header>
+<main>
+  <div id="wrap">
+    <canvas id="cv"></canvas>
+    <div id="gameBox" hidden><iframe id="ifr"></iframe><canvas id="ov" width="960" height="540"></canvas></div>
+  </div>
+  <aside>
+    <div id="side"></div>
+    <div id="pvBox"><div class="grp"><label>Поза</label><select id="pose"></select></div><canvas id="pv" width="640" height="400"></canvas></div>
+    <div class="hint" id="help"></div>
+    <div id="status">Загрузка…</div>
+  </aside>
+</main>
+<script>
+const EDIT = '/art_src/l10/rig3/edit/', SRV = 'http://localhost:18802';
+const HELP = {
+  art: '<b>Арт.</b> Справа выбери слой. <b>Левая кнопка</b> — стереть (красное исчезнет), <b>правая</b> — отменить стирание.<br>«Вернуть из исходника» — закрась место, где кусок пропал: он вернётся из картинки Flow (бледная подложка).<br>Колесо — приблизить, пробел + мышь — сдвинуть. Потом зелёная кнопка.',
+  scene: '<b>Сцена.</b> Это живая игра. Тащи мышью: <b>Семёна</b> (колесо над ним — размер), <b>станции</b> (колесо — размер), <b>голубую линию</b> — вода у плотов, <b>жёлтую</b> — горизонт моря, <b>зелёный ромб</b> — откуда выплывают плоты, <b>розовые точки</b> — откуда из спины выходят лапы.<br>Сразу видно в игре. Сохранить — зелёная кнопка.',
+  atk: '<b>Атаки.</b> Двигай ползунки — меняется сразу в игре слева. Кнопки «Показать» запускают атаку. Сегмент — сколько атак одновременно (1, 2, 3).<br>Сохранить — зелёная кнопка.',
+  rig: '<b>Риг.</b> <b>Суставы</b> — перетащи жёлтую точку туда, где должен быть сгиб (красная — изменённая).<br><b>Где делится тело</b>: выбери часть, тащи белые точки границы; двойной клик по краю — добавить точку, правый клик — убрать.<br>Справа — Семён в позах. Потом зелёная кнопка.',
+};
+const LNAME = { legs: 'Паучьи лапы (остальные)', lg0: 'Лапа к станции: левая верхняя', lg1: 'Лапа к станции: левая внешняя', lg2: 'Лапа к станции: правая верхняя', lg3: 'Лапа к станции: правая внешняя', body: 'Тело', headO: 'Открытая пасть', eyes: 'Горящие глаза', gun: 'Миниган в руке', arm: 'Левая рука (у зрителя)', hand: 'Левая кисть', arm2: 'Правая рука', hand2: 'Правая кисть', epaul: 'Погон', stat10: 'Электростанции (лист)', bg1ships: 'Корабли фона (лист)' };
+const ASSET = ['stat10', 'bg1ships'];
+const RNAME = { head: 'голова', belly: 'брюхо', mouth: 'где берётся пасть', lg0: 'лапа: левая верхняя', lg1: 'лапа: левая внешняя', lg2: 'лапа: правая верхняя', lg3: 'лапа: правая внешняя' };
+const RCOL = { head: '#ff6b6b', belly: '#ff6bd5', mouth: '#4d9dff', lg0: '#3fbf5f', lg1: '#ffa53f', lg2: '#3fbf5f', lg3: '#ffa53f' };
+const CHAINS = [['sh', 'el', 'wr', 'tip'], ['sh2', 'el2', 'wr2', 'tip2'], ['root', 'neck', 'head'], ['neck', 'spL'], ['neck', 'spR'], ['root', 'belly', 'hose'], ['head', 'mgp', 'mgm'], ['lgR0', 'lgT0'], ['lgR1', 'lgT1'], ['lgR2', 'lgT2'], ['lgR3', 'lgT3']];
+const POSES = ['cycle', 'idle', 'roar', 'plasma', 'laser', 'gun', 'clapUp', 'clapOut', 'clap', 'hoseUp', 'hoseHit', 'connect', 'hurt'];
+const POSEN = { cycle: 'все по кругу', idle: 'покой', roar: 'рык', plasma: 'плазма', laser: 'лазер', gun: 'миниган', clapUp: 'хлопок: руки вверх', clapOut: 'хлопок: в стороны', clap: 'хлопок', hoseUp: 'шланг: замах', hoseHit: 'шланг: удар', connect: 'лапы к станциям', hurt: 'урон' };
+// ползунки вкладки «Атаки»: [путь в L10.SEA3, подпись, мин, макс, шаг]
+const SL = [
+  ['h', 'Семён'], ['hp', 'Здоровье Семёна', 600, 6000, 100], ['atk.dmg', 'Урон гранаты', 2, 40, 1], ['atk.dmgWeak', 'Урон в открытую пасть', 2, 60, 1],
+  ['h', 'Сколько атак сразу и паузы'], ['atk.tracks.0', 'Атак сразу, сегмент 1', 1, 4, 1], ['atk.tracks.1', 'Атак сразу, сегмент 2', 1, 4, 1], ['atk.tracks.2', 'Атак сразу, сегмент 3', 1, 4, 1],
+  ['atk.cd.0', 'Пауза, сегмент 1 (с)', 0.3, 6, 0.1], ['atk.cd.1', 'Пауза, сегмент 2 (с)', 0.3, 6, 0.1], ['atk.cd.2', 'Пауза, сегмент 3 (с)', 0.3, 6, 0.1],
+  ['h', 'Плазменные шары'], ['atk.ballLife', 'Живут (с)', 2, 20, 0.5], ['atk.ballSpeed', 'Скорость', 30, 250, 2], ['atk.ballTurn', 'Поворот (наведение)', 0.2, 8, 0.1], ['atk.ballHp', 'Попаданий, чтобы сбить', 1, 6, 1], ['atk.ballDmg', 'Урон', 1, 50, 1],
+  ['atk.balls.0', 'Шаров, сегмент 1', 1, 6, 1], ['atk.balls.1', 'Шаров, сегмент 2', 1, 6, 1], ['atk.balls.2', 'Шаров, сегмент 3', 1, 6, 1],
+  ['h', 'Лазер из глаз'], ['atk.laserWarn', 'Предупреждение (с)', 0.2, 3, 0.1], ['atk.laserTime', 'Длительность (с)', 0.5, 5, 0.1], ['atk.laserDmg', 'Урон', 1, 50, 1],
+  ['h', 'Шланг «бей сурка»'], ['atk.hoseN.0', 'Ударов, сегмент 1', 1, 8, 1], ['atk.hoseN.1', 'Ударов, сегмент 2', 1, 8, 1], ['atk.hoseN.2', 'Ударов, сегмент 3', 1, 8, 1], ['atk.hoseWarn', 'Тень-предупреждение (с)', 0.2, 2, 0.05], ['atk.hoseDmg', 'Урон', 1, 50, 1],
+  ['h', 'Хлопок ладонями'], ['atk.clapWarn', 'Руки заносятся (с)', 0.3, 3, 0.1], ['atk.clapEvery', 'Частота (вес)', 0, 4, 0.1], ['atk.clapDmg', 'Урон', 1, 60, 1],
+  ['h', 'Удар двумя кулаками сверху'], ['atk.smashWarn', 'Замах (с)', 0.3, 2, 0.05], ['atk.smashEvery', 'Частота (вес)', 0, 4, 0.1], ['atk.smashDmg', 'Урон', 1, 60, 1], ['atk.smashR', 'Радиус удара', 10, 90, 1],
+  ['h', 'Шланг метёт по воде'], ['atk.sweepP', 'Доля среди атак шлангом', 0, 1, 0.05], ['atk.sweepWarn', 'Предупреждение (с)', 0.3, 2, 0.05], ['atk.sweepTime', 'Проход через экран (с)', 0.4, 3, 0.05], ['atk.sweepDmg', 'Урон', 1, 60, 1],
+  ['h', 'Миньоны и прочее'], ['atk.minions.0', 'Миньонов, сегмент 1', 0, 10, 1], ['atk.minions.1', 'Миньонов, сегмент 2', 0, 10, 1], ['atk.minions.2', 'Миньонов, сегмент 3', 0, 10, 1], ['atk.minionEvery', 'Новый миньон раз в (с)', 1, 20, 0.5], ['atk.minionDmgK', 'Урон миньонов (множитель)', 0, 2, 0.05],
+  ['atk.breath', 'Воздух при нырке (с)', 0.5, 6, 0.1], ['atk.stationHp', 'Прочность станции', 6, 120, 2], ['atk.stationBack', 'Новая станция через (с)', 5, 90, 1], ['atk.splash', 'Взрыв гранаты в воде (радиус)', 0, 120, 2],
+  ['raftEvery.0', 'Плоты: раз в (от, с)', 0.6, 6, 0.1], ['raftEvery.1', 'Плоты: раз в (до, с)', 0.6, 8, 0.1], ['raftSpeed.0', 'Течение: скорость от', 5, 120, 1], ['raftSpeed.1', 'Течение: скорость до', 5, 140, 1], ['raftW.0', 'Ширина плотов от', 40, 220, 1], ['raftW.1', 'Ширина плотов до', 40, 260, 1], ['valeraK', 'Размер Валеры', 0.2, 1.2, 0.01], ['gunK', 'Размер минигана', 0.3, 1.3, 0.01],
+];
+const $ = (id) => document.getElementById(id), cv = $('cv'), ctx = cv.getContext('2d');
+const log = (t) => { $('status').textContent = t; };
+const loadImg = (u) => new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = u; });
+const newCanvas = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+let tab = 'art', amode = 'erase', rmode = 'joints', active = 'body', S = null, OV = { J: {}, R: {} }, Lr = {}, view = { s: 0.5, x: 0, y: 0 }, undo = [], dirty = new Set(), LAY = null;
+
+// ---------------- слои (Арт) и риг ----------------
+async function loadState(keep) {
+  const t = Date.now();
+  S = await (await fetch(EDIT + 'state.json?t=' + t)).json();
+  try { const o = await fetch(EDIT + 'overrides.json?t=' + t); if (o.ok) OV = await o.json(); } catch (e) {}
+  OV.J = OV.J || {}; OV.R = OV.R || {};
+  const names = S.order.filter((k) => S.layers[k]).concat(ASSET);
+  for (const k of names) {
+    const old = Lr[k] || {}, isA = ASSET.includes(k);
+    const img = await loadImg(isA ? EDIT + 'orig/' + k + '.png?t=' + t : EDIT + 'layers/' + k + '.png?t=' + t), src = isA ? img : await loadImg(EDIT + 'layers/' + k + '_src.jpg?t=' + t);
+    if (!img) continue;
+    const size = isA ? [img.width, img.height] : S.size;
+    let mask = old.mask, add = old.add;
+    if (!keep || !mask) { mask = newCanvas(size[0], size[1]); const m = await loadImg(EDIT + k + '_erase.png?t=' + t); if (m) mask.getContext('2d').drawImage(m, 0, 0, size[0], size[1]); }
+    if (!keep || !add) { add = newCanvas(size[0], size[1]); const m = await loadImg(EDIT + k + '_add.png?t=' + t); if (m) add.getContext('2d').drawImage(m, 0, 0, size[0], size[1]); }
+    Lr[k] = { img, src, mask, add, size, asset: isA, o: isA ? [0, 0] : S.layers[k], comp: null };
+    compose(k);
+  }
+  buildSide();
+}
+function compose(k) {
+  const l = Lr[k]; if (!l || !l.img) return;
+  const c = l.comp || newCanvas(l.img.width, l.img.height), g = c.getContext('2d');
+  g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, c.width, c.height); g.drawImage(l.img, 0, 0);
+  if (l.src && !l.asset) { const a = newCanvas(c.width, c.height), ag = a.getContext('2d'); ag.drawImage(l.add, -l.o[0], -l.o[1]); ag.globalCompositeOperation = 'source-in'; ag.drawImage(l.src, -l.o[0], -l.o[1], S.size[0], S.size[1]); g.drawImage(a, 0, 0); }
+  g.globalCompositeOperation = 'destination-out'; g.drawImage(l.mask, -l.o[0], -l.o[1]); g.globalCompositeOperation = 'source-over';
+  l.comp = c;
+}
+const J = (k) => OV.J[k] || S.J[k], R = (k) => OV.R[k] || S.R[k];
+const docSize = () => tab === 'art' && Lr[active] && Lr[active].asset ? Lr[active].size : S.size;
+function resize() { const r = cv.getBoundingClientRect(); cv.width = r.width * devicePixelRatio; cv.height = r.height * devicePixelRatio; draw(); }
+function fit() { const r = cv.getBoundingClientRect(), d = docSize(); view.s = Math.min(r.width / d[0], r.height / d[1]) * 0.96; view.x = (r.width - d[0] * view.s) / 2; view.y = (r.height - d[1] * view.s) / 2; draw(); }
+const toC = (e) => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left - view.x) / view.s, (e.clientY - r.top - view.y) / view.s]; };
+function draw() {
+  if (!S || tab === 'scene' || tab === 'atk') return;
+  const d = devicePixelRatio; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#20282e'; ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.setTransform(view.s * d, 0, 0, view.s * d, view.x * d, view.y * d);
+  const ds = docSize(); ctx.fillStyle = '#2b353d'; ctx.fillRect(0, 0, ds[0], ds[1]);
+  const art = tab === 'art', A = Lr[active];
+  if (art && A && A.asset) { ctx.globalAlpha = 0.25; ctx.drawImage(A.img, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(A.comp, 0, 0); }
+  else {
+    for (const k of S.order) { const l = Lr[k]; if (!l || !l.comp) continue; if (art && k === active && l.src) { ctx.globalAlpha = 0.28; ctx.drawImage(l.src, 0, 0, S.size[0], S.size[1]); ctx.globalAlpha = 1; }
+      if (k === 'headO' || k === 'eyes') { if (!(art && k === active)) continue; } ctx.globalAlpha = art && k !== active ? 0.4 : 1; ctx.drawImage(l.comp, l.o[0], l.o[1]); ctx.globalAlpha = 1; }
+  }
+  if (art && A) { const m = amode === 'add' && !A.asset ? A.add : A.mask, t = newCanvas(m.width, m.height), g = t.getContext('2d'); g.drawImage(m, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = amode === 'add' && !A.asset ? 'rgba(60,255,90,0.35)' : 'rgba(255,60,60,0.55)'; g.fillRect(0, 0, t.width, t.height); ctx.drawImage(t, 0, 0); }
+  if (tab === 'rig' && rmode === 'regions') { const sel = $('reg').value; for (const k of Object.keys(S.R)) { const p = R(k); ctx.beginPath(); p.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); ctx.fillStyle = (RCOL[k] || '#fff') + (k === sel ? '55' : '22'); ctx.fill(); ctx.lineWidth = (k === sel ? 3 : 1.5) / view.s; ctx.strokeStyle = RCOL[k] || '#fff'; ctx.stroke(); if (k === sel) for (const q of p) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(q[0], q[1], 6 / view.s, 0, 7); ctx.fill(); } } }
+  if (tab === 'rig' && rmode === 'joints') {
+    ctx.lineWidth = 3 / view.s; ctx.strokeStyle = 'rgba(255,204,51,0.85)';
+    for (const ch of CHAINS) { ctx.beginPath(); ch.forEach((k, i) => { const q = J(k); if (q) i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }); ctx.stroke(); }
+    ctx.font = `${12 / view.s}px system-ui`;
+    for (const k of Object.keys(S.J)) { const q = J(k); if (!Array.isArray(q)) continue; ctx.fillStyle = OV.J[k] ? '#ff4a4a' : '#ffcc33'; ctx.beginPath(); ctx.arc(q[0], q[1], 7 / view.s, 0, 7); ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5 / view.s; ctx.stroke(); ctx.fillStyle = '#fff'; ctx.fillText(k, q[0] + 9 / view.s, q[1] - 6 / view.s); }
+    ctx.strokeStyle = '#5ac8ff'; ctx.setLineDash([12 / view.s, 8 / view.s]); ctx.beginPath(); ctx.moveTo(0, S.J.root[1] - 10); ctx.stroke(); ctx.setLineDash([]);
+  }
+  if (art && hover) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5 / view.s; ctx.beginPath(); ctx.arc(hover[0], hover[1], +$('brush').value, 0, 7); ctx.stroke(); }
+}
+let drag = null, hover = null, space = false;
+addEventListener('keydown', (e) => { if (e.code === 'Space' && e.target.tagName !== 'INPUT') { space = true; e.preventDefault(); } if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') { doUndo(); e.preventDefault(); } });
+addEventListener('keyup', (e) => { if (e.code === 'Space') space = false; });
+cv.addEventListener('contextmenu', (e) => e.preventDefault());
+cv.addEventListener('wheel', (e) => { e.preventDefault(); const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, k = Math.exp(-e.deltaY * 0.0015); view.x = mx - (mx - view.x) * k; view.y = my - (my - view.y) * k; view.s *= k; draw(); }, { passive: false });
+const nearest = (list, p, rad) => { let best = null, bd = rad; for (const [k, q] of list) { const d = Math.hypot(q[0] - p[0], q[1] - p[1]); if (d < bd) { bd = d; best = k; } } return best; };
+function stroke(p0, p1, paint) {
+  const A = Lr[active], useAdd = amode === 'add' && !A.asset, g = (useAdd ? A.add : A.mask).getContext('2d'), r = +$('brush').value;
+  const erase = A.asset && amode === 'add' ? !paint : paint;     // у листов «вернуть» = снять стирание
+  g.globalCompositeOperation = erase ? 'source-over' : 'destination-out'; g.strokeStyle = '#fff'; g.lineCap = 'round'; g.lineWidth = r * 2; g.beginPath(); g.moveTo(p0[0], p0[1]); g.lineTo(p1[0], p1[1]); g.stroke(); g.globalCompositeOperation = 'source-over';
+  if (useAdd && paint) { const e2 = A.mask.getContext('2d'); e2.globalCompositeOperation = 'destination-out'; e2.strokeStyle = '#fff'; e2.lineCap = 'round'; e2.lineWidth = r * 2; e2.beginPath(); e2.moveTo(p0[0], p0[1]); e2.lineTo(p1[0], p1[1]); e2.stroke(); e2.globalCompositeOperation = 'source-over'; dirty.add(active + '_erase'); }
+  dirty.add(active + (useAdd ? '_add' : '_erase')); compose(active);
+}
+function pushUndo(kind) {
+  if (kind === 'mask') { const A = Lr[active]; undo.push({ t: 'mask', k: active, m: A.mask.getContext('2d').getImageData(0, 0, A.mask.width, A.mask.height), a: A.add.getContext('2d').getImageData(0, 0, A.add.width, A.add.height) }); }
+  else if (kind === 'lay') undo.push({ t: 'lay', data: JSON.stringify(LAY) });
+  else undo.push({ t: 'ov', data: JSON.stringify(OV) });
+  if (undo.length > 30) undo.shift();
+}
+function doUndo() {
+  const u = undo.pop(); if (!u) return;
+  if (u.t === 'mask') { Lr[u.k].mask.getContext('2d').putImageData(u.m, 0, 0); Lr[u.k].add.getContext('2d').putImageData(u.a, 0, 0); dirty.add(u.k + '_erase'); if (!Lr[u.k].asset) dirty.add(u.k + '_add'); compose(u.k); }
+  else if (u.t === 'lay') { const d = JSON.parse(u.data); for (const k of Object.keys(d)) LAY[k] = d[k]; buildSide(); }
+  else OV = JSON.parse(u.data);
+  draw();
+}
+cv.addEventListener('mousedown', (e) => {
+  const p = toC(e);
+  if (e.button === 1 || space) { drag = { pan: true, x: e.clientX, y: e.clientY }; return; }
+  if (tab === 'art') { if (!Lr[active]) return; pushUndo('mask'); drag = { paint: e.button === 0, last: p }; stroke(p, p, drag.paint); draw(); return; }
+  if (tab === 'rig' && rmode === 'joints') { const k = nearest(Object.keys(S.J).filter((k) => Array.isArray(J(k))).map((k) => [k, J(k)]), p, 14 / view.s); if (k && e.button === 0) { pushUndo('ov'); drag = { joint: k }; } return; }
+  if (tab === 'rig' && rmode === 'regions') {
+    const sel = $('reg').value, pts = R(sel).map((q) => q.slice()), i = nearest(pts.map((q, i) => [i, q]), p, 12 / view.s);
+    if (i !== null && e.button === 2) { if (pts.length > 3) { pushUndo('ov'); pts.splice(i, 1); OV.R[sel] = pts; draw(); } return; }
+    if (i !== null && e.button === 0) { pushUndo('ov'); OV.R[sel] = pts; drag = { reg: sel, i }; }
+  }
+});
+cv.addEventListener('dblclick', (e) => {
+  if (tab !== 'rig' || rmode !== 'regions') return;
+  const p = toC(e), sel = $('reg').value, pts = R(sel).map((q) => q.slice()); let bi = 0, bd = 1e9;
+  for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length], vx = b[0] - a[0], vy = b[1] - a[1], t = Math.max(0, Math.min(1, ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / (vx * vx + vy * vy || 1))), d = Math.hypot(a[0] + vx * t - p[0], a[1] + vy * t - p[1]); if (d < bd) { bd = d; bi = i; } }
+  pushUndo('ov'); pts.splice(bi + 1, 0, [Math.round(p[0]), Math.round(p[1])]); OV.R[sel] = pts; draw();
+});
+cv.addEventListener('mousemove', (e) => {
+  const p = toC(e); hover = p;
+  if (drag && drag.pan) { view.x += e.clientX - drag.x; view.y += e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY; }
+  else if (drag && drag.last) { stroke(drag.last, p, drag.paint); drag.last = p; }
+  else if (drag && drag.joint) OV.J[drag.joint] = [Math.round(p[0]), Math.round(p[1])];
+  else if (drag && drag.reg) OV.R[drag.reg][drag.i] = [Math.round(p[0]), Math.round(p[1])];
+  draw();
+});
+addEventListener('mouseup', () => { drag = null; sdrag = null; });
+
+// ---------------- игра в iframe (Сцена, Атаки, превью поз) ----------------
+const ifr = $('ifr'), ov = $('ov'), og = ov.getContext('2d');
+let W = null;
+function loadGame() {
+  return new Promise((ok) => {
+    W = null; ifr.onload = async () => {
+      const w = ifr.contentWindow, ready = () => { try { return w.eval("typeof L10 !== 'undefined' && L10.PARTS && L10.PARTS.sea && !!L10.PARTS.sea.R && !!L10.img.rig30"); } catch (e) { return false; } };
+      for (let i = 0; i < 200 && !ready(); i++) await new Promise((r) => setTimeout(r, 250));
+      W = { w, L10: w.eval('L10'), P: w.eval('L10.PARTS.sea') }; LAY = W.L10.SEA3; W.L10._skin3 = undefined; W.P.freeze = $('freeze').checked; buildSide(); ok();
+    };
+    ifr.src = '/?l10=sea&seaedit=1&t=' + Date.now();
+  });
+}
+// пересчёт координат: игровой холст 640x360 внутри iframe
+function gameRect() { try { const c = W.w.document.querySelector('canvas'), r = c.getBoundingClientRect(); return { x: r.left, y: r.top, k: r.width / 640 }; } catch (e) { return { x: 0, y: 0, k: 1.5 }; } }
+const toG = (e) => { const b = ov.getBoundingClientRect(), g = gameRect(); return [(e.clientX - b.left - g.x) / g.k, (e.clientY - b.top - g.y) / g.k]; };
+const fromG = (x, y) => { const g = gameRect(); return [g.x + x * g.k, g.y + y * g.k]; };
+function handles() {
+  if (!W || !LAY) return [];
+  const H = [], L = LAY, k = L.sem.H / 236;
+  L.stations.forEach((s, i) => { const hw = 273 * s.s * 0.5, hh = 330 * s.s * 0.5; H.push({ k: 'st', i, box: [s.x - hw, s.y - hh, hw * 2, hh] }); });
+  L.legA.forEach((q, i) => H.push({ k: 'leg', i, pt: [L.sem.x + q[0] * k, L.sem.y + q[1] * k] }));
+  H.push({ k: 'raft', pt: [Math.max(L.raftX0, 6), L.WY] });
+  H.push({ k: 'wy', line: L.WY }); H.push({ k: 'sea', line: (L.bg || {}).seaY ?? 150 });
+  try { const b = W.P.R.box(); H.push({ k: 'sem', box: b }); } catch (e) {}
+  return H;
+}
+function hit(p) {
+  for (const h of handles()) {
+    if (h.pt && Math.hypot(h.pt[0] - p[0], h.pt[1] - p[1]) < 9) return h;
+  }
+  for (const h of handles()) if (h.box && h.k === 'st' && p[0] > h.box[0] && p[0] < h.box[0] + h.box[2] && p[1] > h.box[1] && p[1] < h.box[1] + h.box[3]) return h;
+  for (const h of handles()) if (h.line != null && Math.abs(p[1] - h.line) < 4) return h;
+  for (const h of handles()) if (h.box && h.k === 'sem' && p[0] > h.box[0] && p[0] < h.box[0] + h.box[2] && p[1] > h.box[1] && p[1] < h.box[1] + h.box[3]) return h;
+  return null;
+}
+let sdrag = null, shover = null;
+ov.addEventListener('mousedown', (e) => { if (tab !== 'scene') return; const p = toG(e), h = hit(p); if (!h) return; pushUndo('lay'); sdrag = { h, p0: p, L0: JSON.parse(JSON.stringify(LAY)) }; });
+ov.addEventListener('mousemove', (e) => {
+  const p = toG(e); shover = hit(p);
+  if (!sdrag) return; const { h, p0, L0 } = sdrag, dx = p[0] - p0[0], dy = p[1] - p0[1], L = LAY, R = (v) => Math.round(v);
+  if (h.k === 'sem') { L.sem.x = R(L0.sem.x + dx); L.sem.y = R(L0.sem.y + dy); }
+  if (h.k === 'st') { L.stations[h.i].x = R(L0.stations[h.i].x + dx); L.stations[h.i].y = R(L0.stations[h.i].y + dy); }
+  if (h.k === 'leg') { const k = L.sem.H / 236; L.legA[h.i] = [R(L0.legA[h.i][0] + dx / k), R(L0.legA[h.i][1] + dy / k)]; }
+  if (h.k === 'raft') L.raftX0 = R(Math.min(300, L0.raftX0 + dx));
+  if (h.k === 'wy') L.WY = R(L0.WY + dy);
+  if (h.k === 'sea') { L.bg = L.bg || {}; L.bg.seaY = R((L0.bg || {}).seaY ?? 150) + R(dy); }
+  buildSide();
+});
+ov.addEventListener('wheel', (e) => {
+  if (tab !== 'scene') return; e.preventDefault(); const h = hit(toG(e)); if (!h) return; const k = Math.exp(-e.deltaY * 0.001);
+  pushUndo('lay'); if (h.k === 'sem') LAY.sem.H = Math.round(LAY.sem.H * k); if (h.k === 'st') LAY.stations[h.i].s = +(LAY.stations[h.i].s * k).toFixed(3); buildSide();
+}, { passive: false });
+function drawOverlay() {
+  og.clearRect(0, 0, 960, 540); if (tab !== 'scene' || !W) return;
+  const g = gameRect(); og.save(); og.translate(g.x, g.y); og.scale(g.k, g.k); og.lineWidth = 1.5 / g.k * 1.5;
+  for (const h of handles()) {
+    const on = shover && shover.k === h.k && shover.i === h.i;
+    if (h.line != null) { og.strokeStyle = h.k === 'wy' ? '#5ac8ff' : '#ffd84a'; og.setLineDash(on ? [] : [6, 4]); og.beginPath(); og.moveTo(0, h.line); og.lineTo(640, h.line); og.stroke(); og.setLineDash([]); og.fillStyle = og.strokeStyle; og.font = '9px system-ui'; og.fillText(h.k === 'wy' ? 'вода у плотов' : 'горизонт моря', 4, h.line - 3); }
+    if (h.box) { og.strokeStyle = h.k === 'sem' ? (on ? '#ff8a3a' : 'rgba(255,138,58,0.6)') : (on ? '#7dff7a' : 'rgba(125,255,122,0.6)'); og.strokeRect(h.box[0], h.box[1], h.box[2], h.box[3]); }
+    if (h.pt) { og.fillStyle = h.k === 'raft' ? '#3dff8a' : '#ff6bd5'; og.beginPath(); if (h.k === 'raft') { og.moveTo(h.pt[0], h.pt[1] - 7); og.lineTo(h.pt[0] + 7, h.pt[1]); og.lineTo(h.pt[0], h.pt[1] + 7); og.lineTo(h.pt[0] - 7, h.pt[1]); } else og.arc(h.pt[0], h.pt[1], on ? 6 : 4.5, 0, 7); og.fill(); }
+  }
+  og.restore();
+}
+
+// ---------------- боковая панель ----------------
+const getP = (o, path) => path.split('.').reduce((a, k) => a && a[k], o);
+const setP = (o, path, v) => { const ks = path.split('.'), last = ks.pop(), t = ks.reduce((a, k) => a[k], o); t[last] = v; };
+function buildSide() {
+  const box = $('side');
+  if (tab === 'art') {
+    box.innerHTML = '<h4>Какой слой правим</h4><div class="list" id="lst"></div>';
+    for (const k of Object.keys(Lr)) { const d = document.createElement('div'); d.innerHTML = `<label style="color:var(--text);cursor:pointer;display:flex;gap:6px;align-items:center"><input type="radio" name="act" ${k === active ? 'checked' : ''}>${LNAME[k] || k}</label>`; d.querySelector('input').onchange = () => { active = k; fit(); }; $('lst').appendChild(d); }
+  } else if (tab === 'scene') {
+    if (!LAY) { box.innerHTML = 'Игра загружается…'; return; }
+    const L = LAY, f = (path, name) => `<div class="row"><span>${name}</span><input type="number" step="any" data-p="${path}" value="${getP(L, path)}"><span></span></div>`;
+    box.innerHTML = '<h4>Положения (можно и числами)</h4>' + f('sem.x', 'Семён: X') + f('sem.y', 'Семён: линия воды Y') + f('sem.H', 'Семён: высота над водой') + f('WY', 'Вода у плотов Y') + f('bg.seaY', 'Горизонт моря Y') + f('bg.seaH', 'Высота моря') + f('bg.ships', 'Кораблей на фоне') + f('raftX0', 'Плоты выплывают с X')
+      + L.stations.map((s, i) => f(`stations.${i}.x`, `Станция ${i + 1}: X`) + f(`stations.${i}.y`, `Станция ${i + 1}: Y`) + f(`stations.${i}.s`, `Станция ${i + 1}: масштаб`)).join('')
+      + L.legA.map((q, i) => f(`legA.${i}.0`, `Лапа ${i + 1}: X от Семёна`) + f(`legA.${i}.1`, `Лапа ${i + 1}: Y от воды`)).join('');
+    box.querySelectorAll('input').forEach((inp) => inp.onchange = () => { pushUndo('lay'); setP(LAY, inp.dataset.p, +inp.value); });
+  } else if (tab === 'atk') {
+    if (!LAY) { box.innerHTML = 'Игра загружается…'; return; }
+    let h = '<h4>Показать в игре</h4><div class="grp" style="flex-wrap:wrap">' + ['plasma', 'laser', 'hose', 'clap'].map((k) => `<button data-a="${k}">${{ plasma: 'Плазма', laser: 'Лазер', hose: 'Шланг', clap: 'Хлопок' }[k]}</button>`).join('') + '</div>'
+      + '<div class="grp" style="margin-top:4px"><label>Сегмент</label>' + [0, 1, 2].map((i) => `<button data-seg="${i}">${i + 1}</button>`).join('') + '<button data-auto="1">авто-бой</button></div>';
+    for (const s of SL) {
+      if (s[0] === 'h') { h += `<h4>${s[1]}</h4>`; continue; }
+      const v = getP(LAY, s[0]); h += `<div class="row"><span>${s[1]}</span><input type="range" min="${s[2]}" max="${s[3]}" step="${s[4]}" value="${v}" data-p="${s[0]}"><b>${v}</b></div>`;
+    }
+    box.innerHTML = h;
+    box.querySelectorAll('input[type=range]').forEach((inp) => inp.oninput = () => { setP(LAY, inp.dataset.p, +inp.value); inp.nextElementSibling.textContent = inp.value; if (inp.dataset.p === 'hp' && W) { W.P.B.maxHp = +inp.value; W.P.B.segHp = W.P.B.maxHp / W.P.B.segs; W.P.B.hp = Math.min(W.P.B.hp, W.P.B.maxHp); } });
+    box.querySelectorAll('[data-a]').forEach((b) => b.onclick = () => { if (W) W.P.startAtk(b.dataset.a); });
+    box.querySelectorAll('[data-seg]').forEach((b) => b.onclick = () => { if (W) { const B = W.P.B; B.hp = B.maxHp - (+b.dataset.seg) * B.segHp - 1; } });
+    box.querySelectorAll('[data-auto]').forEach((b) => b.onclick = () => { if (W) { W.P.edit = !W.P.edit; if (!W.P.edit) W.P.A.cd = 1; b.classList.toggle('on', !W.P.edit); log(W.P.edit ? 'Атаки — только по кнопкам.' : 'Авто-бой: Семён атакует сам (Валера всё равно бессмертен? нет — может погибнуть).'); } });
+  } else if (tab === 'rig') {
+    box.innerHTML = '<h4>Суставы и области рига анфас</h4><div class="hint">Изменённые суставы — красные. Чтобы вернуть сустав как было, выбери его и нажми «Сбросить сустав».</div><div class="grp"><select id="jsel"></select><button id="jreset">Сбросить сустав</button></div>';
+    const js = $('jsel'); for (const k of Object.keys(OV.J)) js.add(new Option(k, k)); $('jreset').onclick = () => { if (js.value) { pushUndo('ov'); delete OV.J[js.value]; buildSide(); draw(); } };
+  }
+}
+
+// ---------------- превью поз рига (для «Арт» и «Риг») ----------------
+const pv = $('pv'), pg = pv.getContext('2d');
+POSES.forEach((p) => $('pose').add(new Option(POSEN[p], p)));
+let PB = null, pt = 0, poseI = 0;
+const pre = { clap: 'clapOut', hoseHit: 'hoseUp' };
+function tick() {
+  requestAnimationFrame(tick); drawOverlay();
+  if (!W || (tab !== 'art' && tab !== 'rig')) return;
+  try {
+    if (!PB) { PB = new W.L10.RigFront({ x: 320, y: 300, H: 260 }); PB.watch = { x: 420, y: 300 }; PB.gunT = { x: 150, y: 300 }; PB.aimL = [316, 302]; PB.aimR = [324, 302]; PB.hoseT = { x: 470, y: 305 }; }
+    const sel = $('pose').value, list = POSES.slice(1), want = sel === 'cycle' ? list[poseI % list.length] : sel;
+    pt += 1 / 60; if (pt > 1.8) { pt = 0; if (sel === 'cycle') poseI++; if (want === 'gun') PB.fireGun(); }
+    PB.setPose(pre[want] && pt < 0.9 ? pre[want] : want); PB.shield = want === 'connect' ? 1 : 0; PB.update(1 / 60);
+    const t = newCanvas(640, 360), tg = t.getContext('2d'); PB.draw(tg);
+    pg.fillStyle = '#26343c'; pg.fillRect(0, 0, 640, 400); pg.drawImage(t, 80, 10, 480, 300, 0, 0, 640, 400);
+    pg.fillStyle = 'rgba(20,70,110,0.75)'; pg.fillRect(0, (300 - 10) * 400 / 300, 640, 400); pg.fillStyle = '#ff0'; pg.font = '20px system-ui'; pg.fillText(POSEN[want], 10, 26);
+  } catch (e) { PB = null; }
+}
+
+// ---------------- вкладки и кнопки ----------------
+function setTab(t) {
+  tab = t; document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
+  const game = t === 'scene' || t === 'atk';
+  $('gameBox').hidden = !game; cv.style.display = game ? 'none' : ''; $('artGrp').hidden = t !== 'art'; $('rigGrp').hidden = t !== 'rig'; $('sceneGrp').hidden = t !== 'scene'; $('pvBox').hidden = game; $('fit').hidden = game;
+  ov.style.pointerEvents = t === 'scene' ? 'auto' : 'none';
+  $('help').innerHTML = HELP[t]; buildSide(); if (!game) { resize(); fit(); }
+}
+document.querySelectorAll('#tabs button').forEach((b) => b.onclick = () => setTab(b.dataset.t));
+document.querySelectorAll('#artGrp [data-m]').forEach((b) => b.onclick = () => { amode = b.dataset.m; document.querySelectorAll('#artGrp [data-m]').forEach((x) => x.classList.toggle('on', x === b)); draw(); });
+document.querySelectorAll('#rigGrp [data-r]').forEach((b) => b.onclick = () => { rmode = b.dataset.r; document.querySelectorAll('#rigGrp [data-r]').forEach((x) => x.classList.toggle('on', x === b)); draw(); });
+$('brush').oninput = (e) => { $('brushV').textContent = e.target.value; draw(); };
+$('freeze').onchange = () => { if (W) W.P.freeze = $('freeze').checked; };
+$('undo').onclick = doUndo; $('fit').onclick = fit;
+const maskEmpty = (c) => { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; for (let i = 3; i < d.length; i += 4) if (d[i] > 0) return false; return true; };
+async function save() {
+  const masks = {};
+  for (const key of dirty) { const add = key.endsWith('_add'), k = key.replace(/_(add|erase)$/, ''), c = add ? Lr[k].add : Lr[k].mask; masks[key] = maskEmpty(c) ? null : c.toDataURL('image/png'); }
+  const j = await (await fetch(SRV + '/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ layout: LAY, overrides: OV, masks }) })).json();
+  if (!j.ok) throw new Error(j.log); dirty.clear();
+}
+$('build').onclick = async () => {
+  try {
+    log('Сохраняю…'); await save(); log('Собираю (риг, станции, сжатие картинок) — около минуты…');
+    const j = await (await fetch(SRV + '/build', { method: 'POST' })).json();
+    if (!j.ok) { log('Сборка упала:\n' + j.log); return; }
+    log('Версия ' + j.ver + '. Перезапускаю игру…'); PB = null; await loadState(true); await loadGame(); draw(); log('Готово! Всё сохранено, игра слева/справа уже новая. В обычной игре нажми F5.');
+  } catch (e) { log('Ошибка: ' + e.message + '\nЗакрой окно и запусти «Конструктор моря.bat» ещё раз.'); }
+};
+addEventListener('resize', resize);
+(async () => {
+  $('help').innerHTML = HELP.art;
+  await loadState(false); resize(); fit(); log('Загружаю игру…');
+  await loadGame(); log('Готово к работе.'); requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

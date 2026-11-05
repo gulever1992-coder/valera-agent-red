@@ -116,7 +116,7 @@ def cut(name, bg, rows, cols, mode='gap', fx=False, clean=False):
                 edge = set(lab[0]) | set(lab[-1]) | set(lab[:, 0]) | set(lab[:, -1]); sz = ndimage.sum(s, lab, range(1, n + 1)); keep = [i for i in range(1, n + 1) if (i not in edge and sz[i - 1] > sz.max() * 0.004) or sz[i - 1] >= sz.max()]
                 s = np.isin(lab, keep); sub = sub.copy(); sub[~s, 3] = 0
             elif n > 1:
-                sz = ndimage.sum(s, lab, range(1, n + 1)); keep = [i + 1 for i, v in enumerate(sz) if v >= sz.max() * 0.04]
+                sz = ndimage.sum(s, lab, range(1, n + 1)); keep = [i + 1 for i, v in enumerate(sz) if v >= sz.max() * (0.999 if clean == 'one' else 0.04)]
                 s = np.isin(lab, keep); sub = sub.copy(); sub[~s, 3] = 0
         ys, xs = np.where(s)
         res.append(Image.fromarray(sub[ys.min():ys.max() + 1, xs.min():xs.max() + 1]))
@@ -133,15 +133,55 @@ def anchor_x(im):
 DATA = {}
 
 
+def heal(im, wmax=3, share=0.3):
+    """Зашить тонкие прозрачные швы (до wmax px) поперёк фигуры: их оставляет чистка линий сетки в key()."""
+    a = np.asarray(im).copy(); H, W = a.shape[:2]
+    for axis in (0, 1):                          # 0 — вертикальные швы (столбцы), 1 — горизонтальные (ряды)
+        b = a if axis == 0 else a.transpose(1, 0, 2).copy()
+        op = b[..., 3] > 100; n = b.shape[1]; rows = op.any(1).sum()
+        if rows < 20: continue
+        for x in range(1, n - 1):
+            gap = ~op[:, x] & op[:, x - 1]
+            if gap.sum() < share * rows: continue
+            for w in range(1, wmax + 1):         # ширина шва: справа через w пикселей снова непрозрачно
+                if x + w >= n: break
+                m = gap & op[:, x + w] & ~op[:, x:x + w].any(1)
+                if m.sum() >= share * rows:
+                    for k in range(w): b[m, x + k] = b[m, x - 1]
+                    op = b[..., 3] > 100; break
+        a = b if axis == 0 else b.transpose(1, 0, 2).copy()
+    return Image.fromarray(a)
+
+def find_eyes(fr):
+    """Глаза зомби в кадре: пара самых ярких пятен (зелёное свечение, иначе жёлтые) в верхней трети, на одной высоте."""
+    a=np.asarray(fr).astype(int); h,w=a.shape[:2]; r,g,b,al=a[...,0],a[...,1],a[...,2],a[...,3]
+    for m in ((al>100)&(g>175)&(g-r>=14)&(g>=b), (al>100)&(r>165)&(g>165)&(b<g-35)):
+        m=m.copy(); m[int(h*0.33):]=False
+        from scipy import ndimage
+        lab,n=ndimage.label(m); cs=[]
+        for i in range(1,n+1):
+            k=lab==i; sz=k.sum()
+            if sz<2: continue
+            cs.append((g[k].mean()+(r[k].mean()+b[k].mean())*0.3+6*np.log(sz), sz, ndimage.center_of_mass(k)))
+        best=None
+        for x in range(len(cs)):
+            for y in range(x+1,len(cs)):
+                (q1,s1,c1),(q2,s2,c2)=cs[x],cs[y]
+                if abs(c1[0]-c2[0])<0.05*h and 0.035*h<abs(c1[1]-c2[1])<0.16*h and max(s1,s2)<5*min(s1,s2):
+                    if not best or q1+q2>best[0]: best=(q1+q2,[c1,c2])
+        if best: return [[round(c[1],1),round(c[0],1)] for c in best[1]]
+    return None
+
 def pack(sheet, frames, scale, anchor='feet', names=None):
     """Собрать кадры в один ряд; scale — множитель к исходнику; anchor: feet | mid."""
     fr = []
     for im in frames:
         if im is None: fr.append(None); continue
+        im = heal(im.convert('RGBA'))
         w, h = max(1, round(im.width * scale)), max(1, round(im.height * scale))
         fr.append(im.resize((w, h), Image.LANCZOS))
     Wd = sum(f.width + 2 for f in fr if f) + 2; Hd = max(f.height for f in fr if f) + 2
-    sh = Image.new('RGBA', (Wd, Hd), (0, 0, 0, 0)); x = 1; meta = []
+    sh = Image.new('RGBA', (Wd, Hd), (0, 0, 0, 0)); x = 1; meta = []; eyes_ = []
     for f in fr:
         if f is None: meta.append(None); continue
         arr = np.asarray(f).copy(); arr[arr[..., 3] < 110, 3] = 0; arr[arr[..., 3] >= 110, 3] = 255
@@ -149,8 +189,10 @@ def pack(sheet, frames, scale, anchor='feet', names=None):
         ax = anchor_x(f) if anchor == 'feet' else f.width // 2
         ay = f.height if anchor == 'feet' else f.height // 2
         meta.append([x, 1, f.width, f.height, ax, ay]); x += f.width + 2
+        if sheet.startswith('zomb') and sheet != 'zombE1': eyes_.append(find_eyes(f))   # у рабочего глаза тёмные — без свечения
     sh.save(os.path.join(OUT, sheet + '.png'))
     DATA[sheet] = {'f': meta}
+    if eyes_: DATA[sheet]['e'] = eyes_
     if names: DATA[sheet]['n'] = names
     print('%-8s %4dx%-4d кадров %d, высоты %s' % (sheet, Wd, Hd, len(fr), [f.height if f else 0 for f in fr]))
 
@@ -190,6 +232,8 @@ vc = cut('l8valC_1.jpg', 'g', 2, 4, clean=True)
 pack('valS8', vc[:4], VAL_H / hgt(vc, 3) * 0.99)
 # передний план зала (параллакс)
 fg = cut('l8fgHall_1.jpg', 'm', 2, 4, mode='grid', clean='edge', fx=True)
+Image.open(os.path.join(SRC, 'l8fgHall_1.jpg')).crop((0, 40, 688, 384)).save(os.path.join(SRC, '_fgseats.jpg'), quality=95)
+fg[0] = cut('_fgseats.jpg', 'm', 1, 1, clean='edge')[0]; fg[0] = fg[0].crop((0, 0, fg[0].width - 22, fg[0].height))      # ряд кресел целиком (сетка резала третье кресло пополам)
 pack('fgHall8', fg, 1.0, names=['seats', 'rope', 'chair', 'candle', 'column', 'ctable', 'palm', 'tvcam'])
 
 # ---------- эффекты ----------
@@ -277,7 +321,7 @@ pack('shield8', shd, CH * 1.12 / hgt(shd, 0))          # 0-3 идёт за щи�
 z5 = cut('l8zomb5_1.jpg', 'm', 3, 7, clean=True); pack('zombE0', z5[:7], ZH / hgt(z5, 0))
 z6 = cut('l8zomb6_1.jpg', 'm', 3, 7, clean=True); pack('zombE1', z6[:7], ZH / hgt(z6, 0))
 one('l8craneA_0.jpg', 'm', 0.92, 'craneA8'); one('l8craneA2_0.jpg', 'm', 0.92, 'craneN8')
-one('l8craneB_1.jpg', 'm', 0.72, 'craneB8')
+one('l8cradle_0.jpg', 'm', 0.95, 'craneB8')    # люлька целиком, с низом и стрелой
 glow('l8fxC_1.jpg', 2, 4, 'fxC8', 0.75, ['pool', 'cone', 'redlamp', 'flare', 'eyes', 'laser', 'spark', 'dot'])
 fd = cut('l8fxD_0.jpg', 'm', 2, 4, mode='grid', fx=True)
 pack('fxD8', fd, 0.8, anchor='mid', names=['fire0', 'fire1', 'fire2', 'puddle', 'foam', 'foam2', 'glass', 'steam'])
@@ -315,20 +359,29 @@ pack('spi8', sp, RK, anchor='mid', names=['wallA', 'wallB', 'laser', 'jump', 'fl
 vn = cut('l8van_0.jpg', 'm', 2, 3, mode='grid', clean='edge', fx=True)
 pack('van8', vn[:3], 1.5, names=['vanA', 'vanB', 'wreck'])
 def nobeam(im):
-    """Убрать стальную балку из-под Максима. Чистка линий сетки съела пустые ряды над и под балкой (они режут ноги) —
-    балку стираем, щель над ней заполняем рядом сверху, всё ниже — рядом голеней под балкой."""
-    a = np.asarray(im).copy(); op = a[..., 3] > 100; H, W = op.shape
+    """Убрать стальную балку из-под Максима. Ноги нарисованы перед балкой: в её полосе оставляем родные джинсы
+    (столбцы голеней), сталь по бокам стираем; пустые ряды над/под балкой (их съела чистка линий сетки) закрываем соседним рядом."""
+    a = np.asarray(im).copy(); op = a[..., 3] > 100; H = op.shape[0]
     rows = np.where(op.mean(1) > 0.8)[0]                 # балка — единственное, что идёт во всю ширину
     if not len(rows): return im
-    gs = rows.min()
+    r0, r1 = rows.min(), rows.max()
+    gs = r0
     while gs > 1 and not op[gs - 1].any(): gs -= 1     # пустые ряды над балкой
-    b = rows.max() + 1
+    b = r1 + 1
     while b < H - 1 and not op[b].any(): b += 1        # первый ряд голеней под балкой
-    up, dn = a[gs - 1].copy(), a[b].copy(); a[gs:b, :, 3] = 0
-    for y in range(gs, rows.min()): m = up[:, 3] > 100; a[y, m] = up[m]
-    for y in range(rows.min(), b): m = dn[:, 3] > 100; a[y, m] = dn[m]
+    legs = op[b:b + 4].all(0)
+    legs = np.convolve(legs.astype(int), np.ones(3, int), 'same') == 3   # без крайних пикселей — там кромка стали
+    a[r0:r1 + 1, ~legs, 3] = 0
+    up = a[gs - 1].copy()
+    for y in range(gs, r0): a[y] = up
+    for y in range(r1 + 1, b): a[y] = 0; a[y, legs] = a[b, legs]
     return Image.fromarray(a)
-pack('max8', [nobeam(f) for f in vn[3:]], 0.62, names=['sit', 'wind', 'throw'])
+mx = cut('l8max2_0.jpg', 'm', 2, 4, mode='grid', clean='one')   # только сам Максим, без мешка       # Максим в бронежилете, 8 кадров
+def sack_of(name):
+    """Мешок картошки рядом с Максимом: заходит за границу ячейки, поэтому вырезается отдельным кропом."""
+    Image.open(os.path.join(SRC, name)).crop((266, 192, 364, 282)).save(os.path.join(SRC, '_sack.jpg'), quality=95)
+    return cut('_sack.jpg', 'm', 1, 1, clean=True)[0]
+pack('max8', mx + [sack_of('l8max2_0.jpg')], 212 / hgt(mx, 0), names=['sit', 'sit2', 'reach', 'wind', 'throw', 'laugh', 'taunt', 'hit', 'sack'])
 fe = cut('l8fxE_1.jpg', 'm', 3, 6, mode='grid', fx=True)
 pack('fxE8', fe, 0.6, anchor='mid', names=['feather', 'feather2', 'egg', 'egg2', 'potatoF', 'potato', 'mini', 'mini2', 'leap', 'miniDead', 'eggBoom', 'scrap', 'beam', 'burst', 'gust', 'ring', 'shield', 'bolt'])
 bt = cut('l8batt_0.jpg', 'm', 2, 3, clean=True)
@@ -337,6 +390,58 @@ pack('batt8', bt, 0.62, anchor='mid', names=['on', 'dmg', 'dead', 'sideOn', 'sid
 mg = cut('l8megaA_0.jpg', 'm', 1, 2, clean=True) + cut('l8megaB_%d.jpg' % MEGA_B, 'm', 1, 2, clean=True) + cut('l8megaC_%d.jpg' % MEGA_C, 'm', 1, 2, clean=True)
 pack('mega8', mg, 1.0, names=['idle', 'roar', 'laser', 'punch', 'dmg', 'explode'])
 
+# ================= партия 4: обрушение арены, лаборатория, пролом стены, люлька =================
+for i, n in enumerate(['l8crk1_0.jpg', 'l8crk2_1.jpg', 'l8crk2_0.jpg', 'l8crk3_1.jpg', 'l8crk3_0.jpg']): single('crk%d' % i, n)
+def nologo(name, out, pts, r=11):
+    """Закрасить эмблему марки на решётке радиатора (без реальных брендов)."""
+    from PIL import ImageDraw
+    im = Image.open(os.path.join(SRC, name)).convert('RGB'); d = ImageDraw.Draw(im)
+    for (x, y) in pts:
+        d.ellipse((x - r, y - r, x + r, y + r), fill=(40, 42, 48))
+        for yy in range(y - r + 3, y + r - 1, 5): d.line((x - r + 1, yy, x + r - 1, yy), fill=(78, 80, 88))
+    im.save(os.path.join(SRC, out), quality=95)
+nologo('l8wreck_0.jpg', '_wreck_nl.jpg', [(770, 645), (1061, 216), (80, 646)])
+wr = cut('_wreck_nl.jpg', 'm', 2, 3, clean=True)
+Image.open(os.path.join(SRC, '_wreck_nl.jpg')).crop((694, 388, 1376, 768)).save(os.path.join(SRC, '_wreck_van.jpg'), quality=95)
+wv = cut('_wreck_van.jpg', 'm', 1, 1, clean=True)
+pack('wreck8', [wr[0], wr[1], wv[0]], 1.0, names=['roo', 'spi', 'van'])
+dz = cut('l8dazed_0.jpg', 'm', 2, 2, clean=True)
+pack('dazed8', dz, 0.42, names=['stasLie', 'stasUp', 'maxLie', 'maxUp'])
+def soft(im, k=0.2):
+    """Края заплатки стены плавно гаснут: ложится на кирпич фона без квадрата."""
+    a = np.asarray(im).copy(); h, w = a.shape[:2]; yy, xx = np.mgrid[0:h, 0:w]
+    e = np.minimum(np.minimum(xx, w - 1 - xx) / (w * k), np.minimum(yy, h - 1 - yy) / (h * k))
+    hole = (a[..., :3].max(2) < 40)                       # чёрная дыра и вылетающие кирпичи — не гасим
+    a[..., 3] = (a[..., 3] * np.where(hole, 1, np.clip(e, 0, 1) ** 1.5)).astype(np.uint8); return Image.fromarray(a)
+wl = cut('l8wall_0.jpg', 'm', 2, 4, clean=True)
+fr = [soft(f) for f in wl[:4]]
+Wd = sum(f.width + 2 for f in fr) + 2; Hd = max(f.height for f in fr) + 2; sh = Image.new('RGBA', (Wd, Hd)); x = 1; meta = []
+for f in fr: f = f.resize((round(f.width * 0.9), round(f.height * 0.9)), Image.LANCZOS); sh.paste(f, (x, 1)); meta.append([x, 1, f.width, f.height, f.width // 2, f.height // 2]); x += f.width + 2
+sh.save(os.path.join(OUT, 'wall8.png')); DATA['wall8'] = {'f': meta, 'n': ['crack', 'bulge', 'burst', 'hole']}
+tr = cut('l8truck_0.jpg', 'm', 1, 4, mode='grid', clean='edge')
+pack('truck8', tr, 0.9, names=['a', 'b', 'c', 'd'])
+def brk(i):
+    """Стадия пролома стены: правая часть кадра из Flow поверх родного конца панорамы закулисья (шов плавный)."""
+    base = Image.open(os.path.join(OUT, 'back.jpg')).convert('RGB'); w = base.width; base = base.crop((w - 1280, 0, w, 720))
+    new = Image.open(os.path.join(SRC, 'l8brk%d.jpg' % i)).convert('RGB').resize((1280, 720), Image.LANCZOS)
+    m = np.clip((np.arange(1280) - 800) / 120.0, 0, 1)[None, :, None]
+    out = (np.asarray(base) * (1 - m) + np.asarray(new) * m).astype(np.uint8)
+    Image.fromarray(out).save(os.path.join(OUT, 'brk%d.jpg' % i), quality=90); DATA['_bg']['brk%d' % i] = {'w': 1280, 'h': 720}
+for i in range(5): brk(i)
+def brk_diff(i, src=None, base_name='brk4'):
+    """Кадр с краном в проломе: из Flow берём только изменённое (кран, люлька, кирпичи) — маска по разнице с кадром пролома."""
+    from scipy import ndimage
+    if base_name == 'back': b0 = Image.open(os.path.join(OUT, 'back.jpg')).convert('RGB'); base = np.asarray(b0.crop((b0.width - 1280, 0, b0.width, 720))).astype(float)
+    else: base = np.asarray(Image.open(os.path.join(OUT, base_name + '.jpg')).convert('RGB')).astype(float)
+    new = np.asarray(Image.open(os.path.join(SRC, src or 'l8brk%d.jpg' % i)).convert('RGB').resize((1280, 720), Image.LANCZOS)).astype(float)
+    d = ndimage.uniform_filter(np.abs(new - base).sum(2), 9) > 60
+    d = ndimage.binary_closing(d, iterations=6); d = ndimage.binary_fill_holes(d)
+    lab, n = ndimage.label(d); sz = ndimage.sum(d, lab, range(1, n + 1)); d = np.isin(lab, [k + 1 for k, v in enumerate(sz) if v > 1500])
+    d = ndimage.binary_dilation(d, iterations=4); m = ndimage.gaussian_filter(d.astype(float), 3)
+    m = np.maximum(m, np.clip((np.arange(1280) - 900) / 100.0, 0, 1)[None, :])[..., None]
+    Image.fromarray((base * (1 - m) + new * m).astype(np.uint8)).save(os.path.join(OUT, 'brk%d.jpg' % i), quality=90); DATA['_bg']['brk%d' % i] = {'w': 1280, 'h': 720}
+brk_diff(5)
+for i, n in enumerate(['l8nat1.jpg', 'l8nat2.jpg']): brk_diff(6 + i, n, 'back')   # кран Наташки пробивает стену: 3 кадра фона
 open(os.path.join(ROOT, 'js', 'l8_data.js'), 'w', encoding='utf-8').write('// собрано tools/build_l8.py — не править руками\nwindow.L8D = ' + json.dumps(DATA, separators=(',', ':')) + ';\n')
 
 if DBG:

@@ -18,3 +18,7 @@ cv.convert('RGB').resize((128, 128), Image.LANCZOS).save(os.path.join(SPR, 'p_va
 # Денис Ч. — новое лицо по фото (Flow, 2026-10-12): квадрат вокруг головы
 a = key_green(Image.open(os.path.join(ROOT, 'art_src/l7/v4_pdch_0.jpg')).crop((20, 0, 700, 680))); cv = Image.new('RGBA', (680, 680), BG); cv.alpha_composite(Image.fromarray(a, 'RGBA'))
 cv.convert('RGB').resize((128, 128), Image.LANCZOS).save(os.path.join(SPR, 'p_denisch.png'))
+
+# пустые полосы снизу у аватарок (Стас, Максим, Денис О., кожаный)
+import subprocess, sys
+subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'portraits_l8fix.py')])

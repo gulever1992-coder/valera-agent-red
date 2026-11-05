@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Риг Семёна</title>
+<style>
+  :root { --bg: #15191d; --panel: #1f252b; --line: #333c44; --text: #dfe6ec; --dim: #8b98a5; --acc: #ffcc33; --red: #ff4a4a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 13px/1.35 system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  header { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; padding: 8px 10px; background: var(--panel); border-bottom: 1px solid var(--line); }
+  header .grp { display: flex; gap: 4px; align-items: center; }
+  button, select { background: #2b333b; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 5px 9px; font: inherit; cursor: pointer; }
+  button:hover { border-color: #56636f; }
+  button.on { background: var(--acc); color: #111; border-color: var(--acc); font-weight: 600; }
+  button.go { background: #2f7d3a; border-color: #3d9b4a; font-weight: 600; }
+  label { color: var(--dim); }
+  main { flex: 1; display: flex; min-height: 0; }
+  #wrap { flex: 1; position: relative; min-width: 0; }
+  #cv { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; }
+  aside { width: 420px; max-width: 45vw; border-left: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; gap: 8px; padding: 10px; overflow: auto; }
+  #pv { width: 100%; aspect-ratio: 1 / 1; background: #26343c; border-radius: 6px; }
+  #layers div { display: flex; gap: 6px; align-items: center; padding: 2px 0; }
+  #status { color: var(--dim); white-space: pre-wrap; font: 12px/1.3 ui-monospace, monospace; max-height: 160px; overflow: auto; }
+  .hint { color: var(--dim); font-size: 12px; }
+  .hint b { color: var(--text); }
+  #ifr { position: absolute; left: -2000px; top: 0; width: 640px; height: 360px; border: 0; }
+</style>
+</head>
+<body>
+<header>
+  <div class="grp" id="modes">
+    <button data-m="erase" class="on">🧽 Стереть лишнее</button>
+    <button data-m="add">🖌️ Дорисовать</button>
+    <button data-m="joints">🦴 Суставы</button>
+    <button data-m="regions">✂️ Где делится тело</button>
+  </div>
+  <div class="grp" id="brushGrp"><label>Размер кисти</label><input id="brush" type="range" min="2" max="80" value="14"><span id="brushV">14</span></div>
+  <div class="grp" id="regGrp" hidden><label>Часть</label><select id="reg"></select></div>
+  <input type="checkbox" id="showSrc" checked hidden>
+  <div class="grp"><button id="undo">↶ Отменить</button><button id="fit">⤢ Весь Семён</button></div>
+  <div class="grp"><button id="build" class="go">✅ Сохранить и посмотреть</button></div>
+</header>
+<main>
+  <div id="wrap"><canvas id="cv"></canvas></div>
+  <aside>
+    <div class="grp" style="display:flex;gap:6px;align-items:center">
+      <label>Поза</label>
+      <select id="pose">
+        <option value="cycle">все по кругу</option><option value="walk">ходьба</option><option value="roar">крик</option><option value="raise">замах</option>
+        <option value="slam">удар</option><option value="gun">стрельба</option><option value="plasma">плазма</option><option value="eyes">лазер</option>
+        <option value="lunge">выпад</option><option value="grab">хват</option><option value="hurt">урон</option>
+      </select>
+      <label><input type="checkbox" id="big"> крупно</label>
+      <button id="pause">Пауза</button>
+    </div>
+    <canvas id="pv" width="640" height="640"></canvas>
+    <div id="layers"></div>
+    <div class="hint" id="help"></div>
+    <div id="status">Загрузка…</div>
+  </aside>
+</main>
+<iframe id="ifr"></iframe>
+<script>
+const EDIT = '/art_src/l10/rig2/edit/', SRV = 'http://localhost:18801';
+const HELP = {
+  erase: '<b>1.</b> Справа выбери часть Семёна.<br><b>2.</b> Левой кнопкой мыши закрась лишнее — оно станет красным и исчезнет.<br>Ошибся — <b>правой кнопкой</b> верни или нажми «Отменить».<br><b>3.</b> Нажми зелёную кнопку — через минуту увидишь Семёна справа.<br><span style="opacity:.7">Колесо мыши — приблизить. Пробел + мышь — сдвинуть картинку.</span>',
+  add: '<b>Дорисовать</b> — вернуть то, чего не хватает (палец, кусок руки).<br><b>1.</b> Справа выбери часть. Под ней бледно видна вся исходная картинка.<br><b>2.</b> Левой кнопкой закрась место, где кусок пропал — он появится (зелёная подсветка).<br>Лишнее — <b>правой кнопкой</b>.<br><b>3.</b> Зелёная кнопка «Сохранить и посмотреть».',
+  joints: '<b>Суставы</b> — жёлтые точки, вокруг которых гнутся руки и ноги.<br>Перетащи точку мышью туда, где должен быть сгиб. Красная — уже изменённая.<br>Потом зелёная кнопка.',
+  regions: '<b>Где делится тело</b>: цветные зоны — какой кусок картинки двигается вместе с какой частью.<br>Выбери часть вверху, тащи белые точки её границы.<br><b>Двойной клик</b> по краю — добавить точку, <b>правый клик</b> по точке — убрать.<br>Потом зелёная кнопка.'
+};
+const RNAME = { head: 'голова', spider: 'паучьи лапы', belly: 'брюхо', thighL: 'задняя нога: бедро', shinL: 'задняя нога: голень', footL: 'задняя нога: стопа', thighR: 'передняя нога: бедро', shinR: 'передняя нога: голень', footR: 'передняя нога: стопа' };
+const CHAINS = [['sh', 'el', 'wr', 'tip'], ['sh2', 'el2', 'wr2', 'tip2'], ['hipL', 'kneeL', 'hockL', 'footL', 'toeL'], ['hipR', 'kneeR', 'hockR', 'footR', 'toeR'], ['hip', 'neck', 'head'], ['neck', 'spider'], ['hip', 'belly']];
+const RCOL = { head: '#ff6b6b', spider: '#4d9dff', belly: '#ff6bd5', thighL: '#3fbf5f', shinL: '#8fd14f', footL: '#1f8f4f', thighR: '#ffa53f', shinR: '#d97a2b', footR: '#a65a1f' };
+const NAMES = { arm: 'Передняя рука', arm2: 'Дальняя рука', body: 'Тело и ноги', sticks: 'Паучья трость', hroot: 'Вздутие шланга', headO: 'Открытая пасть', epaul: 'Погон' };
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d'), st = document.getElementById('status');
+let S, OV = { J: {}, R: {} }, mode = 'erase', active = 'arm', view = { s: 0.5, x: 0, y: 0 }, L = {}, undo = [], dirty = new Set();
+const log = (t) => { st.textContent = t; };
+const loadImg = (u) => new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = u; });
+const newCanvas = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+
+async function loadState(keepMasks) {
+  const t = Date.now();
+  S = await (await fetch(EDIT + 'state.json?t=' + t)).json();
+  try { const o = await fetch(EDIT + 'overrides.json?t=' + t); if (o.ok) OV = await o.json(); } catch (e) {}
+  OV.J = OV.J || {}; OV.R = OV.R || {};
+  for (const k of S.order) {
+    if (!S.layers[k]) continue;
+    const old = L[k] || {};
+    const img = await loadImg(EDIT + 'layers/' + k + '.png?t=' + t), src = await loadImg(EDIT + 'layers/' + k + '_src.jpg?t=' + t);
+    let mask = old.mask, add = old.add;
+    if (!keepMasks || !mask) { mask = newCanvas(S.size[0], S.size[1]); const m = await loadImg(EDIT + k + '_erase.png?t=' + t); if (m) mask.getContext('2d').drawImage(m, 0, 0); }
+    if (!keepMasks || !add) { add = newCanvas(S.size[0], S.size[1]); const m = await loadImg(EDIT + k + '_add.png?t=' + t); if (m) add.getContext('2d').drawImage(m, 0, 0); }
+    L[k] = { img, src, mask, add, o: S.layers[k], vis: old.vis !== undefined ? old.vis : k !== 'headO', comp: null };
+    compose(k);
+  }
+  buildLayerList(); buildRegSel(); draw();
+}
+function compose(k) {
+  const l = L[k]; if (!l.img) return;
+  const c = l.comp || newCanvas(l.img.width, l.img.height), g = c.getContext('2d');
+  g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, c.width, c.height); g.drawImage(l.img, 0, 0);
+  if (l.src) {     // дорисованное: кусок исходника под зелёной маской
+    const a = newCanvas(c.width, c.height), ag = a.getContext('2d');
+    ag.drawImage(l.add, -l.o[0], -l.o[1]); ag.globalCompositeOperation = 'source-in'; ag.drawImage(l.src, -l.o[0], -l.o[1], S.size[0], S.size[1]);
+    g.drawImage(a, 0, 0);
+  }
+  g.globalCompositeOperation = 'destination-out'; g.drawImage(l.mask, -l.o[0], -l.o[1]); g.globalCompositeOperation = 'source-over';
+  l.comp = c;
+}
+function buildLayerList() {
+  const box = document.getElementById('layers'); box.innerHTML = '<b>Какую часть чистим:</b>';
+  for (const k of S.order) if (L[k]) {
+    const d = document.createElement('div');
+    d.innerHTML = `<label style="color:var(--text);cursor:pointer;display:flex;gap:6px;align-items:center"><input type="radio" name="act" ${k === active ? 'checked' : ''}>${NAMES[k] || k}</label>`;
+    d.querySelector('input').onchange = () => { active = k; L[k].vis = true; draw(); };
+    box.appendChild(d);
+  }
+}
+function buildRegSel() {
+  const sel = document.getElementById('reg'), cur = sel.value; sel.innerHTML = '';
+  for (const k of Object.keys(S.R)) sel.add(new Option(RNAME[k] || k, k));
+  if (cur) sel.value = cur; sel.onchange = draw;
+}
+const J = (k) => OV.J[k] || S.J[k], R = (k) => OV.R[k] || S.R[k];
+function resize() { const r = cv.getBoundingClientRect(); cv.width = r.width * devicePixelRatio; cv.height = r.height * devicePixelRatio; draw(); }
+function fit() { const r = cv.getBoundingClientRect(); view.s = Math.min(r.width / S.size[0], r.height / 1300) * 0.98; view.x = (r.width - S.size[0] * view.s) / 2; view.y = -40 * view.s; draw(); }
+const toC = (e) => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left - view.x) / view.s, (e.clientY - r.top - view.y) / view.s]; };
+function draw() {
+  if (!S) return;
+  const d = devicePixelRatio; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#20282e'; ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.setTransform(view.s * d, 0, 0, view.s * d, view.x * d, view.y * d);
+  ctx.fillStyle = '#2b353d'; ctx.fillRect(0, 0, S.size[0], S.size[1]);
+  for (const k of S.order) {
+    const l = L[k]; if (!l || !l.vis || !l.comp) continue;
+    if (k === active && (mode === 'erase' || mode === 'add') && document.getElementById('showSrc').checked && l.src) {
+      ctx.globalAlpha = 0.28; ctx.drawImage(l.src, 0, 0, S.size[0], S.size[1]); ctx.globalAlpha = 1;
+    }
+    ctx.globalAlpha = (mode === 'erase' || mode === 'add') && k !== active ? 0.45 : 1; ctx.drawImage(l.comp, l.o[0], l.o[1]); ctx.globalAlpha = 1;
+  }
+  if ((mode === 'erase' || mode === 'add') && L[active]) {
+    const m = mode === 'add' ? L[active].add : L[active].mask, t = newCanvas(m.width, m.height), g = t.getContext('2d');
+    g.drawImage(m, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = mode === 'add' ? 'rgba(60,255,90,0.35)' : 'rgba(255,60,60,0.55)'; g.fillRect(0, 0, t.width, t.height);
+    ctx.drawImage(t, 0, 0);
+  }
+  if (mode === 'regions') {
+    const sel = document.getElementById('reg').value;
+    for (const k of Object.keys(S.R)) {
+      const p = R(k); ctx.beginPath(); p.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath();
+      ctx.fillStyle = (RCOL[k] || '#fff') + (k === sel ? '55' : '22'); ctx.fill();
+      ctx.lineWidth = (k === sel ? 3 : 1.5) / view.s; ctx.strokeStyle = RCOL[k] || '#fff'; ctx.stroke();
+      if (k === sel) for (const q of p) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(q[0], q[1], 6 / view.s, 0, 7); ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5 / view.s; ctx.stroke(); }
+    }
+  }
+  if (mode === 'joints') {
+    ctx.lineWidth = 3 / view.s; ctx.strokeStyle = 'rgba(255,204,51,0.85)';
+    for (const ch of CHAINS) { ctx.beginPath(); ch.forEach((k, i) => { const q = J(k); if (q) i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }); ctx.stroke(); }
+    ctx.font = `${12 / view.s}px system-ui`;
+    for (const k of Object.keys(S.J)) {
+      const q = J(k); if (!Array.isArray(q)) continue;
+      ctx.fillStyle = OV.J[k] ? '#ff4a4a' : '#ffcc33'; ctx.beginPath(); ctx.arc(q[0], q[1], 7 / view.s, 0, 7); ctx.fill();
+      ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5 / view.s; ctx.stroke(); ctx.fillStyle = '#fff'; ctx.fillText(k, q[0] + 9 / view.s, q[1] - 6 / view.s);
+    }
+  }
+  if ((mode === 'erase' || mode === 'add') && hover) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5 / view.s; ctx.beginPath(); ctx.arc(hover[0], hover[1], +document.getElementById('brush').value, 0, 7); ctx.stroke(); }
+}
+// ---- мышь
+let drag = null, hover = null, space = false;
+addEventListener('keydown', (e) => { if (e.code === 'Space') { space = true; e.preventDefault(); } if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') { doUndo(); e.preventDefault(); } });
+addEventListener('keyup', (e) => { if (e.code === 'Space') space = false; });
+cv.addEventListener('contextmenu', (e) => e.preventDefault());
+cv.addEventListener('wheel', (e) => { e.preventDefault(); const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, k = Math.exp(-e.deltaY * 0.0015); view.x = mx - (mx - view.x) * k; view.y = my - (my - view.y) * k; view.s *= k; draw(); }, { passive: false });
+function nearest(list, p, rad) { let best = null, bd = rad; for (const [k, q] of list) { const d = Math.hypot(q[0] - p[0], q[1] - p[1]); if (d < bd) { bd = d; best = k; } } return best; }
+function stroke(p0, p1, erase) {
+  const g = (mode === 'add' ? L[active].add : L[active].mask).getContext('2d'), r = +document.getElementById('brush').value;
+  g.globalCompositeOperation = erase ? 'source-over' : 'destination-out'; g.strokeStyle = g.fillStyle = '#fff'; g.lineCap = 'round'; g.lineWidth = r * 2;
+  g.beginPath(); g.moveTo(p0[0], p0[1]); g.lineTo(p1[0], p1[1]); g.stroke(); g.globalCompositeOperation = 'source-over';
+  if (mode === 'add' && erase) {     // дорисовка снимает старое стирание в этом месте (ластик сильнее кисти)
+    const e = L[active].mask.getContext('2d'); e.globalCompositeOperation = 'destination-out'; e.strokeStyle = '#fff'; e.lineCap = 'round'; e.lineWidth = r * 2;
+    e.beginPath(); e.moveTo(p0[0], p0[1]); e.lineTo(p1[0], p1[1]); e.stroke(); e.globalCompositeOperation = 'source-over'; dirty.add(active + '_erase');
+  }
+  dirty.add(active + (mode === 'add' ? '_add' : '_erase')); compose(active);
+}
+function pushUndo() {
+  if (mode === 'erase' || mode === 'add') { const w = mode === 'add' ? 'add' : 'mask', m = L[active][w]; const e = L[active].mask; undo.push({ t: 'mask', k: active, w, data: m.getContext('2d').getImageData(0, 0, m.width, m.height), er: mode === 'add' ? e.getContext('2d').getImageData(0, 0, e.width, e.height) : null }); }
+  else undo.push({ t: 'ov', data: JSON.stringify(OV) });
+  if (undo.length > 25) undo.shift();
+}
+function doUndo() {
+  const u = undo.pop(); if (!u) return;
+  if (u.t === 'mask') { L[u.k][u.w].getContext('2d').putImageData(u.data, 0, 0); dirty.add(u.k + (u.w === 'add' ? '_add' : '_erase')); if (u.er) { L[u.k].mask.getContext('2d').putImageData(u.er, 0, 0); dirty.add(u.k + '_erase'); } compose(u.k); } else OV = JSON.parse(u.data);
+  draw();
+}
+cv.addEventListener('mousedown', (e) => {
+  const p = toC(e);
+  if (e.button === 1 || space) { drag = { pan: true, x: e.clientX, y: e.clientY }; return; }
+  if (mode === 'erase' || mode === 'add') { if (!L[active]) return; pushUndo(); drag = { erase: e.button === 0, last: p }; stroke(p, p, drag.erase); draw(); return; }
+  if (mode === 'joints') {
+    const k = nearest(Object.keys(S.J).filter((k) => Array.isArray(J(k))).map((k) => [k, J(k)]), p, 14 / view.s);
+    if (k && e.button === 0) { pushUndo(); drag = { joint: k }; }
+    return;
+  }
+  if (mode === 'regions') {
+    const sel = document.getElementById('reg').value, pts = R(sel).map((q) => q.slice());
+    const i = nearest(pts.map((q, i) => [i, q]), p, 12 / view.s);
+    if (i !== null && e.button === 2) { if (pts.length > 3) { pushUndo(); pts.splice(i, 1); OV.R[sel] = pts; draw(); } return; }
+    if (i !== null && e.button === 0) { pushUndo(); OV.R[sel] = pts; drag = { reg: sel, i }; }
+  }
+});
+cv.addEventListener('dblclick', (e) => {
+  if (mode !== 'regions') return;
+  const p = toC(e), sel = document.getElementById('reg').value, pts = R(sel).map((q) => q.slice());
+  let bi = 0, bd = 1e9;
+  for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length], vx = b[0] - a[0], vy = b[1] - a[1], t = Math.max(0, Math.min(1, ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / (vx * vx + vy * vy || 1))), d = Math.hypot(a[0] + vx * t - p[0], a[1] + vy * t - p[1]); if (d < bd) { bd = d; bi = i; } }
+  pushUndo(); pts.splice(bi + 1, 0, [Math.round(p[0]), Math.round(p[1])]); OV.R[sel] = pts; draw();
+});
+addEventListener('mousemove', (e) => {
+  const p = toC(e); hover = p;
+  if (drag && drag.pan) { view.x += e.clientX - drag.x; view.y += e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY; }
+  else if (drag && drag.last) { stroke(drag.last, p, drag.erase); drag.last = p; }
+  else if (drag && drag.joint) OV.J[drag.joint] = [Math.round(p[0]), Math.round(p[1])];
+  else if (drag && drag.reg) OV.R[drag.reg][drag.i] = [Math.round(p[0]), Math.round(p[1])];
+  draw();
+});
+addEventListener('mouseup', () => { drag = null; });
+// ---- кнопки
+document.querySelectorAll('#modes button').forEach((b) => b.onclick = () => {
+  mode = b.dataset.m; document.querySelectorAll('#modes button').forEach((x) => x.classList.toggle('on', x === b));
+  document.getElementById('brushGrp').hidden = mode !== 'erase' && mode !== 'add'; document.getElementById('regGrp').hidden = mode !== 'regions';
+  document.getElementById('help').innerHTML = HELP[mode]; draw();
+});
+document.getElementById('brush').oninput = (e) => { document.getElementById('brushV').textContent = e.target.value; draw(); };
+document.getElementById('showSrc').onchange = draw;
+document.getElementById('undo').onclick = doUndo;
+document.getElementById('fit').onclick = fit;
+function maskEmpty(c) { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; for (let i = 3; i < d.length; i += 4) if (d[i] > 0) return false; return true; }
+async function save() {
+  const masks = {};
+  for (const key of dirty) { const add = key.endsWith('_add'), k = key.replace(/_(add|erase)$/, ''), c = add ? L[k].add : L[k].mask; masks[key] = maskEmpty(c) ? null : c.toDataURL('image/png'); }
+  const r = await fetch(SRV + '/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ overrides: OV, masks }) });
+  const j = await r.json(); if (!j.ok) throw new Error(j.log); dirty.clear();
+}
+document.getElementById('build').onclick = async () => {
+  try {
+    log('Сохраняю…'); await save(); log('Собираю Семёна, подожди около минуты…');
+    const j = await (await fetch(SRV + '/build', { method: 'POST' })).json();
+    if (!j.ok) { log('Сборка упала:\n' + j.log); return; }
+    log('Готово, версия ' + j.ver + '. Обновляю…'); await loadState(true); await loadGame(); log('Готово! Семён справа уже новый. В игре нажми F5.');
+  } catch (e) { log('Ошибка: ' + e.message + '\nЗакрой окно и запусти «Редактор рига.bat» ещё раз.'); }
+};
+// ---- живое превью из игры (скрытый iframe того же сайта)
+const ifr = document.getElementById('ifr'), pv = document.getElementById('pv'), pg = pv.getContext('2d');
+let W = null, B = null, paused = false, pt = 0, poseI = 0;
+const CYCLE = ['walk', 'roar', 'walk', 'slam', 'walk', 'gun', 'plasma', 'walk', 'raise', 'lunge', 'hurt', 'grab', 'eyes'];
+function loadGame() {
+  return new Promise((ok) => {
+    W = null; B = null; ifr.onload = async () => {
+      const w = ifr.contentWindow;
+      const ready = () => { try { return w.eval("typeof L10 !== 'undefined' && !!L10.img && !!L10.img.rig20 && L10.img.rig20.complete && !!L10.RigBoss"); } catch (e) { return false; } };
+      for (let i = 0; i < 160 && !ready(); i++) await new Promise((r) => setTimeout(r, 250));
+      try { w.eval('App.paused = true'); } catch (e) {}
+      W = { L10: w.eval('L10') }; W.L10._skin = undefined; ok();
+    };
+    ifr.src = '/?l10=run&rigedit=' + Date.now();
+  });
+}
+function newBoss() { B = new W.L10.RigBoss(1, { H: 330, x: 330, y: 345, flip: true }); B.watch = [120, 260]; pt = 0; }
+function tick(now) {
+  requestAnimationFrame(tick);
+  if (!W) return; if (!B) newBoss();
+  const dt = paused ? 0 : 1 / 60, sel = document.getElementById('pose').value;
+  if (!paused) {
+    pt += dt; const want = sel === 'cycle' ? CYCLE[poseI % CYCLE.length] : sel;
+    const hold = want === 'walk' ? 2.4 : 1.6;
+    if (pt > hold) { pt = 0; if (sel === 'cycle') poseI++; }
+    const p = sel === 'cycle' ? CYCLE[poseI % CYCLE.length] : sel, act = p === 'walk' || (sel !== 'cycle' && pt > hold * 0.75);
+    B.aim = [70, 230]; B.hoseT = p === 'lunge' || p === 'grab' ? { x: 60, y: 250 } : null;
+    if (act) { if (B.pose !== 'idle') B.setPose('idle'); B.walk = 1.8; } else { if (B.pose !== p) B.setPose(p); B.walk = 0; }
+    B.update(dt);
+  }
+  pg.setTransform(1, 0, 0, 1, 0, 0); pg.fillStyle = '#26343c'; pg.fillRect(0, 0, 640, 640);
+  const t = newCanvas(640, 360), tg = t.getContext('2d'); B.draw(tg);
+  if (document.getElementById('big').checked) pg.drawImage(t, 130, 60, 260, 260, 0, 0, 640, 640); else pg.drawImage(t, 40, 0, 360, 360, 0, 0, 640, 640);
+}
+document.getElementById('pause').onclick = (e) => { paused = !paused; e.target.textContent = paused ? 'Дальше' : 'Пауза'; };
+document.getElementById('pose').onchange = () => { pt = 0; poseI = 0; };
+addEventListener('resize', resize);
+(async () => {
+  document.getElementById('help').innerHTML = HELP.erase;
+  await loadState(false); resize(); fit(); log('Готово к работе.');
+  await loadGame(); requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

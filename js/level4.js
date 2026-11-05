@@ -736,7 +736,7 @@ L4.BUILD = {
     const P = (type, x, o2 = {}) => this.props.push(Object.assign({ type, x }, o2));
     const esc = !!o.escort;
     // ресепшен: диван с гостем и хостес (задний план); колонки; канат
-    P('rope', 330, { layer: 'bg' }); if (!esc) P('sofaA', 560, { layer: 'bg', y: L4.GROUND - 16 }); P('speakers', 800);
+    if (!esc) P('sofaA', 560, { layer: 'bg', y: L4.GROUND - 16 }); P('speakers', 800);
     // танцпол: столики с гостями — задний план; перепрыгнуть колонки; проползти под сценой шеста и стойкой
     if (!esc) { P('tableA', 1060, { layer: 'bg', y: L4.GROUND - 18 }); P('djA', 1620, { layer: 'bg', y: L4.GROUND - 22 }); P('table2A', 2150, { layer: 'bg', y: L4.GROUND - 18 }); P('tableA', 2290, { layer: 'bg', y: L4.GROUND - 18, flip: true }); }
     P('pole', 1320, { layer: 'front' }); P('speakers', 1500); P('bar', 1880, { layer: 'front', y: L4.GROUND + 16 }); P('speakers', 2260);
@@ -805,7 +805,6 @@ L4.BUILD = {
     for (let x = 200; x < L4.DARK_X0; x += 200) this.lights.push({ x, sp: 0.5 + Math.random(), ph: Math.random() * 6, col: Math.random() < 0.5 });
     this.fgItems = [{ sheet: 'fg2', fr: 2, x: 500, y: H + 30, par: 1.3 }, { sheet: 'fg2', fr: 0, x: 900, y: H + 34, par: 1.3 }, { sheet: 'fg2', fr: 4, x: 1200, y: H + 30, par: 1.3 }];
     for (const x of [560, 1180]) this.props.push({ type: 'speakers', x, free: true, layer: 'bg' }); // колонки в закрытом зале — декор, не преграда
-    this.props.push({ type: 'rope', x: 330, layer: 'bg' }, { type: 'rope', x: 1390, layer: 'bg' });
     // закрытый зал: мебель кожа/хром — задний, средний и передний планы
     if (!o.escort) this.props.push({ type: 'lsofa', x: 250, layer: 'bg', y: L4.GROUND - 14, scale: 1.3 }, { type: 'lchair', x: 690, layer: 'bg', y: L4.GROUND - 14, scale: 1.3 }, { type: 'lsmall', x: 1060, layer: 'bg', y: L4.GROUND - 14, scale: 1.3 }, { type: 'lsofa', x: 1560, layer: 'bg', y: L4.GROUND - 14, scale: 1.3, flip: true });
     this.props.push({ type: 'lcage', x: 830, layer: 'bg', y: L4.GROUND - 10, scale: 1.2 }, { type: 'lrack', x: 140, layer: 'bg', y: L4.GROUND - 12, scale: 1.2 }, { type: 'lbag', x: 1320, layer: 'mid', scale: 1.3 }, { type: 'ltable', x: 1720, layer: 'mid', scale: 1.35 });

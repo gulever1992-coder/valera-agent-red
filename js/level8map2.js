@@ -24,22 +24,33 @@
     },
     // пролом стены: Наташка на кране
     next(lv) {
-      lv.cut = { t: 0, ph: 0 };
+      lv.cut = { t: 0, ph: 0, wall: -1, tr: 0 }; lv.props = lv.props.filter(o => o.x < lv.panW - 470);   // реквизит не висит перед проломом
       Scene.run(function* () {
-        Scene.dialogTop = false; const wx = lv.panW - 110;
-        G.shake(5, 0.5); Sound.play('crumble'); lv.puff(wx - 30, 150, 2, 1); yield 0.45; G.shake(7, 0.5); Sound.play('crumble'); lv.puff(wx + 20, 110, 2.4, 1); lv.puff(wx - 10, 200, 2, 1); yield 0.45;
-        lv.cut.ph = 1; lv.cut.t = 0; G.shake(10, 0.9); Sound.play('crash'); lv.boom(wx, 170, 1.5); lv.boom(wx - 40, 120, 1.1); yield 1.3;
-        lv.cut.ph = 2; Sound.play('honk');
+        const q = lv.cut, wx = lv.panW - 85; q.br = [];
+        const bricks = n => { for (let i = 0; i < n; i++) q.br.push({ t0: lv.cut.T || 0, x: rnd(-45, 45), y: 160 + rnd(-45, 45), vx: rnd(-260, 120), vy: rnd(-240, 20), r: rnd(0, 6), vr: rnd(-12, 12), s: rnd(0.7, 1.5) }); };
+        Scene.dialogTop = false;
+        Sound.play('crane'); G.shake(3, 0.8); yield 0.8;
+        q.wall = 0; G.shake(5, 0.6); Sound.play('crumble'); yield 0.75;
+        q.wall = 1; G.shake(8, 0.7); Sound.play('crumble'); bricks(4); yield 0.75;
+        q.wall = 2; G.shake(14, 0.6); Sound.play('crash'); bricks(14); yield 0.45;   // стена взрывается, фары в проломе
+        q.wall = 6; G.shake(16, 0.7); Sound.play('honk'); bricks(10); yield 0.75;    // кран Наташки вырывается с люлькой
+        q.wall = 7; q.ph = 1; q.t = 0; G.shake(6, 0.4); Sound.play('stomp'); yield 0.5; // встал, люлька на полу, Наташка машет
+        q.ph = 2;
         yield* Scene.say('natasha', 'ВАЛЕРА! ЗАБИРАЙСЯ НА КРАН, ЖИВО!');
         yield* Scene.say('valera', 'Наташка?! Ты же на смене была...');
         yield* Scene.say('natasha', 'Смена подождёт. Тут зомби прут, а у меня кран не глушится!');
-        lv.cut.ph = 3; lv.cut.t = 0; yield 0.9;
+        q.ph = 3; q.t = 0; Sound.play('crane'); yield 0.9;
       }, () => { lv.cut = null; lv.stage = 'dock'; lv.reset(); });
     },
+    drawBack(lv, c, cam) {            // стадии пролома — сам фон конца закулисья
+      const q = lv.cut; if (!q || q.wall < 0) return; const sh = q.wall < 2 ? Math.sin(lv.t * 40) : 0;
+      c.drawImage(L8.img['brk' + q.wall], 0, 0, 1280, 720, (lv.panW - 640 - cam) + sh, 0, 640, 360);
+    },
     drawMid(lv, c, cam) {
-      const q = lv.cut; if (!q || !q.ph) return;
-      const x = lv.panW - 120 - cam + (q.ph === 1 ? Math.max(0, 1 - q.t / 0.35) * 160 : 0);
-      L8.spr(c, q.ph === 1 ? 'craneA8' : 'craneN8', 0, x, 268, 0.78);
+      const q = lv.cut; if (!q || q.wall < 0) return;
+      const wx = lv.panW - 85 - cam;
+      for (const b of q.br || []) { const t = q.T - b.t0; if (t < 0) continue; const x = wx + b.x + b.vx * t, y = b.y + b.vy * t + 330 * t * t; if (y > 380) continue;
+        c.save(); c.translate(x, y); c.rotate(b.r + b.vr * t); c.scale(b.s, b.s); c.fillStyle = '#2a120c'; c.fillRect(-6, -3.5, 12, 7); c.fillStyle = '#8c3f28'; c.fillRect(-5, -2.5, 10, 5); c.fillStyle = '#b0583a'; c.fillRect(-5, -2.5, 10, 1.5); c.restore(); }
     },
     drawFront(lv, c) { const q = lv.cut; if (q && q.ph === 3) { c.fillStyle = `rgba(0,0,0,${clamp(q.t / 0.8, 0, 1)})`; c.fillRect(0, 0, 640, 360); } },
   };
@@ -47,7 +58,7 @@
   // ---------------------------------------------------------------- C. Кран задним ходом
   L8.STAGES.dock = {
     bg: 'dock', title: 'НА КРАНЕ', speed: 22, fgSheet: 'fgTech8',
-    fg: () => { const a = []; for (let x = 500; x < 3000; x += 330) a.push([x % 660 ? 'pipe' : 'lamp', x, 150]); return a; }, trickle: 1.5, zMax: 0.42, zSpeed: 2.3, bite: 5, xmin: 160, xmax: 480,
+    trickle: 1.5, zMax: 0.42, zSpeed: 2.3, bite: 5, xmin: 160, xmax: 480,
     build(lv) {
       const m = L8.mk(lv), N = s => () => lv.say('НАТАШКА: ' + s, 3.2);
       return [
@@ -58,7 +69,7 @@
         [39.0, m.troop(1, 420, { stopZ: 0.3 })], [41.0, m.zomb(-1, 0.05, 5)], [44.0, N('ВОРОТА! ПОЧТИ ПРИЕХАЛИ!')], [45.0, m.zomb(1, 0.1, 6)], [48.0, m.zomb(-1, 0.1, 4)],
       ];
     },
-    drawMid(lv, c) { L8.spr(c, 'craneB8', 0, 320, 366 + Math.sin(lv.t * 9) * 1.2, 0.8); },
+    drawMid(lv, c) { L8.spr(c, 'craneB8', 0, 320, 452 + Math.sin(lv.t * 9) * 1.2, 0.62); },
     next(lv) {
       Scene.run(function* () {
         Sound.play('crane'); G.shake(4, 0.4); yield 0.5;

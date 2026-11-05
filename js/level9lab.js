@@ -39,7 +39,7 @@
       const M = P.M = L9.MAPS[map || 'lab'](); P.lv = lv;
       const cp = M.cks[ck || 0] || M.cks[0];
       Object.assign(P, { hp: 100, inv: 1.2, x: cp[0], y: cp[1], vx: 0, vy: 0, dir: 1, st: 'stand', stT: 0, onG: true, aim: 'fwd', fireT: 0, fireA: 0, rollT: 0, rollCd: 0, buttT: 0,
-        climb: null, gren: 5, weap: 'rifle', ammo: {}, t: 0, ck: ck || 0, dropT: 0, cam: { x: cp[0] - 220, y: cp[1] - 250 }, bul: [], ebul: [], fx: [], foes: [], hint: null, hintT: 0, cover: false, web: 0, hide: 0 });
+        climb: null, gren: 5, weap: 'rifle', ammo: {}, t: 0, ck: ck || 0, dropT: 0, cam: { x: cp[0] - 220, y: M.camY ? M.camY(cp[1]) : cp[1] - 250 }, bul: [], ebul: [], fx: [], foes: [], hint: null, hintT: 0, cover: false, web: 0, hide: 0 });
       for (const k in WEAP) P.ammo[k] = 0;
       M.init && M.init(P, lv, ck || 0);
       try { Music.play('alarm'); } catch (e) {}
@@ -67,7 +67,7 @@
       else if (P.climb) {
         const l = P.climb; P.vx = 0; P.vy = 0; P.x = l[0];
         const dy = (Dn ? 1 : 0) - (U ? 1 : 0); P.y += dy * 95 * dt; P.climbT = (P.climbT || 0) + Math.abs(dy) * dt;
-        if (P.y < l[1]) { P.y = l[1]; P.climb = null; P.st = 'stand'; P.onG = true; }        // вылез наверх
+        if (P.y < l[1]) { P.y = l[1]; if (l[3] != null) P.x = l[3]; P.climb = null; P.st = 'stand'; P.onG = true; }        // вылез наверх (l[3] — куда шагнуть с лестницы)
         else if (P.y > l[2]) { P.y = l[2]; P.climb = null; P.st = 'stand'; }
         if (I.pressed('jump') && !U) { P.climb = null; P.st = 'jump'; P.vy = -220; P.vx = (R ? 1 : L ? -1 : 0) * RUN; }
       } else if (P.st === 'roll') { P.vx = P.dir * 300; if (P.stT > 0.38) P.st = 'stand'; }
@@ -79,7 +79,7 @@
         else if (lad && Dn && P.onG && Math.abs(P.y - lad[1]) < 4) { P.climb = lad; P.st = 'climb'; P.y += 4; }
         if (!P.climb) {
           const mv = (R ? 1 : 0) - (L ? 1 : 0);
-          if (mv) P.dir = mv;
+          if (mv && !(M.strafe && I.held('punch'))) P.dir = mv;     // M.strafe: при зажатом огне смотрит, куда стрелял
           const crouch = Dn && P.onG && !mv;
           P.vx = crouch ? 0 : mv * RUN * (M.pushAt ? 1 : 1);
           if (P.onG && M.beltAt) P.vx += M.beltAt(P.x, P.y);
@@ -132,9 +132,9 @@
     },
     camera(dt) {
       const M = P.M, c = P.cam, look = P.dir * 70;
-      const tx = clamp(P.x - 320 + look, M.x0, M.x1 - 640), gy = P.onG || P.climb ? (P.camGY = P.y) : Math.max(P.camGY ?? P.y, P.y), ty = clamp(M.camY ? M.camY(gy) : gy - (Math.abs(gy - 330) < 3 ? 272 : P.x > 16500 && gy > 1200 ? 292 : 230), M.y0, M.y1 - 360);     // по опоре, а не по прыжку; на основном полу ниже — меньше пустоты под ним
+      const Z = M.zoom || 1, VW = 640 / Z, VH = 360 / Z, tx = clamp(P.x - VW / 2 + look, M.x0, M.x1 - VW), gy = P.onG || P.climb ? (P.camGY = P.y) : Math.max(P.camGY ?? P.y, P.y), ty = clamp(M.camY ? M.camY(gy) : gy - (Math.abs(gy - 330) < 3 ? 272 : P.x > 16500 && gy > 1200 ? 292 : 230), M.y0, M.y1 - VH);     // по опоре, а не по прыжку; на основном полу ниже — меньше пустоты под ним
       c.x += (tx - c.x) * Math.min(1, dt * 4); c.y += (ty - c.y) * Math.min(1, dt * 4.5);
-      if (M.camLock) { const k = M.camLock(P); if (k) { c.x = clamp(c.x, k[0], k[1] - 640); } }
+      if (M.camLock) { const k = M.camLock(P); if (k) { c.x = clamp(c.x, k[0], k[1] - 640 / (M.zoom || 1)); } }
     },
     // ---- стрельба
     muzzle() { const a = AIM[P.aim]; return [P.x + P.dir * a.mx, P.y - a.my, a.a]; },
@@ -184,7 +184,7 @@
           }
         }
         if (!b.dead && M.shootProps) M.shootProps(b, P);
-        if (b.t > 1.6 || b.x < P.cam.x - 60 || b.x > P.cam.x + 700 || b.y < P.cam.y - 80 || b.y > P.cam.y + 440) b.dead = true;
+        if (b.t > 1.6 || b.x < P.cam.x - 60 || b.x > P.cam.x + 640 / (M.zoom || 1) + 60 || b.y < P.cam.y - 80 || b.y > P.cam.y + 360 / (M.zoom || 1) + 80) b.dead = true;
       }
       // семечки: прорастают в подсолнух-мину и взрываются (цепная реакция)
       for (const b of P.bul) if (b.w === 'seed' && b.stuck) { if (b.stuck !== 1) { b.x = b.stuck.x + b.ox; b.y = b.stuck.y + b.oy; } b.boomT -= dt; if (b.boomT <= 0) { b.dead = true; P.blast(b.x, b.y, 34, 4); } }
@@ -206,7 +206,7 @@
       const M = P.M, cx = Math.round(P.cam.x), cy = Math.round(P.cam.y);
       c.fillStyle = '#04070a'; c.fillRect(0, 0, 640, 360);
       M.drawBack(c, cx, cy, P);
-      c.save(); c.translate(-cx, -cy);
+      c.save(); if (M.zoom) c.scale(M.zoom, M.zoom); c.translate(-cx, -cy);
       P.drawFloor(c);
       P.drawWalks(c);     // мостки (опоры, лестницы) — позади предметов: капсулы, пульты, укрытия стоят перед опорами
       M.drawMid && M.drawMid(c, P);
@@ -225,7 +225,7 @@
       if (P.hintT > 0 && P.hint) G.text(Game.fmtHint(P.hint), 320, 46, { align: 'center', size: 8, color: '#9cf', outline: true });
     },
     drawFloor(c) {     // пол, опоры под ним, лента и цистерны — раньше всех предметов: всё стоит ПОВЕРХ пола
-      const M = P.M, x0 = P.cam.x - 100, x1 = P.cam.x + 740;
+      const M = P.M, x0 = P.cam.x - 100, x1 = P.cam.x + 640 / (M.zoom || 1) + 100;
       M.drawBackWorld && M.drawBackWorld(c, P);
       // пол — тонкая металлическая плита (бесшовная полоса labFloor), под ней виден дальний план; торцы плиты на опорных колоннах
       const fim = L9.img.labFloor, FH = 34;
@@ -244,7 +244,7 @@
       M.drawOnFloor && M.drawOnFloor(c, P);
     },
     drawWalks(c) {
-      const M = P.M, x0 = P.cam.x - 100, x1 = P.cam.x + 740;
+      const M = P.M, x0 = P.cam.x - 100, x1 = P.cam.x + 640 / (M.zoom || 1) + 100;
       // мостки v5 (cw9): опоры, лестница и настил — один рисунок; передние перила (F) — после Валеры в drawRails
       LAB.camY = P.cam.y; for (const w of M.walks) if (!w.gone && !w.own && w[0] < x1 && w[0] + w[2] > x0) LAB.cwLayer(c, M, w, 'B');
     },
@@ -253,7 +253,7 @@
       for (const l of M.lifts || []) M.drawCar ? M.drawCar(c, l) : S(c, 'plat9', 'lift', l.x + l.w / 2, l.y + 24, l.w / 53);
     },
     drawRails(c) {     // передние перила мостков — перед Валерой и врагами
-      const M = P.M, x0 = P.cam.x - 100, x1 = P.cam.x + 740;
+      const M = P.M, x0 = P.cam.x - 100, x1 = P.cam.x + 640 / (M.zoom || 1) + 100;
       for (const w of M.walks) if (!w.gone && !w.own && w[0] < x1 && w[0] + w[2] > x0) LAB.cwLayer(c, M, w, 'F');
     },
     drawValera(c) {

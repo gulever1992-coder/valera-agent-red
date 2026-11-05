@@ -4,7 +4,7 @@
 (() => {
   const K = window.__K || 0.968;   // координаты клика = пиксели страницы * K (ширина кадра скриншота / innerWidth)
   window.__sl = ms => new Promise(r => { const t0 = performance.now(), c = new MessageChannel(); c.port1.onmessage = () => performance.now() - t0 >= ms ? r() : c.port2.postMessage(0); c.port2.postMessage(0); });
-  const dlgInp = () => [...document.querySelectorAll('input')].find(i => /Поиск объектов|Search assets/.test(i.placeholder));
+  const dlgInp = () => [...document.querySelectorAll('input')].find(i => /^(Поиск|Поиск объектов|Search assets|Search)$/.test(i.placeholder));
   window.__ld = async () => {
     const sv = window.__saved;
     for (const f of ['flow5.js', 'flowA.js']) { let t = await (await fetch('http://127.0.0.1:8783/' + f + '?' + Date.now())).text(); t = t.split('new Promise(r => setTimeout(r, ms))').join('window.__sl(ms)'); (0, eval)(window.__pol.createScript(t)); }

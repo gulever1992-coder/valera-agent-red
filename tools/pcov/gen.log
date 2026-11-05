@@ -1,0 +1,22 @@
+Tue Oct 20 22:35:07 RTZ 2026 cov1 try 1
+Tue Oct 20 22:35:07 RTZ 2026 cov2 try 1
+Tue Oct 20 22:35:07 RTZ 2026 cov3 try 1
+Tue Oct 20 22:36:00 RTZ 2026 cov3 try 2
+Tue Oct 20 22:36:10 RTZ 2026 cov1 try 2
+FAIL art_src/covers/cov3.png
+Tue Oct 20 22:37:04 RTZ 2026 cov6 try 1
+OK art_src/covers/cov2.png
+Tue Oct 20 22:38:26 RTZ 2026 cov5 try 1
+FAIL art_src/covers/cov1.png
+Tue Oct 20 22:39:22 RTZ 2026 cov5 try 2
+Tue Oct 20 22:39:22 RTZ 2026 cov6 try 2
+Tue Oct 20 22:39:22 RTZ 2026 cov4 try 1
+FAIL art_src/covers/cov6.png
+Tue Oct 20 22:39:35 RTZ 2026 cov4 try 2
+Tue Oct 20 22:39:35 RTZ 2026 cov9 try 1
+FAIL art_src/covers/cov5.png
+Tue Oct 20 22:39:46 RTZ 2026 cov8 try 1
+FAIL art_src/covers/cov4.png
+Tue Oct 20 22:39:46 RTZ 2026 cov7 try 1
+Tue Oct 20 22:39:47 RTZ 2026 cov8 try 2
+Tue Oct 20 22:39:47 RTZ 2026 cov9 try 2

@@ -1,0 +1,19 @@
+// Задания Flow: квадратные обложки уровней (1:1). После boot9 __ld(): eval этого файла, затем __jb('l9cov1') ...
+(() => {
+  const J = window.__J;
+  const STY = 'Square 1:1 cover illustration for a level of a retro 2D action-comedy video game: extremely detailed 16-bit style pixel-art painting, rich dramatic atmospheric lighting, cinematic composition, main subject in the center. ';
+  const VAL = 'The hero VALERA must look EXACTLY like the character in the reference image (same face, hair, orange hoodie, jeans, proportions and pixel-art style). ';
+  const RULES = 'No text, no letters, no numbers, no logos, no flags, no real symbols or emblems, no UI, no frame or border. Fictional gloomy northern post-Soviet town of the 2000s. ';
+  const S = {
+    1: 'A huge northern shipyard at grey dawn: tall harbour cranes, a dark submarine hull in a flooded dry dock, steam, seagulls, wet concrete, warm orange work lights against cold blue-grey. Valera in the foreground seen from behind three-quarter, walking through the open shipyard gate on his first workday, lunchbox in hand.',
+    2: 'Evening street: grey panel apartment blocks with lit windows, rusty street kiosks, puddles reflecting orange street lamps, light drizzle. Valera walks home toward the viewer, hands in hoodie pockets; behind him in a dark archway several shadowy figures with glowing cigarette tips are watching him. Tense and funny.',
+    3: 'A cramped old apartment at night: flowered wallpaper, a carpet on the wall, an old CRT television glowing. Reality is going weird: the wallpaper pattern swirls psychedelically, furniture slightly melts, colours shift to acid green and purple. Valera sits on a worn sofa, wide-eyed and confused, holding his head. Two tiny bugs crawl along the skirting board.',
+    4: 'Night facade of a shady nightclub on a wet street: a glowing pink and purple neon sign shaped like a cat silhouette (no letters), a big bouncer silhouette by the door, a velvet rope, smoke and coloured light spilling out. Valera stands before the entrance, seen from behind, determined to go in and rescue his friend. Family-friendly.',
+    5: 'High-speed night chase on a city avenue, dynamic low angle: a small old boxy red 1970s sedan (generic, no badges) drifting around a corner with sparks, Valera at the wheel seen through the windshield, his friend leaning out of the back window. Behind them blurred police cars with blue and red flashing lights. Motion streaks, wet asphalt reflections.',
+    6: 'A magical northern forest in warm mushroom rain: giant glowing red-and-white toadstools, ferns, fog, sunbeams through tall pines, a boggy path leading toward distant sand dunes. Valera stands small on the path looking up in wonder at a big glowing mushroom, raindrops sparkle. Fairy-tale and slightly eerie.',
+    7: 'A massive stern old administrative building at night in heavy rain, columns, lit windows, a high fence, searchlights sweeping the wet courtyard, a security camera on a pole, a guard dog silhouette. Valera crouches sneaking in the foreground behind a parked car, soaked, finger to his lips. Stealth mood, blue rain with yellow light.',
+    8: 'The dark backstage of an old theatre: heavy red curtains, ropes and sandbags, a hanging industrial crane hook, a fairground shooting gallery with tin targets lit by bulbs. Valera aims a rifle forward; from behind the curtain several green rotten zombie hands reach out, and glowing red robot eyes gleam in the shadows above. Funny-spooky.',
+    9: 'A deep underground tunnel lit by cold cyan lights and pipes: a sleek transparent glass hover capsule floating above the rails with Valera inside peering out; far ahead the tunnel opens into a glowing secret laboratory with tanks of green liquid and sparks. Sci-fi mystery in a post-Soviet metro style.',
+  };
+  for (const n in S) J['l9cov' + n] = [['pick_valera.jpg'], 'KEYL9COV' + n + 'X ' + STY + VAL + RULES + 'Scene: ' + S[n]];
+})();

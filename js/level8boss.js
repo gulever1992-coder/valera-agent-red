@@ -208,25 +208,36 @@
       arenaUpdate(lv, dt, { max: true }); if (A.roo.inv || A.spi.inv) chaos(lv, dt, 1);
       if (A.roo.inv && A.spi.inv && !A.fall) {       // оба на половине: пол рушится
         A.fall = 1; lv.haz = []; lv.wind = 0; A.van = null; lv.cling = 0;
+        const R = A.roo, S = A.spi, sp = o => [o.x - lv.cam, o.py, o.k];
+        lv.cutVal = { t: 0, life: 99, fall: 0, roo: sp(R), spi: sp(S), val: lv.pl.x, max: A.max ? [A.max.x, A.max.y] : null };
+        lv.foes = lv.foes.filter(f => f !== R && f !== S); lv.fx = [];
         Scene.run(function* () {
-          Scene.dialogTop = false; G.shake(8, 1.2); Sound.play('crumble'); yield 0.8;
-          lv.cutImg = 'fall0'; G.shake(10, 0.8); Sound.play('crumble'); yield 0.8;
-          lv.cutImg = 'fall1'; lv.cutVal = { t: 0, life: 4, drop: 1 }; G.shake(14, 0.9); Sound.play('crash'); yield 1.2;
+          const q = lv.cutVal; Scene.dialogTop = false;
+          lv.cutImg = 'crk0'; G.shake(6, 1.4); Sound.play('crumble'); yield 1.1;
+          lv.cutImg = 'crk1'; G.shake(10, 1.0); Sound.play('crash'); yield 0.8;
           yield* Scene.say('valera', 'Пол!.. Да вы что, строили по ГОСТу?!');
-          lv.cutImg = 'fall2'; G.shake(16, 1.0); Sound.play('boom'); yield 1.1;
-          lv.cutImg = 'fall3'; G.shake(6, 1.2); Sound.play('crumble'); yield 1.3;
+          lv.cutImg = 'crk2'; G.shake(14, 1.0); Sound.play('boom'); yield 0.7;
+          lv.cutImg = 'crk3'; q.fall = 1; q.t = 0; G.shake(18, 1.6); Sound.play('crash'); yield 0.6; Sound.play('shout'); yield 1.6;
+          lv.cutImg = 'crk4'; G.shake(4, 1.0); Sound.play('crumble'); yield 1.0;
           for (let i = 0; i < 10; i++) { lv.cutFade = i / 9; yield 0.06; }
         }, () => { lv.cutImg = null; lv.cutVal = null; lv.cutFade = 0; lv.bars = null; lv.carry = { hp: Math.max(lv.pl.hp, 70), ammo: 30, res: Math.max(lv.pl.res, 240), vog: Math.max(lv.pl.vog, 3), vest: lv.pl.vest }; lv.stage = 'mega'; lv.reset(); });
       }
     },
-    drawBack(lv, c) { const M = lv.A && lv.A.max; if (M && lv.A.on) L8.spr(c, 'max8', M.st === 'wind' ? 1 : M.st === 'throw' ? 2 : 0, M.x, M.y, 0.7); },
+    drawBack(lv, c) { const A = lv.A, M = A && A.max; if (!M || !A.on || A.fall) return;
+      const fr = M.st === 'wind' ? (A.mT < 0.22 ? 2 : 3) : M.st === 'throw' ? 4 : A.mT < 0.7 ? 5 : (A.mT % 5 > 4.2 ? 6 : (lv.t * 1.4 | 0) % 3 === 2 ? 1 : 0);
+      L8.spr(c, 'max8', 8, M.x + 21, M.y - 20, 0.7); L8.spr(c, 'max8', fr, M.x, M.y, 0.7); },
     drawMid(lv, c) { vanDraw(lv, c, false); },
     drawFront(lv, c) {
       vanDraw(lv, c, true); clingDraw(lv, c);
       const R = lv.A && lv.A.roo; if (R && R.st === 'crow' && R.stT > 0.3 && !lv.cutImg) G.text('КУ-КА-РЕ-КУ!', clamp(R.x - lv.cam, 70, 570), clamp(R.py + 14, 60, 300), { align: 'center', size: 16, color: '#ffd84a', outline: true });
-      full(lv, c, () => { const q = lv.cutVal; if (!q || !q.drop) return; const y = (q.t * 170) % 560 - 60;
-        L8.spr(c, 'van8', 2, 330, y - 150, 0.3, { rot: q.t * 1.1 }); L8.spr(c, 'roo8', 7, 190, y + 30, 0.42, { rot: q.t * 1.6 }); L8.spr(c, 'spi8', 7, 455, y - 40, 0.36, { rot: -q.t * 2 });
-        L8.spr(c, 'val8', 8, 320 + Math.sin(q.t * 5) * 8, 110 + (q.t * 110) % 250, 0.6, { rot: Math.sin(q.t * 4) * 0.5 }); });
+      full(lv, c, () => { const q = lv.cutVal; if (!q || !q.roo) return;
+        const t = q.fall ? q.t : 0, wob = q.fall ? 0 : Math.sin(lv.t * 30) * 2, dy = d => q.fall ? Math.max(0, t - d) ** 2 * 420 : 0;
+        const go = (sh, fr, x, y, k, d, r) => { if (y + dy(d) < 520) L8.spr(c, sh, fr, x + wob, y + dy(d), k, { rot: q.fall ? Math.max(0, t - d) * r : 0 }); };
+        go('roo8', 7, q.roo[0], q.roo[1], q.roo[2], 0.15, 1.4); go('spi8', 7, q.spi[0], q.spi[1], q.spi[2], 0.3, -1.8);
+        if (q.max) go('max8', 7, q.max[0], q.max[1] + 70 * Math.min(1, t * 2), 0.7, 0.45, 2.2);
+        if (q.fall) { const u = Math.max(0, t - 0.6); if (u < 1.4) L8.spr(c, 'van8', 2, -120 + u * 380, 150 + u * u * 260, 0.42, { rot: u * 1.3 }); }
+        const vy = 364 + dy(0.05) * 0.8; if (vy < 560) L8.spr(c, 'val8', q.fall ? 8 : 0, q.val + wob, vy, 1, { rot: q.fall ? Math.sin(t * 6) * 0.5 : 0 });
+        if (q.fall && t < 1.8) for (let i = 0; i < 3; i++) L8.spr(c, 'fxE8', E('scrap'), rnd(60, 580), rnd(160, 360), rnd(0.5, 1.1), { rot: rnd(0, 6) }); });
     },
   };
 
@@ -311,16 +322,17 @@
   L8.STAGES.mega = {
     bg: 'labbg', title: null, arena: true,
     build(lv) {
-      lv.A = { on: false, open: 0 }; lv.wind = 0; lv.cling = 0;
+      lv.A = { on: false, open: 0 }; lv.wind = 0; lv.cling = 0; lv.lab = null;
       return [[0, () => { lv.A.b = [new Battery(lv, 66, 196, -1), new Battery(lv, 320, 186, 0), new Battery(lv, 574, 196, 1)]; lv.foes.push(...lv.A.b); }], [0.4, () => {
         Scene.run(function* () {
-          G.shake(8, 0.8); Sound.play('crash'); yield 0.9;
+          lv.lab = { up: 0 }; G.shake(8, 0.8); Sound.play('crash'); yield 1.4;
           yield* Scene.say('valera', 'Живой... А это ещё что за подвал?');
+          lv.lab.up = 1; Sound.play('crumble'); yield 0.5;
           yield* Scene.say('deniso', 'Секретная лаборатория, мистер Валера. Экскурсии не предусмотрены.');
           yield* Scene.say('stas', 'Фургон в хлам! Парни, план "Б"?');
           yield* Scene.say('denisch', 'План "Б". Общая сборка!');
           yield* Scene.say('maxim', 'Чур я в середине!');
-          lv.cutVal = { t: 0, life: 1.7, asm: 1 }; G.shake(6, 1.7); Sound.play('crane'); yield 1.0; Sound.play('zap'); yield 0.7;
+          lv.lab = null; lv.cutVal = { t: 0, life: 2.2, asm: 1 }; G.shake(6, 2.2); Sound.play('crane'); yield 1.2; Sound.play('zap'); yield 1.0;
           lv.cutVal = null; G.shake(12, 0.8); Sound.play('boom'); G.flash(0.5, '#fff'); yield 0.4;
         }, () => {
           const m = new Mega(lv);
@@ -337,14 +349,23 @@
         if (A.open <= 0) { for (const b of A.b) { b.down = false; b.hp = b.max; } m.inv = true; Sound.play('lever'); lv.say('БАТАРЕИ ПЕРЕЗАГРУЗИЛИСЬ!', 2.5); }
       } else if (A.b.every(b => b.down)) { A.open = 30; m.inv = false; Sound.play('checkpoint'); G.flash(0.25, '#7fe'); }
     },
+    drawMid(lv, c) {
+      const L = lv.lab; if (!L) return; const sm = (x, y, i) => { if ((lv.t * 3 + i) % 1 < 0.04) lv.fx.push({ sh: 'fxD8', fr: [N('fxD8', 'steam')], x: x + lv.cam, y, s: 0.3, t: 0, life: 1.2, vx: 0, vy: -30, fade: 1 }); };
+      L8.spr(c, 'wreck8', 2, 330, 296, 0.95); L8.spr(c, 'wreck8', 0, 125, 330, 1.05); L8.spr(c, 'wreck8', 1, 520, 326, 1.0);
+      sm(100, 215, 0); sm(525, 225, 0.5); sm(300, 190, 0.25);
+      if ((lv.t * 2 | 0) % 3 === 0) L8.spr(c, 'fxE8', E('bolt'), 520 + rnd(-50, 50), 270 + rnd(-30, 30), rnd(0.5, 1));
+      const sw = Math.sin(lv.t * 2.2) * 0.04;
+      L8.spr(c, 'dazed8', L.up ? 1 : 0, 215, 356, 1.25, { rot: L.up ? sw : 0 }); L8.spr(c, 'dazed8', L.up ? 3 : 2, 450, 358, 1.25, { rot: L.up ? -sw : 0 });
+    },
     drawFront(lv, c) {
       clingDraw(lv, c);
       const A = lv.A; if (A && A.on && !A.m.dead && !lv.cutImg) { if (A.open > 0) G.text('ЩИТ СНЯТ: ' + Math.ceil(A.open), 320, 26, { align: 'center', size: 8, color: A.open < 8 && (lv.t * 6 | 0) % 2 ? '#f66' : '#7fe' , outline: true }); else G.text('ЩИТ: БАТАРЕИ ' + A.b.filter(b => !b.down).length + '/3', 320, 26, { align: 'center', size: 8, color: '#ffd84a', outline: true }); }
       full(lv, c);
-      const a = lv.cutVal; if (a && a.asm) { const k = clamp(a.t / a.life, 0, 1), e = k * k, m = (x0, y0) => [x0 + (320 - x0) * e, y0 + (300 - y0) * e];
-        let v = m(320, -40); L8.spr(c, 'van8', 2, v[0], v[1] - 60 * (1 - e), 0.42, { rot: (1 - e) * 3 });
-        v = m(40, 250); L8.spr(c, 'roo8', k < 0.5 ? (a.t * 8 | 0) % 2 : 7, v[0], v[1], 0.5, { rot: e * 0.6 });
-        v = m(600, 150); L8.spr(c, 'spi8', 3, v[0], v[1] - 60, 0.44, { rot: -e * 2 });
+      const a = lv.cutVal; if (a && a.asm) { const k = clamp(a.t / a.life, 0, 1), e = k * k * (3 - 2 * k), m = (x0, y0) => [x0 + (320 - x0) * e, y0 + (290 - y0) * e - Math.sin(k * Math.PI) * 90];
+        let v = m(330, 296); L8.spr(c, 'wreck8', 2, v[0], v[1], 0.95 * (1 - e * 0.5), { rot: Math.sin(k * 9) * 0.15 * k });
+        v = m(125, 330); L8.spr(c, 'wreck8', 0, v[0], v[1], 1.05 * (1 - e * 0.5), { rot: e * 0.7 });
+        v = m(520, 326); L8.spr(c, 'wreck8', 1, v[0], v[1], 1.0 * (1 - e * 0.5), { rot: -e * 1.2 });
+        if (k < 0.8) { v = m(215, 356); L8.spr(c, 'dazed8', 1, v[0], v[1], 1.25 * (1 - e * 0.6)); v = m(450, 358); L8.spr(c, 'dazed8', 3, v[0], v[1], 1.25 * (1 - e * 0.6)); }
         for (let i = 0; i < 4; i++) if (Math.random() < k) L8.spr(c, 'fxE8', E('bolt'), 320 + rnd(-90, 90), 210 + rnd(-80, 60), rnd(0.6, 1.4));
         if (k > 0.7) L8.spr(c, 'fxE8', E('ring'), 320, 220, (k - 0.7) * 14, { a: 0.6 }); }
       const q = lv.cutVal && !lv.cutVal.asm ? lv.cutVal : null; if (q) { const k = clamp(q.t / q.life, 0, 1); L8.spr(c, 'valS8', (q.t * 8 | 0) % 4, 250 + 150 * k, 372 - 118 * k, 1 - 0.55 * k, { flip: true }); }

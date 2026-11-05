@@ -310,7 +310,7 @@ G.loadImage('assets/l8/card.jpg').then(im => { L8.card = im; });
       if (this.loading) return;
       const I = G.Input, p = this.pl; this.t += dt; this.fadeIn -= dt;
       if (this.msgT > 0) this.msgT -= dt;
-      if (Scene.active) { Scene.tick(dt); this.updFx(dt); if (this.cut) this.cut.t += dt; if (this.cutVal) this.cutVal.t += dt; return; }
+      if (Scene.active) { Scene.tick(dt); this.updFx(dt); if (this.cut) { this.cut.t += dt; this.cut.T = (this.cut.T || 0) + dt; } if (this.cutVal) this.cutVal.t += dt; return; }
       if (this.dead) { this.dead += dt; if (this.dead > 2.2) this.reset(); this.updFx(dt); return; }
       if (this.done) { this.doneT += dt; if (this.doneT > 1.5 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch'))) { Sound.play('confirm'); this.stats.deaths = 0; this.score = 0; this.stage = L8.FIRST; this.carry = null; this.reset(); } this.updFx(dt); return; }
       this.stats.time += dt;
@@ -461,12 +461,12 @@ G.loadImage('assets/l8/card.jpg').then(im => { L8.card = im; });
       for (const f of this.fx) if (f.sh === 'boom8') cut(LN('pool'), f.x - cam, f.y, 3.2 * f.s, { a: 1 - f.t / f.life });
       for (const h of this.fires) cut(LN('pool'), h.x - cam, zy(h.z) - 20, 2.2, { a: 0.9 });
       for (const k of this.picks) if (k.kind === 'flare') cut(LN('pool'), k.x - cam, zy(k.z) - 12, 1.1, { a: 0.8 });
-      if (this.S.lamps) for (const lx of this.S.lamps) cut(LN('pool'), lx - cam, 96, 0.9, { a: 0.35 + 0.3 * Math.sin(this.t * 5 + lx) });
+      if (this.S.lamps) for (const lx of this.S.lamps) cut(LN('pool'), lx - cam, 40, 0.9, { a: 0.35 + 0.3 * Math.sin(this.t * 5 + lx) });
       c.drawImage(cv, 0, 0);
       // поверх темноты: красные аварийные лампы, глаза зомби, лучи прицелов
       const a = this.darkK;
-      if (this.S.lamps) for (const lx of this.S.lamps) L8.spr(c, 'fxC8', LN('redlamp'), lx - cam, 96, 0.8, { a: a * (0.55 + 0.45 * Math.sin(this.t * 5 + lx)) });
-      for (const f of this.foes) { if (f.dead || f.clipY != null) continue; const b = f.box(); if (!b[2]) continue; if (f instanceof Zombie) L8.spr(c, 'fxC8', LN('eyes'), f.x - cam, b[1] + b[3] * 0.17, f.s * 0.62, { a }); else if (f.st === 'aim' || f.st === 'open') { const mz = f.muzzle(), tx = p.x, ty = 300, an = Math.atan2(ty - mz[1], tx - (mz[0] - cam)) - Math.PI / 2, ln = Math.hypot(ty - mz[1], tx - (mz[0] - cam)), fr = D().fxC8.f[LN('laser')]; c.save(); c.translate(mz[0] - cam, mz[1]); c.rotate(an); c.globalAlpha = 0.9; c.drawImage(L8.img.fxC8, fr[0] + fr[2] * 0.35, fr[1], fr[2] * 0.3, fr[3], -3, 0, 6, ln); c.restore(); L8.spr(c, 'fxC8', LN('dot'), tx, ty, 0.5); } }
+      if (this.S.lamps) for (const lx of this.S.lamps) L8.spr(c, 'fxC8', LN('redlamp'), lx - cam, 22, 0.8, { sy: -1, a: a * (0.55 + 0.45 * Math.sin(this.t * 5 + lx)) });   // мигалки висят под потолком
+      for (const f of this.foes) { if (f.dead || f.clipY != null) continue; const b = f.box(); if (!b[2]) continue; if (f instanceof Zombie) { const Z = D()[f.sh], fi = f.frame(), ee = Z.e && Z.e[fi]; if (ee) { const F = Z.f[fi], k = f.s * 0.5; const EF = D().fxC8.f[LN('eyes')], g = f.s * 0.14; c.save(); c.globalAlpha = a; for (const q of ee) c.drawImage(L8.img.fxC8, EF[0] + 50, EF[1] + 95, 74, 85, f.x - cam + (q[0] - F[4]) * k * (f.flip ? -1 : 1) - 38 * g, f.y + (f.off || 0) + (q[1] - F[5]) * k - 42 * g, 74 * g, 85 * g); c.restore(); } } else if (f.st === 'aim' || f.st === 'open') { const mz = f.muzzle(), tx = p.x, ty = 300, an = Math.atan2(ty - mz[1], tx - (mz[0] - cam)) - Math.PI / 2, ln = Math.hypot(ty - mz[1], tx - (mz[0] - cam)), fr = D().fxC8.f[LN('laser')]; c.save(); c.translate(mz[0] - cam, mz[1]); c.rotate(an); c.globalAlpha = 0.9; c.drawImage(L8.img.fxC8, fr[0] + fr[2] * 0.35, fr[1], fr[2] * 0.3, fr[3], -3, 0, 6, ln); c.restore(); L8.spr(c, 'fxC8', LN('dot'), tx, ty, 0.5); } }
     }
     drawValera(c) {
       const p = this.pl; let fr, ox = 0, rot = 0, sheet = 'val8', flip = false; const dx = this.cx - p.x;
