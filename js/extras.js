@@ -26,9 +26,16 @@ G.Extras = Extras;
   const X8 = X('L8'), X9 = X('L9'), X10 = X('L10');
   const R = (a, b, p = '') => Array.from({ length: b - a + 1 }, (_, i) => p ? p + (a + i) : a + i);
   const AN = (n, set, name) => ({ n, set, name });       // из Spr.ANIM
+  const P = (n, file) => ({ n, file });                   // портрет из assets/spr (для тех, у кого нет спрайтов)
 
   // кадры анимации -> [[img, f], ...]; null — ещё не загружено/нет
   function resolve(a) {
+    if (a.file) {
+      const key = 'P:' + a.file;
+      if (!imgCache[key]) { imgCache[key] = { loading: true }; G.loadImage('assets/spr/' + a.file).then(im => { imgCache[key] = im ? { img: im } : { none: true }; }).catch(() => { imgCache[key] = { none: true }; }); }
+      const ce = imgCache[key]; if (ce.none) return null; if (!ce.img) return { loading: true };
+      const im = ce.img; return { frames: [[im, [0, 0, im.width, im.height, im.width / 2, im.height]]], fps: 1 };
+    }
     if (a.set) {
       const an = Spr.ANIM[a.set] && Spr.ANIM[a.set][a.name]; if (!an) return null;
       const out = [];
@@ -221,7 +228,63 @@ G.Extras = Extras;
       bio: 'Семён после зелёной жижи — выше завода в несколько раз. Рушит крыши Выборгска, летает над морем и плодит миньонов из прыщей. Главный и последний враг Валеры.',
       moves: 'Удары руками, лазеры из глаз, плазма, захват, миньоны', weak: 'Рука на лбу, глаза' },
   ];
+  // ---------- герои и остальные персонажи (kind: hero — герой, npc — персонаж, villain — злодей без боя) ----------
+  const D7 = s => [S('Стоит', s, [0, 1], 2), S('Говорит', s, [2, 3, 4, 5], 4), S('Кулак', s, [6], 1), S('Поклон', s, [7], 1), S('Ходьба', s, R(8, 13), 8), S('Указывает', s, [14], 1), S('Испуг', s, [15], 1)];
+  const CHARS = [
+    { lv: 1, kind: 'hero', name: 'ВАЛЕРА', anims: [AN('Ходьба', 'valera6', 'walk'), AN('Бег', 'valera6', 'run'), AN('Прыжок', 'valera6', 'jump'), AN('Джеб', 'valera6', 'jab'), AN('Хук', 'valera6', 'cross'), AN('Апперкот', 'valera6', 'upper'), AN('Бросок', 'valera6', 'throwA'), AN('Лезет', 'valera6', 'climb'), AN('Стрельба', 'valera4green', 'shoot'), AN('Колдует', 'valera6w', 'castFire'), AN('Танец', 'valera4', 'dance'), AN('Топает', 'valera6', 'stomp'), AN('Пиво', 'valera', 'beerHappy'), AN('Победа', 'valera6w', 'victory')],
+      bio: 'Стропальщик с Севмолота в оранжевом пуховике. Хотел просто отработать смену, а оказался агентом RED и спас Выборгск от Семёна и Господина Икс.',
+      moves: 'Кулаки, гайки и кирпичи, «Осеменитель», волшебная палочка, джетпак', weak: 'Пиво и пирожки' },
+    { lv: 4, kind: 'hero', name: 'ВОВА', anims: [AN('Ходьба', 'vova', 'walk'), AN('Бег', 'vova6', 'run'), AN('В цепях', 'vova', 'chained'), AN('С пушкой', 'vovagun', 'hold'), AN('Крутит пушку', 'vovagun', 'flip'), AN('Гордится', 'vovagun', 'proud'), AN('Отдаёт пушку', 'vovagun', 'give'), AN('Указывает', 'vova6', 'point'), AN('Смеётся', 'vova6', 'laugh'), AN('Мухомор', 'vova6', 'shroom')],
+      bio: 'Лучший друг Валеры. Попал в плен в клубе, стрелял из окна «копейки», в лесу превратился в мухомор — и всё равно всегда рядом.',
+      moves: '«Осеменитель 3000», стрельба из окна', weak: 'Влипает в истории' },
+    { lv: 1, kind: 'npc', name: 'СПЕЦНАЗ ИЗ ИНДИИ', anims: [AN('Спуск', 'commando', 'rappel'), AN('Автомат', 'commando', 'rifle'), AN('Указывает', 'commando', 'point'), AN('Удивлён', 'commando', 'surprised')],
+      bio: 'Прилетели за «агентом RED» в конце первой смены. Валера до сих пор не понимает, почему именно за ним.', moves: '—', weak: '—' },
+    { lv: 2, kind: 'npc', name: 'ШПИОНЫ', anims: [AN('Выглядывает', 'spy', 'peek'), AN('В кустах', 'spy', 'bush'), AN('Ползком', 'spy', 'prone'), AN('Перебежка', 'spy', 'dart'), AN('Трос', 'spy', 'rope'), AN('Бег', 'spy', 'run')],
+      bio: 'Следят за Валерой по дороге домой из-за углов, кустов и с крыш гаражей. Маскировка так себе.', moves: '—', weak: '—' },
+    { lv: 2, kind: 'npc', name: 'ПРОДАВЩИЦА', anims: [S('За прилавком', 'sellera', [0, 1], 1.5), S('Паспорт!', 'sellera', [2], 1), S('Думает', 'sellera', [3], 1), S('Держи', 'sellera', [4], 1), S('Ворчит', 'sellera', [5], 1)],
+      bio: 'Хозяйка магазина «Под горлышко». Спрашивает паспорт у всех, даже у Валеры. Тару велит сдавать.', moves: '—', weak: '—' },
+    { lv: 4, kind: 'npc', name: 'ГОРНИЧНАЯ', anims: [AN('Стоит', 'maid', 'stand'), AN('Ходьба', 'maid', 'walk'), AN('Зовёт', 'maid', 'beckon')],
+      bio: 'Работает в отеле при клубе. Потом её видели гуляющей по Выборгску.', moves: '—', weak: '—' },
+    { lv: 4, kind: 'npc', name: 'МЕДСЕСТРА', anims: [AN('Стоит', 'nurse', 'stand'), AN('Ходьба', 'nurse', 'walk'), AN('Пожимает плечами', 'nurse', 'shrug')],
+      bio: 'Тоже из персонала клуба. На все вопросы пожимает плечами.', moves: '—', weak: '—' },
+    { lv: 4, kind: 'npc', name: 'ПАРОЧКА', anims: [AN('Гуляют', 'couple', 'walk'), AN('Лезут', 'couple', 'climb'), AN('Подмигивает', 'couple', 'wink')],
+      bio: 'Пришли в клуб на свидание и случайно оказались в самой гуще событий.', moves: '—', weak: '—' },
+    { lv: 6, kind: 'npc', name: 'ОЧКАРИК', anims: [AN('Стоит', 'wiz6', 'stand'), AN('Крадётся', 'wiz6', 'sneak'), AN('Пинок', 'wiz6', 'kick'), AN('Хватает палочку', 'wiz6', 'grab'), AN('Убегает', 'wiz6', 'run')],
+      bio: 'Настоящий хозяин волшебной палочки. Дождался конца грибного леса, пнул Валеру и забрал своё.', moves: 'Пинок исподтишка', weak: 'Очки' },
+    { lv: 7, kind: 'npc', name: 'СТАС', anims: [S('Ходьба', 'stas7', R(0, 9), 10), S('Говорит', 'stas7', [11, 12], 3), S('Смеётся', 'stas7', [13, 14], 4), S('Указывает', 'stas7', [15, 16, 17], 3), S('За рулём', 'stas7', [18, 19, 20, 21], 3), S('Машет', 'stas7', [22, 23], 4), S('Пожимает плечами', 'stas7', [24, 25], 2)],
+      bio: 'Водитель фургона, подобравший Валеру на трассе. Болтает без остановки.', moves: 'Фургон', weak: 'Болтовня' },
+    { lv: 7, kind: 'npc', name: 'МАКСИМ', anims: [S('Ходьба', 'max7', R(0, 7), 9), S('Машет', 'max7', [8, 9], 4), S('Пожимает плечами', 'max7', [10, 11], 2), S('Говорит', 'maxt7', [6, 7], 3), S('Смеётся', 'maxt7', [11, 12], 4), S('Руки скрестил', 'maxt7', [18, 19], 1), S('Сидит', 'maxt7', [20, 21, 22, 23], 3)],
+      bio: 'Напарник Стаса по фургону. Позже вернётся в восьмом уровне с мешком картошки.', moves: 'Картошка', weak: '—' },
+    { lv: 7, kind: 'npc', name: 'КОЖАНЫЙ', anims: [S('Стоит', 'leap7', [20, 21, 22], 2), S('Фу!', 'leap7', [16, 17, 18, 19], 4), S('На мотоцикле', 'leap7', [8, 9, 10, 11], 6), S('Машет', 'lea7', [4, 5, 6, 7], 6), S('Бег', 'lea7', R(8, 15), 13), S('Ходьба', 'lea7', R(16, 21), 8), S('Толкает', 'lea7', [22, 23], 6)],
+      bio: 'Пассажир байкера на трассе, весь в коже. Валеру в попутчики брать не захотел.', moves: '—', weak: '—' },
+    { lv: 7, kind: 'npc', name: 'БАЙКЕР С ТРАССЫ', anims: [S('Стоит', 'bik7', [8, 9], 2), S('Руки скрестил', 'bik7', [10, 11], 2), S('Ходьба', 'bik7', R(14, 19), 8)],
+      bio: 'Хозяин мотоцикла на трассе. Суров, немногословен, подвозит не всех.', moves: '—', weak: '—' },
+    { lv: 7, kind: 'npc', name: 'ДЕНИС О.', anims: D7('deno7'),
+      bio: 'Звезда приёма в главном зале заводоуправления. В восьмом уровне выйдет против Валеры в костюме петуха.', moves: '—', weak: '—' },
+    { lv: 7, kind: 'npc', name: 'ДЕНИС Ч.', anims: D7('dench7'),
+      bio: 'Второй Денис со сцены главного зала. В восьмом уровне сядет в механического паука.', moves: '—', weak: '—' },
+    { lv: 7, kind: 'npc', name: 'ПРЕССА', anims: [S('Фотограф', 'press7', [1, 2, 3, 1], 4), S('Оператор', 'press7', [5, 6], 2), S('Репортёрша', 'press7', [9, 10], 3), S('Фотограф идёт', 'press4', R(0, 4), 8), S('Оператор идёт', 'press4', R(7, 11), 8), S('Репортёрша идёт', 'press4', R(14, 18), 8)],
+      bio: 'Фотографы, телевизионщики и репортёрша с микрофоном. Снимают всё, особенно то, что не надо.', moves: 'Вспышка', weak: '—' },
+    { lv: 7, kind: 'npc', name: 'БОМОНД', anims: [S('Ходьба', 'rich4', R(0, 7), 9), S('Смеётся', 'rich4', [8, 9], 3), S('Беседует', 'rich4', [10, 11], 2.5), S('Дама', 'rich4', [12, 13, 14, 13], 1.5), S('Дама идёт', 'rich4', R(15, 21), 9), S('Гости хлопают', 'crowd7', [2, 0], 6), S('Гости в шоке', 'crowd7', [3, 7, 11], 1.5)],
+      bio: 'Важные гости приёма Господина Икс. После «туалетки на 3 рубля» станут зомби-бомондом.', moves: '—', weak: '—' },
+    { lv: 7, kind: 'villain', name: 'ГОСПОДИН ИКС', anims: [P('Портрет', 'p_mrx.png')],
+      bio: 'Тот, кто стоит за всем: заводом, спецназом, лабораторией и Семёном. Появляется в ложе и на экранах, но лично в драку не лезет.',
+      moves: 'Чужие руки', weak: 'Валера' },
+    { lv: 10, kind: 'npc', name: 'ЮРИК', anims: [X10('Ходит', 'chYurik', ['y0', 'y1', 'y2', 'y3', 'y4', 'y5'], 7), X10('Говорит', 'chYurik', ['y6', 'y7'], 3)],
+      bio: 'Путешественник во времени. Прилетает в телефонной будке: «Опять не тот год». Зовёт Валеру в прошлое всё исправить.', moves: 'Машина времени', weak: 'Путает года' },
+    { lv: 10, kind: 'npc', name: 'БАСОВ', anims: [X10('Играет на гитаре', 'chBasov', ['bs0', 'bs1', 'bs2', 'bs3'], 4)],
+      bio: 'Сидит рядом с Вовой-мухомором и играет на гитаре грустную мелодию. Что бы ни случилось — продолжает играть.', moves: 'Гитара', weak: '—' },
+    { lv: 10, kind: 'npc', name: 'ПОДВОДНИКИ', anims: [X10('Экипаж', 'chSub', ['sb0', 'sb1', 'sb2', 'sb3'], 3), P('Капитан', 'p_capt.png'), P('Матрос', 'p_sailor.png')],
+      bio: 'Экипаж подлодки из финала: капитан и матрос. Сначала принимают Валеру за врага флота.', moves: 'Торпеды', weak: '—' },
+  ];
+  // порядок: герои, затем по уровням — персонажи, враги, боссы
+  const RANK = { hero: 0, npc: 1, villain: 1, foe: 2, boss: 3 };
+  for (const e of BEST) e.kind = e.boss ? 'boss' : 'foe';
+  const ALL = [...CHARS, ...BEST].map((e, i) => ({ e, i }))
+    .sort((a, b) => ((a.e.kind === 'hero' ? 0 : 1) - (b.e.kind === 'hero' ? 0 : 1)) || (a.e.kind === 'hero' ? 0 : a.e.lv - b.e.lv) || (RANK[a.e.kind] - RANK[b.e.kind]) || (a.i - b.i)).map(o => o.e);
+  BEST.length = 0; BEST.push(...ALL);
   Extras.BEST = BEST;
+  const TAG = { hero: ['ГЕРОЙ', '#8cf08c'], npc: ['ПЕРСОНАЖ', '#8cd0ff'], villain: ['ЗЛОДЕЙ', '#ff5a5a'], foe: ['ВРАГ', '#ff8a6a'], boss: ['БОСС', '#ffd84a'] };
 
   // масштаб и кадры записи считаются один раз, когда все кадры доступны
   function prep(e) {
@@ -236,12 +299,20 @@ G.Extras = Extras;
     }
     if (loading) return false;
     e.list = list;
-    let mw = 1, mh = 1;
-    for (const a of list) for (const [, f] of a.frames) { mw = Math.max(mw, f[2] * 0.5); mh = Math.max(mh, f[3] * 0.5); }
-    e.sc = Math.min(1.6, 380 / mw, 150 / mh);
+    // общие габариты всех кадров относительно якоря (у летающих/больших якорь бывает не у ног) — по ним вписываем в кадр
+    let x0 = 0, x1 = 1, y0 = -1, y1 = 0;
+    for (const a of list) for (const [, f] of a.frames) {
+      x0 = Math.min(x0, -f[4] * 0.5); x1 = Math.max(x1, (f[2] - f[4]) * 0.5);
+      y0 = Math.min(y0, -f[5] * 0.5); y1 = Math.max(y1, (f[3] - f[5]) * 0.5);
+    }
+    e.sc = Math.min(1.6, (STAGE.w - 20) / (x1 - x0), STAGE.h / (y1 - y0));
+    e.ox = -(x0 + x1) / 2 * e.sc;                  // сдвиг якоря от центра сцены
+    e.oy = -(y0 + y1) / 2 * e.sc;
+    for (const a of list) a.dur = a.frames.length === 1 ? 1.6 : Math.max(1.8, Math.min(4, a.frames.length / a.fps * 2));
     e.ready = true;
     return true;
   }
+  const STAGE = { x: 212, y: 52, w: W - 212 - 8, h: 124 };     // область фигуры на сцене (y 52..176)
 
   // ---------- состояние экрана ----------
   const B = { sel: 0, top: 0, anim: 0, at: 0, autoT: 0 };
@@ -252,27 +323,29 @@ G.Extras = Extras;
     B.at += dt; B.autoT += dt;
     if (I.pressed('up')) { B.sel = (B.sel + n - 1) % n; B.anim = 0; B.at = 0; B.autoT = 0; Sound.play('select'); }
     if (I.pressed('down')) { B.sel = (B.sel + 1) % n; B.anim = 0; B.at = 0; B.autoT = 0; Sound.play('select'); }
-    const m = e.ready ? e.list.length : 0;
-    if (m) {
-      if (I.pressed('left')) { B.anim = (B.anim + m - 1) % m; B.at = 0; B.autoT = -4; Sound.play('select'); }
-      if (I.pressed('right') || I.pressed('jump') || I.pressed('punch')) { B.anim = (B.anim + 1) % m; B.at = 0; B.autoT = -4; Sound.play('select'); }
-      if (B.autoT > 3.2) { B.anim = (B.anim + 1) % m; B.at = 0; B.autoT = 0; }
-    }
+    // влево/вправо — к предыдущему/следующему уровню
+    const grp = x => x.kind === 'hero' ? 0 : x.lv;
+    if (I.pressed('right')) { const g = grp(e); let j = BEST.findIndex(x => grp(x) > g); if (j < 0) j = 0; B.sel = j; B.anim = 0; B.at = 0; Sound.play('select'); }
+    if (I.pressed('left')) { const g = grp(e); let j = BEST.findIndex(x => grp(x) === g); if (j === B.sel) { const pg = grp(BEST[(j + n - 1) % n]); j = BEST.findIndex(x => grp(x) === pg); } B.sel = j; B.anim = 0; B.at = 0; Sound.play('select'); }
+    // анимации идут каруселью сами
+    const cur = BEST[B.sel];
+    if (cur.ready && cur.list.length) { const a = cur.list[B.anim % cur.list.length]; if (B.at > a.dur) { B.anim = (B.anim + 1) % cur.list.length; B.at = 0; } }
     if (B.sel < B.top) B.top = B.sel;
     if (B.sel >= B.top + ROWS) B.top = B.sel - ROWS + 1;
     if (I.pressed('pause') || I.pressed('start')) { Sound.play('select'); back(); }
   };
   Extras.drawBestiary = function (c) {
     Art.R(c, 0, 0, W, H, '#0e1014');
-    G.text('ЭНЦИКЛОПЕДИЯ ЗЛОДЕЕВ', W / 2, 8, { size: 12, align: 'center', color: '#e03030', outline: true });
+    G.text('ЭНЦИКЛОПЕДИЯ', W / 2, 8, { size: 12, align: 'center', color: '#e03030', outline: true });
     // список
     Art.R(c, 8, 28, 196, ROWS * 13 + 6, '#16191e');
     for (let r = 0; r < ROWS; r++) {
       const i = B.top + r; if (i >= BEST.length) break;
       const e = BEST[i], y = 32 + r * 13, sel = i === B.sel;
       if (sel) Art.R(c, 9, y - 2, 194, 12, 'rgba(240,106,20,0.35)');
-      G.text(String(e.lv).padStart(2, ' '), 14, y, { color: LV_COLOR[e.lv], shadow: false });
-      G.text((e.boss ? '* ' : '') + e.name, 36, y, { color: sel ? '#fff' : e.boss ? '#ffd84a' : '#9aa4ae', shadow: false, size: e.name.length > 18 ? 6 : 8 });
+      G.text(e.kind === 'hero' ? ' +' : String(e.lv).padStart(2, ' '), 14, y, { color: e.kind === 'hero' ? '#8cf08c' : LV_COLOR[e.lv], shadow: false });
+      const nc = sel ? '#fff' : e.kind === 'foe' ? '#9aa4ae' : TAG[e.kind][1];
+      G.text((e.boss ? '* ' : '') + e.name, 36, y, { color: nc, shadow: false, size: e.name.length > 18 ? 6 : 8 });
     }
     if (B.top > 0) G.text('^', 196, 30, { color: '#f06a14' });
     if (B.top + ROWS < BEST.length) G.text('v', 196, 28 + ROWS * 13 - 6, { color: '#f06a14' });
@@ -280,30 +353,30 @@ G.Extras = Extras;
     const e = BEST[B.sel], px = 212, pw = W - px - 8;
     Art.R(c, px, 28, pw, 176, '#050608');
     Art.R(c, px, 180, pw, 1, '#2a2e36');
-    G.text(e.name, px + 8, 34, { size: e.name.length > 16 ? 8 : 12, color: e.boss ? '#ffd84a' : '#fff', outline: true });
-    G.text('УРОВЕНЬ ' + e.lv + (e.boss ? ' · БОСС' : ''), px + pw - 8, 36, { align: 'right', color: LV_COLOR[e.lv] });
+    G.text(e.name, px + 8, 34, { size: e.name.length > 16 ? 8 : 12, color: e.kind === 'foe' ? '#fff' : TAG[e.kind][1], outline: true });
+    G.text(TAG[e.kind][0] + (e.kind === 'hero' ? '' : ' · УР. ' + e.lv), px + pw - 8, 36, { align: 'right', color: e.kind === 'hero' ? '#8cf08c' : LV_COLOR[e.lv] });
     if (!prep(e)) G.text('ЗАГРУЗКА...', px + pw / 2, 110, { align: 'center', color: '#5a6068' });
     else if (e.list.length) {
-      const a = e.list[Math.min(B.anim, e.list.length - 1)];
+      const a = e.list[B.anim % e.list.length];
       const [img, f] = a.frames.length === 1 ? a.frames[0] : a.frames[Math.floor(B.at * a.fps) % a.frames.length];
-      const k = e.sc * 0.5, cx = px + pw / 2, fy = 180;
+      const k = e.sc * 0.5, ax = STAGE.x + STAGE.w / 2 + e.ox, ay = STAGE.y + STAGE.h / 2 + e.oy;
       c.save();
-      c.beginPath(); c.rect(px, 50, pw, 154); c.clip();
+      c.beginPath(); c.rect(px, 48, pw, 134); c.clip();
       c.imageSmoothingEnabled = e.sc < 0.97;
-      c.globalAlpha = 0.35; c.fillStyle = '#000';
-      c.beginPath(); c.ellipse(cx, fy + 1, Math.min(70, f[2] * k * 0.4), 4, 0, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1;
-      c.drawImage(img, f[0], f[1], f[2], f[3], Math.round(cx - f[4] * k), Math.round(fy - f[5] * k), f[2] * k, f[3] * k);
+      c.drawImage(img, f[0], f[1], f[2], f[3], Math.round(ax - f[4] * k), Math.round(ay - f[5] * k), f[2] * k, f[3] * k);
       c.restore(); c.imageSmoothingEnabled = false;
-      G.text('< ' + a.n + ' >', px + pw / 2, 188, { align: 'center', color: '#ffd84a' });
-      G.text((B.anim + 1) + '/' + e.list.length, px + pw - 8, 188, { align: 'right', color: '#5a6068', size: 6 });
+      G.text(a.n, px + pw / 2, 188, { align: 'center', color: '#ffd84a' });
+      // точки карусели
+      const nn = e.list.length, dx = Math.min(8, (pw - 40) / nn), d0 = px + pw / 2 - (nn - 1) * dx / 2;
+      for (let i = 0; i < nn; i++) Art.R(c, Math.round(d0 + i * dx) - 1, 198, 2, 2, i === B.anim % nn ? '#ffd84a' : '#3a3e46');
     }
     // описание
     let y = 212;
     for (const ln of G.wrap(e.bio, pw - 8, 8)) { G.text(ln, px + 4, y, { color: '#e8e0c8' }); y += 11; }
     y += 4;
-    for (const ln of G.wrap('ПРИЁМЫ: ' + e.moves, pw - 8, 8)) { G.text(ln, px + 4, y, { color: '#ff8a6a' }); y += 11; }
-    for (const ln of G.wrap('СЛАБОСТЬ: ' + e.weak, pw - 8, 8)) { G.text(ln, px + 4, y, { color: '#8cf08c' }); y += 11; }
-    G.text('ВВЕРХ/ВНИЗ — ЗЛОДЕЙ · ВЛЕВО/ВПРАВО — АНИМАЦИЯ · ESC — НАЗАД', W / 2, H - 12, { align: 'center', size: 6, color: '#6a727a', shadow: false });
+    if (e.moves && e.moves !== '—') for (const ln of G.wrap((e.kind === 'foe' || e.kind === 'boss' ? 'ПРИЁМЫ: ' : 'УМЕЕТ: ') + e.moves, pw - 8, 8)) { G.text(ln, px + 4, y, { color: '#ff8a6a' }); y += 11; }
+    if (e.weak && e.weak !== '—') for (const ln of G.wrap('СЛАБОСТЬ: ' + e.weak, pw - 8, 8)) { G.text(ln, px + 4, y, { color: '#8cf08c' }); y += 11; }
+    G.text('ВВЕРХ/ВНИЗ — ПЕРСОНАЖ · ВЛЕВО/ВПРАВО — УРОВЕНЬ · ESC — НАЗАД', W / 2, H - 12, { align: 'center', size: 6, color: '#6a727a', shadow: false });
   };
 
   // ---------- финальные титры ----------
@@ -327,7 +400,7 @@ G.Extras = Extras;
     for (const l of levels) row(l.id + '. ' + l.name + ' — ' + l.sub.toLowerCase());
     sp(30);
     h('ЗЛОДЕИ');
-    sub('Все ' + BEST.length + ' — в энциклопедии в главном меню');
+    sub('Все ' + BEST.filter(e => e.kind === 'foe' || e.kind === 'boss').length + ' — в энциклопедии в главном меню');
     for (const e of BEST.filter(e => e.boss)) row(e.name, '#ffd84a');
     sp(30);
     h('СОЗДАТЕЛИ');

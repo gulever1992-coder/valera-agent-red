@@ -234,7 +234,7 @@ function chooseDiff(levelIdx) { App.pendingLevel = levelIdx; App.diffSel = G.DIF
 function menuItems() {
   const it = [['НАЧАТЬ ИГРУ', () => chooseDiff(0)]];
   it.push(['ВЫБОР УРОВНЯ', () => { App.lvlSel = OPEN_ALL ? 0 : Math.min(progress(), 2) - 1; setState('levels'); }]);
-  it.push(['ЭНЦИКЛОПЕДИЯ ЗЛОДЕЕВ', () => { Extras.openBestiary(); setState('bestiary'); }]);
+  it.push(['ЭНЦИКЛОПЕДИЯ', () => { Extras.openBestiary(); setState('bestiary'); }]);
   it.push(['УПРАВЛЕНИЕ', () => setState('controls')]);
   it.push(['ЗВУК: ' + (Sound.muted ? 'ВЫКЛ' : 'ВКЛ'), () => Sound.toggleMute()]);
   return it;
