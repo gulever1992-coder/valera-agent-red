@@ -1,5 +1,5 @@
 'use strict';
-// ============ МУЗЫКА v2: свой трек на каждый уровень + металл на боссах ============
+// ============ МУЗЫКА v3: всё в духе саундтрека Serious Sam 3 (эпичный металл, хор, струнные, большой барабан) ============
 // Всё синтезируется WebAudio, без файлов. Темы уровней — постоянный «сид» (тема узнаваемая),
 // боссы — у каждого свой стиль металла, а рифф/соло/темп генерируются заново при каждом заходе в бой.
 // Подмена имён: старые вызовы Music.play('boss'|'level'|'city'|...) превращаются в трек текущего уровня (resolve).
@@ -44,7 +44,7 @@
     };
     const lead = (() => {
       const inp = a.createGain(), pre = a.createGain(), sh = a.createWaveShaper(), lp = B('lowpass', 4600, 0.7), o = a.createGain(), e = a.createGain(), r = a.createGain();
-      pre.gain.value = 3; sh.curve = SOFT; o.gain.value = 0.5; e.gain.value = 0.3; r.gain.value = 0.25;
+      pre.gain.value = 9; sh.curve = DIST; sh.oversample = '2x'; lp.frequency.value = 3400; o.gain.value = 0.16; e.gain.value = 0.22; r.gain.value = 0.2;
       inp.connect(pre); pre.connect(sh); sh.connect(lp); lp.connect(o); o.connect(bus); lp.connect(e); e.connect(echo); lp.connect(r); r.connect(rev);
       return inp;
     })();
@@ -135,6 +135,9 @@
     T: (t, v) => boom(t, 140, 90, 0.34, v * 0.7),
     f: (t, v) => boom(t, 92, 58, 0.42, v * 0.75),
     b: (t, v) => nz(t, 0.05, v * 0.12, 'bandpass', 5200, 1),
+    D: (t, v) => { boom(t, 120, 68, 0.3, v * 0.7); nz(t, 0.03, v * 0.15, 'lowpass', 400); },                  // дарбука: «дум»
+    q: (t, v) => { nz(t, 0.05, v * 0.3, 'bandpass', 3200, 2.5); boom(t, 900, 700, 0.04, v * 0.12, 'triangle'); },  // дарбука: «тек»
+    G: (t, v) => { boom(t, 95, 38, 0.9, v * 0.9).connect(FX.rev); nz(t, 0.25, v * 0.2, 'lowpass', 300); },      // большой военный барабан
     a: (t, v) => { boom(t, 2350, 2300, 0.5, v * 0.06, 'sine').connect(FX.rev); boom(t, 3410, 3400, 0.35, v * 0.04, 'sine'); boom(t, 5900, 5850, 0.2, v * 0.025, 'square'); },   // наковальня
   };
 
@@ -160,7 +163,11 @@
     wob: { w: 'square', w2: 'sawtooth', det: 30, a: 0.01, d: 0.3, s: 0.7, r: 0.2, cut: 2000, vib: 45, vibR: 7, vibD: 0.05, echo: 0.45, rev: 0.3 },
     harpsi: { w: 'sawtooth', w2: 'square', oct2: 12, m2: 0.5, a: 0.001, d: 0.25, s: 0, r: 0.1, cut: 4200, fenv: 1.5, fd: 0.05, echo: 0.18, rev: 0.2 },
     siren: { w: 'square', w2: 'square', det: 12, a: 0.02, d: 0.1, s: 0.9, r: 0.1, cut: 2600, rev: 0.2 },
-    lead: { w: 'sawtooth', w2: 'square', det: 6, a: 0.008, d: 0.2, s: 0.85, r: 0.12, cut: 6000, vib: 24, vibR: 6, vibD: 0.18, amp: 'lead' },
+    lead: { w: 'sawtooth', w2: 'sawtooth', det: 10, a: 0.004, d: 0.25, s: 0.8, r: 0.08, cut: 4200, vib: 14, vibR: 6, vibD: 0.35, amp: 'lead' },
+    str: { w: 'sawtooth', w2: 'sawtooth', det: 14, a: 0.006, d: 0.1, s: 0.5, r: 0.06, cut: 2600, q: 0.9, rev: 0.35 },          // струнные стаккато
+    strL: { w: 'sawtooth', w2: 'sawtooth', det: 18, a: 0.25, d: 0.5, s: 0.9, r: 0.5, cut: 1800, rev: 0.55 },   // струнные легато
+    strM: { w: 'sawtooth', w2: 'sawtooth', det: 14, a: 0.06, d: 0.3, s: 0.85, r: 0.3, cut: 2200, rev: 0.5, echo: 0.12 },  // струнные-мелодия
+    ney: { w: 'sine', w2: 'sawtooth', m2: 0.12, a: 0.07, d: 0.2, s: 0.85, r: 0.2, cut: 2400, vib: 28, vibR: 5.5, vibD: 0.3, rev: 0.6, echo: 0.25 }, // восточная флейта
     // басы
     bass: { w: 'sawtooth', w2: 'square', oct2: -12, m2: 0.6, a: 0.003, d: 0.2, s: 0.6, r: 0.05, cut: 700, q: 1.2, fenv: 2.5, fd: 0.06 },
     bassR: { w: 'triangle', w2: 'sine', oct2: -12, m2: 0.8, a: 0.004, d: 0.3, s: 0.5, r: 0.08 },
@@ -390,7 +397,7 @@
   }
   function solo(S, bar0, nb, sp, root, R, v) {
     const sub = S.sub, sc = SC[sp.scale] || SC.min, ns = [];
-    for (let m = 62; m <= 91; m++) if (sc.includes(((m - root) % 12 + 12) % 12)) ns.push(m);
+    for (let m = 52; m <= 79; m++) if (sc.includes(((m - root) % 12 + 12) % 12)) ns.push(m);
     let i = (ns.length / 2) | 0;
     for (let b = 0; b < nb; b++) for (let bt = 0; bt < 4; bt++) {
       const st = (bar0 + b) * S.spb + bt * sub, last = b === nb - 1 && bt >= 2;
@@ -406,7 +413,7 @@
   function metal(sp) {
     return seed => {
       const R = rng(seed), sub = sp.sub || 4, spb = sub * 4, pick = a => a[R() * a.length | 0];
-      const bpm = sp.bpm + Math.round((R() - 0.5) * 12);
+      const bpm = sp.bpm + Math.round((R() - 0.5) * 6);
       const root = sp.root + pick([0, 0, 1, -1, 2, -2]);
       const scName = sp.scale || 'min', scale = SC[scName];
       const ctx = { key: root, scale, pcs: new Set(scale.map(x => (root + x) % 12)) };
@@ -434,7 +441,7 @@
         if (sp.choir && b % 2 === 0) padBar(S, 10 + b, chB[b], ctx, 'choir', root + 24, 0.045, spb * 2);
         if (sp.keys && b % 2 === 0) arpBar(S, 10 + b, chB[b], ctx, sp.keys, root + 36, 'updown', 0.045), arpBar(S, 11 + b, chB[b], ctx, sp.keys, root + 36, 'up', 0.045);
       }
-      phrase(S, 10, chB, ctx, R, 'lead', root + 24, root + 45, 0.45, 0.11);
+      phrase(S, 10, chB, ctx, R, 'lead', root + 12, root + 33, 0.45, 0.11);
       S.drums(10, 8, dB); S.hit(10 * spb, 'c', 1.1); S.hit(14 * spb, 'c', 1); S.fill(17, 2);
       // C: брейкдаун (половинный размер)
       const br = pick(BREAK[sub]);
@@ -449,7 +456,26 @@
       S.drums(22, 4, kf ? D.djent || dH : dA); S.drums(26, 4, dB); S.hit(22 * spb, 'c', 1.1); S.hit(26 * spb, 'c', 1.1); S.fill(29, 2);
       solo(S, 22, 8, sp, root, R, 0.1);
       if (sp.choir) for (let b = 26; b < 30; b += 2) padBar(S, b, pw(turn[(b - 22) >> 1]), ctx, 'choir', root + 24, 0.04, spb * 2);
+      S.meta = { root, turn, chB, ctx };
       if (sp.extra) sp.extra(S, R, root);
+      return S;
+    };
+  }
+
+  // ---------- в духе Serious Sam 3: металл + струнное остинато, хор, томы, большой барабан (минор, без востока) ----------
+  const OST = { 4: [[0, 0, 3, 0, 0, 0, 3, 0, 7, 0, 8, 7, 3, 0, 2, 0], [0, 2, 3, 2, 0, 2, 3, 5, 7, 5, 3, 2, 0, 2, 0, -2], [0, 0, 7, 0, 8, 0, 7, 0, 3, 0, 5, 0, 3, 0, -2, 0], [0, 3, 7, 3, 0, 3, 7, 12, 10, 7, 3, 0, 8, 7, 3, 2]],
+    3: [[0, 3, 7, 3, 0, 3], [0, 0, 3, 0, 7, 8], [0, 2, 3, 5, 3, 2]] };
+  const DARB = { 4: [{ T: 'x.....x.x.......', t: '..........x...x.' }, { T: 'x.....xx........', t: '...........x..x.' }, { T: 'x..x..x.........', t: '..........x.x...' }], 3: [{ T: 'x.....x.....', t: '.........x.x' }, { T: 'x..x..x.....', t: '..........x.' }] };
+  function sam(sp) {
+    const gen = metal(Object.assign({ choir: true, scale: 'min' }, sp));
+    return seed => {
+      const S = gen(seed), M = S.meta, R = rng(seed ^ 0x5a5a5a), pick = a => a[R() * a.length | 0], spb = S.spb, sub = S.sub;
+      const ost = pick(OST[sub]), dr = pick(DARB[sub]), dv = (sp.darbV || 0.5) * 0.6;
+      const strBars = b0 => { for (let b = 0; b < 8; b++) { const r = M.root + 24 + M.turn[(b >> 1) % 4]; for (let i = 0; i < spb; i++) S.note((b0 + b) * spb + i, 'str', r + ost[i % ost.length], 0.9, 0.028 * (i % sub ? 0.75 : 1)); } };
+      strBars(2); strBars(22);
+      for (let b = 10; b < 18; b += 2) padBar(S, b, M.chB[b - 10], M.ctx, 'strL', M.root + 12, 0.03, spb * 2);
+      S.drums(0, 2, dr, dv * 1.2); S.drums(18, 4, dr, dv * 1.1);
+      for (const b of [10, 12, 14, 16, 18, 19, 20, 21, 26, 28]) S.hit(b * spb, 'G', 1);
       return S;
     };
   }
@@ -457,89 +483,58 @@
   // ---------- треки ----------
   const SONGS = {};
   const off8 = '.x.x.x.x', E = { k: '.', s: '.' };
-  // 1. СЕВМОЛОТ — бодрый рабочий рок-чиптюн, звон наковальни
-  SONGS.L1 = theme({ bpm: 144, key: 57, scale: SC.min, A: [0, 5, 2, 6, 0, 5, 3, 4], B: [3, 4, 0, 5, 3, 4, 6, 6],
-    lead: { i: 'sq', lo: 64, hi: 84, dens: 0.55, v: 0.075, upB: 2 }, bass: { i: 'sqb', pat: 'oct8', v: 0.16 },
-    gtr: { r: 'm.m.m.m.o---m.m.', on: 'B', v: 0.5 }, arp: { i: 'pluck', lo: 69, pat: 'eighth', v: 0.035, on: 'A' },
-    dA: { k: 'x.......x.x.....', s: '....x.......x...', h: 'x.x.x.x.x.x.x.x.' }, dB: { k: 'x...x...x...x.x.', s: '....x.......x...', o: '..x...x...x...x.' },
-    extra: (S) => { for (let b = 1; b < 16; b += 2) S.hit(b * 16 + 12, 'a', 1); } });
-  // 2. ДОРОГА ДОМОЙ — вечерний город, джаз-фанк с саксом
-  SONGS.L2 = theme({ bpm: 104, key: 62, scale: SC.dor, swing: 0.16, A: [[0, 'm7'], [8, 'M7'], [5, 'm7'], [7, '7'], [0, 'm7'], [8, 'M7'], [5, 'm7'], [7, '7']], B: [[3, 'M7'], [10, '7'], [8, 'M7'], [7, '7'], [5, 'm7'], [10, '7'], [3, 'M7'], [7, '7']],
-    lead: { i: 'sax', lo: 62, hi: 79, dens: 0.42, v: 0.085 }, bass: { i: 'bassR', pat: 'sync', v: 0.26 },
-    comp: { i: 'epiano', lo: 60, r: '..x-..x...x-.x..', v: 0.04 }, pad: { i: 'pad', lo: 55, v: 0.022, on: 'B' },
-    dA: { k: 'x......x..x.....', s: '....x.......x..-', h: 'x.x.x.x.x.x.x.x.' }, dB: { k: 'x......x..x..x..', s: '....x.......x...', h: 'x.xxx.x.x.xxx.x.', o: '..............x.' } });
-  // 3. ГЛЮКИ — психоделика: качающийся лид, стеклянные арпеджио, «глюк»-свисты, таракань топоток
-  SONGS.L3 = theme({ bpm: 122, key: 61, scale: SC.weird, A: [[0, 'min'], [1, 'maj'], [6, 'dim'], [0, 'min'], [0, 'min'], [1, 'maj'], [8, 'aug'], [7, 'sus']], B: [[4, 'aug'], [1, 'maj'], [10, 'min'], [6, 'dim'], [4, 'aug'], [1, 'maj'], [7, 'sus'], [7, 'maj']],
-    lead: { i: 'wob', lo: 61, hi: 80, dens: 0.35, v: 0.06 }, bass: { i: 'bassW', pat: 'half', v: 0.24 },
-    arp: { i: 'bell', lo: 73, pat: 'updown', v: 0.028 }, pad: { i: 'dark', lo: 49, v: 0.03, on: 'B' }, echo: 60 / 122 * 0.75,
-    dA: { k: 'x.....x...x.....', m: '..x...x...x.x.x.', b: 'x.x.x.x.x.x.x.x.' }, dB: { k: 'x.....x...x.....', x: '....x.......x...', m: '..x..x....x..x.x', b: 'xxxxxxxxxxxxxxxx' },
-    extra: (S, ch, R) => { for (let b = 3; b < 16; b += 4) S.at(b * 16 + 8, t => { syn(t, 96, 0.9, 0.05, { w: 'sine', slide: -48, slideT: 0.9, echo: 0.5, rev: 0.5 }); });
-      for (let b = 1; b < 16; b += 2) S.at(b * 16 + 13, (t, sd) => { for (let i = 0; i < 6; i++) DR.m(t + i * sd / 2, 0.5); }); } });
-  // 4. ДИКИЕ КОШКИ — клубный евроданс: бочка в пол, октавный бас, стэбы
-  SONGS.L4 = theme({ bpm: 126, key: 53, scale: SC.min, A: [[0, 'min'], [8, 'maj'], [3, 'maj'], [10, 'maj'], [0, 'min'], [8, 'maj'], [3, 'maj'], [10, 'maj']], B: [[8, 'maj'], [10, 'maj'], [3, 'maj'], [0, 'min'], [8, 'maj'], [10, 'maj'], [7, 'min'], [7, 'maj']],
-    lead: { i: 'saw', lo: 65, hi: 84, dens: 0.6, v: 0.06 }, bass: { i: 'bass', pat: 'disco', v: 0.2 },
-    comp: { i: 'stab', lo: 60, r: '..x-..x-..x-.x-.', v: 0.035 }, pad: { i: 'pad', lo: 56, v: 0.02, on: 'A' },
-    dA: { k: 'x...x...x...x...', x: '....x.......x...', o: '..x...x...x...x.' }, dB: { k: 'x...x...x...x...', x: '....x.......x...', o: '..x...x...x...x.', h: 'xxxxxxxxxxxxxxxx' }, fill: false,
-    extra: (S) => { S.at(15 * 16, (t, sd) => nz(t, sd * 16, 0.12, 'bandpass', 400, 2, 9000)); } });
-  // 5. ПОГОНЯ — гоночный драйв: 16-й бас, медь, сирена
-  SONGS.L5 = theme({ bpm: 162, key: 52, scale: SC.min, A: [[0, 'min'], [8, 'maj'], [10, 'maj'], [0, 'min'], [0, 'min'], [8, 'maj'], [5, 'min'], [7, 'maj']], B: [[8, 'maj'], [10, 'maj'], [3, 'maj'], [7, 'maj'], [8, 'maj'], [10, 'maj'], [5, 'min'], [7, 'maj']],
-    lead: { i: 'saw', lo: 64, hi: 86, dens: 0.5, v: 0.065, upB: 3 }, bass: { i: 'bass', pat: 'drive16', v: 0.17 },
-    comp: { i: 'brass', lo: 59, r: 'x-.x-...x-.x-...', v: 0.035, on: 'B' }, arp: { i: 'sq', lo: 64, pat: 'up', v: 0.02, on: 'A' },
-    dA: { k: 'x...x..xx...x...', s: '....x.......x...', h: 'xxxxxxxxxxxxxxxx' }, dB: { k: 'x...x...x...x...', s: '....x.......x..x', h: 'x.x.x.x.x.x.x.x.', o: '..x...x...x...x.' },
-    extra: (S) => { for (let b = 6; b < 16; b += 8) for (let i = 0; i < 4; i++) S.note(b * 16 + i * 4, 'siren', i % 2 ? 76 : 81, 4, 0.03); } });
-  // 6. ГРИБНОЙ ДОЖДЬ — сказочный лес 12/8: флейта, арфа, бубен, капли
-  SONGS.L6 = theme({ bpm: 88, sub: 3, key: 62, scale: SC.dor, A: [[0, 'min'], [5, 'maj'], [0, 'min'], [10, 'maj'], [0, 'min'], [5, 'maj'], [3, 'maj'], [7, 'min']], B: [[3, 'maj'], [10, 'maj'], [5, 'maj'], [7, 'min'], [3, 'maj'], [10, 'maj'], [5, 'maj'], [5, 'maj']],
-    lead: { i: 'flute', lo: 67, hi: 86, dens: 0.4, v: 0.085 }, bass: { i: 'bassR', pat: 'six8', v: 0.22 },
-    arp: { i: 'harp', lo: 62, pat: 'updown', v: 0.04 }, pad: { i: 'choir', lo: 57, v: 0.018, on: 'B' },
-    dA: { T: 'x.....x..x..', b: '.xx.xx.xx.xx', m: '...x.....x..' }, dB: { T: 'x.....x..x..', t: '.........x.x', b: 'xxxxxxxxxxxx', m: '...x.....x..' },
-    extra: (S, ch, R) => { for (let i = 0; i < 26; i++) { const st = (R() * S.len) | 0, m = 84 + (R() * 12 | 0); S.at(st, t => syn(t, m, 0.12, 0.03, { w: 'sine', slide: 7, slideT: 0.08, a: 0.002, d: 0.1, s: 0, rev: 0.5 })); } } });
-  // 7. ЗАВОДОУПРАВЛЕНИЕ — шпионский нуар: контрабас, вибрафон, щётки
-  SONGS.L7 = theme({ bpm: 92, key: 52, scale: SC.min, swing: 0.22, A: [[0, 'm7'], [0, 'm7'], [6, 'm7b5'], [7, '7'], [0, 'm7'], [0, 'm7'], [6, 'm7b5'], [7, '7']], B: [[5, 'm7'], [0, 'm7'], [8, 'M7'], [7, '7'], [5, 'm7'], [2, 'm7b5'], [8, 'M7'], [7, '7']],
-    lead: { i: 'vibes', lo: 64, hi: 83, dens: 0.3, v: 0.08 }, bass: { i: 'bassW', pat: 'walk', v: 0.3 },
-    comp: { i: 'brass', lo: 55, r: 'x--.........x-..', v: 0.02, on: 'B' },
-    dA: { r: 'x...x.x.x...x.x.', h: '....x.......x...', k: '-.........-.....' }, dB: { r: 'x...x.x.x...x.x.', h: '....x.......x...', k: '-.........-.....', s: '......-.......-.' }, fill: false });
-  SONGS.L7alarm = theme({ bpm: 150, key: 52, scale: SC.phr, A: [[0, 'min'], [0, 'min'], [1, 'maj'], [0, 'min']], B: [[3, 'maj'], [1, 'maj'], [0, 'min'], [1, 'maj']],
-    lead: { i: 'siren', lo: 70, hi: 82, dens: 0.3, v: 0.04 }, bass: { i: 'acid', pat: 'drive16', v: 0.16 },
-    dA: { k: 'x...x...x...x...', s: '....x.......x...', h: 'x.x.x.x.x.x.x.x.' }, dB: { k: 'x...x...x...x...', s: '....x.......x.xx', h: 'xxxxxxxxxxxxxxxx' },
-    extra: (S) => { for (let b = 0; b < 8; b++) for (let i = 0; i < 2; i++) S.note(b * 16 + i * 8, 'siren', i ? 76 : 83, 6, 0.028); } });
-  SONGS.L7fight = theme({ bpm: 138, key: 55, scale: SC.min, A: [[0, 'min'], [0, 'min'], [8, 'maj'], [7, 'maj']], B: [[5, 'min'], [8, 'maj'], [10, 'maj'], [7, 'maj']],
-    lead: { i: 'brass', lo: 62, hi: 79, dens: 0.45, v: 0.07 }, bass: { i: 'bass', pat: 'sync', v: 0.2 }, comp: { i: 'stab', lo: 60, r: 'x-.x-.....x-....', v: 0.035 },
-    gtr: { r: 'm.mm..m.m.mm..o-', v: 0.5 }, dA: { k: 'x.....x...x.....', s: '....x..x.x..x...', h: 'x.x.x.x.x.x.x.x.' }, dB: { k: 'x.x...x...x.x...', s: '....x..x.x..x..x', h: 'xxxxxxxxxxxxxxxx' } });
-  // 8. ЗАКУЛИСЬЕ — тир-боевик в духе NES: пульс-лид, хоррор-орган, лязг механизмов
-  SONGS.L8 = theme({ bpm: 134, key: 52, scale: SC.phr, A: [[0, 'min'], [1, 'maj'], [0, 'min'], [1, 'maj'], [0, 'min'], [3, 'maj'], [1, 'maj'], [10, 'maj']], B: [[5, 'min'], [1, 'maj'], [3, 'maj'], [0, 'min'], [5, 'min'], [1, 'maj'], [11, 'dim'], [0, 'min']],
-    lead: { i: 'sq', lo: 64, hi: 83, dens: 0.6, v: 0.07 }, bass: { i: 'sqb', pat: 'root8', v: 0.17 },
-    pad: { i: 'organ', lo: 52, v: 0.018, on: 'A' }, gtr: { r: 'm.m.m.mmm.m.o---', on: 'B', v: 0.55 },
-    dA: { k: 'x.x...x.x.x...x.', s: '....x.......x...', h: 'x.x.x.x.x.x.x.x.' }, dB: { k: 'x.x...x.x.x...x.', s: '....x.......x...', h: 'x.x.x.x.x.x.x.x.', a: 'x...............' } });
-  // 9. ПОДЗЕМКА — тёмное техно в тоннеле и тревожный эмбиент в лаборатории
-  SONGS.L9 = theme({ bpm: 134, key: 54, scale: SC.min, A: [[0, 'min'], [0, 'min'], [0, 'min'], [8, 'maj'], [0, 'min'], [0, 'min'], [0, 'min'], [8, 'maj']], B: [[3, 'maj'], [8, 'maj'], [10, 'maj'], [0, 'min'], [3, 'maj'], [8, 'maj'], [10, 'maj'], [10, 'maj']],
-    lead: { i: 'bell', lo: 66, hi: 85, dens: 0.22, v: 0.06 }, bass: { i: 'acid', pat: 'drive16', v: 0.15 }, pad: { i: 'dark', lo: 54, v: 0.025, on: 'B' },
-    dA: { k: 'x...x...x...x...', o: '..x...x...x...x.', m: '......x.......x.' }, dB: { k: 'x...x...x...x...', o: '..x...x...x...x.', x: '....x.......x...', h: 'xxxxxxxxxxxxxxxx' }, fill: false,
-    extra: (S) => { for (let b = 3; b < 16; b += 4) S.at(b * 16, (t, sd) => nz(t, sd * 16, 0.08, 'bandpass', 300, 1.5, 3000)); } });
-  SONGS.L9lab = theme({ bpm: 100, key: 48, scale: SC.harm, A: [[0, 'min'], [8, 'maj'], [5, 'min'], [7, 'maj'], [0, 'min'], [8, 'maj'], [5, 'min'], [7, 'maj']], B: [[3, 'maj'], [8, 'maj'], [11, 'dim'], [7, 'maj'], [3, 'maj'], [8, 'maj'], [2, 'dim'], [7, 'maj']],
-    lead: { i: 'bell', lo: 67, hi: 84, dens: 0.28, v: 0.065 }, bass: { i: 'bassR', pat: 'pulse', v: 0.22 }, pad: { i: 'dark', lo: 51, v: 0.03 },
-    arp: { i: 'pluck', lo: 72, pat: 'eighth', v: 0.022, on: 'B' },
-    dA: { k: 'x.........x.....', m: 'x.x.x.x.x.x.x.x.' }, dB: { k: 'x.........x.....', m: 'x.x.x.x.x.x.x.x.', s: '........-.......', h: '..x...x...x...x.' }, fill: false });
+  // Все уровни — в духе саундтрека Serious Sam 3 (эпичный металл, без восточного лада). Стелс и лаборатория — спокойные.
+  const sirens = S => { for (let b = 6; b < 30; b += 8) for (let i = 0; i < 4; i++) S.note(b * S.spb + i * 4, 'siren', i % 2 ? 76 : 81, 4, 0.025); };
+  const calmDr = { T: 'x.........x.....', m: '....x.......x...' };
+  SONGS.L1 = sam({ bpm: 150, root: 40, riff: 'thrash', drA: 'thrash', drB: 'double', extra: S => { for (let i = 2 * S.spb + 12; i < S.len; i += 2 * S.spb) S.hit(i, 'a', 0.8); } }); // Севмолот + наковальня
+  SONGS.L2 = sam({ bpm: 132, root: 45, riff: 'groove', drA: 'groove', drB: 'double' });                   // Дорога домой
+  SONGS.L3 = sam({ bpm: 120, root: 37, riff: 'chug', drA: 'four', drB: 'half', kick: 'follow', acc: [3, 6, 5, 7] }); // Глюки
+  SONGS.L4 = sam({ bpm: 140, root: 41, riff: 'chug', drA: 'four', drB: 'double', acc: [3, 5, 7, 8] });     // Дикие кошки
+  SONGS.L5 = sam({ bpm: 176, root: 40, riff: 'gallop', drA: 'gallopK', drB: 'double', acc: [3, 5, 7, 8], extra: sirens }); // Погоня
+  SONGS.L6 = sam({ bpm: 120, sub: 3, root: 38, riff: 'shuffle', drA: 'shuffle', drB: 'double', acc: [3, 5, 7, 10], keys: 'harp' }); // Грибной дождь 12/8
+  SONGS.L7 = theme({ bpm: 92, key: 50, scale: SC.min, A: [[0, 'min'], [8, 'maj'], [0, 'min'], [10, 'maj'], [0, 'min'], [8, 'maj'], [5, 'min'], [7, 'min']], B: [[5, 'min'], [8, 'maj'], [10, 'maj'], [0, 'min'], [3, 'maj'], [8, 'maj'], [10, 'maj'], [0, 'min']],
+    lead: { i: 'str', lo: 57, hi: 74, dens: 0.35, v: 0.06 }, bass: { i: 'bassR', pat: 'long', v: 0.2 }, pad: { i: 'strL', lo: 50, v: 0.02 }, arp: { i: 'str', lo: 62, pat: 'eighth', v: 0.016, on: 'B' },
+    dA: calmDr, dB: { T: 'x.........x.....', m: '....x.......x.x.', h: '..x...x...x...x.' }, fill: false, extra: S => { for (let b = 0; b < 16; b += 4) S.hit(b * 16, 'G', 0.7); } }); // Заводоуправление (стелс)
+  SONGS.L7alarm = sam({ bpm: 168, root: 40, riff: 'trem', drA: 'double', drB: 'blast', extra: sirens });   // Тревога
+  SONGS.L7fight = sam({ bpm: 150, root: 43, riff: 'thrash', drA: 'dbeat', drB: 'double' });                // Драка с охраной
+  SONGS.L8 = sam({ bpm: 138, root: 40, riff: 'neo', drA: 'thrash', drB: 'double', keys: 'harpsi', extra: S => { for (let i = 2 * S.spb; i < S.len; i += 4 * S.spb) S.hit(i, 'a', 0.7); } }); // Закулисье
+  SONGS.L9 = sam({ bpm: 160, root: 42, riff: 'trem', drA: 'double', drB: 'blast' });                       // Тоннель
+  SONGS.L9lab = theme({ bpm: 100, key: 48, scale: SC.min, A: [[0, 'min'], [8, 'maj'], [5, 'min'], [0, 'min'], [0, 'min'], [8, 'maj'], [3, 'maj'], [7, 'min']], B: [[10, 'maj'], [8, 'maj'], [5, 'min'], [0, 'min'], [10, 'maj'], [3, 'maj'], [8, 'maj'], [0, 'min']],
+    lead: { i: 'bell', lo: 60, hi: 79, dens: 0.3, v: 0.065 }, bass: { i: 'bassR', pat: 'half', v: 0.2 }, pad: { i: 'dark', lo: 48, v: 0.028 }, arp: { i: 'str', lo: 60, pat: 'updown', v: 0.016 },
+    dA: calmDr, dB: { T: 'x.....x...x.....', m: '....x.......x...', h: 'x.x.x.x.x.x.x.x.' }, fill: false, extra: S => { for (let b = 0; b < 16; b += 2) S.hit(b * 16, 'G', 0.6); } }); // Лаборатория
 
   // боссы: у каждого свой стиль
   const clank = S => { for (let i = 2 * S.spb + 12; i < S.len; i += S.spb) S.hit(i, 'a', 1); };
   const glitch = (S, R, root) => { for (let b = 3; b < 30; b += 4) S.at(b * S.spb + S.spb - 4, (t, sd) => { for (let i = 0; i < 8; i++) gtr(t + i * sd / 2, root + i, sd / 2, { mute: true, v: 0.9 }); }); };
   const keysOrgan = (S, R, root) => { for (let b = 2; b < 10; b++) S.note(b * S.spb, 'organ', root + 24 + (b % 2 ? 5 : 0), S.spb, 0.03), S.note(b * S.spb, 'organ', root + 31 + (b % 2 ? 5 : 0), S.spb, 0.025); };
   const ambient = (S, R, root) => { const ns = [0, 3, 7, 10, 14, 15].map(x => root + 36 + x); for (let b = 2; b < 10; b++) for (let i = 0; i < S.spb; i += 3) S.note(b * S.spb + i, 'bell', ns[(R() * ns.length) | 0], 3, 0.03); };
+  // заставки: громкость как у остальной музыки (старый чиптюн main.js был почти не слышен)
+  SONGS.cutscene = theme({ bpm: 76, key: 45, scale: SC.min, A: [[0, 'min'], [8, 'maj'], [3, 'maj'], [10, 'maj'], [0, 'min'], [8, 'maj'], [5, 'min'], [7, 'maj']], B: [[8, 'maj'], [10, 'maj'], [3, 'maj'], [7, 'maj'], [8, 'maj'], [5, 'min'], [10, 'maj'], [7, 'maj']],
+    lead: { i: 'strM', lo: 60, hi: 77, dens: 0.3, v: 0.06 }, bass: { i: 'bassR', pat: 'half', v: 0.22 }, pad: { i: 'choir', lo: 57, v: 0.022 }, arp: { i: 'str', lo: 57, pat: 'eighth', v: 0.014, on: 'B' },
+    dA: { G: 'x...............' }, dB: { G: 'x.......x.......', T: '..........x...x.' }, fill: false });
+  SONGS.intro = theme({ bpm: 70, key: 50, scale: SC.min, A: [[0, 'min'], [0, 'min'], [8, 'maj'], [8, 'maj'], [5, 'min'], [5, 'min'], [7, 'maj'], [7, 'maj']], B: [[3, 'maj'], [10, 'maj'], [8, 'maj'], [7, 'maj'], [3, 'maj'], [10, 'maj'], [5, 'min'], [7, 'maj']],
+    lead: { i: 'strM', lo: 62, hi: 79, dens: 0.25, v: 0.06 }, bass: { i: 'bassR', pat: 'long', v: 0.22 }, pad: { i: 'dark', lo: 50, v: 0.026 }, arp: { i: 'str', lo: 62, pat: 'updown', v: 0.012, on: 'B' },
+    dA: { G: 'x...............' }, dB: { G: 'x.......x.......', T: '............x.x.' }, fill: false });
+
+  // боссы по нарастающей: чем круче босс, тем быстрее и жёстче; финал ур.10 — самый эпичный
+  const epic = (S, R, root) => { const M = S.meta;      // хор и струнные на всю песню, большой барабан каждый такт
+    for (let b = 2; b < 30; b += 2) { const c = b >= 10 && b < 18 ? M.chB[b - 10] : { pcs: new Set([root % 12, (root + 4) % 12, (root + 7) % 12]) }; padBar(S, b, c, M.ctx, 'choir', root + 24, 0.045, S.spb * 2); padBar(S, b, c, M.ctx, 'strL', root + 12, 0.025, S.spb * 2); }
+    for (let b = 2; b < 30; b++) S.hit(b * S.spb, 'G', 1.1); };
   Object.assign(SONGS, {
-    'boss:1': metal({ bpm: 178, root: 40, scale: 'min', riff: 'thrash', drA: 'thrash', drB: 'double' }),                       // Наташа — трэш
-    'boss:2': metal({ bpm: 196, root: 45, scale: 'min', riff: 'punk', drA: 'dbeat', drB: 'thrash', acc: [5, 7, 10, 3] }),       // Кеша — панк-метал
-    'boss:3': metal({ bpm: 104, root: 36, scale: 'phr', riff: 'groove', drA: 'groove', drB: 'half', acc: [1, 6, 3, 7], kick: 'follow', extra: glitch }), // глюк-таракан — грув/ню
-    'boss:4': metal({ bpm: 138, sub: 3, root: 43, scale: 'blues', riff: 'shuffle', drA: 'shuffle', drB: 'double', acc: [3, 5, 6, 10], extra: keysOrgan }), // байкер — хард-рок шаффл
-    'boss:5': metal({ bpm: 208, root: 42, scale: 'harm', riff: 'gallop', drA: 'gallopK', drB: 'double', acc: [3, 7, 8, 11] }),  // гонка с Граблионком — спид-метал
-    'boss:6': metal({ bpm: 168, root: 38, scale: 'harm', riff: 'trem', drA: 'double', drB: 'blast', choir: true, keys: 'harpsi' }), // Ванделорд — симфо
-    'boss:7a': metal({ bpm: 132, root: 38, scale: 'phr', riff: 'chug', drA: 'four', drB: 'double', acc: [1, 6, 3], kick: 'follow', extra: clank }), // охрана — индастриал
-    'boss:7b': metal({ bpm: 186, root: 39, scale: 'min', riff: 'trem', drA: 'double', drB: 'blast', acc: [3, 5, 7, 8] }),          // начальник охраны — мелодик-дэт
-    'boss:8': metal({ bpm: 124, root: 35, scale: 'phr', riff: 'djent', drA: 'djent', drB: 'half', extra: ambient }),             // петух и паук — джент
-    'boss:9a': metal({ bpm: 214, root: 37, scale: 'min', riff: 'trem', drA: 'blast', drB: 'double', choir: true }),               // Саня — блэк
-    'boss:9b': metal({ bpm: 76, root: 38, scale: 'blues', riff: 'doom', drA: 'half', drB: 'groove', acc: [3, 5, 6, 10], extra: keysOrgan }), // Семён — дум/сладж
-    'boss:10a': metal({ bpm: 184, root: 40, scale: 'harm', riff: 'gallop', drA: 'gallopK', drB: 'double', choir: true }),         // гигант-Семён: крыши — пауэр
-    'boss:10b': metal({ bpm: 200, root: 45, scale: 'phrd', riff: 'neo', drA: 'double', drB: 'blast', keys: 'harpsi' }),           // небо — неоклассика
-    'boss:10c': metal({ bpm: 160, root: 38, scale: 'min', riff: 'gallop', drA: 'gallopK', drB: 'double', choir: true, keys: 'harpsi' }), // море — эпический финал
+    'boss:1': sam({ bpm: 124, root: 40, riff: 'groove', drA: 'groove', drB: 'four' }),                                    // Наташа
+    'boss:2': sam({ bpm: 132, root: 45, riff: 'punk', drA: 'dbeat', drB: 'thrash', acc: [5, 7, 3, 10] }),                    // Кеша
+    'boss:3': sam({ bpm: 138, root: 37, riff: 'chug', drA: 'four', drB: 'double', acc: [3, 6, 5, 7], kick: 'follow', extra: glitch }), // глюк-таракан
+    'boss:4': sam({ bpm: 146, sub: 3, root: 43, riff: 'shuffle', drA: 'shuffle', drB: 'double', acc: [3, 5, 7, 10], extra: keysOrgan }), // байкер
+    'boss:5': sam({ bpm: 154, root: 42, riff: 'gallop', drA: 'gallopK', drB: 'double', acc: [3, 5, 7, 8] }),               // гонка с Граблионком
+    'boss:6': sam({ bpm: 162, root: 38, riff: 'trem', drA: 'double', drB: 'double', keys: 'harpsi' }),                       // Ванделорд
+    'boss:7a': sam({ bpm: 168, root: 38, riff: 'chug', drA: 'thrash', drB: 'double', acc: [3, 6, 5], kick: 'follow', extra: clank }), // охрана
+    'boss:7b': sam({ bpm: 174, root: 39, riff: 'trem', drA: 'double', drB: 'blast', acc: [3, 5, 7, 8] }),                    // начальник охраны
+    'boss:8': sam({ bpm: 180, root: 35, riff: 'thrash', drA: 'thrash', drB: 'blast', extra: ambient }),                       // петух и паук
+    'boss:9a': sam({ bpm: 188, root: 37, riff: 'trem', drA: 'blast', drB: 'double', darbV: 0.6 }),                          // Саня
+    'boss:9b': sam({ bpm: 196, root: 38, riff: 'gallop', drA: 'gallopK', drB: 'blast', darbV: 0.6, extra: keysOrgan }),     // Семён
+    'boss:10a': sam({ bpm: 204, root: 40, riff: 'gallop', drA: 'gallopK', drB: 'blast', darbV: 0.7, extra: epic }),        // гигант-Семён: крыши
+    'boss:10b': sam({ bpm: 212, root: 45, riff: 'neo', drA: 'double', drB: 'blast', keys: 'harpsi', darbV: 0.7, extra: epic }), // небо
+    'boss:10c': sam({ bpm: 220, root: 38, riff: 'trem', drA: 'blast', drB: 'gallopK', keys: 'harpsi', darbV: 0.8, extra: epic }), // море — финал, самый эпичный
   });
 
   // ---------- подмена имён: общий вызов -> трек текущего уровня ----------
@@ -551,7 +546,7 @@
     const id = lv && lv.id; if (!id) return name;
     if (id === 5 && name === 'chase' && lv.raceStarted) return 'boss:5';
     if (id === 9 && (name === 'alarm' || name === 'boss' || name === 'epicBoss')) { if (lv.partName === 'semen') return 'boss:9b'; if (lv.partName === 'sanya') return 'boss:9a'; }
-    if (name === 'boss' || name === 'epicBoss') {
+    if (name === 'boss' || name === 'epicBoss' || (id === 10 && name === 'alarm')) {     // ф1 ур.10 идёт на движке ур.9 — тот зовёт 'alarm', а такого трека у ур.10 нет (была тишина)
       if (id === 10) return 'boss:10' + ({ jet: 'b', sea: 'c' }[lv.partName] || 'a');
       if (id === 7) return 'boss:7a';
       if (id === 9) return 'boss:9a';
@@ -580,6 +575,11 @@
   };
   Music.stop = function () { this.v2 = null; baseStop.call(this); };
   Music.update = function () {
+    let sc = null; try { sc = G.Scene; } catch (e) {}
+    if (sc && sc.active && !this.v2 && !this.cur && Sound.ac) {
+      const now = performance.now(); this.quietT = this.quietT || now;
+      if (now - this.quietT > 1500) { this.quietT = 0; this.play('cutscene'); }
+    } else this.quietT = 0;
     if (!this.v2) return baseUpdate.call(this);
     if (!Sound.ac || !FX) return;
     const v = this.v2, S = v.song, sd = 60 / S.bpm / S.sub, now = Sound.ac.currentTime;
@@ -596,9 +596,9 @@
   if (/[?&]jukebox\b/.test(location.search)) window.addEventListener('load', () => {
     const box = document.createElement('div');
     box.style.cssText = 'position:fixed;left:8px;top:8px;z-index:99;background:rgba(0,0,0,.85);color:#fff;font:13px monospace;padding:8px;border-radius:6px;max-width:360px';
-    const NAMES = { L1: '1 Севмолот', L2: '2 Дорога домой', L3: '3 Глюки', L4: '4 Дикие кошки', L5: '5 Погоня', L6: '6 Грибной дождь', L7: '7 Заводоуправление', L7alarm: '7 Тревога', L7fight: '7 Драка с охраной', L8: '8 Закулисье', L9: '9 Тоннель', L9lab: '9 Лаборатория',
-      'boss:1': 'Босс 1 Наташа (трэш)', 'boss:2': 'Босс 2 Кеша (панк-метал)', 'boss:3': 'Босс 3 Таракан (грув)', 'boss:4': 'Босс 4 Байкер (шаффл)', 'boss:5': 'Босс 5 Граблионок (спид)', 'boss:6': 'Босс 6 Ванделорд (симфо)', 'boss:7a': 'Босс 7 Охрана (индастриал)', 'boss:7b': 'Босс 7 Начальник (мелодик-дэт)',
-      'boss:8': 'Босс 8 Петух+Паук (джент)', 'boss:9a': 'Босс 9 Саня (блэк)', 'boss:9b': 'Босс 9 Семён (дум)', 'boss:10a': 'Финал: крыши (пауэр)', 'boss:10b': 'Финал: небо (неоклассика)', 'boss:10c': 'Финал: море (эпик)' };
+    const NAMES = { cutscene: 'Заставки', intro: 'Вступление ур.1', L1: '1 Севмолот', L2: '2 Дорога домой', L3: '3 Глюки', L4: '4 Дикие кошки', L5: '5 Погоня', L6: '6 Грибной дождь', L7: '7 Заводоуправление', L7alarm: '7 Тревога', L7fight: '7 Драка с охраной', L8: '8 Закулисье', L9: '9 Тоннель', L9lab: '9 Лаборатория',
+      'boss:1': 'Босс 1 Наташа', 'boss:2': 'Босс 2 Кеша', 'boss:3': 'Босс 3 Таракан', 'boss:4': 'Босс 4 Байкер', 'boss:5': 'Босс 5 Граблионок', 'boss:6': 'Босс 6 Ванделорд', 'boss:7a': 'Босс 7 Охрана', 'boss:7b': 'Босс 7 Начальник',
+      'boss:8': 'Босс 8 Петух+Паук', 'boss:9a': 'Босс 9 Саня', 'boss:9b': 'Босс 9 Семён', 'boss:10a': 'Финал: крыши', 'boss:10b': 'Финал: небо', 'boss:10c': 'Финал: море' };
     box.innerHTML = '<b>Музыка игры</b> (боссы: повторный клик — новый рифф)<br>';
     for (const k in SONGS) { const b = document.createElement('button'); b.textContent = NAMES[k] || k; b.style.cssText = 'display:block;margin:2px 0;width:100%;text-align:left'; b.onclick = () => { Sound.unlock(); if (Music.v2) Music.v2.req = 0; Music.play(k); }; box.appendChild(b); }
     const st = document.createElement('button'); st.textContent = 'СТОП'; st.onclick = () => Music.stop(); box.appendChild(st);

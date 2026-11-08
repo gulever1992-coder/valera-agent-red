@@ -1,4 +1,4 @@
-// Уровень 10 «ФИНАЛ» — гигант-Семён. ТЗ: L10_TZ.md, раскадровка: L10_STORYBOARD.md.
+// Уровень 10 «ФИНАЛ» — гигант-Семён. ТЗ: docs/L10_TZ.md, раскадровка: docs/L10_STORYBOARD.md.
 // Части: intro (кинокатсцена) -> run (ф1, крыши) -> jet (ф2, джетпак) -> mid (катсцена) -> sea (ф3, море) -> nuke -> outro.
 // Листы L10D (js/l10_data.js) рисуются как L9D: координаты логические 640x360, кадры в пикселях холста (k=0.5).
 const L10 = { img: {}, ready: false, PARTS: {} };
@@ -24,9 +24,10 @@ WHO.semen = WHO.semen || { name: 'СЕМЁН', color: '#7cff6a', voice: 60 };
     if (L10.BLD2) await Promise.all(['bld10', 'rtop10'].map(async n => { try { L10.img[n] = await G.loadImage('assets/l10/' + n + '.png'); } catch (er) {} }));     // новые дома и предметы на крышах
     if (L10.RSC) await Promise.all([['rsrun', 'png']].concat(L10.RSC.plates.map(n => [n, 'jpg'])).map(async ([n, e]) => { try { L10.img[n] = await G.loadImage('assets/l10/' + n + '.' + e); } catch (er) {} }));     // катсцена: бег по крыше, завод и Семён
     if (L10.BG1) await Promise.all([['bg1sky', 'jpg'], ['bg1sea', 'jpg'], ['bg1cranes', 'png'], ['bg1quay', 'png'], ['bg1ships', 'png']].map(async ([n, e]) => { try { L10.img[n] = await G.loadImage('assets/l10/' + n + '.' + e); } catch (er) {} }));     // фон фазы 1: 4 слоя параллакса
+    if (L10.MIDA) await Promise.all(['jpg', 'png'].flatMap(e => L10.MIDA[e].map(n => [n, e])).map(async ([n, e]) => { try { L10.img['mid_' + n] = await G.loadImage('assets/l10/mid/' + n + '.' + e + '?v=' + G.VER); } catch (er) {} }));     // катсцена mid (джетпак сбит)
     for (const n of names) { L10.N[n] = {}; (D()[n].n || []).forEach((nm, i) => L10.N[n][nm] = i); }
     G.portraits = G.portraits || {};
-    await Promise.all(['yurik', 'basov', 'sub1', 'sub2', 'semen', 'valera6'].filter(k => !G.portraits[k]).map(async k => { try { G.portraits[k] = await G.loadImage('assets/spr/p_' + k + '.png'); } catch (e) {} }));
+    await Promise.all(['yurik', 'basov', 'sub1', 'sub2', 'semen', 'valera6', 'sailor', 'capt'].filter(k => !G.portraits[k]).map(async k => { try { G.portraits[k] = await G.loadImage('assets/spr/p_' + k + '.png'); } catch (e) {} }));
     L10.ready = true;
   };
   L10.has = sh => !!(D()[sh] && L10.img[sh]);
@@ -52,15 +53,21 @@ WHO.semen = WHO.semen || { name: 'СЕМЁН', color: '#7cff6a', voice: 60 };
   L10.lerp = (a, b, t) => a + (b - a) * t;
   L10.ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
   // фон-картинка, растянутая по высоте h, с повтором по x (параллакс k)
+  L10.SEAMLESS = new Set(['bg1sea']);     // бесшовные по краям (сшиты перекрёстным растворением) — тайлятся без зеркала: у зеркальных копий на волнах видны стыки (владелец)
   L10.bgTile = (c, n, camx, k, y = 0, h = 360, flipEven = false) => {
     const im = L10.img[n]; if (!im) return;
     const w = im.width / im.height * h, x0 = -((camx * k) % w + w) % w;
     c.imageSmoothingEnabled = true;
     const i0 = Math.floor((camx * k) / w);
-    for (let x = x0, i = i0; x < 640; x += w, i++) { if (i & 1) { c.save(); c.translate(Math.floor(x) + Math.ceil(w) + 1, y); c.scale(-1, 1); c.drawImage(im, 0, 0, Math.ceil(w) + 1, h); c.restore(); } else c.drawImage(im, Math.floor(x), y, Math.ceil(w) + 1, h); }     // нечётные — зеркально: стыков не видно
+    const mir = !L10.SEAMLESS.has(n); for (let x = x0, i = i0; x < 640; x += w, i++) { if ((i & 1) && mir) { c.save(); c.translate(Math.floor(x) + Math.ceil(w) + 1, y); c.scale(-1, 1); c.drawImage(im, 0, 0, Math.ceil(w) + 1, h); c.restore(); } else c.drawImage(im, Math.floor(x), y, Math.ceil(w) + 1, h); }     // нечётные — зеркально: стыков не видно
     c.imageSmoothingEnabled = false;
   };
   L10.ORDER = ['intro', 'run', 'jet', 'mid', 'sea', 'nuke', 'outro'];
+  L10.TAUNTS = {
+    run: ['Я устал от этого города! От этого завода!', 'Мне нужно большего! Я еду в столицу!', 'Город продан, Валера. Контракт подписан!', 'Я выжму из него все соки. И из тебя тоже!', 'Это я скинул Граблионка в реку!', 'Беги, беги! Крыши тебя не спасут!'],
+    jet: ['Кеша тоже был шустрый... пока не получил мой шприц!', 'Я носил маску Кеши и катался за тобой на Матизе!', 'В столовой я сидел рядом. Ты даже не заметил!', 'Наташке привет передать?', 'Я изучил тебя, Валера. Каждый твой шаг!', 'Лети-лети. Падать будет больнее!'],
+    sea: ['Всё должно было быть идеально!', 'Я убрал твоих друзей, чтобы добраться до тебя!', 'Тони, Валера! Море моё, завод мой!', 'Олигархи заплатят за этот город сполна!', 'Твой плот — щепки, твой город — мой!', 'Ты мне весь контракт сорвал!'],
+  };
 
   // ---------- погода: дождь и молнии (поверх всего, кроме HUD) ----------
   // бушующее море под грозой (фон фаз 1 и 2): слои bg1sky/bg1sea + корабли и подлодки; o.seaY — горизонт, o.seaH — высота моря
@@ -117,10 +124,23 @@ WHO.semen = WHO.semen || { name: 'СЕМЁН', color: '#7cff6a', voice: 60 };
     }
     get canPause() { return !(this.P && this.P.cine); }     // в катсцене Esc = пропуск, не пауза
     reset() {
-      this.t = 0; this.dead = 0; this.done = false; this.fadeIn = 0.7; this.msg = null; this.msgT = 0; this.tv = null; this.tvT = 0; this.eaten = 0;
+      this.t = 0; this.dead = 0; this.done = false; this.fadeIn = 0.7; this.msg = null; this.msgT = 0; this.tv = null; this.tvT = 0; this.eaten = 0; this.tn = null; this.tnT = 3.5;
       this.P = L10.PARTS[this.partName]; this.P.start(this, this.ck); if (L10.Drops) L10.Drops.reset(this);
     }
     say(s, t = 2.2) { this.msg = s; this.msgT = t; }
+    // Семён бросается фразами во время боя (владелец 2026-11-08; по его истории: контракт олигархов, Граблионок, Кеша, Матиз, столовая)
+    tauntUpd(dt) {
+      const L = L10.TAUNTS[this.partName], P = this.P; if (!L || P.cine || this.dead || (P.B && P.B.hp <= 0)) { this.tn = null; return; }
+      if (this.tn && (this.tn.t += dt) > this.tn.d) this.tn = null;
+      if ((this.tnT -= dt) > 0 || this.tn) return;
+      if (!this.tnQ || !this.tnQ.length) this.tnQ = L.slice().sort(() => Math.random() - 0.5);
+      const text = this.tnQ.pop(); this.tn = { text, t: 0, d: 2.2 + text.length * 0.045 }; this.tnT = 11 + Math.random() * 5; Sound.play('blip', 90);
+    }
+    drawTaunt(c) {     // владелец: фразы без окна — просто крупный текст с обводкой
+      const n = this.tn; if (!n) return; const a = L10.clamp(Math.min(n.t, n.d - n.t) / 0.2, 0, 1), sh = n.t < 0.15 ? (1 - n.t / 0.15) * 3 : 0; c.globalAlpha = a;
+      G.wrap(n.text.slice(0, Math.floor(n.t * 40)), 520, 12).slice(0, 2).forEach((l, i) => G.text(l, 320 + (Math.random() - 0.5) * sh, 30 + i * 18, { align: 'center', size: 12, color: '#b8ff7a', outline: true, shadowColor: '#0a1a04' }));
+      c.globalAlpha = 1;
+    }
     xsay() {}
     next() {
       const i = L10.ORDER.indexOf(this.partName);
@@ -140,6 +160,7 @@ WHO.semen = WHO.semen || { name: 'СЕМЁН', color: '#7cff6a', voice: 60 };
       if (this.dead) { this.dead += dt; if (this.P.deadUpdate) this.P.deadUpdate(this, dt); if (this.dead > (this.P.deadTime || 2.6)) { this.deathText = null; this.reset(); } return; }
       this.stats.time += dt;
       this.P.update(this, dt);
+      this.tauntUpd(dt);
       if (L10.Drops) L10.Drops.update(this, dt);
     }
     draw(c) {
@@ -147,7 +168,9 @@ WHO.semen = WHO.semen || { name: 'СЕМЁН', color: '#7cff6a', voice: 60 };
       this.P.draw(this, c);
       if (L10.Drops && !Scene.active) L10.Drops.draw(this, c);
       if (!Scene.active && !this.P.noHud) this.drawHud(c);
-      if (this.msgT > 0 && this.msg) G.text(Game.fmtHint(this.msg), 320, 70, { align: 'center', size: 8, color: '#ffd84a', outline: true });
+      if (!Scene.active) this.drawTaunt(c);
+      const my = this.tn ? 70 : 44;     // под плашкой Семёна
+      if (this.msgT > 0 && this.msg) { const m = Game.fmtHint(this.msg), w = m.length * 8 + 16; c.fillStyle = 'rgba(0,0,0,0.5)'; c.fillRect(320 - w / 2, my, w, 14); G.text(m, 320, my + 3, { align: 'center', size: 8, color: '#ffd84a', outline: true }); }     /* выше и на подложке — не на лице Семёна (арт-директор) */
       if (this.dead) { c.fillStyle = `rgba(0,0,0,${L10.clamp(this.dead / 1.4, 0, 0.92)})`; c.fillRect(0, 0, 640, 360); if (this.dead > 0.8) G.text(this.deathText || this.P.deathText || 'ВАЛЕРА ПОГИБ', 320, 160, { align: 'center', size: 16, color: '#ff5050', outline: true }); }
       if (this.fadeIn > 0) { c.fillStyle = `rgba(0,0,0,${L10.clamp(this.fadeIn / 0.7, 0, 1)})`; c.fillRect(0, 0, 640, 360); }
       Scene.drawDialog(c);
@@ -163,17 +186,17 @@ WHO.semen = WHO.semen || { name: 'СЕМЁН', color: '#7cff6a', voice: 60 };
     }
   };
   // шкала босса: сегменты фазы, таймер сегмента
-  L10.bossBar = (c, B, label = 'СЕМЁН') => {
-    const x = 170, y = 340, w = 300;
+  L10.bossBar = (c, B, label = 'СЕМЁН', y = 340) => {
+    const x = 170, w = 300;
     c.fillStyle = 'rgba(0,0,0,0.65)'; c.fillRect(x - 4, y - 14, w + 8, 24);
     G.text(label, x, y - 12, { size: 8, color: '#9dff7a' });
-    const n = B.segs, seg = w / n;
+    const n = B.barSegs || B.segs, seg = w / n, sh = B.maxHp / n;     // barSegs: рисовать одной шкалой (ф3)
     for (let i = 0; i < n; i++) {
-      const v = L10.clamp(B.hp - i * B.segHp, 0, B.segHp) / B.segHp;
+      const v = L10.clamp(B.hp - i * sh, 0, sh) / sh;
       c.fillStyle = '#301010'; c.fillRect(x + i * seg + 1, y, seg - 2, 7);
       c.fillStyle = B.inv ? '#5ad0ff' : B.flashT > 0 ? '#fff' : '#d82020'; c.fillRect(x + i * seg + 1, y, (seg - 2) * v, 7);
     }
-    if (B.segT != null) { const left = Math.max(0, B.segLimit - B.segT), m = left / 60 | 0, s = left % 60 | 0; G.text(m + ':' + String(s).padStart(2, '0'), x + w, y - 12, { align: 'right', size: 8, color: left < 30 ? '#ff4040' : '#ffd84a' }); }
+    if (B.segT != null && B.hp > 0) { const left = Math.max(0, B.segLimit - B.segT), m = left / 60 | 0, s = left % 60 | 0; G.text(m + ':' + String(s).padStart(2, '0'), x + w, y - 12, { align: 'right', size: 8, color: left < 30 ? '#ff4040' : '#ffd84a' }); }
   };
 })();
 

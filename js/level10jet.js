@@ -3,7 +3,7 @@
 // плазма изо рта, миниган руки на лбу, молнии. Завис на месте 1.5 с — шланг съедает сразу.
 (() => {
   const S = L10.spr, clamp = L10.clamp, rnd = L10.rnd;
-  const HP = 2800, SPD = 175;
+  const HP = 1400, SPD = 175, WATER = 318;     // фаза 2 = одна ячейка здоровья; Семён идёт по морю на Валеру, WATER — линия воды у его ног
   const P = L10.PARTS.jet = {
     deathText: 'СЕМЁН СЪЕЛ ВАЛЕРУ',
     start(lv, ck) {
@@ -11,14 +11,15 @@
       P.W = new L10.Weather(240);
       P.W.flashK = 0.35;     // молний много — общая вспышка слабее, чтобы кадр не засвечивало
       P.storm = L10.makeStorm(P.W, { seaY: 150, seaH: 230, shipZ: 70, ships: 9 });     // фон как в фазе 1: гроза и море до низа кадра, набережной нет
-      const B = P.B = L10.makeBoss(2, L10.RIG2 ? { H: 400, x: 545, y: 505, hp: HP, segs: 2, segLimit: 150 } : { H: 640, x: 540, y: 650, hp: HP, segs: 2, segLimit: 150 });
+      const B = P.B = L10.makeBoss(2, L10.RIG2 ? { H: 400, x: 600, y: 450, hp: HP, segs: 2, segLimit: 120 } : { H: 640, x: 540, y: 650, hp: HP, segs: 2, segLimit: 150 });
       B.setPose('idle'); P.A = { cur: null, cd: 2.5, t: 0 };
+      B.barSegs = 1;     // одна шкала, скрытый чекпоинт на половине
       if (ck) B.hp = B.maxHp - ck * B.segHp;     // чекпоинт: после смерти — с начала сегмента
       B.onSeg = (s) => { if (B.hp > 0) { lv.ck = s; lv.say('СЕМЁН ЗВЕРЕЕТ!', 2); B.setPose(L10.fr('sem2', 'hurt') ? 'hurt' : 'roar', 1.2); G.shake(8, 0.8); Sound.play('stomp'); } };
       B.onPop = (x, y) => { if (B.hp > 0 && P.foes.length < 4 + B.seg * 3) { const k = ['bat', 'worm', 'eye', 'blob'][(Math.random() * 4) | 0]; P.foes.push(new L10.Minion(k, x, y, { env: P.env, hpK: 1 })); } };
       P.env = { px: () => P.x, py: () => P.y, shoot: e => P.ebul.push(e), hurt: (d) => P.hurt(d), ground: null, lv };
       try { Music.play('epicBoss'); } catch (e) {}
-      lv.say('ЛЕТИ И СТРЕЛЯЙ! НЕ ЗАВИСАЙ НА МЕСТЕ!', 3.5);
+      lv.say('СЕМЁН ИДЁТ ПО МОРЮ! ЛЕТИ И СТРЕЛЯЙ!', 3.5);
     },
     onDie() {},
     hurt(d) { if (P.inv > 0 || P.grab || P.eat) return; P.lv.hurt(Math.ceil(d * 0.5)); P.inv = 1.2; P.hurtT = 0.3; P.calm = 0; },
@@ -32,11 +33,12 @@
       if (k === 'spawn') { B.setPose('roar', 1.0); for (const p of B.pimps) p.st = Math.max(p.st, 3.3); }
     },
     update(lv, dt) {
-      const I = G.Input, B = P.B, A = P.A; P.t += dt; P.inv -= dt; P.calm = (P.calm || 0) + dt; if (P.calm > 4 && P.hp < 100) P.hp = Math.min(100, P.hp + 2 * dt); P.fireT -= dt; P.fireA -= dt; P.hurtT -= dt; P.cam += dt * 60;
-      B.watch = [P.x, P.y]; P.W.update(dt, 4);     /* молнии чаще (владелец) */ B.update(dt); B.segT += dt; B.walk = 0;
+      const I = G.Input, B = P.B, A = P.A; P.t += dt; P.inv -= dt; P.calm = (P.calm || 0) + dt; if (P.calm > 6 && P.hp < 100) P.hp = Math.min(100, P.hp + 0.7 * dt); P.fireT -= dt; P.fireA -= dt; P.hurtT -= dt; P.cam += dt * 60;     // критик: реген 2/с делал фазу 2 бессмертной
+      B.watch = [P.x, P.y]; P.W.update(dt, 4);     /* молнии чаще (владелец) */ B.update(dt); B.segT += dt; B.walk = A.cur ? 0.6 : 1.8;     // владелец: Семён всё время идёт на Валеру, как в фазе 1
+      B.x += (clamp(P.x + 330, 470, 600) - B.x) * Math.min(1, dt * 0.6); if (B.walk > 1 && (P.t * 1.8 | 0) !== P.stepN) { P.stepN = P.t * 1.8 | 0; G.shake(2, 0.15); }
       if (B.hold <= 0 && !A.cur) B.setPose('idle');
       // ---- съедение (анимация) / захват
-      if (P.eat) { const e = P.eat; e.t += dt; const [mx, my] = B.P('m'), [hx, hy] = B.pt(0.45, 0.75); P.tent = e.t < 1.1 ? { x0: hx, y0: hy, x1: P.x, y1: P.y } : null; if (B.rig) B.hoseT = P.tent ? { x: P.x, y: P.y } : null;     // шланг тянет Валеру в пасть
+      if (P.eat) { const e = P.eat; if (!e.clr) { e.clr = 1; A.cur = null; B.glowE = B.glowM = 0; P.beam = null; B.aim = null; B.gunT = null; P.ebul = []; }     /* владелец: лазер застывал на экране, пока Семён ест Валеру */ e.t += dt; const [mx, my] = B.P('m'), [hx, hy] = B.pt(0.45, 0.75); P.tent = e.t < 1.1 ? { x0: hx, y0: hy, x1: P.x, y1: P.y } : null; if (B.rig) B.hoseT = P.tent ? { x: P.x, y: P.y } : null;     // шланг тянет Валеру в пасть
         P.x = L10.lerp(e.x0, mx, clamp(e.t / 1.0, 0, 1)); P.y = L10.lerp(e.y0, my, clamp(e.t / 1.0, 0, 1)); if (e.t > 1.1 && !e.ch) { e.ch = 1; Sound.play('punch'); G.shake(10, 0.5); G.flash(0.25, '#300'); } if (e.t > 1.4) { P.eat = null; lv.kill(e.text); } return; }
       if (P.grab) {
         const g = P.grab; g.t += dt; B.setPose('roar', 0.5); if (B.rig) B.hoseT = { x: P.x, y: P.y + 4 };
@@ -62,8 +64,8 @@
       // ---- пули
       for (const b of P.bul) {
         b.x += b.vx * dt; b.y += b.vy * dt;
-        for (const f of P.foes) if (!f.dead) { const bx = f.box(); if (b.x > bx[0] && b.x < bx[0] + bx[2] && b.y > bx[1] && b.y < bx[1] + bx[3]) { f.hit(b.dmg); b.dead = 1; P.fx.push({ k: 'hit', x: b.x, y: b.y, t: 0, life: 0.12 }); break; } }
-        if (!b.dead) { const r = B.hitAt(b.x, b.y, b.dmg); if (r) { b.dead = 1; lv.score += r === 'weak' ? 15 : 5; P.fx.push({ k: r === 'weak' ? 'whit' : 'hit', x: b.x, y: b.y, t: 0, life: 0.15 }); } }
+        for (const f of P.foes) if (!f.dead) { const bx = f.box(); if (b.x > bx[0] && b.x < bx[0] + bx[2] && b.y > bx[1] && b.y < bx[1] + bx[3]) { f.hit(b.dmg); b.dead = 1; lv.stats.hits = (lv.stats.hits || 0) + 1; P.fx.push({ k: 'hit', x: b.x, y: b.y, t: 0, life: 0.12 }); break; } }
+        if (!b.dead) { const r = B.hitAt(b.x, b.y, b.dmg); if (r) { b.dead = 1; lv.stats.hits = (lv.stats.hits || 0) + 1; lv.score += r === 'weak' ? 15 : 5; P.fx.push({ k: r === 'weak' ? 'whit' : 'hit', x: b.x, y: b.y, t: 0, life: 0.15 }); } }
         if (b.x > 680) b.dead = 1;
       }
       P.bul = P.bul.filter(b => !b.dead);
@@ -95,7 +97,7 @@
       }
       if (A.cur === 'eyes') {
         B.glowE = Math.min(1, A.t * 1.5);
-        if (A.t > 0.8) { A.ang += A.dirA * dt * 0.35; const [ex, ey] = B.P('e'), [ex2, ey2] = B.P('e2'); P.beam = { x0: ex, y0: ey, x1: ex2, y1: ey2, a: A.ang, laser: 1 }; B.aim = [ex + Math.cos(A.ang) * 300, ey + Math.sin(A.ang) * 300];
+        if (A.t > 0.8) { A.ang += A.dirA * dt * 0.35; const [ex, ey] = B.P('e'), [ex2, ey2] = B.P('e2'); P.beam = { x0: ex, y0: ey, x1: ex2, y1: ey2, a: A.ang, laser: 1 };     /* владелец: лазер из двух глаз */ B.aim = [ex + Math.cos(A.ang) * 300, ey + Math.sin(A.ang) * 300];
           const px = P.x - ex, py = P.y - ey, ux = Math.cos(A.ang), uy = Math.sin(A.ang); if (px * ux + py * uy > 0 && Math.abs(px * uy - py * ux) < 9) P.hurt(12);
           if (A.t > 2.8) end(1.3); }
       }
@@ -108,17 +110,26 @@
     },
     draw(lv, c) {
       const B = P.B;
-      if (L10.img.bg1sky) P.storm(c, P.t * 90);     // летим — море и небо плывут
+      if (L10.img.bg1sky) P.storm(c, P.t * 150);     // летим — море и небо плывут
       else { L10.bgTile(c, 'bg2', -P.cam, 0.25, 0, 360); P.W.drawBolt(c); }
-      for (const s of P.strikes) { if (s.t < 0.8) { if (L10.has('fx10')) S(c, 'fx10', ((s.x | 0) % 2) ? 'bolt0' : 'bolt1', s.x, 180, 1.2, { add: 1, a: 0.12 + 0.12 * Math.abs(Math.sin(s.t * 30)) }); } else if (L10.has('fx10')) S(c, 'fx10', ((s.x | 0) % 2) ? 'bolt0' : 'bolt1', s.x, 180, 1.2, { add: 1, a: 1 - (s.t - 0.8) / 0.3 }); else { c.fillStyle = '#eef'; c.fillRect(s.x - 3, 0, 6, 360); } }
+      const BT = -40, BB = 345;     /* владелец: молния начинается сверху за краем экрана и бьёт до воды (раньше обрывалась посреди неба) */
+      const bolt = (s, a) => { const n = ((s.x | 0) % 2) ? 'bolt0' : 'bolt1', f = L10.fr('fx10', n); if (!f) return; const h = f[3] * 0.5 * 1.2, cy = f[5] * 0.5 * 1.2; const sy = (BB - BT) / h; S(c, 'fx10', n, s.x, BT + cy * sy, 1.2, { add: 1, a, sy }); };
+      for (const s of P.strikes) { if (s.t < 0.8) { if (L10.has('fx10')) bolt(s, 0.12 + 0.12 * Math.abs(Math.sin(s.t * 30))); } else if (L10.has('fx10')) bolt(s, 1 - (s.t - 0.8) / 0.3); else { c.fillStyle = '#eef'; c.fillRect(s.x - 3, 0, 6, 360); } }
       B.draw(c);
-      if (P.beam) { const b = P.beam; c.save(); c.globalCompositeOperation = 'lighter'; c.translate(b.x0, b.y0); c.rotate(b.a); if (L10.has('fx10')) { const f = L10.fr('fx10', b.laser ? 'laser' : 'plasma'); c.imageSmoothingEnabled = true; const th = b.laser ? 9 : 48 + Math.sin(P.t * 50) * 6; c.drawImage(L10.img.fx10, f[0], f[1], f[2], f[3], 0, -th / 2, 800, th); if (b.laser) { c.rotate(-b.a); c.translate(b.x1 - b.x0, b.y1 - b.y0); c.rotate(b.a); c.drawImage(L10.img.fx10, f[0], f[1], f[2], f[3], 0, -th / 2, 800, th); } } else { c.fillStyle = 'rgba(140,255,120,0.8)'; c.fillRect(0, -16, 800, 32); } c.restore(); }     // лазер: второй луч — из второго глаза
+      if (P.beam) { const b = P.beam; c.save(); c.globalCompositeOperation = 'lighter'; c.translate(b.x0, b.y0); c.rotate(b.a); if (L10.has('fx10')) { const f = L10.fr('fx10', b.laser ? 'laser' : 'plasma'); c.imageSmoothingEnabled = true; const th = b.laser ? 10 : 48 + Math.sin(P.t * 50) * 6; c.drawImage(L10.img.fx10, f[0], f[1], f[2], f[3], 0, -th / 2, 800, th); if (b.laser && b.x1 != null) { const D = Math.max(80, Math.hypot(P.x - b.x0, P.y - b.y0)), tx = b.x0 + Math.cos(b.a) * D, ty = b.y0 + Math.sin(b.a) * D, a2 = Math.atan2(ty - b.y1, tx - b.x1); c.rotate(-b.a); c.translate(b.x1 - b.x0, b.y1 - b.y0); c.rotate(a2); c.drawImage(L10.img.fx10, f[0], f[1], f[2], f[3], 0, -th / 2, 800, th); }     /* второй луч из второго глаза сходится с первым у Валеры */ } else { c.fillStyle = 'rgba(140,255,120,0.8)'; c.fillRect(0, -16, 800, 32); } c.restore(); }     // лазер: второй луч — из второго глаза
       if (P.beam && B.rig && B.drawOver) B.drawOver(c);     // луч из глаз — за миниганом и рукой
+      if (L10.img.bg1sea) {     // вода перед Семёном: один слой моря с плавным краем (градиент-маска), без полос
+        const wc = P.wc || (P.wc = document.createElement('canvas')), H2 = 140, y0 = WATER - 22; wc.width = 640; wc.height = H2; const w = wc.getContext('2d');
+        w.save(); w.translate(0, -y0); L10.bgTile(w, 'bg1sea', P.t * 150 + G.t * 140, 0.05, WATER - 40, 120); w.restore();
+        const g = w.createLinearGradient(0, 0, 0, 26); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.95)'); w.globalCompositeOperation = 'destination-in'; w.fillStyle = g; w.fillRect(0, 0, 640, H2);
+        c.drawImage(wc, 0, y0); }
+      if (L10.has('fx10') && B.hp > 0) for (let i = 0; i < 14; i++) { const u = (i + 0.5) / 14, x = B.x - 165 + u * 300 + Math.sin(P.t * 1.3 + i * 2) * 5;     // пена: вода бьётся о Семёна
+        S(c, 'fx10', 'splash', x, WATER + 2 + (i % 2) * 3, 0.2 + 0.05 * Math.sin(P.t * 2.1 + i * 1.7), { add: 1, a: 0.55 + 0.25 * Math.sin(P.t * 3 + i), sy: 0.6 }); }
       if (P.tent && !B.rig) P.drawTent(c, P.tent);
       for (const f of P.foes) f.draw(c);
       for (const e of P.ebul) e.draw ? e.draw(c, e) : (c.fillStyle = '#f80', c.fillRect(e.x - 3, e.y - 3, 6, 6));
       for (const b of P.bul) { if (L10.has('fx10')) S(c, 'fx10', 'ball', b.x, b.y, 0.08, { add: 1 }); else S(c, 'fxL9', 'plasma', b.x, b.y, 0.3); }
-      for (const f of P.fx) { if (f.k === 'flash' && L10.has('fx10')) S(c, 'fx10', 'flash', f.x, f.y, 0.12, { add: 1 }); else if (L10.has('fx10')) S(c, 'fx10', f.k === 'whit' ? 'lhit' : 'splash', f.x, f.y, 0.1, { add: 1 }); }
+      for (const f of P.fx) { if (f.k === 'flash' && L10.has('fx10')) S(c, 'fx10', 'flash', f.x, f.y, 0.12, { add: 1 }); else if (L10.has('fx10')) S(c, 'fx10', 'lhit', f.x, f.y, f.k === 'hit' ? 0.07 : 0.1, { add: 1 })     /* попадание — вспышка удара, а не брызги воды (владелец) */; }
       P.drawValera(c);
       P.W.draw(c);
       if (B.segLimit - B.segT < 25 && B.hp > 0) { c.strokeStyle = `rgba(255,30,30,${0.3 + 0.3 * Math.sin(B.t * 10)})`; c.lineWidth = 6; c.strokeRect(3, 3, 634, 354); }

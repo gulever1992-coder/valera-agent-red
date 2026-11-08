@@ -40,7 +40,7 @@
       this.pimps = (PIMPS[this.sh] || []).map((p, i) => ({ u: p[0], v: p[1], st: rnd(0, 6), sp: rnd(0.35, 0.6), dead: 0 }));
       this.blood = [];
     }
-    get seg() { return Math.min(this.segs - 1, Math.floor((this.maxHp - this.hp) / this.segHp)); }
+    get seg() { return Math.min(this.segs - 1, Math.floor((this.maxHp - this.hp) / this.segHp + 1e-6)); }
     setPose(p, hold = 0) { if (p === this.pose) { this.hold = Math.max(this.hold, hold); return; } if (!L10.fr(this.sh, p)) return; this.prev = this.pose; this.pose = p; this.fade = 0; this.hold = hold; }
     frame(p = this.pose) { return L10.fr(this.sh, p); }
     scale() { const f = L10.fr(this.sh, 0); return f ? this.H / (f[3] * 0.5) : 1; }     // общий масштаб листа (по первому кадру) — тело не «прыгает» между позами

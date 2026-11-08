@@ -1,5 +1,25 @@
-tools/__pycache__/
+# служебное и локальное — в репозиторий не идёт
+__pycache__/
 .DS_Store
 Thumbs.db
+# исходники арта, референсы, черновики, бэкапы
 art_src/
 refs/
+tmp/
+_old/
+# картинки-референсы и превью внутри инструментов (нужны только для генерации арта)
+tools/**/*.png
+tools/**/*.jpg
+tools/**/*.jpeg
+tools/**/*.webp
+tools/**/*.gif
+tools/**/*.bmp
+tools/*.png
+tools/*.jpg
+# локальные лаунчеры редакторов и макеты в корне
+*.bat
+make_cov2.*
+floor_variants.jpg
+wall_mockups.jpg
+# бэкапы редакторов
+*_before_*.html

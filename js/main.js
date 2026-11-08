@@ -234,6 +234,7 @@ function chooseDiff(levelIdx) { App.pendingLevel = levelIdx; App.diffSel = G.DIF
 function menuItems() {
   const it = [['НАЧАТЬ ИГРУ', () => chooseDiff(0)]];
   it.push(['ВЫБОР УРОВНЯ', () => { App.lvlSel = OPEN_ALL ? 0 : Math.min(progress(), 2) - 1; setState('levels'); }]);
+  it.push(['ЭНЦИКЛОПЕДИЯ ЗЛОДЕЕВ', () => { Extras.openBestiary(); setState('bestiary'); }]);
   it.push(['УПРАВЛЕНИЕ', () => setState('controls')]);
   it.push(['ЗВУК: ' + (Sound.muted ? 'ВЫКЛ' : 'ВКЛ'), () => Sound.toggleMute()]);
   return it;
@@ -249,6 +250,8 @@ function startLevel1(opts = {}) {
     App.level.startBoss();
   } else App.level.start(opts.skip);
 }
+
+function startCredits() { Extras.startCredits(LEVELS); setState('credits'); Music.play('title'); }
 
 const fmtTime = s => { s = Math.floor(s); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 
@@ -294,6 +297,12 @@ function update(dt) {
       if (App.lockedT > 0) App.lockedT -= dt;
       break;
     }
+    case 'bestiary':
+      if (App.t > 0.2) Extras.updateBestiary(dt, I, () => setState('title'));
+      break;
+    case 'credits':
+      Extras.updateCredits(dt, I, () => { setState('title'); Music.play('title'); });
+      break;
     case 'controls':
       if (App.t > 0.2 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch') || I.pressed('pause'))) { Sound.play('select'); setState('title'); }
       break;
@@ -315,7 +324,7 @@ function update(dt) {
     case 'results': {
       const r = App.results;
       r.shown += dt;
-      if (r.shown > 1 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch'))) { Sound.play('confirm'); if (r.id === 1) startLevel2(); else if (r.id === 2) startLevel3(); else if (r.id === 3) startLevel4(); else if (r.id === 4) startLevel5(); else if (r.id === 5) startLevel6(); else if (r.id === 6) startLevel7(); else if (r.id === 7) startLevel8(); else if (r.id === 8) startLevel9(); else if (r.id === 9) startLevel10(); else if (r.id === 10) { setState('title'); Music.play('title'); } else { setState('soon'); Music.play('title'); } }
+      if (r.shown > 1 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch'))) { Sound.play('confirm'); if (r.id === 1) startLevel2(); else if (r.id === 2) startLevel3(); else if (r.id === 3) startLevel4(); else if (r.id === 4) startLevel5(); else if (r.id === 5) startLevel6(); else if (r.id === 6) startLevel7(); else if (r.id === 7) startLevel8(); else if (r.id === 8) startLevel9(); else if (r.id === 9) startLevel10(); else if (r.id === 10) startCredits(); else { setState('soon'); Music.play('title'); } }
       break;
     }
     case 'soon':
@@ -349,9 +358,9 @@ function drawTitle(c) {
   });
   let best = null;
   try { best = JSON.parse(localStorage.getItem('valera_best_l1') || 'null'); } catch (e) {}
-  if (best) G.text('Рекорд ур.1: ' + best.total + ' (' + best.rank + ')', W / 2, 258, { align: 'center', size: 8, color: '#ffd84a' });
+  if (best) G.text('Рекорд ур.1: ' + best.total + ' (' + best.rank + ')', W / 2, 274, { align: 'center', size: 8, color: '#ffd84a' });
   if ((G.t * 2 | 0) % 2) G.text('Нажми ENTER', W / 2, H - 22, { align: 'center', color: '#e8e0c8' });
-  G.text('v0.3 · уровни 1–2', 6, H - 12, { size: 8, color: 'rgba(255,255,255,0.4)' });
+  G.text('v1.0 · 10 уровней', 6, H - 12, { size: 8, color: 'rgba(255,255,255,0.4)' });
 }
 
 function drawDifficulty(c) {
@@ -538,6 +547,8 @@ function splashWord(c, str, y, size, depth) {
   c.restore();
 }
 function drawSplash(c) {
+  // пока шрифт не загружен — чёрный экран, иначе надпись выходит запасным узким шрифтом
+  if (!App.fontOK) { App.t = 0; return; }
   const t = App.t;
   let a = Math.min(1, t / 0.7);
   if (App.splashOut != null) a = Math.max(0, 1 - (t - App.splashOut) / SPLASH_FADE);
@@ -564,6 +575,8 @@ function draw() {
     case 'loading': drawSplash(c); break;
     case 'title': drawTitle(c); break;
     case 'controls': drawControls(c); break;
+    case 'bestiary': Extras.drawBestiary(c); break;
+    case 'credits': Extras.drawCredits(c); break;
     case 'difficulty': drawDifficulty(c); break;
     case 'levels': drawLevels(c); break;
     case 'play': App.level.draw(c); if (App.paused) drawPause(c); break;
@@ -596,15 +609,20 @@ function frame(now) {
 
 // ---------- загрузка ----------
 (async function boot() {
+  const fontWait = Promise.race([
+    Promise.all([document.fonts.load('8px "Press Start 2P"', 'AZ'), document.fonts.load('8px "Press Start 2P"', 'АЯ')]),
+    new Promise(r => setTimeout(r, 2500))]).catch(() => {}).then(() => { App.fontOK = true; });
   requestAnimationFrame(frame);
   const [head, street] = await Promise.all([G.loadImage('assets/valera_head.png'), G.loadImage('assets/street.jpg'), Spr.load(), Spr.loadBGs(), L2.load(), L3.load(), L4.load(), L5.load(), L6.load(), L7.load(), V4.load()]);
   G.img.valeraHeadSrc = head; G.img.street = street;
-  try { await Promise.race([document.fonts.load('8px "Press Start 2P"'), new Promise(r => setTimeout(r, 2500))]); } catch (e) {}
+  await fontWait;
   G.img.valeraHud = G.downscale(head, 52, 54);
   G.img.valeraPortrait = G.downscale(head, 120, 122);
   titleActor.a = new G.Actor('valera', 120, 312, 1);
   titleActor.a.setAnim('walk');
   const q = new URLSearchParams(location.search);
+  if (q.has('credits')) { startCredits(); return; }
+  if (q.has('best')) { Extras.openBestiary(); setState('bestiary'); return; }
   if (q.has('sprites')) { App.spriteScale = +(q.get('scale') || 0.5); setState('sprites'); return; }
   if (q.has('l6boss')) startLevel6({ boss: true });
   else if (q.has('l6wand')) startLevel6({ wand: true });

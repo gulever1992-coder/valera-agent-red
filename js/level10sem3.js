@@ -210,6 +210,10 @@
         const q = pose[id] || (pose[id] = { r: 0, x: 0, y: 0, s: 1 }), M = Core.mats(R, pose), b = R.B[id], pv = ap(M[id], [b.x, b.y]), tp = ap(M[id], a.tip);
         const k = Math.hypot(tq[0] - pv[0], tq[1] - pv[1]) / Math.max(1, Math.hypot(tp[0] - pv[0], tp[1] - pv[1])); q.s = clamp((q.s ?? 1) * k, o.st[0], o.st[1]);
       }
+      if (o.mv && a.lim) {     // остаток пути — сдвигом всей руки (огромные ладони у зрителя закрывают плечо)
+        const q = pose[id] || (pose[id] = { r: 0, x: 0, y: 0, s: 1 }), M = Core.mats(R, pose), tp = ap(M[id], a.tip); let dx = tq[0] - tp[0], dy = tq[1] - tp[1]; const L = Math.hypot(dx, dy);
+        if (L > o.mv) { dx *= o.mv / L; dy *= o.mv / L; } q.x = (q.x || 0) + dx; q.y = (q.y || 0) + dy;
+      }
     },
     ccd(R, pose, chain, tipLocal, tq, it = 8) {
       for (let n = 0; n < it; n++) for (let j = chain.length - 1; j >= 0; j--) {
@@ -283,7 +287,8 @@
       // IK рук (хлопок, хватание)
       if (f.ik) for (const s of ['L', 'R']) {
         if (!f.ik.includes(s)) continue; const tg = s === 'L' ? this.aimL : (this.aimR || this.aimL); if (!tg) continue;
-        Core.reach(R, pose, s, st.vars, this.toModel(tg), 6, { lim: f.ikLim, st: f.ikSt });
+        if (f.front) continue;     /* «на зрителя» (хлопок, удар): поза ровно как в редакторе — там IK по умолчанию выключен, руки не тянем */
+        Core.reach(R, pose, s, st.vars, this.toModel(tg), 6, { lim: f.ikLim ?? 25 });
       }
       this.legUpd(dt, pose);
       this.hoseUpd(dt, pose, O.hose || f.hose);
@@ -347,7 +352,7 @@
     alphaFn() { return p => { if (p.tag && p.tag.startsWith('leg')) { const lg = this.legs[+p.tag[3]]; return lg ? (lg.gs < 0.02 ? 0 : Math.min(1, lg.gs * 2)) : 1; } return 1; }; }
     // рисуем на отдельный холст, чтобы тонировать целиком (вспышка урона, щит)
     render(c, only) {
-      const tint = this.flashT > 0 ? [1, 0.27, 0.16, 0.4] : this.shield > 0 ? [0.35, 0.78, 1, 0.22 + Math.sin(this.t * 12) * 0.1] : null;
+      const tint = this.flashT > 0 ? [1, 0.27, 0.16, 0.22] : this.shield > 0 ? [0.35, 0.78, 1, 0.22 + Math.sin(this.t * 12) * 0.1] : null;
       Core.draw(c, this.rig(), this.m(), this.T0(), this.st, { alpha: this.alphaFn(), only, tint });
     }
     drawHoseOnly(c) { this.render(c, p => p.tag === 'hose'); }

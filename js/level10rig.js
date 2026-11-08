@@ -27,6 +27,9 @@
     lunge: { t: { torso: 17, head: 6, mouth: 0.6, ua: 108, fa: -8, ua2: 38, rx: 34 }, k: 90, z: 0.72 },
     hurt: { t: { torso: -19, head: -28, mouth: 1, ua: -58, fa: -22, ha: -26, ua2: -66, fa2: -12, rx: -38, ry: -4 }, k: 120, z: 0.55 },
     grab: { t: { torso: 14, mouth: 0.7, ha: 6, ua2: 26, rx: 34 }, k: 70, z: 0.8, ik: 1 },
+    pick: { t: { torso: 22, head: 12, mouth: 0.5, ha: 18, ua2: 34, rx: 46, ry: 14, thL: -8, thR: 10 }, k: 70, z: 0.85, ik: 1 },     // бросок будки: нагнулся, рука к крыше
+    wind: { t: { torso: -18, head: -12, mouth: 0.85, ua: -128, fa: -58, ha: -34, ua2: 28, rx: -34, ry: -8 }, k: 42, z: 0.8 },     // замах будкой над головой
+    toss: { t: { torso: 24, head: 8, mouth: 1, ua: 70, fa: -14, ha: 16, ua2: 36, rx: 44, ry: 8 }, k: 260, z: 0.6 },     // швыряет
     gun: { t: { torso: 6, mouth: 0.45, ua: 40, fa: -20, ua2: 10 }, k: 70, z: 0.85, look: 1, gun: 1 },     // стреляет миниган на голове, голова наводит
   };
   const ALIAS = { front: 'roar', taunt: 'roar', tired: 'hurt', hit: 'hurt', eat0: 'roar', eat1: 'roar', eat2: 'hurt', idle2: 'idle', walk0: 'walk', walk1: 'walk', walk2: 'walk' };

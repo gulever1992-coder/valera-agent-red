@@ -14,8 +14,8 @@ G.say = function (target, text, dur = 2.2, o = {}) {
 };
 G.updateBubbles = dt => { for (const b of G.bubbles) b.t += dt; G.bubbles = G.bubbles.filter(b => b.t < b.dur && !(b.target && b.target.gone)); };
 G.drawBubble = function (c, x, y, text, o = {}) {
-  const size = o.shout ? 16 : 8;
-  const lines = G.wrap(text, o.shout ? 300 : 170, size);
+  const size = o.shout ? 16 : (G.SAY_FS || 12);     // реплики крупнее — владелец: «не читаемо»
+  const lines = G.wrap(text, o.shout ? 300 : 240, size);
   const lh = size + 4;
   let w = 0; for (const l of lines) w = Math.max(w, G.textWidth(l, size));
   const bw = w + 12, bh = lines.length * lh + 8;

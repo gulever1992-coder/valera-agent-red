@@ -1,7 +1,7 @@
 'use strict';
 // ============ ДВИЖОК: экран, ввод, звук, утилиты, частицы, текст ============
 const W = 640, H = 360;
-const G = { W, H, t: 0, dt: 0, debug: false, VER: '866' };
+const G = { W, H, t: 0, dt: 0, debug: false, VER: '961' };
 window.G = G;
 
 const canvas = document.getElementById('game');
@@ -233,9 +233,9 @@ const Music = {
   cur: null, name: null, step: 0, next: 0, pending: null,
   songs: {},
   play(name) {
-    if (this.name === name) return;
+    if (this.name === name && this.cur) return;
+    if (!Sound.ac) { this.pending = name; return; }     // имя не запоминаем — иначе после разблокировки звука трек не стартует
     this.name = name;
-    if (!Sound.ac) { this.pending = name; return; }
     const song = this.songs[name];
     this.cur = song ? { song, tracks: song.tracks.map(t => ({ ...t, seq: t.notes.trim().split(/\s+/) })) } : null;
     this.step = 0; this.next = Sound.ac.currentTime + 0.05;

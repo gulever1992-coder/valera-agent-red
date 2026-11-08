@@ -17,11 +17,7 @@ L10.SEA3 = {
  "raftTop": 0.62,
  "raftSub": 4,
  "WY": 275,
- "sem": {
-  "x": 310,
-  "y": 241,
-  "H": 236
- },
+ "sem": {"x": 310.0, "y": 241.0, "H": 236.0},
  "legA": [
   [
    -62,
@@ -78,63 +74,59 @@ L10.SEA3 = {
   83,
   125
  ],
- "hp": 2000,
+ "hp": 1000,
  "segs": 3,
  "atk": {
-  "tracks": [
-   3,
-   2,
-   3
-  ],
-  "cd": [
-   2.2,
-   1.8,
-   1.4
-  ],
+  "tracks": [1, 2, 3],
+  "cd": [3, 2.2, 1.6],
   "ballLife": 10,
   "ballSpeed": 92,
   "ballTurn": 2,
-  "ballHp": 2,
-  "ballDmg": 14,
+  "ballHp": 1,
+  "ballDmg": 10,
   "balls": [
-   1,
    2,
-   3
+   3,
+   4
   ],
-  "laserWarn": 0.9,
+  "laserWarn": 1.2,
   "laserTime": 1.7,
-  "laserDmg": 16,
+  "laserDmg": 12,
   "hoseN": [
+   2,
    3,
-   4,
-   5
+   4
   ],
-  "hoseWarn": 0.6,
-  "hoseDmg": 18,
-  "clapWarn": 1,
-  "clapDmg": 30,
+  "hoseWarn": 0.9,
+  "hoseDmg": 12,
+  "clapWarn": 1.4,
+  "clapDmg": 24,
   "clapEvery": 1,
-  "minions": [
-   1,
-   3,
-   5
-  ],
-  "minionEvery": 5,
-  "minionDmgK": 0.6,
+  "minions": [2, 3, 5],
+  "minionEvery": 5.5,
+  "minionDmgK": 0.4,
   "dmg": 14,
   "dmgWeak": 20,
   "splash": 40,
   "breath": 2.5,
   "stationHp": 30,
   "stationBack": 28,
-  "smashWarn": 0.9,
+  "smashWarn": 1.2,
   "smashEvery": 1.3,
-  "smashDmg": 24,
+  "smashDmg": 18,
   "smashR": 42,
   "sweepP": 0.35,
   "sweepWarn": 0.9,
   "sweepTime": 1,
-  "sweepDmg": 18
+  "sweepDmg": 14,
+  "hoseBub": 1,
+  "waveV": 120,
+  "smashN": [
+   3,
+   4,
+   4
+  ],
+  "stationRespawn": false
  },
  "layers": [
   {

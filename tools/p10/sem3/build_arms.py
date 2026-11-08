@@ -20,7 +20,8 @@ CX = D['cx']; SHO = {'L': (521.7, 302.2), 'R': (855.0, 300.0)}
 def key(im, m):
     a = np.asarray(im).astype(np.float32); al = nd.gaussian_filter(m.astype(np.float32), 0.8)
     al = np.clip((al - 0.15) / 0.7, 0, 1)
-    r, g, b = a[..., 0], a[..., 1], a[..., 2]; sp = np.clip((np.minimum(r, b) - g - 10) / 200, 0, 1)   # пурпур на кромке -> нейтраль
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]; sp = np.clip((np.minimum(r, b) - g + 5) / 50, 0, 1)   # пурпур (кайма, вода у кулаков) -> нейтраль
+    al = al * (1 - 0.85 * np.clip((np.minimum(r, b) - g - 25) / 50, 0, 1))     # сильно пурпурные пиксели — прозрачнее
     rgb = np.dstack([r - sp * (r - g), g, b - sp * (b - g)])
     core = nd.binary_erosion(m, iterations=2).astype(np.float32); w = nd.gaussian_filter(core, 3) + 1e-4
     fill = np.dstack([nd.gaussian_filter(rgb[..., i] * core, 3) / w for i in range(3)]); e = (1 - core)[..., None]

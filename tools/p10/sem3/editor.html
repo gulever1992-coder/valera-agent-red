@@ -36,13 +36,25 @@
   #hint { position: absolute; left: 8px; bottom: 6px; color: var(--dim); font-size: 12px; pointer-events: none; background: #0008; padding: 3px 7px; border-radius: 4px; }
   .chk { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2px 6px; max-height: 170px; overflow-y: auto; border: 1px solid var(--line); border-radius: 5px; padding: 4px; }
   .chk label { white-space: nowrap; font-size: 12px; }
+  /* простой режим */
+  .ez h4 { font-size: 15px !important; margin-top: 16px !important; }
+  .ez button { font-size: 14px; padding: 7px 10px; }
+  .ez .clips { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .ez .clips button { text-align: left; padding: 6px 8px; font-size: 13px; }
+  .ez .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .ez .nav { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 5px; }
+  .ez .say { background: #11151a; border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; color: #cfd6e0; font-size: 13px; margin: 6px 0; }
+  .ez .big { font-size: 16px; padding: 10px; width: 100%; }
+  .ez input[type=range] { width: 170px; }
+  .ez input[type=color] { width: 48px; height: 32px; padding: 2px; }
 </style>
 </head>
 <body>
 <div id="top">
   <h1>Редактор фазы 3 «Море»</h1>
   <div class="grp" id="tabs">
-    <button data-t="parts" class="on">🖼️ Части</button>
+    <button data-t="easy" class="on">⭐ Просто</button>
+    <button data-t="parts">🖼️ Части</button>
     <button data-t="bones">🦴 Кости</button>
     <button data-t="anim">🎬 Анимации</button>
     <button data-t="scene">🌊 Сцена</button>
@@ -70,9 +82,9 @@
 const ROOT = '../../../', SRV = 'http://localhost:18803', $ = id => document.getElementById(id);
 const cv = $('cv'), ctx = cv.getContext('2d'), tlc = $('tlc'), tctx = tlc.getContext('2d');
 let D = null, Core = null, R = null, IMG = {}, ORIG = {}, dirty = new Set(), needPrep = true;
-let tab = 'parts', view = { k: 0.5, ox: 300, oy: 40 }, dpr = 1;
+let tab = 'anim', easy = true, solo = false, paintCol = '#6b5a45', view = { k: 0.5, ox: 300, oy: 40 }, dpr = 1;
 let selPart = null, selBone = null, selPt = null, mode = 'move', brush = 24, cutMode = 'trace';
-let aMode = 'rot', clip = 'idle', T = 0, playing = false, live = false, liveSem = null, copyPose = null, ikView = true;
+let aMode = 'rot', clip = 'idle', T = 0, playing = false, live = false, liveSem = null, copyPose = null, ikView = false;
 let TRACE = null, lasso = null, mouse = [0, 0], undoSt = [], drag = null, addBone = null;
 const status = (s, bad) => { $('status').textContent = s; $('status').style.color = bad ? 'var(--bad)' : 'var(--dim)'; };
 const hint = s => $('hint').textContent = s;
@@ -82,12 +94,14 @@ const r1 = x => Math.round(x * 10) / 10, r3 = x => Math.round(x * 1000) / 1000;
 async function loadScript(url) { const t = await (await fetch(url + '?' + Date.now())).text(); new Function('L10', t)(window.L10); }
 function toCanvas(img, w, h) { const c = document.createElement('canvas'); c.width = w || img.naturalWidth || img.width; c.height = h || img.naturalHeight || img.height; c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); return c; }
 function loadImg(src) { return new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = src; }); }
+const SRC = {};     // картинка части в исходном кадре Flow — для «Вернуть из оригинала»
 async function boot() {
   await loadScript(ROOT + 'js/level10sem3.js'); await loadScript(ROOT + 'js/sem3_data.js');
   Core = L10.Sem3Core; D = JSON.parse(JSON.stringify(L10.SEM3));
   for (const n of new Set(D.parts.map(p => p.img))) {
     try { const i = await loadImg(ROOT + 'assets/l10/sem3/' + n + '.png?' + Date.now()); IMG[n] = toCanvas(i); ORIG[n] = toCanvas(i); }
     catch (e) { status('Нет картинки ' + n, 1); }
+    try { SRC[n] = toCanvas(await loadImg(ROOT + 'art_src/l10/sem3/src/' + n + '.png?' + Date.now())); } catch (e) {}     // исходник из кадра Flow (make_src.py)
   }
   resize(); fit(); buildSide(); status('Готово. Части: ' + D.parts.length + ', костей: ' + D.bones.length);
   requestAnimationFrame(loop);
@@ -109,7 +123,7 @@ function curPose() {
   if (clip[0] === '+') { Core.sample(D.clips.idle, 0, pose, st); Core.sample(c, T, pose, st, 1, true); const m = c.c || {}; for (const k in m) st.ch[k] = Core.keyAt(m[k], T, c.len, c.loop)[1]; }
   else pose = Core.base(D, clip === 'idle' ? T : 0, clip, T, st);
   const ik = (c.f || {}).ik; if (ik && ikView && !(drag && drag.fn)) for (const sd of ['L', 'R']) { if (!ik.includes(sd)) continue;     // как в игре: кисти к цели перед животом
-    const hh = D.water - D.top, tq = [D.cx + (sd === 'L' ? -0.16 : 0.16) * hh, D.water - 0.27 * hh]; Core.reach(R, pose, sd, st.vars, tq, 6, { lim: c.f.ikLim, st: c.f.ikSt }); }
+    const hh = D.water - D.top, tq = [D.cx + (sd === 'L' ? -0.16 : 0.16) * hh, D.water - 0.27 * hh]; Core.reach(R, pose, sd, st.vars, tq, 6, { lim: c.f.ikLim, st: c.f.ikSt, mv: c.f.ikMv }); }
   return { pose, st, M: Core.mats(R, pose) };
 }
 
@@ -146,7 +160,7 @@ function draw(dt) {
     s.update(dt); s.draw(ctx);
   } else {
     ctx.setTransform(dpr * view.k, 0, 0, dpr * view.k, dpr * view.ox, dpr * view.oy); ctx.imageSmoothingQuality = 'high';
-    Core.draw(ctx, R, M, Core.ID, st, { alpha: p => p._hide ? 0 : (tab === 'parts' && selPart && $('solo') && $('solo').checked && p !== selPart ? 0.25 : 1) });
+    Core.draw(ctx, R, M, Core.ID, st, { alpha: p => p._hide || easy && (p.tag === 'hose' || p.id === 'hroot') ? 0 : ((tab === 'parts' && selPart && $('solo') && $('solo').checked || easy && solo && selPart) && p !== selPart ? 0.2 : 1) });
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   if (TRACE && !TRACE.under) drawTrace();
@@ -157,8 +171,10 @@ function boneScr(M, id) { const b = R.B[id]; return [toS(Core.ap(M[id], [b.x, b.
 function overlay(M) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   if (tab === 'parts' && selPart) partOutline(selPart, M);
-  const showB = tab === 'bones' || tab === 'anim' || (tab === 'parts' && $('showB') && $('showB').checked);
-  if (showB) for (const id of R.order) {
+  if (easy && selPart) poseOutline(selPart, M);
+  const hb = hiddenBones();
+  const showB = tab === 'bones' || tab === 'anim' && (!easy || BONE_T[aMode]) || (tab === 'parts' && $('showB') && $('showB').checked);
+  if (showB) for (const id of R.order) { if (hb && hb.has(id)) continue;
     const [p, q] = boneScr(M, id), sel = id === selBone, inSkin = tab === 'parts' && selPart && (selPart.mode === 'skin' ? (selPart.skin || []).includes(id) : selPart.bone === id);
     const a = Math.atan2(q[1] - p[1], q[0] - p[0]), w = Math.min(9, Math.hypot(q[0] - p[0], q[1] - p[1]) * 0.14 + 2);
     ctx.fillStyle = sel ? 'rgba(255,204,51,0.75)' : inSkin ? 'rgba(80,255,140,0.6)' : 'rgba(170,200,255,0.35)';
@@ -176,7 +192,54 @@ function overlay(M) {
   if (lasso && lasso.length) { ctx.strokeStyle = '#ffcc33'; ctx.lineWidth = 1.5; ctx.beginPath(); lasso.forEach((p, i) => { const s = toS(p); i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); }); const m = mouse; ctx.lineTo(m[0], m[1]); ctx.stroke(); }
   if (addBone && addBone.p) { const s = toS(addBone.p); ctx.strokeStyle = '#ffcc33'; ctx.beginPath(); ctx.moveTo(s[0], s[1]); ctx.lineTo(mouse[0], mouse[1]); ctx.stroke(); }
   if (tab === 'parts' && (mode === 'erase' || mode === 'restore')) { ctx.strokeStyle = mode === 'erase' ? '#ff7a3a' : '#5aff9a'; ctx.beginPath(); ctx.arc(mouse[0], mouse[1], brush * view.k * partScale(), 0, 7); ctx.stroke(); }
+  if (tab === 'anim' && PAINT_T[aMode]) { if (aMode === 'restore' && selPart) srcGhost(selPart, M); ctx.strokeStyle = aMode === 'erase' ? '#ff7a3a' : aMode === 'paint' ? paintCol : aMode === 'warp' ? '#4ac8ff' : '#5aff9a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(mouse[0], mouse[1], brush * view.k, 0, 7); ctx.stroke(); ctx.lineWidth = 1; }
 }
+const BONE_T = { rot: 1, move: 1, scale: 1 }, PAINT_T = { erase: 1, restore: 1, paint: 1, warp: 1 }, IMG_T = { imove: 1, irot: 1, istretch: 1 }, D2R = Math.PI / 180;
+function hiddenBones() { return easy ? new Set(D.roles.hose || []) : null; }     // шланг в игре теперь отдельный — его кости в простом режиме не мешают
+// контур выбранной части в текущей позе (простой режим)
+function poseOutline(p, M) {
+  const q = R.parts.find(x => x.p === p); if (!q) return; ctx.save(); ctx.strokeStyle = '#ffcc33'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+  if (!q.T) { const m = Core.mul(M[q.bone] || Core.ID, q.M), c = [[0, 0], [p.w, 0], [p.w, p.h], [0, p.h]].map(v => toS(Core.ap(m, v))); ctx.beginPath(); c.forEach((s, i) => i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1])); ctx.closePath(); ctx.stroke(); }
+  else { ctx.globalAlpha = 0.35; ctx.lineWidth = 1; ctx.setLineDash([]); const P = skinPts(q, M); ctx.beginPath(); for (const t of q.T) { const a = toS(P[t[0]]), b = toS(P[t[1]]), c = toS(P[t[2]]); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c[0], c[1]); ctx.closePath(); } ctx.stroke(); }
+  ctx.restore();
+}
+// призрак: чего не хватает до исходника (то, что можно вернуть кистью) — поверх, полупрозрачно
+function srcGhost(p, M) {
+  const S = SRC[p.img], c = IMG[p.img], q = R.parts.find(x => x.p === p); if (!S || !q || q.T || S.width !== c.width) return;
+  const t = srcGhost.c || (srcGhost.c = document.createElement('canvas')); t.width = S.width; t.height = S.height; const g = t.getContext('2d');
+  g.drawImage(S, 0, 0); g.globalCompositeOperation = 'destination-out'; g.drawImage(c, 0, 0); g.globalCompositeOperation = 'source-over';
+  const m = Core.mul(M[q.bone] || Core.ID, q.M); ctx.save(); ctx.transform(view.k, 0, 0, view.k, view.ox, view.oy); ctx.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
+  ctx.globalAlpha = 0.5; ctx.drawImage(t, 0, 0, p.w, p.h); ctx.restore();
+}
+// вернуть исходник в круге без кольца: итог = S*m + C*(1-m) (раньше clip+clearRect оставлял полупрозрачный обод)
+function stampSrc(c, S, x, y, r) {
+  const t = stampSrc.c || (stampSrc.c = document.createElement('canvas')); t.width = c.width; t.height = c.height; const k = t.getContext('2d');
+  // мягкий край: в центре оригинал целиком, к краю плавно уходит в текущую картинку — швов-кругов нет
+  const mask = ctx2 => { const gr = ctx2.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, '#000'); gr.addColorStop(0.35, '#000'); gr.addColorStop(0.7, 'rgba(0,0,0,0.45)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); ctx2.fillStyle = gr; ctx2.beginPath(); ctx2.arc(x, y, r, 0, 7); ctx2.fill(); };
+  k.drawImage(S, 0, 0); k.globalCompositeOperation = 'destination-in'; mask(k);
+  const g = c.getContext('2d'); g.save(); g.globalCompositeOperation = 'destination-out'; mask(g);
+  g.globalCompositeOperation = 'lighter'; g.drawImage(t, 0, 0); g.restore();
+}
+// следы старой кисти: полупрозрачные точки внутри сплошной заливки -> делаем непрозрачными
+function fixRings(c) {
+  const W = c.width, H = c.height, g = c.getContext('2d'), I = g.getImageData(0, 0, W, H), d = I.data, D3 = [[-3, 0], [3, 0], [0, -3], [0, 3], [-3, -3], [3, 3], [-3, 3], [3, -3]]; let tot = 0;
+  for (let it = 0; it < 3; it++) { const A = new Uint8Array(W * H); for (let i = 0; i < W * H; i++) A[i] = d[i * 4 + 3]; let n = 0;
+    for (let y = 3; y < H - 3; y++) for (let x = 3; x < W - 3; x++) { const a = A[y * W + x]; if (a < 40 || a > 254) continue;
+      if (D3.every(([dx, dy]) => A[(y + dy) * W + x + dx] >= 200)) { d[(y * W + x) * 4 + 3] = 255; n++; } }
+    tot += n; if (!n) break; }
+  if (tot) g.putImageData(I, 0, 0); return tot;
+}
+// «подвинуть пиксели»: пятно под кистью тянется за мышью (как пластика в фотошопе)
+function warpAt(c, x, y, dx, dy, r) {
+  const mg = Math.ceil(Math.hypot(dx, dy)) + 2, x0 = Math.max(0, Math.floor(x - r - mg)), y0 = Math.max(0, Math.floor(y - r - mg)), x1 = Math.min(c.width, Math.ceil(x + r + mg)), y1 = Math.min(c.height, Math.ceil(y + r + mg)), W = x1 - x0, H = y1 - y0; if (W < 2 || H < 2) return;
+  const g = c.getContext('2d'), I = g.getImageData(x0, y0, W, H), s = I.data, o = new Uint8ClampedArray(s), r2 = r * r;
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const px = x0 + i + 0.5, py = y0 + j + 0.5, d2 = (px - x) ** 2 + (py - y) ** 2; if (d2 >= r2) continue;
+    const w = (1 - d2 / r2) ** 2, sx = Math.min(W - 1.001, Math.max(0, i - dx * w)), sy = Math.min(H - 1.001, Math.max(0, j - dy * w)), ix = sx | 0, iy = sy | 0, fx = sx - ix, fy = sy - iy, k = (j * W + i) * 4;
+    const a = (iy * W + ix) * 4, b = a + 4, cc = a + W * 4, d = cc + 4;
+    for (let n = 0; n < 4; n++) o[k + n] = (s[a + n] * (1 - fx) + s[b + n] * fx) * (1 - fy) + (s[cc + n] * (1 - fx) + s[d + n] * fx) * fy; }
+  I.data.set(o); g.putImageData(I, x0, y0);
+}
+function skinPts(q, M) { return q.V.map((v, k) => { let x = 0, y = 0; for (const [id, w] of q.W[k]) { const m = M[id] || Core.ID; x += (m[0] * v[0] + m[2] * v[1] + m[4]) * w; y += (m[1] * v[0] + m[3] * v[1] + m[5]) * w; } return [x, y]; }); }
 function partScale() { if (!selPart) return 1; return Math.hypot(selPart.sx ?? 1, 0) || 1; }
 function partOutline(p, M) {
   const q = R.parts.find(x => x.p === p); if (!q) return; ctx.strokeStyle = '#ffcc33'; ctx.lineWidth = 1;
@@ -211,6 +274,7 @@ document.addEventListener('keydown', e => {
   else if (e.code === 'Escape') { lasso = null; addBone = null; hint(''); }
   else if (e.code === 'Enter' && lasso) finishLasso();
   else if (e.code === 'Space' && tab === 'anim' && e.target.tagName !== 'BUTTON') { e.preventDefault(); playing = !playing; buildSide(); }
+  else if (easy && tab === 'anim' && (e.code === 'ArrowLeft' || e.code === 'ArrowRight') && e.target.type !== 'range') { e.preventDefault(); jumpKey(e.code === 'ArrowRight' ? 1 : -1); }
 });
 
 // ---------- отмена ----------
@@ -219,9 +283,9 @@ function undo() {
   if (tab === 'img') { if (imgUndo()) { buildSide(); return status('Отменено'); } return status('Нечего отменять'); }
   const u = undoSt.pop(); if (!u) return status('Нечего отменять');
   if (u.lay) { if (LAY) applyLay(u.lay); return status('Отменено'); }
-  const selP = selPart && D.parts.indexOf(selPart); D = JSON.parse(u.json);
+  const selId = selPart && selPart.id; D = JSON.parse(u.json);
   if (u.img) { const c = IMG[u.img.n]; if (c.width !== u.img.data.width) { c.width = u.img.data.width; c.height = u.img.data.height; } c.getContext('2d').putImageData(u.img.data, 0, 0); dirty.add(u.img.n); }
-  selPart = selP != null && selP >= 0 ? D.parts[selP] || null : null; changed(); buildSide(); status('Отменено');
+  selPart = selId ? D.parts.find(p => p.id === selId) || null : null; changed(); buildSide(); status('Отменено');
 }
 $('undo').onclick = undo; $('fit').onclick = fit;
 
@@ -243,7 +307,7 @@ function partsDown(e, m, a) {
     pushUndo(selPart.img); const p = selPart, c = IMG[p.img], g = c.getContext('2d'), kx = c.width / p.w;
     const paint = a => { const q = R.parts.find(x => x.p === p); const l = Core.ap(Core.inv(q.M), a), r = brush * kx;
       g.save(); g.beginPath(); g.arc(l[0] * kx, l[1] * kx, r, 0, 7);
-      if (mode === 'erase') { g.globalCompositeOperation = 'destination-out'; g.fill(); } else if (ORIG[p.img] && ORIG[p.img].width === c.width) { g.clip(); g.clearRect(0, 0, c.width, c.height); g.drawImage(ORIG[p.img], 0, 0); }
+      if (mode === 'erase') { g.globalCompositeOperation = 'destination-out'; g.fill(); } else if (ORIG[p.img] && ORIG[p.img].width === c.width) { g.restore(); stampSrc(c, ORIG[p.img], l[0] * kx, l[1] * kx, r); g.save(); }
       g.restore(); dirty.add(p.img); };
     paint(a); drag = { fn: (m, a) => paint(a), end: () => changed() }; return;
   }
@@ -304,8 +368,8 @@ function finishLasso() {
 
 // ======================= КОСТИ =======================
 function boneAt(m, M) {
-  let best = null, bd = 12;
-  for (const id of R.order) { const [p, q] = boneScr(M, id), vx = q[0] - p[0], vy = q[1] - p[1], l = vx * vx + vy * vy || 1, t = Math.max(0, Math.min(1, ((m[0] - p[0]) * vx + (m[1] - p[1]) * vy) / l)), d = Math.hypot(m[0] - p[0] - vx * t, m[1] - p[1] - vy * t) + t * 2; if (d < bd) { bd = d; best = id; } }
+  let best = null, bd = 12; const hb = hiddenBones();
+  for (const id of R.order) { if (hb && hb.has(id)) continue; const [p, q] = boneScr(M, id), vx = q[0] - p[0], vy = q[1] - p[1], l = vx * vx + vy * vy || 1, t = Math.max(0, Math.min(1, ((m[0] - p[0]) * vx + (m[1] - p[1]) * vy) / l)), d = Math.hypot(m[0] - p[0] - vx * t, m[1] - p[1] - vy * t) + t * 2; if (d < bd) { bd = d; best = id; } }
   return best;
 }
 function bonesDown(e, m, a) {
@@ -363,18 +427,19 @@ function setChKey(kind, name, val) {
   if (i >= 0) K[i] = row; else { K.push(row); K.sort((a, b) => a[0] - b[0]); }
 }
 // точка модели в ТЕКУЩЕЙ позе -> часть и координата в её картинке (для ластика прямо в анимации)
-function poseHit(a, M, st) {
+function poseHit(a, M, st, pick) {
+  const only = !pick && easy && selPart;     // в простом режиме кисть трогает только выбранную часть
   for (let i = R.parts.length - 1; i >= 0; i--) {
-    const q = R.parts[i], p = q.p; if (p._hide || !q.img || Core.alpha(R, q, st, {}) < 0.05) continue;
+    const q = R.parts[i], p = q.p; if (only && p !== selPart) continue; if (p._hide || !q.img || easy && (p.tag === 'hose' || p.id === 'hroot') || !only &&Core.alpha(R, q, st, {}) < 0.05) continue;
     let l = null;
     if (!q.T) { const mm = Core.mul(M[q.bone] || Core.ID, q.M); l = Core.ap(Core.inv(mm), a); if (l[0] < 0 || l[1] < 0 || l[0] >= p.w || l[1] >= p.h) l = null; }
-    else { const P = q.V.map((v, k) => { let x = 0, y = 0; for (const [id, w] of q.W[k]) { const m = M[id] || Core.ID; x += (m[0] * v[0] + m[2] * v[1] + m[4]) * w; y += (m[1] * v[0] + m[3] * v[1] + m[5]) * w; } return [x, y]; });
+    else { const P = skinPts(q, M);
       for (const t of q.T) { const A = P[t[0]], B = P[t[1]], C = P[t[2]], d = (B[1] - C[1]) * (A[0] - C[0]) + (C[0] - B[0]) * (A[1] - C[1]); if (Math.abs(d) < 1e-6) continue;
         const u = ((B[1] - C[1]) * (a[0] - C[0]) + (C[0] - B[0]) * (a[1] - C[1])) / d, v = ((C[1] - A[1]) * (a[0] - C[0]) + (A[0] - C[0]) * (a[1] - C[1])) / d, w = 1 - u - v;
         if (u < -0.01 || v < -0.01 || w < -0.01) continue; const U = q.UV; l = [U[t[0]][0] * u + U[t[1]][0] * v + U[t[2]][0] * w, U[t[0]][1] * u + U[t[1]][1] * v + U[t[2]][1] * w]; break; } }
     if (!l) continue;
     const c = IMG[p.img], kx = c.width / p.w, ky = c.height / p.h, px = c.getContext('2d').getImageData(Math.min(c.width - 1, l[0] * kx | 0), Math.min(c.height - 1, l[1] * ky | 0), 1, 1).data;
-    if (px[3] > 20 || aMode === 'restore') return { q, p, l, kx, ky };
+    if (px[3] > 20 || !pick && (aMode === 'restore' || only)) return { q, p, l, kx, ky };
   }
   return null;
 }
@@ -382,13 +447,37 @@ function posePaint(a) {
   const { M, st } = curPose(), h = poseHit(a, M, st); if (!h) return;
   const { p, l, kx } = h, c = IMG[p.img], g = c.getContext('2d'), sc = Math.hypot(p.sx ?? 1, 0) || 1, r = brush * kx / sc;
   if (!posePaint.done.has(p.img)) { pushUndo(p.img); posePaint.done.add(p.img); }
+  if (aMode === 'warp') { const L = [l[0] * kx, l[1] * h.ky], pv = posePaint.last; posePaint.last = { p, L }; if (!pv || pv.p !== p) return;
+    warpAt(c, L[0], L[1], L[0] - pv.L[0], L[1] - pv.L[1], r); dirty.add(p.img); posePaint.parts.add(p.img); return; }
+  const S = SRC[p.img] && SRC[p.img].width === c.width ? SRC[p.img] : ORIG[p.img];
   g.save(); g.beginPath(); g.arc(l[0] * kx, l[1] * h.ky, r, 0, 7);
-  if (aMode === 'erase') { g.globalCompositeOperation = 'destination-out'; g.fill(); } else if (ORIG[p.img] && ORIG[p.img].width === c.width) { g.clip(); g.clearRect(0, 0, c.width, c.height); g.drawImage(ORIG[p.img], 0, 0); }
+  if (aMode === 'erase') { g.globalCompositeOperation = 'destination-out'; g.fill(); } else if (aMode === 'paint') { g.fillStyle = paintCol; g.fill(); } else if (S && S.width === c.width) { g.restore(); stampSrc(c, S, l[0] * kx, l[1] * h.ky, r); g.save(); }
   g.restore(); dirty.add(p.img); posePaint.parts.add(p.img);
 }
 posePaint.done = new Set(); posePaint.parts = new Set();
+// картинка выбранной части (не кость): двигать / крутить / растянуть. У целых рук своя картинка на каждую позу — правка только этой позы.
+function imgDrag(m, a) {
+  const { M, st } = curPose(); if (!selPart) { const h = poseHit(a, M, st, true); if (!h) return; selPart = h.p; buildSide(); }
+  const p = selPart, q = R.parts.find(x => x.p === p); if (!q) return; if (q.T) return status('Эта часть гнётся по костям — её двигайте костями.');
+  pushUndo(); playing = false;
+  const Bm = M[q.bone] || Core.ID, L = [Bm[0], Bm[1], Bm[2], Bm[3], 0, 0], Ib = Core.inv(L), t0 = { x: p.x, y: p.y, r: p.r || 0, sx: p.sx ?? 1, sy: p.sy ?? 1 }, P0 = Core.partMat(p), hand0 = p.hand && p.hand.slice();
+  const cS = toS(Core.ap(Bm, [p.x, p.y])), a0 = Math.atan2(m[1] - cS[1], m[0] - cS[0]), nz = v => { const d = Math.hypot(v[0], v[1]) || 1; return [v[0] / d, v[1] / d]; };
+  const ax = nz(Core.ap(L, [Math.cos(t0.r * D2R), Math.sin(t0.r * D2R)])), ay = nz(Core.ap(L, [-Math.sin(t0.r * D2R), Math.cos(t0.r * D2R)])), v0 = [m[0] - cS[0], m[1] - cS[1]], dot = (u, w) => u[0] * w[0] + u[1] * w[1];
+  drag = { fn: (m2, a2, e2) => {
+    if (aMode === 'imove') { const d = Core.ap(Ib, [a2[0] - a[0], a2[1] - a[1]]); p.x = r1(t0.x + d[0]); p.y = r1(t0.y + d[1]); }
+    else if (aMode === 'irot') p.r = r1(t0.r + Core.wrap((Math.atan2(m2[1] - cS[1], m2[0] - cS[0]) - a0) / D2R));
+    else { const v = [m2[0] - cS[0], m2[1] - cS[1]];
+      if (e2.shiftKey) { const f = Math.max(0.2, Math.hypot(v[0], v[1]) / (Math.hypot(v0[0], v0[1]) || 1)); p.sx = r3(t0.sx * f); p.sy = r3(t0.sy * f); }
+      else { const X0 = dot(v0, ax), Y0 = dot(v0, ay); if (Math.abs(X0) > 12) p.sx = r3(t0.sx * Math.max(0.2, dot(v, ax) / X0)); if (Math.abs(Y0) > 12) p.sy = r3(t0.sy * Math.max(0.2, dot(v, ay) / Y0)); } }
+    q.M = Core.partMat(p); if (hand0) p.hand = Core.ap(Core.mul(Core.partMat(p), Core.inv(P0)), hand0).map(r1);     // точка кисти для IK едет вместе с картинкой
+  }, end: () => { changed(); buildSide(); } };
+}
 function animDown(e, m, a) {
-  if (aMode === 'erase' || aMode === 'restore') { playing = false; posePaint.done = new Set(); posePaint.parts = new Set(); posePaint(a); drag = { fn: (m2, a2) => posePaint(a2), end: () => changed() }; return; }
+  if (aMode === 'pick') { playing = false; const { M, st } = curPose(), h = poseHit(a, M, st, true); selPart = h ? h.p : null; buildSide(); return; }
+  if (aMode === 'pipette') { const d = ctx.getImageData(m[0] * dpr | 0, m[1] * dpr | 0, 1, 1).data; paintCol = '#' + [d[0], d[1], d[2]].map(v => v.toString(16).padStart(2, '0')).join(''); aMode = 'paint'; buildSide(); status('Цвет взят. Теперь «Дорисовать».'); return; }
+  if (easy && PAINT_T[aMode] && !selPart) { const { M, st } = curPose(), h = poseHit(a, M, st, true); if (!h) return; selPart = h.p; buildSide(); status('Выбрана часть «' + partName(h.p) + '». Кисть работает только по ней.'); }
+  if (IMG_T[aMode]) return imgDrag(m, a);
+  if (PAINT_T[aMode]) { playing = false; posePaint.done = new Set(); posePaint.parts = new Set(); posePaint.last = null; posePaint(a); drag = { fn: (m2, a2) => posePaint(a2), end: () => changed() }; return; }
   const { M } = curPose(), id = boneAt(m, M); if (id !== selBone) { selBone = id; buildSide(); } if (!id) return;
   pushUndo(); playing = false; const v0 = clipVal(id), [p] = boneScr(M, id), a0 = Math.atan2(m[1] - p[1], m[0] - p[0]);
   const par = R.B[id].p, Pm = par ? M[par] : Core.ID, Ip = Core.inv([Pm[0], Pm[1], Pm[2], Pm[3], 0, 0]), my0 = m[1];
@@ -429,6 +518,7 @@ function buildSide() {
   const box = $('side'); prep(); $('tl').hidden = tab !== 'anim'; $('game').hidden = tab !== 'scene'; if (tab === 'anim') setTimeout(resize, 0);
   if (tab === 'scene') { box.innerHTML = sceneSide(); sceneWire(); return; }
   if (tab === 'img') { box.innerHTML = imgSide(); imgWire(); return; }
+  if (tab === 'anim' && easy) { box.innerHTML = easySide(); easyWire(); return; }
   let h = '';
   if (tab === 'parts') {
     h += `<div class="hint">Клик — выбрать часть. Тащить — двигать, <b>Shift</b>+тащить — поворот, <b>Alt</b>+тащить — размер. Колесо — масштаб вида, правая кнопка — сдвиг вида.</div>
@@ -504,6 +594,89 @@ function buildSide() {
       <div class="grp"><button id="gReload">⟳ Перезапустить игру</button></div>`;
   }
   box.innerHTML = h; wire();
+}
+// ======================= ПРОСТОЙ РЕЖИМ =======================
+const EZ_CLIPS = [['idle', 'Стоит, дышит'], ['roar', 'Рёв (новая фаза)'], ['hurt', 'Ранен'], ['plasma', 'Плазма из пасти'], ['laser', 'Лазер из глаз'], ['clapUp', 'Хлопок 1: руки вверх'], ['clapOpen', 'Хлопок 2: ладони врозь'], ['clapShut', 'Хлопок 3: хлоп!'], ['clapBack', 'Хлопок 4: руки назад'],
+  ['smashUp', 'Кулаки вверх (замах)'], ['poundL', 'Удар левым по воде'], ['poundR', 'Удар правым по воде'], ['poundB', 'Удар двумя по воде'], ['chest', 'Бьёт себя в грудь'], ['point', 'Тычет пальцем'], ['hoseHit', 'Кулаки у груди (guard)']];
+const POSEN = { hang: 'опущена', roar: 'рёв', low: 'внизу', palmUp: 'ладонь вверх', clap: 'хлопок', fistUp: 'кулак вверх', smash: 'удар', guard: 'кулак у груди', grab: 'хватает', clapOpen: 'ладонь раскрыта', clapShut: 'хлоп', pound: 'бьёт вниз', chest: 'бьёт в грудь', point: 'палец' };
+function partName(p) {
+  if (!p) return '—'; const m = /^arm_(\w+?)([LR])$/.exec(p.id);
+  if (m) return (m[2] === 'L' ? 'левая' : 'правая') + ' рука «' + (POSEN[m[1]] || m[1]) + '»';
+  return ({ body: 'тело', hose: 'шланг', hroot: 'основание шланга', gun: 'миниган', epL: 'погон левый', epR: 'погон правый', leg0: 'лапа 1', leg1: 'лапа 2', leg2: 'лапа 3', leg3: 'лапа 4' })[p.id] || p.id;
+}
+function keyTimes() {     // все ключи клипа: кости, пасть/глаза, смена поз рук
+  const c = D.clips[clip], s = new Set([0]); const add = K => { for (const k of K) s.add(Math.round(k[0] * 100) / 100); };
+  for (const id in c.k || {}) add(c.k[id]); for (const kind of ['c', 'v']) for (const n in c[kind] || {}) add(c[kind][n]);
+  return [...s].filter(t => t <= c.len + 1e-6).sort((a, b) => a - b);
+}
+function jumpKey(d) { const K = keyTimes(); playing = false; let t;
+  if (d > 0) t = K.find(x => x > T + 0.005); else t = K.slice().reverse().find(x => x < T - 0.005);
+  if (t == null) t = d > 0 ? K[0] : K[K.length - 1]; T = t; buildSide(); }
+const EZ_TOOLS = [['pick', '👆 Выбрать часть', 'Кликни по картинке — выберется часть под мышью (жёлтая рамка). Потом её можно поднять поверх/под, показать отдельно, стирать или дорисовывать только её.'],
+  ['rot', '↻ Крутить кость', 'Хватай кость (треугольник) и крути мышью. Поза запомнится в ключ на текущем времени.'],
+  ['move', '✥ Двигать кость', 'Хватай кость и тащи. Поза запомнится в ключ на текущем времени.'],
+  ['scale', '⤢ Размер кости', 'Хватай кость и веди мышь вверх/вниз — больше/меньше.'],
+  ['erase', '🧽 Стереть', 'Води мышью — стирает картинку выбранной части (если ничего не выбрано — выберет ту, что под мышью). Действует во всех анимациях.'],
+  ['restore', '↺ Вернуть из оригинала', 'Бледным показано то, что было в исходной картинке, но сейчас стёрто или срезано. Води мышью — вернёт оригинал в этом месте (вокруг рук есть запас, можно вернуть срезанные края кулака).'],
+  ['warp', '👉 Подвинуть пиксели', 'Как «пластика»: зажми и тяни — кусок картинки под кистью растянется за мышью. Удобно подправить форму предплечья, кулака, пальцев.'],
+  ['paint', '🖌️ Дорисовать', 'Рисует выбранным цветом по выбранной части. Цвет удобно брать пипеткой.'],
+  ['pipette', '💧 Пипетка', 'Кликни по картинке — возьмёт оттуда цвет для кисти.'],
+  ['imove', '🖼️ Двигать картинку', 'Тащи выбранную часть — сдвигается сама картинка, кости не трогаются. У рук своя картинка на каждую позу: правка меняет только эту позу (во всех ключах).'],
+  ['irot', '🖼️ Крутить картинку', 'Тащи по кругу вокруг центра части — картинка поворачивается, кости не трогаются.'],
+  ['istretch', '🖼️ Растянуть картинку', 'Тащи от центра части: вдоль руки — длиннее/короче, поперёк — толще/тоньше. С зажатым Shift — пропорционально.']];
+function easySide() {
+  const c = D.clips[clip], K = keyTimes(), ki = K.findIndex(t => Math.abs(t - T) < 0.006), v = c.v || {};
+  const arms = ['armL', 'armR'].map(g => (POSEN[varAt(g)] || varAt(g) || '—')).join(' / ');
+  const tool = EZ_TOOLS.find(t => t[0] === aMode) || EZ_TOOLS[1];
+  let h = `<div class="ez">
+    <div class="say">Колесо мыши — приблизить, правая кнопка — двигать вид. <b>Ctrl+Z</b> — отменить. Стрелки ← → — по ключам. Пробел — играть.</div>
+    <h4>1. Анимация</h4><div class="clips">${EZ_CLIPS.filter(x => D.clips[x[0]]).map(x => `<button data-ez="${x[0]}" class="${x[0] === clip ? 'on' : ''}">${x[1]}</button>`).join('')}</div>
+    ${(D.clips[clip].f || {}).ik || (D.clips[clip].f || {}).ikOff ? `<div class="say">🤝 В этой анимации руки <b>сами тянутся к Валере</b> (в редакторе — к центру). Поэтому их тянет в кучу.</div>
+      <div class="row"><label><input type="checkbox" id="ezIk"${D.clips[clip].f.ik ? ' checked' : ''}> В игре руки сами ловят Валеру</label></div>
+      <div class="row"><label><input type="checkbox" id="ikV"${ikView ? ' checked' : ''}> Показать, как их стянет в игре</label></div>` : ''}
+    <h4>2. Ключи анимации</h4>
+    <div class="nav"><button id="ezPrev">◀ ключ</button><button id="ezPlay" class="${playing ? 'on' : ''}">${playing ? '⏸ Пауза' : '▶ Играть'}</button><button id="ezNext">ключ ▶</button></div>
+    <div class="say">${ki >= 0 ? `Ключ <b>${ki + 1}</b> из ${K.length}` : `Между ключами (всего ${K.length})`} · время ${T.toFixed(2)} из ${c.len} с<br>Руки: ${arms}</div>
+    <input type="range" id="aT" min="0" max="${c.len}" step="0.01" value="${T}" style="width:100%"><b hidden></b>
+    <label><input type="checkbox" id="ikV"${ikView ? ' checked' : ''}> руки тянутся к цели, как в игре</label>
+    <h4>3. Инструмент</h4><div class="tools">${EZ_TOOLS.map(t => `<button data-am="${t[0]}" class="${aMode === t[0] ? 'on' : ''}">${t[1]}</button>`).join('')}</div>
+    <div class="say">${tool[2]}</div>`;
+  if (PAINT_T[aMode]) h += `<div class="row"><span>Размер кисти</span><input type="range" id="aBr" min="2" max="80" value="${brush}"><b>${brush}</b></div>`;
+  if (aMode === 'paint' || aMode === 'pipette') h += `<div class="row"><span>Цвет</span><input type="color" id="ezCol" value="${paintCol}"></div>`;
+  if (BONE_T[aMode] && selBone) h += `<div class="grp"><button id="kDel" class="bad">✕ Убрать ключ кости «${selBone}» здесь</button></div>`;
+  h += `<h4>4. Выбранная часть</h4>`;
+  if (selPart) h += `<div class="say">Выбрана: <b>${partName(selPart)}</b><br>Слой ${D.parts.indexOf(selPart) + 1} из ${D.parts.length} (больше — ближе к зрителю)</div>
+    <div class="grp"><button id="ezUp">▲ Поверх</button><button id="ezDn">▼ Под</button><button id="ezSolo" class="${solo ? 'on' : ''}">👁 Только она</button><button id="ezHide" class="${selPart._hide ? 'on' : ''}">${selPart._hide ? '🙈 Показать' : '🙈 Спрятать'}</button><button id="ezNone">Снять выбор</button><button id="ezRing">🧹 Убрать круги</button></div>`;
+  else h += `<div class="say">Ничего не выбрано. Инструмент «👆 Выбрать часть» и клик по картинке.</div>`;
+  h += `<h4>5. Готово?</h4>
+    <div class="grp"><button id="ezKey">🔑 Запомнить всю позу в этом ключе</button></div>
+    <button id="ezSave" class="go big">✅ Сохранить и обновить игру</button>
+    <div class="say">Изменения картинок (стёр/дорисовал) действуют во всех анимациях, где видна эта часть. Полный редактор — вкладки сверху.</div></div>`;
+  return h;
+}
+function easyLayer(dir) {
+  const p = selPart; if (!p) return; const { st } = curPose(), vis = x => { const q = R.parts.find(r => r.p === x); return q && !x._hide && x.tag !== 'hose' && x.id !== 'hroot' && Core.alpha(R, q, st, {}) > 0.05; };     // шланг в игре рисуется отдельно
+  const i = D.parts.indexOf(p); let j = i + dir; while (j >= 0 && j < D.parts.length && !vis(D.parts[j])) j += dir;
+  if (j < 0 || j >= D.parts.length) return status(dir > 0 ? 'Уже поверх всех' : 'Уже под всеми');
+  pushUndo(); const over = D.parts[j]; D.parts.splice(i, 1); D.parts.splice(j, 0, p); changed(); buildSide(); status((dir > 0 ? 'Теперь поверх: ' : 'Теперь под: ') + partName(over));
+}
+function easyWire() {
+  const box = $('side');
+  box.querySelectorAll('[data-ez]').forEach(b => b.onclick = () => { clip = b.dataset.ez; T = 0; playing = false; buildSide(); });
+  box.querySelectorAll('[data-am]').forEach(b => b.onclick = () => { aMode = b.dataset.am; buildSide(); });
+  on('ezPrev', 'onclick', () => jumpKey(-1)); on('ezNext', 'onclick', () => jumpKey(1)); on('ezPlay', 'onclick', () => { playing = !playing; buildSide(); });
+  on('aT', 'oninput', e => { T = +e.target.value; playing = false; }); on('aT', 'onchange', () => buildSide());
+  on('ikV', 'onchange', e => { ikView = e.target.checked; });
+  on('ezIk', 'onchange', e => { pushUndo(); const f = D.clips[clip].f || (D.clips[clip].f = {}); if (e.target.checked) { f.ik = f.ikOff || 'LR'; delete f.ikOff; } else { f.ikOff = f.ik; f.ik = undefined; } changed(); buildSide(); status(e.target.checked ? 'Руки снова ловят Валеру' : 'Сведение выключено: руки будут ровно как ты поставил. Не забудь сохранить.'); });
+  on('aBr', 'oninput', e => { brush = +e.target.value; e.target.nextElementSibling.textContent = brush; });
+  on('ezCol', 'oninput', e => { paintCol = e.target.value; });
+  on('kDel', 'onclick', () => { const c = D.clips[clip], K = selBone && c.k && c.k[selBone]; if (!K) return; const i = K.findIndex(k => Math.abs(k[0] - T) < 0.02); if (i < 0) return status('У этой кости здесь нет ключа'); pushUndo(); K.splice(i, 1); if (!K.length) delete c.k[selBone]; buildSide(); });
+  on('ezUp', 'onclick', () => easyLayer(1)); on('ezDn', 'onclick', () => easyLayer(-1));
+  on('ezSolo', 'onclick', () => { solo = !solo; buildSide(); }); on('ezHide', 'onclick', () => { selPart._hide = !selPart._hide; buildSide(); });
+  on('ezNone', 'onclick', () => { selPart = null; solo = false; buildSide(); });
+  on('ezRing', 'onclick', () => { const p = selPart; if (!p || !IMG[p.img]) return; pushUndo(p.img); const n = fixRings(IMG[p.img]); if (n) dirty.add(p.img); status(n ? 'Круги убраны (' + n + ' точек). Не забудь сохранить.' : 'Кругов в этой части не нашёл.'); });
+  on('ezKey', 'onclick', () => { pushUndo(); const ik0 = ikView; ikView = false; const { pose } = curPose(); ikView = ik0; for (const id of R.order) setKey(id, clip[0] === '+' ? clipVal(id) : Object.assign({ r: 0, x: 0, y: 0, s: 1 }, pose[id] || {})); status('Поза записана в ключ ' + T.toFixed(2) + ' с'); buildSide(); });
+  on('ezSave', 'onclick', () => $('save').click());
 }
 function chAt(n) { const c = D.clips[clip], K = c.c && c.c[n]; if (!K || !K.length) return 0; return r3(Core.keyAt(K, T, c.len, c.loop)[1]); }
 function varAt(g) { const K = (D.clips[clip].v || {})[g]; if (!K || !K.length) return ''; let v = K[0][1]; for (const e of K) if (e[0] <= T + 1e-4) v = e[1]; return v; }
@@ -590,7 +763,7 @@ const gameP = () => { try { return $('ifr').contentWindow.eval("typeof L10 !== '
 function reloadGame() { $('ifr').src = ROOT + 'index.html?l10=sea&t=' + Date.now(); }
 async function readSem() { try { await loadScript(ROOT + 'js/sea3_layout.js'); const s = L10.SEA3 && L10.SEA3.sem; if (s) SEM = { x: s.x, y: s.y, H: s.H }; } catch (e) {} }
 document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
-  tab = b.dataset.t; document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b)); lasso = null; addBone = null; hint('');
+  tab = b.dataset.t; easy = tab === 'easy'; if (easy) tab = 'anim'; else if (aMode === 'pick' || aMode === 'paint' || aMode === 'pipette' || aMode === 'warp' || IMG_T[aMode]) aMode = 'rot'; document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b)); lasso = null; addBone = null; hint('');
   if (tab === 'scene' && !W) loadGame(); buildSide(); setTimeout(resize, 0);
 });
 

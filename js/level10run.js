@@ -11,7 +11,7 @@
 
   L9.MAPS = L9.MAPS || {};
   L9.MAPS.x10run = () => {
-    const M = { zoom: Z, x0: -1e7, x1: 1e7, y0: CY, y1: 360, solids: [], walks: [], ladders: [], lifts: [], pits: [], cks: [[60, 260]], killY: 1e9, strafe: true, dmgK: 0.8, noFloor: [] };
+    const M = { zoom: Z, x0: -1e7, x1: 1e7, y0: CY, y1: 360, solids: [], walks: [], ladders: [], lifts: [], pits: [], cks: [[60, 260]], killY: 1e9, strafe: true, dmgK: 1.15,     /* критик: фаза 1 была прогулкой (25 урона за 74 с) */ noFloor: [] };
     M.camY = () => CY;
     const W = M.weather = new L10.Weather(230);
     let camX = -150;                               // левый край экрана в мире (уменьшается)
@@ -19,17 +19,19 @@
     M.toScr = (x, y) => [sx(x), sy(y)];     // для падающих бонусов (level10drops.js)
     const sx = x => (x - camX) * Z, sy = y => (y - CY) * Z, wx = s => camX + s / Z, wy = s => s / Z + CY;     // мир <-> экран
     M.sx = sx; M.sy = sy; M.touchX = () => B.x - B.H * (B.rig ? 0.3 : 0.28);     // экранная линия передней ноги Семёна
-    const B = M.boss = L10.makeBoss(1, L10.RIG2 ? { H: 360, x: 520, y: 405, hp: HP, segs: 2, segLimit: 120 } : { H: 560, x: 560, y: 600, hp: HP, segs: 2, segLimit: 120 });     // владелец: «за 2 минуты не убьёт первую часть — съедает»
+    const JP = new Image(); JP.src = 'assets/l10/jetpack10.png?v=' + G.VER;     // джетпак на площадке (вырезан из кадра vJetUp10 j0)
+    const B = M.boss = L10.makeBoss(1, L10.RIG2 ? { H: 360, x: 520, y: 405, hp: HP / 2, segs: 2, segLimit: 75 } : { H: 560, x: 560, y: 600, hp: HP / 2, segs: 1, segLimit: 100 });     // владелец: «за 2 минуты не убьёт первую часть — съедает»
+    B.barSegs = 1;     // одна шкала, но 2 скрытых чекпоинта (тестировщик: смерть = заново всё)
     B.setPose(L10.fr('sem1', 'walk0') ? 'walk0' : 'roar');
     // ---- здания
     const blds = M.blds = [];
     let seed = 0;
     // типы домов: 0,1,3,4 — старый лист roof10 (r2 «пила» не для ходьбы, 5 — финальное здание); 10..15 — новый лист bld10. Масштаб у всех единый (рост Валеры 78 = 1.8 м)
     const B2 = L10.BLD2, PXM = 78 / 1.8, OLD_S = 2.3, OBJ_S = 0.55, OBJ_K = [1.15, 1, 1, 1, 1.2, 1],     /* будки с дверью крупнее — дверь выше героя (критик) */ OBJ = B2 && L10.img.rtop10 && B2.obj.length;
-    const TYPES = [0, 1, 3, 4].concat(B2 && L10.img.bld10 ? B2.bld.map((_, i) => 10 + i).filter(t => t !== 13) : []);     // 13 — жёлтый дом, владелец убрал
+    const TYPES = [0, 1, 3].concat(B2 && L10.img.bld10 ? B2.bld.map((_, i) => 10 + i).filter(t => t !== 13) : []);     // 13 — жёлтый дом, 4 — ангар из гофры со скатной крышей: владелец убрал
     const NEW_K = 0.72;     // владелец: все новые дома слишком огромные — общий масштаб нового листа
     const typeW = t => t >= 10 ? Math.round(B2.bld[t - 10][2] * B2.bld[t - 10][6] * PXM / B2.bld[t - 10][5] * NEW_K) : Math.round(L10.size('roof10', 'r' + t)[0] * OLD_S);
-    const pickType = prev => { let t; do t = TYPES[(Math.random() * TYPES.length) | 0]; while ((t === prev || (t === 11 && Math.random() < 0.7)) && TYPES.length > 1); return t; };     // панелька среди цехов — редко (критик)
+    const bag = [], pickType = prev => { if (!bag.length) { bag.push(...TYPES.filter(t => t !== 11 || Math.random() < 0.3).sort(() => Math.random() - 0.5)); if (bag.length > 1 && bag[bag.length - 1] === prev) [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1], bag[0]]; } return bag.pop(); };     // владелец: дома без повторов — колода, пока не выйдут все виды; панелька (11) редко     // панелька среди цехов — редко (критик)
     const addObj = b => {     // предмет на крыше: спрайт стоит на линии крыши; если лестница нарисована слева — зеркалим, чтобы была справа
       if (b.type === 0 || b.type === 1 || b.type === 4) return;     // критик: у type 0 своя надстройка, у type 1 свой бак, у type 4 скатная крыша
       let i; do i = (Math.random() * B2.obj.length) | 0; while (i === 3 || (b.type === 1 && i === 1));     // 3 — билборд, владелец убрал     // на доме с баком — без второго бака
@@ -55,7 +57,7 @@
       while (L.x > camX - 900) {
         if (M.finalWanted && !M.final) { const g = 46; const b = addB(L.x - g - 700, 700, clamp(L.y - 30, 60, 170), 5); M.final = b; L = b; break; }
         if (M.final) break;
-        const twin = L.type !== 5 && L.w < 600 && Math.random() < 0.28;     /* только узкие дома — иначе крыша слишком длинная (владелец) */     // владелец: где-то крыши длиннее — тот же дом вплотную, крыша продолжается
+        const twin = false;     /* владелец: без повторов — близнецов вплотную больше нет */     /* только узкие дома — иначе крыша слишком длинная (владелец) */     // владелец: где-то крыши длиннее — тот же дом вплотную, крыша продолжается
         const step = Math.random(), type = twin ? L.type : pickType(L.type), w = typeW(type), g = twin ? 0 : step < 0.18 ? 0 : rnd(28, 80);
         let y = twin ? L.y : L.y + (step < 0.18 ? rnd(-62, -30) * (Math.random() < 0.5 ? 1 : -1) : rnd(-58, 70)); y = clamp(y, 60, 190);
         L = addB(L.x - g - w, w, y, type);
@@ -74,7 +76,8 @@
     // ---- атаки
     const A = M.atk = { cd: 1.6, cur: null, t: 0 };
     const fx = M.fx = [];              // эффекты мира: {k, x, y, t, life, ...}
-    const marks = [];                  // метки удара на крышах
+    const marks = [], throws = [];     // throws — предметы с крыш, которые швыряет Семён
+                     // метки удара на крышах
     const roofAt = x => { let y = null; for (const b of blds) if (b.st === 'ok' && x >= b.x && x < b.x + b.w) { for (const o of b.objs || []) if (x >= o.x && x < o.sx1 && (y == null || o.top < y)) y = o.top; const ii = Math.round((x - b.x) / DS), d = b.dmg ? b.dmg[ii] || 0 : 0, by = b.y + prof(b, ii) + (d > 6 ? d : 0); if (y == null || by < y) y = by; } return y; };     // самая верхняя крыша (надстройки)
     M.roofAt = roofAt;
     const crumble = (b) => { if (b.st !== 'ok') return; b.st = 'fall'; b.t = 0; if (b.kids) b.kids.forEach(k => crumble(k)); G.shake(3, 0.3); Sound.play('crumble', 0.7); for (let i = 0; i < 8; i++) fx.push({ k: 'deb', fr: 'd' + ((Math.random() * 12) | 0), x: b.x + rnd(0, b.w), y: b.y + rnd(-10, 30), vx: rnd(-60, 140), vy: rnd(-260, -60), r: rnd(-4, 4), t: 0, life: 2.2, s: rnd(0.25, 0.5) }); };
@@ -100,7 +103,7 @@
     const dust = (x, y, n = 14) => { for (let i = 0; i < n; i++) fx.push({ k: 'dust', x: x + rnd(-14, 14), y: y + rnd(-8, 8), vx: rnd(-50, 50), vy: rnd(-90, -10), t: 0, life: rnd(0.6, 1.2) }); };
     const boom = (x, y, s = 0.5) => { fx.push({ k: 'boom', x, y, t: 0, life: 0.6, s }); Sound.play('boom', 0.6); G.shake(4, 0.25); };
     const pickAtk = () => {
-      const sg = B.seg, list = [['slam', 3], ['eyes', 2.2], ['plasma', 1.6 + sg], ['lunge', 1.6], ['rain', 1.2 + sg * 0.6], ['spawn', 0.8 + sg * 0.5], ['gun', 1.8 + sg * 0.4]];
+      const sg = B.seg, list = [['slam', 3], ['eyes', 2.2], ['plasma', 1.6 + sg], ['lunge', 1.6], ['rain', 1.2 + sg * 0.6], ['spawn', 0.8 + sg * 0.5], ['gun', 1.8 + sg * 0.4]].concat(OBJ ? [['throw', 1.8]] : []);
       let tot = list.reduce((a, b) => a + b[1], 0), r = Math.random() * tot; for (const [k, w] of list) { if ((r -= w) <= 0) return k; } return 'slam';
     };
     M.startAtk = (k, P) => {
@@ -111,6 +114,7 @@
       if (k === 'lunge') { B.setPose('lunge', 1.3); A.ty = (roofAt(P.x) || P.y) - 34; Sound.play('warn', 0.5); }
       if (k === 'rain') { B.setPose('roar', 1.2); Sound.play('stomp'); G.shake(5, 0.6); A.n = 6 + B.seg * 4; }
       if (k === 'spawn') { B.setPose('roar', 1.0); for (const p of B.pimps) if (p.st < 3.5) p.st = Math.max(p.st, 3.4); }
+      if (k === 'throw') { A.n = 2; A.i = 0; M.held = null; Sound.play('warn', 0.5); }     // срывает будки с крыш и швыряет в Валеру
       if (k === 'gun') { B.setPose('gun', 2.6); A.n = 0; Sound.play('warn', 0.4); }     // очередь из минигана на голове
     };
     // ---- Семён как «враг» движка ур.9 (пули попадают через box/blocks/hit)
@@ -159,15 +163,18 @@
       if (B.hp > 0 && B.segT > B.segLimit && !M.eat) { M.eatStart(P, lv, 'СЕМЁН СЪЕЛ ВАЛЕРУ — НЕ УСПЕЛ'); return; }
       if (B.hp > 0 && B.segLimit - B.segT < 20 && ((B.segT * 2) | 0) % 2 === 0 && (B.segT % 0.5) < dt) Sound.play('warn', 0.4);
       // победа в фазе
-      if (B.hp <= 0 && !M.finalWanted) { M.finalWanted = true; B.setPose('hurt', 2.5); lv.say('ОН РАНЕН! ДОБЕГИ ДО ВЕРТОЛЁТНОЙ ПЛОЩАДКИ!', 4); Sound.play('stomp'); G.shake(10, 1.2); A.cur = null; }
-      if (M.final && P.onG && Math.abs(P.y - M.final.y) < 3 && P.x < M.final.x + M.final.w * 0.45 && !M.toJet) { M.toJet = 1; lv.say('ДЖЕТПАК!', 1.5); Sound.play('pickup'); M.jetT = 0; }
-      if (M.toJet) { M.jetT += dt; P.vx = 0; P.hide = M.jetT > 0.35; if (M.jetT > 1.5 && !M.lift) { M.lift = 1; Sound.play('steam', 0.8); dust(P.x, P.y, 14); } if (M.jetT > 2.9) { P.hide = false; lv.next(); } return; }     // взлёт на джетпаке
+      if (B.hp <= 0 && !M.finalWanted) { M.finalWanted = true; for (let i = blds.length - 1; i >= 0; i--) if (blds[i].x + blds[i].w < camX - 20) blds.splice(i, 1); gen();     /* владелец: площадка с джетпаком — сразу следующий дом */ B.setPose('hurt', 2.5); lv.say('ОН РАНЕН! БЕГИ К ДЖЕТПАКУ!', 4); Sound.play('stomp'); G.shake(10, 1.2); A.cur = null; }
+      if (M.final && P.onG && Math.abs(P.y - M.final.y) < 3 && P.x < M.final.x + M.final.w * 0.45 && !M.toJet) { M.toJet = 1; P.x = M.final.x + M.final.w * 0.42 + 34; P.dir = -1;     /* стоит рядом с джетпаком — видно, как он перелетает на спину */ lv.say('ДЖЕТПАК!', 1.5); Sound.play('pickup'); M.jetT = 0; }
+      if (M.toJet) { M.jetT += dt; P.vx = 0; P.hide = M.jetT > 0.4; if (M.jetT > 1.5 && !M.lift) { M.lift = 1; Sound.play('steam', 0.8); dust(P.x, P.y, 14); } if (M.jetT > 2.9) { P.hide = false; lv.next(); } return; }     // взлёт на джетпаке
       // атаки
       if (B.hp > 0) {
         if (!A.cur) { A.cd -= dt; if (A.cd <= 0) M.startAtk(pickAtk(), P); }
         else M.atkUpd(dt, P, lv);
       }
       // эффекты
+      for (const o of throws) { o.t += dt; if (o.t >= o.dur && !o.hit) { o.hit = 1; const ry = roofAt(o.tx); boom(o.tx, (ry ?? o.ty) - 14, 0.7); if (ry != null) hole(o.tx, 18); G.shake(7, 0.35);
+          if (Math.abs(P.x - o.tx) < 32 && Math.abs(P.y - (ry ?? o.ty)) < 60 && !lv.dead) LAB().hurt(18, o.tx); } }
+      for (let i = throws.length - 1; i >= 0; i--) if (throws[i].hit) throws.splice(i, 1);
       for (const m of marks) m.t += dt;
       for (let i = marks.length - 1; i >= 0; i--) if (marks[i].t > marks[i].life) marks.splice(i, 1);
       for (const f of fx) { f.t += dt; if (f.vx != null) { f.x += f.vx * dt; f.vy += (f.k === 'dust' ? -20 : f.k === 'bul' ? 0 : 700) * dt; f.y += f.vy * dt; } if (f.k === 'fall' && !f.hit) { const ry = roofAt(f.x); if (ry != null && f.y > ry - 6) { f.hit = 1; f.t = f.life; boom(f.x, ry - 10, 0.35); if (Math.abs(P.x - f.x) < 26 && Math.abs(P.y - ry) < 50) LAB().hurt(12, f.x); } } }
@@ -178,7 +185,7 @@
       for (let i = fx.length - 1; i >= 0; i--) if (fx[i].t > fx[i].life) fx.splice(i, 1);
     };
     M.atkUpd = (dt, P, lv) => {
-      A.t += dt; const k = A.cur, sg = B.seg, end = (cd) => { A.cur = null; A.cd = cd - sg * 0.35; B.glowE = 0; B.glowM = 0; M.beam = null; M.whip = null; M.arm = null; B.aim = null; B.hoseT = null; B.gunT = null; };
+      A.t += dt; const k = A.cur, sg = B.seg, end = (cd) => { A.cur = null; A.cd = (cd - sg * 0.35) * 0.75; B.glowE = 0; B.glowM = 0; M.beam = null; M.whip = null; M.arm = null; B.aim = null; B.hoseT = null; B.gunT = null; };
       if (k === 'slam') {
         B.aim = [sx(A.tx), sy((roofAt(A.tx) ?? 330) - 6)];     // риг: голова и рука целятся в метку
         if (A.t > 0.85 && !A.done) { A.done = 1; B.setPose('slam', 0.8); M.arm = { x: A.tx, t: 0 }; }
@@ -189,7 +196,7 @@
       }
       if (k === 'eyes') {
         B.glowE = Math.min(1, A.t * 1.6);
-        if (A.t > 0.7) { const p = clamp((A.t - 0.7) / (1.5 - sg * 0.15), 0, 1), x = wx(M.touchX() - p * (M.touchX() - 10)), ry = roofAt(x) ?? 330; M.beam = { k: 'laser', from: B.P('e'), from2: B.P('e2'), to: [sx(x), sy(ry - 2)], x }; B.aim = M.beam.to; if (Math.random() < 0.6) dust(x, ry, 1);
+        if (A.t > 0.7) { const p = clamp((A.t - 0.7) / (1.5 - sg * 0.15), 0, 1), x = wx(M.touchX() - p * (M.touchX() - 10)), ry = roofAt(x) ?? 330; M.beam = { k: 'laser', from: B.P('e'), from2: B.P('e2'), to: [sx(x), sy(ry - 2)], x };     /* владелец: лазер из двух глаз */ B.aim = M.beam.to; if (Math.random() < 0.6) dust(x, ry, 1);
           if (Math.abs(P.x - x) < 14 && P.onG && Math.abs(P.y - ry) < 6) LAB().hurt(16, x); if (p >= 1) end(1.4); }
       }
       if (k === 'plasma') {
@@ -203,6 +210,18 @@
           if (P.x > wx(reach) && Math.abs((P.y - 30) - A.ty) < 26 && P.st !== 'crouch') LAB().hurt(20, P.x + 40); if (p >= 1) end(1.3); }
       }
       if (k === 'rain') { if (A.n > 0 && A.t > 0.4 + (6 + sg * 4 - A.n) * 0.18) { A.n--; const x = P.x + rnd(-220, 220); marks.push({ x, t: 0, life: 0.9, small: 1 }); fx.push({ k: 'fall', fr: 'd' + ((Math.random() * 12) | 0), x, y: wy(-40), vx: 0, vy: 120, r: rnd(-3, 3), t: 0, life: 3, s: rnd(0.3, 0.5) }); } if (A.t > 3.2) end(1.2); }
+      if (k === 'throw') {     // владелец: нагибается, срывает будку с крыши у ног, замахивается над головой и швыряет
+        const C = 1.3, c = A.t - A.i * C, hand = () => B.rig ? B.P('g') : B.P('h');
+        if (A.i >= A.n) { B.setPose('roar', 0.2); M.held = null; if (c > 0.35) end(1.3); }
+        else if (c < 0.5) { const gx = M.touchX() - 40, gy = sy((roofAt(wx(gx)) ?? 330) - 4); B.setPose('pick', 0.3); B.aim = [gx, gy];
+          if (c > 0.4 && !M.held) { const oi = (Math.random() * B2.obj.length) | 0, r = B2.obj[oi], h = 84; M.held = { i: oi, w: r[2] * h / r[3], h, rot: 0 }; const x = wx(gx), ry = roofAt(x) ?? 330; hole(x, 18); Sound.play('crumble', 0.7); G.shake(4, 0.2);
+            for (let j = 0; j < 7; j++) fx.push({ k: 'deb', fr: 'd' + ((Math.random() * 12) | 0), x: x + rnd(-14, 14), y: ry - 6, vx: rnd(-90, 90), vy: rnd(-200, -80), g: 600, r: rnd(-6, 6), t: 0, life: 1.1, s: rnd(0.2, 0.35) });
+            for (let j = 0; j < 3; j++) fx.push({ k: 'dust', x: x + rnd(-16, 16), y: ry - 4, t: 0, life: 0.7 }); } }
+        else if (c < 1.0) { B.setPose('wind', 0.3); B.aim = [sx(P.x), sy(P.y - 24)]; if (M.held) M.held.rot += (-0.9 - M.held.rot) * 0.08; }
+        else { B.setPose('toss', 0.3); B.aim = [sx(P.x), sy(P.y - 24)];
+          if (c > 1.1 && M.held) { const [hx, hy] = hand(), tx = P.x + P.vx * 0.55 + rnd(-20, 20), ty = roofAt(tx) ?? P.y, o = M.held; M.held = null;
+            throws.push({ x0: wx(hx), y0: wy(hy), tx, ty, t: 0, dur: 1.0, i: o.i, w: o.w, h: o.h, rot: o.rot }); marks.push({ x: tx, t: 0, life: 1.0 }); Sound.play('throw', 0.7); }
+          if (c >= C) A.i++; } }
       if (k === 'spawn') { if (A.t > 1.0) end(1.0); }
       if (k === 'gun') {
         B.aim = B.gunT = [sx(P.x), sy(P.y - 24)];
@@ -250,6 +269,13 @@
     M.drawBackWorld = (c, P) => {
       for (const b of blds) M.drawBld(c, b);
       for (const b of blds) if (b.st === 'ok' && b.steps && L9D.lad9) for (const q of b.steps) { const [lw, lh] = L9.size('lad9', 'l'), k = 30 / lw, len = q[2] - q[1] + 8; S9(c, 'lad9', 'l', q[0] + 15, b.y + q[2] + 2, k, { sy: len / (lh * k) }); }     // лестница на высокую ступень крыши (у предметов лестницы нарисованы)
+      if (M.final && (!M.toJet || M.jetT < 0.4) && JP.complete && JP.naturalWidth) {     // джетпак стоит на площадке крупно: соплами вниз, свечение и стрелка
+        const b = M.final, q = M.toJet ? Math.min(1, M.jetT / 0.4) : 0, e = q * q * (3 - 2 * q), P0 = L9.PARTS.lab, x = L10.lerp(b.x + b.w * 0.42, P0.x - P0.dir * 8, e), y = L10.lerp(b.y, P0.y - 18, e), h = L10.lerp(112, 44, e), w = h * JP.naturalHeight / JP.naturalWidth, t = G.t;     // при подборе джетпак перелетает со стойки Валере на спину (критик: раньше пропадал)
+        c.save(); c.globalCompositeOperation = 'lighter'; const gl = c.createRadialGradient(x, y - h / 2, 4, x, y - h / 2, h); gl.addColorStop(0, `rgba(120,255,200,${0.35 + 0.15 * Math.sin(t * 6)})`); gl.addColorStop(1, 'rgba(120,255,200,0)'); c.fillStyle = gl; c.fillRect(x - h, y - h * 1.5, h * 2, h * 2); c.restore();
+        c.fillStyle = 'rgba(0,0,0,0.35)'; c.beginPath(); c.ellipse(x, y, w * 0.9, 5, 0, 0, Math.PI * 2); c.fill();
+        c.save(); c.translate(x, y - h / 2); c.rotate(-Math.PI / 2); c.imageSmoothingEnabled = true; c.drawImage(JP, -h / 2, -w / 2, h, w); c.restore();
+        if (!M.toJet) { const ay = y - h - 26 + Math.sin(t * 5) * 6; c.fillStyle = '#ffd84a'; c.strokeStyle = '#3a2a00'; c.lineWidth = 3; c.beginPath(); c.moveTo(x - 14, ay - 16); c.lineTo(x + 14, ay - 16); c.lineTo(x, ay); c.closePath(); c.stroke(); c.fill(); }
+      }
       for (const m of marks) { const ry = roofAt(m.x); if (ry == null) continue; const a = 0.4 + 0.4 * Math.sin(m.t * 18); L10.Minion.mark(c, m.x, ry - 2, m.small ? 24 : 68, a); }
     };
     M.drawBld = (c, b) => {
@@ -294,17 +320,20 @@
     M.drawBeam = (c, bm) => {
       const [x0, y0] = bm.from, [x1, y1] = bm.to, ang = Math.atan2(y1 - y0, x1 - x0), len = Math.hypot(x1 - x0, y1 - y0);
       c.save(); c.globalCompositeOperation = 'lighter';
-      if (L10.has('fx10')) { const fr = bm.k === 'plasma' ? 'plasma' : 'laser', [fw, fh] = L10.size('fx10', fr); c.translate(x0, y0); c.rotate(ang); const f = L10.fr('fx10', fr); c.imageSmoothingEnabled = true; const th = bm.k === 'plasma' ? 34 + Math.sin(B.t * 40) * 4 : 10; c.drawImage(L10.img.fx10, f[0], f[1], f[2], f[3], 0, -th / 2, len, th); if (bm.k === 'laser' && bm.from2) { c.rotate(-ang); c.translate(bm.from2[0] - x0, bm.from2[1] - y0); c.rotate(ang); c.drawImage(L10.img.fx10, f[0], f[1], f[2], f[3], 0, -th / 2, len, th); } }
+      if (L10.has('fx10')) { const fr = bm.k === 'plasma' ? 'plasma' : 'laser', [fw, fh] = L10.size('fx10', fr); c.translate(x0, y0); c.rotate(ang); const f = L10.fr('fx10', fr); c.imageSmoothingEnabled = true; const th = bm.k === 'plasma' ? 34 + Math.sin(B.t * 40) * 4 : 10; c.drawImage(L10.img.fx10, f[0], f[1], f[2], f[3], 0, -th / 2, len, th); if (bm.k === 'laser' && bm.from2) { const a2 = Math.atan2(bm.to[1] - bm.from2[1], bm.to[0] - bm.from2[0]), l2 = Math.hypot(bm.to[0] - bm.from2[0], bm.to[1] - bm.from2[1]); c.rotate(-ang); c.translate(bm.from2[0] - x0, bm.from2[1] - y0); c.rotate(a2); c.drawImage(L10.img.fx10, f[0], f[1], f[2], f[3], 0, -th / 2, l2, th); }     /* оба луча сходятся в одну точку (критик) */ }
       else { c.strokeStyle = bm.k === 'plasma' ? 'rgba(140,255,120,0.9)' : 'rgba(255,90,60,0.9)'; c.lineWidth = bm.k === 'plasma' ? 18 : 4; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); }
       c.restore();
     };
     M.drawFront = (c, P) => {
-      if (M.toJet && M.jetT > 0.35) {     // надевает джетпак (vJetUp10: 0-2 надевает, 3-5 запуск, 7 взлёт)
-        const k = M.jetT - 0.35, up = Math.max(0, k - 1.75), y = P.y - up * up * 140;
-        const f = k < 0.45 ? 0 : k < 0.8 ? 1 : k < 1.15 ? 2 : k < 1.4 ? 3 : k < 1.6 ? 4 : k < 1.75 ? 5 : 7;
+      if (M.toJet && M.jetT > 0.4) {     // надевает джетпак (vJetUp10: 0-2 надевает, 3-5 запуск, 7 взлёт)
+        const k = M.jetT - 0.4, up = Math.max(0, k - 1.75), y = P.y - up * up * 140;
+        const f = k < 0.8 ? 1 : k < 1.15 ? 2 : k < 1.4 ? 3 : k < 1.6 ? 4 : k < 1.75 ? 5 : 7;
         if (L10.has('vJetUp10')) S(c, 'vJetUp10', 'j' + f, P.x, y, 0.95, { flip: P.dir < 0 });
         else if (L10.has('vJet10')) S(c, 'vJet10', 'up', P.x, y - 46, 0.5);
       }
+      if (L10.img.rtop10) for (const o of throws) { const u = Math.min(1, o.t / o.dur), x = o.x0 + (o.tx - o.x0) * u, y = o.y0 + (o.ty - o.h / 2 - o.y0) * u - Math.sin(u * Math.PI) * 120, r = B2.obj[o.i];
+        c.save(); c.translate(x, y); c.rotate(o.rot + u * 6); c.drawImage(L10.img.rtop10, r[0], r[1], r[2], r[3], -o.w / 2, -o.h / 2, o.w, o.h); c.restore(); }     // летящая будка
+      if (L10.img.rtop10 && M.held && A.cur === 'throw') { const o = M.held, r = B2.obj[o.i], [hx, hy] = B.rig ? B.P('g') : B.P('h'); c.save(); c.translate(wx(hx), wy(hy)); c.rotate(o.rot); c.drawImage(L10.img.rtop10, r[0], r[1], r[2], r[3], -o.w / 2, -o.h * 0.7, o.w, o.h); c.restore(); }     // будка в руке
       for (const f of fx) {
         if (f.k === 'deb' || f.k === 'fall') { if (L10.has('deb10')) S(c, 'deb10', f.fr, f.x, f.y, f.s, { rot: f.r * f.t }); else { c.fillStyle = '#4a4440'; c.fillRect(f.x - 6, f.y - 6, 12, 12); } }
         else if (f.k === 'dust') { if (L10.has('fx10')) S(c, 'fx10', 'dust', f.x, f.y, 0.1 + f.t * 0.08, { a: 0.55 * (1 - f.t / f.life) }); }

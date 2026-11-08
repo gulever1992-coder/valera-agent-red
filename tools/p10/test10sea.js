@@ -6,26 +6,28 @@ window.__t10s = (() => {
   let jT = 0;
   const threat = (P) => {
     for (const a of P.atks) {
-      if (a.k === 'clap' && (a.st === 'out' || a.st === 'clap' || (a.st === 'up' && a.t > 0.5))) return 'clap';
+      if (a.k === 'clap' && Math.abs((a.tx ?? P.x) - P.x) < 90 && (a.st === 'swing' || a.st === 'shut' || (a.st === 'up' && a.t > 0.45))) return 'clap';
       if (a.k === 'hose' && a.mark && Math.abs(a.mark.x - P.x) < 70 && a.st === 'up' && a.t > 0.35) return 'hose';
       if (a.k === 'laser' && !a.warn && Math.abs(a.x - P.x) < 90) return 'laser';
     }
     if (P.balls.some(b => Math.hypot(b.x - P.x, b.y - P.y + 40) < (P.onG && P.gun ? 34 : 70))) return 'ball';
-    if (P.waves.some(w => !w.hit)) return 'clap';
+    if (P.waves.some(w => w.h > 0.3 && !w.hit && Math.sign(P.x - w.x) === w.d && Math.abs(P.x - w.x) < 46)) return 'wave';     // волна от кулака — прыжок
     return null;
   };
   const bot = (lv, st) => {
-    const P = L10.PARTS.sea; ['left', 'right', 'jump', 'punch', 'up', 'down'].forEach(a => set(a, 0));
+    const P = L10.PARTS.sea; ['left', 'right', 'jump', 'punch', 'up', 'down', 'throw'].forEach(a => set(a, 0));
     if (lv.dead || P.climbT > 0) return;
     const th = threat(P); if (th) st.th[th] = (st.th[th] || 0) + 1;
+    if (!P.swim && !P.dive && !(P.swingT > 0)) { const nb = P.balls.find(b => !b.ref && Math.hypot(b.x - P.x, b.y - (P.y - 70 * P.K)) < 80); if (nb) { P.wpn = 'racket'; P.dir = nb.x < P.x ? -1 : 1; set('up', nb.y < P.y - 90 * P.K); set('punch', 1); st.swings = (st.swings || 0) + 1; return; } }     // ракетка: шар рядом — отбить
     if (P.onG && P.gun) {     // на плоту — стреляет всегда: шары рядом, станции под щитом, иначе Семён
       const B = P.B, stn = P.stations.filter(s => s.st === 'plug' || s.st === 'float').sort((a, b) => Math.abs(a.x - P.x) - Math.abs(b.x - P.x))[0];
       const bl = P.balls.filter(b => Math.hypot(b.x - P.x, b.y - P.y) < 220).sort((a, b) => Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y))[0];
-      const fo = P.foes.filter(f => !f.dead && Math.hypot(f.x - P.x, f.y - P.y) < 200)[0], tg = bl || fo;
+      const fo = P.foes.filter(f => !f.dead && Math.hypot(f.x - P.x, f.y - P.y) < 200)[0], tg = fo;     /* шары — только ракеткой */
       const tx = tg ? tg.x : B.inv && stn ? stn.x : L10.SEA3.sem.x, ty = tg ? tg.y : B.inv && stn ? stn.y - 40 : 150, dx = tx - P.x;
-      if (Math.abs(dx) > 20) P.dir = dx < 0 ? -1 : 1; const low = !tg && B.inv && stn && stn.y - 50 > P.y + 20; set('up', !tg && !B.inv && Math.abs(dx) < 160); set('down', low && Math.abs(dx) < 260); set('punch', 1);
+      if (Math.abs(dx) > 20) P.dir = dx < 0 ? -1 : 1; const low = !tg && B.inv && stn && stn.y - 50 > P.y + 20; set('up', !tg && !B.inv && Math.abs(dx) < 160); set('down', low && Math.abs(dx) < 260); P.wpn = 'rpg'; set('punch', 1);
     }
     if (P.dive) { set('down', !!th || P.dive.t < 0.4); if (P.x > 420) set('left', 1); return; }
+    if (th === 'wave' && P.onG) { set('jump', 1); st.jumps++; return; }
     if (th && P.swim) { set('down', 1); st.dives++; return; }
     if (th && P.onG && (th === 'clap' || th === 'laser')) { const r0 = P.raft; set(r0 && P.x < r0.x ? 'left' : 'right', 1); set('punch', 0); set('down', 0); return; }     // с плота — сойти в воду, потом нырнуть
     if (th === 'hose' && P.onG) { const m = P.atks.find(a => a.k === 'hose').mark; set(m.x < P.x ? 'right' : 'left', 1); return; }
@@ -66,7 +68,7 @@ window.__t10s = (() => {
       if (o.until && o.until()) break;
       if (i % 600 === 0) await new Promise(q => setTimeout(q, 0));
     }
-    ['left', 'right', 'jump', 'punch', 'up', 'down'].forEach(a => set(a, 0));
+    ['left', 'right', 'jump', 'punch', 'up', 'down', 'throw'].forEach(a => set(a, 0));
     const P = L10.PARTS.sea; r.deaths = lv.stats.deaths - r.deaths0; r.part = lv.partName; r.t = lv.stats.time | 0; r.dmgTaken = lv.stats.dmg;
     if (P.B) { r.bhp = P.B.hp | 0; r.seg = P.B.seg; r.inv = P.B.inv; r.stations = P.stations.map(s => s.st).join(','); }
     r.gun = P.gun; r.atk = atkN; r.threats = st.th; r.dives = st.dives; r.jumps = st.jumps; r.shots = lv.stats.shots;

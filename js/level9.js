@@ -1,4 +1,4 @@
-// Уровень 9 «ПОДЗЕМКА». ТЗ: L9_TZ.md, концепт: L9_CONCEPT.md (раздел 10 — правки критика).
+// Уровень 9 «ПОДЗЕМКА». ТЗ: docs/L9_TZ.md, концепт: docs/L9_CONCEPT.md (раздел 10 — правки критика).
 // Части: tun (капсула в тоннеле) -> arrive (катсцена) -> lab... Каждая часть — объект L9.PARTS[имя] с start/update/draw.
 // Координаты логические 640x360; листы L9D (js/l9_data.js) в пикселях холста — рисуются с k=0.5.
 const L9 = { img: {}, ready: false, PARTS: {} };
@@ -77,10 +77,10 @@ WHO.mrx = WHO.mrx || { name: 'ГОСПОДИН ИКС', color: '#ff4040', voice:
       if (!Scene.active) this.drawHud(c);
       if (this.tvT > 0 && !Scene.active) {     // плашка Икса (в тоннеле — сверху, чтобы не закрывать полосы)
         const a = L9.clamp(Math.min(this.tvT, 0.4) / 0.4, 0, 1), Y = this.P.tvTop ? 24 : 282; c.globalAlpha = a;
-        c.fillStyle = 'rgba(10,4,6,0.85)'; c.fillRect(80, Y, 480, 74); c.fillStyle = '#c22'; c.fillRect(80, Y, 480, 2);
-        G.drawPortrait(c, 'mrx', 86, Y + 4, (this.t * 6 | 0) % 2 === 0);
-        G.text('ГОСПОДИН ИКС', 156, Y + 10, { size: 8, color: '#ff5050' });
-        G.wrap(this.tv, 390, 8).slice(0, 3).forEach((l, i) => G.text(l, 156, Y + 26 + i * 12, { size: 8, color: '#f4f0e4' }));
+        c.fillStyle = 'rgba(10,4,6,0.85)'; c.fillRect(50, Y - 10, 540, 86); c.fillStyle = '#c22'; c.fillRect(50, Y - 10, 540, 2);
+        G.drawPortrait(c, 'mrx', 56, Y - 4, (this.t * 6 | 0) % 2 === 0);
+        G.text('ГОСПОДИН ИКС', 126, Y - 4, { size: 10, color: '#ff5050' });
+        G.wrap(this.tv, 450, 12).slice(0, 3).forEach((l, i) => G.text(l, 126, Y + 13 + i * 17, { size: 12, color: '#f4f0e4' }));
         c.globalAlpha = 1;
       }
       if (this.msgT > 0 && this.msg) G.text(Game.fmtHint(this.msg), 320, 70, { align: 'center', size: 8, color: '#ffd84a', outline: true });

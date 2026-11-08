@@ -26,7 +26,7 @@
       lv.badgeAt = rnd(20, 50);      // значок падает один раз за часть (пока не поймали — после смерти снова)
     },
     spawn(lv, kind) {
-      const n = lv.partName, x = n === 'run' ? rnd(40, 400) : n === 'jet' ? rnd(60, 420) : rnd(40, 600);
+      const n = lv.partName, x = n === 'run' ? rnd(40, Math.min(400, lv.P && lv.P.M && lv.P.M.touchX ? lv.P.M.touchX() - 90 : 400)) : n === 'jet' ? rnd(60, 420) : rnd(40, 600);
       lv.drops.push({ kind, x, x0: x, y: -14, t: 0, vy: kind === 'badge' ? 34 : rnd(38, 52), ph: rnd(0, 6), float: 0 });
     },
     update(lv, dt) {
@@ -39,16 +39,19 @@
       // аптечки: чаще, когда здоровья мало
       lv.dropT -= dt;
       if (lv.dropT <= 0) {
-        lv.dropT = rnd(8, 12);
-        if (Math.random() < (P.hp < 60 ? 0.85 : 0.4)) D.spawn(lv, Math.random() < 0.25 ? 'pelmeni' : 'kefir');
+        const sea = n === 'sea'; lv.dropT = sea ? rnd(4, 6) : rnd(8, 12);     // в море (фаза 3) аптечек больше
+        if (Math.random() < (P.hp < 70 ? (sea ? 0.9 : 0.85) : (sea ? 0.6 : 0.4))) D.spawn(lv, Math.random() < (sea ? 0.45 : 0.25) ? 'pelmeni' : 'kefir');
       }
       if (!lv.badgeGot[n] && lv.badgeAt != null && lv.dropPartT > lv.badgeAt) { lv.badgeAt = null; D.spawn(lv, 'badge'); }
       // падение
-      const WY = n === 'sea' ? P.WY : null, b = body(lv);
+      const WY = n === 'sea' ? (P.swimY ? P.swimY() : P.WY) : null, b = body(lv);
       for (const d of lv.drops) {
         d.t += dt;
-        if (d.float > 0) { d.float += dt; d.y = WY - 6 + Math.sin(d.t * 3) * 2; if (d.float > 6) d.dead = 1; }     // на воде покачивается и тонет
-        else { d.y += d.vy * dt; d.x = d.x0 + Math.sin(d.t * 1.6 + d.ph) * 14; if (WY != null && d.y >= WY - 6) d.float = 0.001; }
+        if (d.raft) { if (d.raft.sink || d.raft.x > 660) { d.raft = null; d.float = 0.001; } else { d.x = d.raft.x + d.off; d.y = d.raft.top - 8 + Math.sin(d.t * 3) * 1.5; } }     // лежит на плоту и плывёт с ним
+        else if (d.float > 0) { d.float += dt; d.y = WY - 6 + Math.sin(d.t * 3) * 2; if (d.float > 6) d.dead = 1; }     // на воде покачивается и тонет
+        else { const y0 = d.y; d.y += d.vy * dt; d.x = d.x0 + Math.sin(d.t * 1.6 + d.ph) * 14;
+          const r = n === 'sea' && P.rafts && P.rafts.find(r => !r.sink && Math.abs(d.x - r.x) < r.w / 2 - 6 && y0 <= r.top - 8 && d.y >= r.top - 8);
+          if (r) { d.raft = r; d.off = d.x - r.x; } else if (WY != null && d.y >= WY - 6) d.float = 0.001; }
         if (d.y > 380) d.dead = 1;
         if (!d.dead && b && !lv.dead && Math.abs(d.x - b[0]) < b[2] && Math.abs(d.y - b[1]) < b[3]) { d.dead = 1; D.take(lv, d); }
       }

@@ -45,14 +45,14 @@ const Scene = {
   drawDialog(c) {
     const d = this.dialog;
     if (!d) return;
-    const bx = 12, bw = W - 24, bh = 82, by = this.dialogTop ? 8 : H - 92;
+    const bx = 12, bw = W - 24, bh = 98, by = this.dialogTop ? 8 : H - 108;
     Art.R(c, bx - 2, by - 2, bw + 4, bh + 4, '#0a0a0c');
     Art.R(c, bx, by, bw, bh, 'rgba(24,26,32,0.95)');
     Art.R(c, bx, by, bw, 2, d.color || '#f06a14');
     G.drawPortrait(c, d.who, bx + 8, by + 9, !(d.shown >= d.text.length));
-    G.text(d.name, bx + 84, by + 10, { size: 8, color: d.color || '#ffb070' });
-    const lines = G.wrap(d.text.slice(0, d.shown), bw - 100, 8);
-    lines.slice(0, 5).forEach((l, i) => G.text(l, bx + 84, by + 26 + i * 12, { size: 8, color: '#f4f0e4' }));
+    G.text(d.name, bx + 84, by + 9, { size: 10, color: d.color || '#ffb070' });
+    const lines = G.wrap(d.text.slice(0, d.shown), bw - 100, 12);
+    lines.slice(0, 4).forEach((l, i) => G.text(l, bx + 84, by + 26 + i * 17, { size: 12, color: '#f4f0e4' }));
     if (d.shown >= d.text.length && (G.t * 3 | 0) % 2) G.text('>', bx + bw - 16, by + bh - 14, { color: '#ffd84a' });
   },
 };
