@@ -42,9 +42,11 @@
       if (this.t < 0.5) { this.x += this.vx * dt; this.y += this.vy * dt; this.vy += 300 * dt; return; }     // вылупился — выброшен из прыща
       const k = this.kind;
       if (GROUND[k]) {     // наземные: падают на крышу, бегут/прыгают к Валере
-        const gy = E.ground ? E.ground(this.x) : null;
+        const gy = E.ground ? E.ground(this.x, this.y) : null;
         this.vy += 900 * dt; this.y += this.vy * dt;
+        if (E.water != null && this.y > E.water + 6) { this.gone = true; E.splash && E.splash(this.x); return; }     // фаза 3: промахнулся мимо плота — утонул
         if (gy != null && this.y > gy - 12 && this.vy > 0 && this.y < gy + 30) { this.y = gy - 12; this.vy = 0; this.onG = true; } else this.onG = false;
+        if (this.onG && E.carry) this.x += E.carry(this.x, this.y + 12) * dt;     // стоит на плывущем плоту — едет вместе с ним
         if (this.onG) {
           this.vx = this.dir * (k === 'spider' ? 120 : 0);
           if (k === 'toad' && this.cd <= 0) { if (Math.abs(dx) < 220 && Math.random() < 0.5) { this.atk = 0.4; this.cd = rnd(1.4, 2.2); const [ox, oy] = this.mouth(), g = (E.g || 900) * 0.7, T = clamp(Math.abs(tx - ox) / 230, 0.45, 1.1); E.shoot({ x: ox, y: oy, vx: (tx - ox) / T, vy: (ty - oy) / T - g * T / 2, grav: 0.7, dmg: 8, t: 0, draw: L10.Minion.drawAcid }); Sound.play('fart', 0.4); }     /* навесом точно в Валеру: время полёта T, гравитация среды env.g */ else { this.vy = -380; this.vx = Math.sign(dx) * 140; this.cd = rnd(0.8, 1.4); } }

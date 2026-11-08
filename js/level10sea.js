@@ -23,7 +23,10 @@
         damage(d) { const s0 = this.seg; this.hp = Math.max(0, this.hp - d); if (this.t - (this.lf || 0) > 0.2) { this.flashT = 0.06; this.lf = this.t; R.flashT = 0.08; } if (this.seg !== s0 && this.hp > 0) P.onSeg(this.seg); } };
       if (ck) B.hp = B.maxHp - ck * B.segHp;     // чекпоинт: после смерти — с начала сегмента
       P.K = L.valeraK || 1;     // масштаб Валеры (владелец: в 2–3 раза меньше)
-      P.env = { px: () => P.x, py: () => P.y - 40 * P.K, shoot: e => P.ebul.push(e), hurt: d => P.hurt(d * AT().minionDmgK, 'minion'), ground: null, lv };
+      P.env = { px: () => P.x, py: () => P.y - 40 * P.K, shoot: e => P.ebul.push(e), hurt: d => P.hurt(d * AT().minionDmgK, 'minion'), lv, water: 334,     /* ниже переднего ряда плотов — утонул; владелец: паук и жаба из прыща — бегают по плотам */
+        ground: (x, y) => { let best = null; for (const r of P.rafts) if (!r.sink && Math.abs(x - r.x) < r.w / 2 - 4 && r.top >= (y ?? -1e9) - 14 && (best == null || r.top < best)) best = r.top; return best; },
+        carry: (x, y) => { const r = P.rafts.find(r => !r.sink && Math.abs(x - r.x) < r.w / 2 && Math.abs(r.top - y) < 6); return r ? r.vx : 0; },
+        splash: x => { P.fx.push({ k: 'splash', x, y: P.WY, t: 0, life: 0.5 }); Sound.play('splash', 0.3); } };
       P.laneX = C().lanes.map((ln, i) => { const pt = P.lanePitch(i), x0 = 20 + (i % 2) * pt * 0.25; for (let x = x0; x < 680; x += pt) P.addRaft(x, i); return x0; });     // laneX — самый левый плот ряда
       P.raft = P.rafts[1]; P.x = P.raft.x; P.y = P.raft.top; P.onG = true;
       P.gun = true; P.gunRaft = null; P.wpn = 'rpg';     // владелец: в фазе 3 гранатомёт у Валеры сразу; wpn — в руках гранатомёт или ракетка (C — сменить)
@@ -342,7 +345,8 @@
         if (Math.random() < dt * 10) P.fx.push({ k: 'foam', x: w.x + rnd(-10, 10), y: P.WY + rnd(0, 46), t: 0, life: 0.5, s: 0.22 }); }
       P.waves = P.waves.filter(w => w.x > -90 && w.x < 730);
       // миньоны
-      P.minT -= dt; if (P.minT <= 0 && B.hp > 0) { P.minT = T.minionEvery * rnd(0.7, 1.3); if (P.foes.filter(f => !f.dead).length < T.minions[B.seg]) { const sp = R.P(Math.random() < 0.5 ? 'legL' : 'legR'), k = ['bat', 'eye', 'bat', 'worm', 'blob'][(Math.random() * 5) | 0]; P.foes.push(new L10.Minion(k, clamp(sp[0], 30, 610), Math.min(sp[1], 200), { env: P.env })); } }
+      P.minT -= dt; if (P.minT <= 0 && B.hp > 0) { P.minT = T.minionEvery * rnd(0.7, 1.3); if (P.foes.filter(f => !f.dead).length < T.minions[B.seg]) { const sp = R.P(Math.random() < 0.5 ? 'legL' : 'legR'), k = ['bat', 'eye', 'bat', 'worm', 'blob', 'spider', 'toad', 'spider', 'toad'][(Math.random() * 9) | 0]; const mn = new L10.Minion(k, clamp(sp[0], 30, 610), Math.min(sp[1], 200), { env: P.env }); P.foes.push(mn);
+        if (k === 'spider' || k === 'toad') { const rs = P.rafts.filter(r => !r.sink && r.x > 60 && r.x < 580); const r = rs[(Math.random() * rs.length) | 0]; if (r) { mn.vx = (r.x + r.vx * 0.9 - mn.x) / 0.5; mn.vy = -170; } } } }     // паук/жаба: прыщ выстреливает их дугой на плот
       for (const f of P.foes) f.update(dt); P.foes = P.foes.filter(f => !f.gone);
       // победа
       if (B.hp <= 0) { P.winT += dt; P.atks = []; P.balls = []; if (P.winT > 2.2) lv.next(); }
