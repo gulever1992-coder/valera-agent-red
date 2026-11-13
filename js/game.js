@@ -245,7 +245,8 @@ Game.Player = class {
       const idx = this.comboT > 0 || this.atk ? (this.combo + 1) % 3 : 0;
       this.combo = idx;
       const bottle = this.bottleHits > 0;
-      this.atk = { t: 0, dur: bottle ? 0.32 : idx === 2 ? 0.34 : 0.24, kind: bottle ? 'bottle' : idx === 2 ? 'upper' : 'punch', side: idx % 2, hit: new Set(), low: this.crouch };
+      const low = this.crouch && !this.noLowAtk;   // сидя: удар/бутылка по низу — достаёт крыс, собачек, тараканов
+      this.atk = { t: 0, dur: bottle ? 0.32 : idx === 2 && !low ? 0.34 : 0.24, kind: bottle ? 'bottle' : idx === 2 && !low ? 'upper' : 'punch', side: idx % 2, hit: new Set(), low };
       Sound.play('punch');
       if (world.ev) world.ev(idx === 2 && !bottle ? 'upper' : 'punch');
       if (this.onGround) this.vx += this.facing * 40;
@@ -257,8 +258,8 @@ Game.Player = class {
       if (on) {
         const hb = a.kind === 'upper'
           ? { x: this.x + (this.facing > 0 ? 2 : -30), y: this.y - 72, w: 28, h: 42 }
-          : a.kind === 'bottle' ? { x: this.x + (this.facing > 0 ? 4 : -44), y: this.y - 62, w: 40, h: 40 }
-          : a.low ? { x: this.x + (this.facing > 0 ? 6 : -36), y: this.y - 34, w: 30, h: 24 }
+          : a.kind === 'bottle' ? (a.low ? { x: this.x + (this.facing > 0 ? 4 : -46), y: this.y - 32, w: 42, h: 32 } : { x: this.x + (this.facing > 0 ? 4 : -44), y: this.y - 62, w: 40, h: 40 })
+          : a.low ? { x: this.x + (this.facing > 0 ? 4 : -38), y: this.y - 32, w: 34, h: 32 }
           : { x: this.x + (this.facing > 0 ? 6 : -36), y: this.y - 52, w: 30, h: 24 };
         const before = a.hit.size;
         world.playerAttack(hb, a.kind === 'upper' ? 2 : a.kind === 'bottle' ? 2 : 1, a, this);
@@ -273,7 +274,7 @@ Game.Player = class {
     if (ctl && I.pressed('switch')) this.switchWeapon();
     if (ctl && I.pressed('throw') && this.throwT <= 0 && !this.atk) {
       if (this.ammo[this.weapon] <= 0) this.switchWeapon(true);
-      if (this.ammo[this.weapon] > 0) { this.throwT = 0.32; this.throwDone = false; }
+      if (this.ammo[this.weapon] > 0) { this.throwT = 0.32; this.throwDone = false; this.throwLow = this.crouch && !this.noLowAtk; }
       else { FX.popText(this.x, this.y - 80, 'НЕТ СНАРЯДОВ', '#ff6a4a'); Sound.play('warn'); }
     }
     if (this.throwT > 0) {
@@ -281,7 +282,7 @@ Game.Player = class {
       if (!this.throwDone && this.throwT < 0.2) {
         this.throwDone = true;
         this.ammo[this.weapon]--;
-        world.spawnPlayerProj(this.weapon, this.x + this.facing * 12, this.y - 48, this.facing);
+        world.spawnPlayerProj(this.weapon, this.x + this.facing * 12, this.y - (this.throwLow ? 22 : 48), this.facing);
         if (world.ev) world.ev('throw');
         Sound.play('throw');
       }
@@ -373,7 +374,9 @@ Game.Player = class {
     let a;
     if (this.forcePose) a = this.forcePose;
     else if (this.hurtT > 0) a = 'hurt';
+    else if (this.atk && this.atk.low && (Spr.ANIM[this.animSet || 'valera'] || {}).cPunch) a = this.atk.kind === 'bottle' ? (this.atk.t < 0.12 ? 'cBWind' : 'cBSwing') : (this.atk.t < 0.05 ? 'cWind' : 'cPunch');
     else if (this.atk) a = this.atk.kind === 'bottle' ? (this.atk.t < 0.12 ? 'bWind' : 'bSwing') : this.atk.kind === 'upper' ? 'upper' : this.atk.side ? 'cross' : 'jab';
+    else if (this.throwT > 0 && this.throwLow && (Spr.ANIM[this.animSet || 'valera'] || {}).cPunch) a = this.weapon === 'bottles' ? (this.throwT > 0.2 ? 'cBWind' : 'cBSwing') : this.throwT > 0.2 ? 'cThrowA' : 'cThrowB';
     else if (this.throwT > 0) a = this.weapon === 'bottles' ? (this.throwT > 0.2 ? 'bWind' : 'bThrow') : this.throwT > 0.2 ? 'throwA' : 'throwB';
     else if (this.crouch) a = this.bottleHits > 0 ? 'bCrouch' : 'crouch';
     else if (!this.onGround) a = this.vy < 0 ? 'jump' : 'fall';
@@ -461,7 +464,7 @@ Game.Drunk = class {
         if (near && (Math.abs(dx) < 170 || this.aggro)) { this.state = 'walk'; this.st = 0; if (Math.random() < 0.7) G.say(this, U.choice(['Ты чё, с какого цеха?!', 'Иди сюда, стропаль!', 'Ик! Щас как дам!', 'Моя бутылка! Не трожь!']), 1.8); }
         break;
       case 'walk':
-        this.facing = dx > 0 ? 1 : -1;
+        if (Math.abs(dx) > 6) this.facing = dx > 0 ? 1 : -1;
         this.x += this.facing * 75 * dt * (0.7 + Math.sin(this.t * 4) * 0.3);
         this.x = U.clamp(this.x, this.x1, this.x2);
         pose = 'walk';

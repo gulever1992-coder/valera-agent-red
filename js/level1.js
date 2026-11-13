@@ -20,7 +20,7 @@ L1.build = function () {
 
   // ---- обучение на полу цеха ----
   P(0, 0, 640, 'floor', { h: 60, oneway: false });
-  P(196, -28, 38, 'crate', { h: 28, oneway: false });
+  P(196, -38, 38, 'crate', { h: 38, oneway: false });
   D.enemies.push({ type: 'rat', x: 330, y: 0, x1: 280, x2: 410 });
   pick('nutsbox', 452, 0);
   D.ladders.push({ x: 572, y: -150, w: 16, h: 150 });
@@ -123,8 +123,8 @@ L1.build = function () {
     const w = 70;
     const x1 = left ? cur.x1 - 64 - w : cur.x2 + 64;
     if (x1 < 16 || x1 + w > 624) return;
-    P(x1, cur.y - 44, w, 'scaffold');
-    pick(kind, x1 + w / 2, cur.y - 44);
+    const bp = P(x1, cur.y - 44, w, 'scaffold', { bonus: true });
+    pick(kind, x1 + w / 2, cur.y - 44); bp.pk = D.pickups[D.pickups.length - 1];
   };
   const gulls = (h) => D.gullZones.push({ y1: cur.y - h, y2: cur.y + 40 });
 
@@ -197,12 +197,43 @@ L1.build = function () {
   D.floorY = off;
   D.worldH = off + 60;
 
+  // ---- проверка свободного места (критик 2026-11-11: объекты не должны налезать друг на друга) ----
+  const solid = D.plats.filter(p => p.look !== 'none' && p.look !== 'floor');
+  const hit = (x1, y1, x2, y2, skip) => solid.some(p => {
+    if (p === skip) return false;
+    const vis = p.look === 'scaffold' ? [-14, 14] : [-2, 14];
+    let px1 = p.x, px2 = p.x + p.w, py1 = p.y + vis[0], py2 = p.y + vis[1];
+    if (p.mover) { px1 = Math.min(p.mover.x1, p.mover.x2); px2 = Math.max(p.mover.x1, p.mover.x2) + p.w; py1 = Math.min(p.mover.y1, p.mover.y2) - 50; py2 = Math.max(p.mover.y1, p.mover.y2) + 10; }
+    return px1 < x2 && px2 > x1 && py1 < y2 && py2 > y1;
+  }) || D.ladders.some(l => l.x < x2 && l.x + l.w > x1 && l.y < y2 && l.y + l.h > y1)
+    || D.sparks.some(s => s.x < x2 && s.x + s.w > x1 && s.y - 30 < y2 && s.y + s.h > y1);
+  // бонусная площадка, слипшаяся с другой платформой, убирается вместе с бонусом
+  for (const p of solid.filter(p => p.bonus)) {
+    if (hit(p.x - 16, p.y - 30, p.x + p.w + 16, p.y + 30, p)) {
+      D.plats.splice(D.plats.indexOf(p), 1); solid.splice(solid.indexOf(p), 1);
+      if (p.pk) D.pickups.splice(D.pickups.indexOf(p.pk), 1);
+    }
+  }
+  // провод тянется от низа ближайшей платформы над ним (а не на 400 px сквозь всё)
+  for (const s of D.sparks) {
+    const above = solid.filter(p => !p.mover && p.x < s.x + s.w && p.x + p.w > s.x && p.y < s.y - 4 && p.y > s.y - 400);
+    s.top = above.length ? Math.max(...above.map(p => p.y)) + 12 : s.y - 400;
+  }
   // ---- фоновые галереи с рабочими ----
   const types = ['weld', 'drink', 'argue', 'lathe', 'smoke', 'domino', 'hammer', 'foreman', 'sleep', 'drink', 'argue', 'weld', 'smoke', 'lathe', 'domino', 'foreman', 'drink', 'hammer'];
   let gi = 0;
   for (let y = D.floorY - 250; y > D.topY + 200; y -= rng.int(230, 290)) {
-    const left = gi % 2 === 0;
-    D.galleries.push({ y, x1: left ? 18 : 380, x2: left ? 260 : 622, type: types[gi % types.length] });
+    // галерея — только на свободном месте: своя сторона, другая сторона, сдвиги по высоте; иначе пропуск
+    const pref = gi % 2 === 0;
+    let spot = null;
+    for (const dy of [0, -20, 20, -40, 40, -60, 60]) {
+      for (const left of [pref, !pref]) {
+        const x1 = left ? 18 : 380, x2 = left ? 260 : 622;
+        if (!hit(x1 - 10, y + dy - 80, x2 + 10, y + dy + 20)) { spot = { y: y + dy, x1, x2 }; break; }
+      }
+      if (spot) break;
+    }
+    if (spot) D.galleries.push(Object.assign(spot, { type: types[gi % types.length] }));
     gi++;
   }
   // плакаты по высоте
@@ -252,12 +283,10 @@ L1.BG = class {
     for (const g of this.D.galleries) {
       const y = g.y - camY;
       if (y < -40 || y > H + 30) continue;
-      c.save(); c.globalAlpha = 0.85;
-      Spr.slice3(c, 'props', Art.PROP.girder, g.x1, y, g.x2 - g.x1, { h: 9 });
+      // галерея — балка и перила одной конструкцией (арт Flow); чуть притемнена, т.к. стоит в глубине
+      c.save(); c.filter = 'brightness(0.82)';
+      Art.strip(c, 'gallery', g.x1, y, g.x2 - g.x1);
       c.restore();
-      Art.R(c, g.x1, y - 22, g.x2 - g.x1, 2, '#4a4f55');
-      Art.R(c, g.x1, y - 12, g.x2 - g.x1, 1, '#3c4147');
-      for (let x = g.x1; x <= g.x2; x += 24) Art.R(c, x, y - 22, 2, 22, '#3c4147');
     }
   }
 };
@@ -411,9 +440,9 @@ L1.Climb = class {
       const ph = v.t % 3.0;
       v.state = ph < 1.5 ? 'off' : ph < 2.0 ? 'warn' : 'on';
       const onScreen = v.y > wd.cam.y && v.y < wd.cam.y + H;
-      if (v.state === 'warn' && Math.random() < dt * 20) FX.spawn({ x: v.x + 8 + U.rand(-3, 3), y: v.y, vx: 0, vy: -40, grav: -20, life: 0.5, color: '#d8dde0', size: 2, type: 'puff' });
+      if (v.state === 'warn' && Math.random() < dt * 20) FX.spawn({ x: v.x + 8 + U.rand(-3, 3), y: v.y - Art.teeH() + 2, vx: 0, vy: -40, grav: -20, life: 0.5, color: '#d8dde0', size: 2, type: 'puff' });
       if (v.state === 'on') {
-        if (Math.random() < dt * 60) FX.spawn({ x: v.x + 8 + U.rand(-5, 5), y: v.y, vx: U.rand(-15, 15), vy: -220, grav: -30, life: 0.45, color: '#e8ecee', size: 4, type: 'puff' });
+        if (Math.random() < dt * 60) FX.spawn({ x: v.x + 8 + U.rand(-5, 5), y: v.y - Art.teeH() + 2, vx: U.rand(-15, 15), vy: -220, grav: -30, life: 0.45, color: '#e8ecee', size: 4, type: 'puff' });
         if (onScreen && ph - dt < 2.0) Sound.play('steam');
         if (U.overlap({ x: v.x, y: v.y - 80, w: v.w, h: 80 }, pl.box)) pl.hurt(10, v.x + 8, wd);
       }
@@ -521,8 +550,8 @@ L1.Climb = class {
     const wd = this.world, cy = Math.round(wd.cam.y);
     this.bg.drawFar(c, cy);
     c.fillStyle = 'rgba(14,18,24,0.22)'; c.fillRect(0, 0, W, H);
-    this.bg.drawGalleries(c, cy);
     for (const g of this.groups) if (g.g.y > cy - 80 && g.g.y < cy + H + 80) g.draw(c, 0, cy);
+    this.bg.drawGalleries(c, cy);   // перила ближе к нам, чем рабочие: стоят на настиле за ними
     c.fillStyle = 'rgba(14,18,24,0.25)'; c.fillRect(0, 0, W, H);
     // кабина крановщика наверху (настил на 312 px ниже верха картинки)
     const cabY = this.D.topY - 312 - cy;
@@ -536,13 +565,14 @@ L1.Climb = class {
     // клапаны пара
     for (const v of wd.vents) {
       if (v.y < cy - 20 || v.y > cy + H + 20) continue;
-      Art.valve(c, v.x + 8, v.y - cy + 1);
+      Art.tee(c, v.x + 8, v.y - cy);
     }
     // провода
     for (const s of wd.sparks) {
       if (s.y > cy + H || s.y + s.h < cy) continue;
       const sy = s.y - cy;
-      Rr(c, s.x + 3, sy - 400, 2, 400 + s.h - 16, '#111');
+      const ty = (s.top ?? s.y - 400) - cy;
+      Rr(c, s.x + 3, ty, 2, sy - ty + s.h - 16, '#111');
       Rr(c, s.x + 2, sy + s.h - 18, 4, 4, '#c8a020');
       if (s.on) { c.strokeStyle = (G.t * 30 | 0) % 2 ? '#bff' : '#fff'; c.lineWidth = 2; c.beginPath(); let yy = sy; c.moveTo(s.x + 4, yy); while (yy < sy + s.h) { yy += 8; c.lineTo(s.x + 4 + U.rand(-6, 6), yy); } c.stroke(); }
     }
@@ -595,7 +625,7 @@ L1.Natasha = class {
     switch (this.state) {
       case 'wait': a = 'idle'; break;
       case 'idle':
-        this.facing = dx > 0 ? 1 : -1;
+        if (Math.abs(dx) > 6) this.facing = dx > 0 ? 1 : -1;
         if (this.st > 0.6 / spd) {
           if (this.actions >= 2) {
             this.actions = 0; this.pickEnd(pl);
@@ -605,14 +635,14 @@ L1.Natasha = class {
         }
         break;
       case 'walk':
-        this.facing = dx > 0 ? 1 : -1;
+        if (Math.abs(dx) > 6) this.facing = dx > 0 ? 1 : -1;
         this.x += this.facing * 60 * spd * dt;
         a = 'walk';
         if (adx < 42) this.set('wind');
         else if (this.st > 1.8) { this.actions++; this.set('idle'); }
         break;
       case 'wind':
-        this.facing = dx > 0 ? 1 : -1; a = 'wind';
+        if (Math.abs(dx) > 6) this.facing = dx > 0 ? 1 : -1; a = 'wind';
         if (this.st > 0.5 / spd) { this.set('slap'); Sound.play('throw'); }
         break;
       case 'slap':
@@ -626,7 +656,7 @@ L1.Natasha = class {
         if (Math.abs(this.x - this.target) < 2) { this.set('throw'); this.volley = this.phase2 ? 5 : 4; this.throwT = 0.35; }
         break;
       case 'throw':
-        this.facing = dx > 0 ? 1 : -1;
+        if (Math.abs(dx) > 6) this.facing = dx > 0 ? 1 : -1;
         this.throwT -= dt;
         if (adx < 46) { this.set('wind'); this.st = 0.2; G.say(this, 'Не подходи!', 1); a = 'wind'; break; }
         a = this.throwT < 0.25 ? 'throw' : 'idle';
@@ -869,7 +899,7 @@ L1.sceneIntro = function (level) {
     const f = Spr.frame('sub', 0);
     if (f) {
       const hx = sx + (f[6] - f[4]) / 2, hy = sy + (f[7] - f[5]) / 2;
-      Art.R(c, hx - 4, L1.TROLLEY_Y, 2, hy - L1.TROLLEY_Y + 4, '#1a1a1a'); Art.R(c, hx + 2, L1.TROLLEY_Y, 2, hy - L1.TROLLEY_Y + 4, '#1a1a1a');
+      Art.cable(c, hx - 1, L1.TROLLEY_Y, hy + 4, 12);   // тросы от тележки крана к крюку (арт Flow)
     }
     Spr.draw(c, 'sub', 0, sx, sy, 1);
     Spr.draw(c, 'wk_a', 6, smoker.x, smoker.y, 1);

@@ -332,7 +332,7 @@ S['wk_a'] = build_sheet('wk_a', 'workers_a.png', 8, 64, ref=6)
 S['wk_b'] = build_sheet('wk_b', 'workers_b.png', 8, 58, ref=6)
 # ---- предметы и платформы (чёрный фон) ----
 S['items'] = build_sheet('items', 'items.png', 16, [-15, -14, -20, 16, -10, -17, 17, 18, -9, -18, 17, -13, -19, -17, 16, 17], keyer='black', grid=(4, 4), anchors=['center'] * 16)
-S['props'] = build_sheet('props', 'props_platforms.png', 10, [-160, -160, -80, -160, -64, 60, -36, -64, 48, -24], keyer='black', grid=(5, 2), anchors=['center'] * 10)
+S['props'] = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'p1', 'props.json')))   # лист props собирает tools/build_l1props.py (арт Flow, art_src/l1)
 # ---- новое: уровень 2 и правки ----
 S['v_bottle'] = build_sheet('v_bottle', 'valera_bottle.png', 7, 80, ref=0)
 S['v_climb2'] = build_sheet('v_climb2', 'valera_climb2.png', 6, 80, ref=3, anchors=['feet'] * 5 + ['center'])
@@ -350,9 +350,9 @@ S['street'] = build_sheet('street', 'prop_street_keyed.png', 12, [96, 92, 106, 5
 # ---- фоны ----
 B = {}
 B['aerial'] = bg('bg_aerial_v2.png', 'bg_aerial', (None, 720))
-B['hall'] = bg('hall_empty.png', 'bg_hall', (1280, 720))
+B['hall'] = bg('hall_empty_v2.png', 'bg_hall', (1280, 720))
 B['arena'] = bg('bg_arena_v2.png', 'bg_arena', (1280, 720))
-B['climb_bottom'] = bg('bg_climb_bottom_v2.png', 'bg_climb_bottom', (1280, None))
+B['climb_bottom'] = bg('bg_climb_bottom_v3.png', 'bg_climb_bottom', (1280, None))
 B['climb_top'] = bg('bg_climb_top_v2.png', 'bg_climb_top', (1280, None))
 B['shop'] = bg('shop_interior.png', 'bg_shop', (1280, 720))
 B['sky'] = bg('city_sky_far.png', 'bg_sky', (None, 720))

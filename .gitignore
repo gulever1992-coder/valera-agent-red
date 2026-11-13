@@ -23,3 +23,14 @@ floor_variants.jpg
 wall_mockups.jpg
 # бэкапы редакторов
 *_before_*.html
+
+# трейлер: исходные кадры и рендеры
+trailer/frames/
+trailer/rv/
+trailer/sheets/
+trailer/stills/
+trailer/*.jpg
+trailer/*.png
+trailer/*.mp4
+trailer/*.wav
+trailer/render.log

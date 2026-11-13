@@ -49,6 +49,8 @@ Spr.ANIM.valera3 = {
   swatWind: { fr: [['v3_melee', 0]], fps: 1 }, swat: { fr: [['v3_melee', 1]], fps: 1 },
   chalkA: { fr: [['v3_melee', 2]], fps: 1 }, chalkB: { fr: [['v3_melee', 3]], fps: 1 },
   fart: { fr: [['v3_melee', 4]], fps: 1 }, climb: { fr: [['v3_melee', 5]], fps: 1 },
+  // атаки сидя (лист Flow v3_crouch): замах/удар мухобойкой у пола, замах/бросок мела низом
+  cSwatWind: { fr: [['v3_crouch', 0]], fps: 1 }, cSwat: { fr: [['v3_crouch', 1]], fps: 1 }, cChalkA: { fr: [['v3_crouch', 2]], fps: 1 }, cChalkB: { fr: [['v3_crouch', 3]], fps: 1 },
 };
 Spr.ANIM.valera3.stomp = Spr.ANIM.valera3.angry; Spr.ANIM.valera3.hips = Spr.ANIM.valera3.angry;
 Spr.ANIM.valera3.scratch = Spr.ANIM.valera3.angry; Spr.ANIM.valera3.yawn = Spr.ANIM.valera3.angry; Spr.ANIM.valera3.belly = Spr.ANIM.valera3.fart;
@@ -122,13 +124,13 @@ L3.Player = class extends Game.Player {
     if (this.atk) {
       const a = this.atk; a.t += dt;
       if (a.kind === 'swat' && a.t > 0.12 && a.t < 0.22) {
-        const hb = { x: this.x + (this.facing > 0 ? 4 : -50), y: this.y - (this.crouch ? 40 : 64), w: 46, h: 44 };
+        const hb = { x: this.x + (this.facing > 0 ? 4 : -50), y: this.y - (this.crouch ? 40 : 64), w: 46, h: this.crouch ? 42 : 44 };
         world.playerAttack(hb, this.ammo3.swatter > 0 ? 2 : 1, a, this);
         if (Math.random() < 0.5) FX.burst(hb.x + (this.facing > 0 ? 40 : 6), hb.y + 20, 2, { colors: ['#9cf', '#fff'], speed: 90, life: 0.2, grav: 0 });
       }
       if (a.kind === 'chalk' && a.t > 0.14 && !a.done) {
         a.done = true; this.ammo3.chalk--;
-        const s = new L3.Shot('chalk', this.x + this.facing * 24, this.y - (this.crouch ? 34 : 52), this.facing); if (a.vert) { s.vx = this.facing * 10; s.vy = -560; s.x = this.x + this.facing * 8; s.y = this.y - 100; } else if (a.up) { s.vx = this.facing * 300; s.vy = -440; s.y = this.y - 84; }
+        const s = new L3.Shot('chalk', this.x + this.facing * 24, this.y - (this.crouch ? 12 : 52), this.facing);   /* сидя мел летит у пола — по мелким паукам */ if (a.vert) { s.vx = this.facing * 10; s.vy = -560; s.x = this.x + this.facing * 8; s.y = this.y - 100; } else if (a.up) { s.vx = this.facing * 300; s.vy = -440; s.y = this.y - 84; }
         world.projs.push(s); Sound.play('throw');
       }
       if (a.t >= a.dur) this.atk = null;
@@ -138,7 +140,8 @@ L3.Player = class extends Game.Player {
     let a;
     if (this.hurtT > 0) a = 'hurt';
     else if (this.fartT > 0) a = 'fart';
-    else if (this.atk && this.atk.kind === 'swat') a = this.atk.t < 0.12 ? 'swatWind' : 'swat';
+    else if (this.atk && this.atk.kind === 'swat') { const w = this.atk.t < 0.12; a = this.crouch && this.onGround ? (w ? 'cSwatWind' : 'cSwat') : (w ? 'swatWind' : 'swat'); }
+    else if (this.atk && this.atk.kind === 'chalk' && this.crouch && this.onGround && !this.atk.up) a = this.atk.t < 0.14 ? 'cChalkA' : 'cChalkB';
     else if (this.atk && this.atk.kind === 'chalk') a = this.atk.vert ? (!this.onGround ? 'chalkVair' : this.atk.t < 0.1 ? 'chalkV0' : 'chalkV1') : this.atk.up ? (this.atk.t < 0.1 ? 'chalkA' : 'chalkUp') : this.atk.t < 0.14 ? 'chalkA' : 'chalkB';
     else if (!this.onGround) a = this.vy < 0 ? 'jump' : 'fall';
     else if (this.crouch) a = 'crouch';
@@ -229,7 +232,7 @@ L3.Bug = class {
       return;
     }
     const dx = pl.x - this.x, adx = Math.abs(dx), dy = pl.y - this.y;
-    const face = () => { this.facing = dx > 0 ? 1 : -1; };
+    const face = () => { if (Math.abs(dx) > 6) this.facing = dx > 0 ? 1 : -1; };   // мёртвая зона: без неё враг под/над Валерой разворачивался каждый кадр
     const move = sp => { this.x = U.clamp(this.x + this.facing * sp * slow * dt, this.x1, this.x2); };
     const talk = () => { const L = BUG_LINES[this.type]; if (!this.said && L.length && Math.random() < 0.7) { this.said = true; G.say(this, U.choice(L), 1.6); } };
     const aware = adx < 380 && !pl.dead;
@@ -242,7 +245,8 @@ L3.Bug = class {
         if (this.state === 'idle') { this.set('chase'); talk(); }
         if (this.state === 'chase') {
           face();
-          if (adx > 170) { move(190); this.running = true; } else { move(85); this.running = false; }
+          if (adx > 210) this.running = true; else if (adx < 120) this.running = false;   // гистерезис: без него на границе кадры бег/шаг мелькали каждый кадр («двоение»)
+          move(this.running ? 190 : 85);
           if (adx < 40 && Math.abs(dy) < 50) this.set('wind');
         } else if (this.state === 'wind') { if (this.st > 0.35) { this.set('attack'); Sound.play('punch'); } }
         else if (this.state === 'attack') { if (this.st < 0.12) this.melee(pl, wd, 42, 10); if (this.st > 0.3) this.set('recover'); }
@@ -294,8 +298,11 @@ L3.Bug = class {
         if (this.state === 'idle' || this.state === 'chase') {
           if (this.state === 'idle') { this.set('chase'); this.side = Math.sign(this.x - pl.x) || 1; this.keep = U.rand(60, 110); }
           const want = pl.x + this.side * this.keep;
-          this.facing = want > this.x ? 1 : -1; move(Math.abs(want - this.x) > 6 ? 200 : 0);
-          if (Math.abs(want - this.x) < 10) { this.facing = pl.x > this.x ? 1 : -1; if (this.cool <= 0 && Math.abs(dy) < 30) { this.set('lunge'); this.vx = this.facing * 330; } }
+          const d = Math.abs(want - this.x);
+          if (d > 60) this.far = true; else if (d < 30) this.far = false;   // гистерезис: иначе паучок разворачивался лево-право каждый кадр («двоился»)
+          this.facing = (this.far ? want : pl.x) > this.x ? 1 : -1;
+          if (d > 6) this.x = U.clamp(this.x + Math.sign(want - this.x) * Math.min(d, 200 * slow * dt), this.x1, this.x2);
+          if (d < 10 && this.cool <= 0 && Math.abs(dy) < 30) { this.facing = pl.x > this.x ? 1 : -1; this.set('lunge'); this.vx = this.facing * 330; }
         } else if (this.state === 'lunge') {
           this.x += this.vx * dt * slow; this.vx *= 0.93;
           if (this.cool <= 0 && U.overlap(this.box, pl.box)) { pl.hurt(4, this.x, wd); this.cool = 1.2; this.set('retreat'); }

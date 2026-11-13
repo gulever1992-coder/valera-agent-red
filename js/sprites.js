@@ -68,6 +68,8 @@ Spr.ANIM = {
     throwA: A('v_fight', [2]), throwB: A('v_fight', [4]), ko: A('v_fight', [5]),
     hips: A('v_idle', [0]), stomp: A('v_idle', [0, 1, 1, 2, 0], 4.5), scratch: A('v_idle', [3]), yawn: A('v_idle', [4]), belly: A('v_idle', [5]),
     climb: A('v_climb2', [0, 1], 5), crouch: A('v_bottle', [6]), bCrouch: A('v_bottle', [5]),
+    // атаки сидя (лист Flow v_crouch): удар, бросок, бутылка
+    cWind: A('v_crouch', [0]), cPunch: A('v_crouch', [1]), cThrowA: A('v_crouch', [2]), cThrowB: A('v_crouch', [3]), cBWind: A('v_crouch', [4]), cBSwing: A('v_crouch', [5]),
     bIdle: A('v_bottle', [0]), bWind: A('v_bottle', [1]), bSwing: A('v_bottle', [2]), bThrow: A('v_bottle', [3]), drink: A('v_bottle', [4]),
     hang: A('v_climb2', [2]), walkAway: A('v_climb2', [3]), backDoor: A('v_climb2', [4]),
     sting: A('v_story3', [0]), beerHappy: A('v_story3', [1]), shoutFist: A('v_story3', [2]), tiredStand: A('v_story3', [3]), dazed: A('v_story3', [4]), victory: A('v_story3', [5]),
@@ -87,7 +89,7 @@ Spr.ANIM = {
   kesha: {
     stand: A('kesha_a', [0]), idle: A('kesha_a', [0]), walk: A('kesha_a', [1, 0], 5), master: A('kesha_a', [2]), punch: A('kesha_a', [3]), kick: A('kesha_a', [4]),
     sniff: A('kesha_a', [5]), shout: A('kesha_a', [6]), hurt: A('kesha_a', [7]),
-    aim: A('kesha_b', [0]), shoot: A('kesha_b', [1]), run: A('kesha_b', [2]), ko: A('kesha_b', [3]), sit: A('kesha_b', [4]), thumbs: A('kesha_b', [5]), talk: A('kesha_b', [6]),
+    aim: A('kesha_b', [0]), shoot: A('kesha_b', [1]), aimU: A('kesha_c', [0]), aimS: A('kesha_c', [1]), aimD: A('kesha_c', [2]), fireU: A('kesha_c', [3]), fireS: A('kesha_c', [4]), fireD: A('kesha_c', [5]), run: A('kesha_b', [2]), ko: A('kesha_b', [3]), sit: A('kesha_b', [4]), thumbs: A('kesha_b', [5]), talk: A('kesha_b', [6]),
   },
   valeraBig: {
     stand: A('vb_story3', [3]), walk: A('vb_run', [0, 1, 2, 3, 4, 5, 6, 7], 9), tiredStand: A('vb_story3', [3]), dazed: A('vb_story3', [4]), shoutFist: A('vb_story3', [2]), beerHappy: A('vb_story3', [1]),

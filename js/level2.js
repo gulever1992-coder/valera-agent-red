@@ -80,7 +80,7 @@ L2.Foe = class {
       return;
     }
     const dx = pl.x - this.x, adx = Math.abs(dx), near = Math.abs(pl.y - this.y) < 50 && !pl.dead;
-    const face = () => { this.facing = dx > 0 ? 1 : -1; };
+    const face = () => { if (Math.abs(dx) > 6) this.facing = dx > 0 ? 1 : -1; };   // мёртвая зона: без неё враг под/над Валерой разворачивался каждый кадр
     const move = sp => { this.x = U.clamp(this.x + this.facing * sp * dt, this.x1, this.x2); };
     const talk = () => { if (!this.said && Math.random() < 0.8) { this.said = true; G.say(this, U.choice(FOE_LINES[this.type]), 1.6); } };
     if (!pl.dead) this.bodyHit(pl, wd, dt);
@@ -170,15 +170,16 @@ L2.Foe = class {
     if (this.type === 'alkash' && this.state === 'idle') rot = Math.sin(this.t * 2) * 0.06;
     if (this.type === 'punk' && (this.state === 'chase' || this.state === 'idle')) y -= Math.abs(Math.sin(this.t * 8)) * 2;
     const alpha = this.dieT != null && this.dieT > 1.3 ? (1.8 - this.dieT) / 0.5 : 1;
-    Spr.draw(c, this.d.sheet, this.frame(), this.x - cx, y - (rot ? 10 : 0), this.facing, { rot, flash: this.flash > 0 ? '#ffffff' : null, alpha });
+    Spr.draw(c, this.d.sheet, this.frame(), this.x - cx, y - (dog && this.dieT != null ? 10 : 0), this.facing,   /* покачивание алкаша — вокруг ступней, без подъёма (раньше висел на 10 px над опорой) */ { rot, flash: this.flash > 0 ? '#ffffff' : null, alpha });
   }
 };
 
 // ---------- «Матиз» с нетрезвым водителем ----------
 const MATIZ_LINES = ['Э, пешеход! С дороги!', 'Я трезвый как стёклышко!', 'Где тут тормоз?!', 'Поберегись, рыжий!', 'У меня права купленные!', 'Би-би, ёлы-палы!'];
+L2.MATIZ_S = 0.85;
 L2.Matiz = class {
   constructor(x1, x2) { this.x1 = x1; this.x2 = x2; this.x = -999; this.active = false; this.t = 0; this.cool = 1.5; this.warn = 0; this.headH = 64; this.voice = 170; this.first = true; }
-  get box() { return { x: this.x - 55, y: L2.GROUND - 44, w: 110, h: 44 }; }
+  get box() { return { x: this.x - 60, y: L2.GROUND - 46, w: 120, h: 46 }; }
   update(dt, wd, pl, cam) {
     this.t += dt;
     const inZone = pl.x > this.x1 - 200 && pl.x < this.x2 + 100;
@@ -204,8 +205,12 @@ L2.Matiz = class {
       G.text('!', W - 19, L2.GROUND - 64, { align: 'center', color: '#fff', shadow: false });
     }
     if (!this.active) return;
-    const fr = (this.t * 10 | 0) % 2;
-    Spr.draw(c, 'matiz', fr, this.x - cx, L2.GROUND + (fr ? 1 : 0), 1);
+    // золотой «Матиз» Граблионка — тот же, что на уровнях 5 и 7 (l5msd: 0 кузов, 2 колесо); едет влево — зеркалим
+    const S = L2.MATIZ_S, [bw, bh] = Spr.size('l5msd', 0), w = bw * S, h = bh * S, cy = -h / 2 - 3 * S, r = 0.085 * w;
+    c.save(); c.translate(Math.round(this.x - cx), L2.GROUND + ((this.t * 14 | 0) % 2)); c.scale(-1, 1);
+    Spr.drawC(c, 'l5msd', 0, 0, cy, 0, S);
+    for (const fx of [0.19, 0.82]) Spr.drawC(c, 'l5msd', 2, (fx - 0.5) * w, cy + h / 2 - r, -this.x / r, S);
+    c.restore();
   }
 };
 
@@ -240,12 +245,12 @@ L2.Spy = class {
 const PROPS = {
   kiosk: { i: 0, top: 0.78, wf: 0.92, oneway: false },
   garages: { i: 1, top: 0.95, wf: 0.98, oneway: false },
-  busstop: { i: 2, top: 0.96, wf: 0.78, oneway: true, dx: -0.08 },
+  busstop: { i: 2, top: 0.87, wf: 0.78, oneway: true, dx: -0.08 },
   dumpster: { i: 3, top: 0.8, wf: 0.9, oneway: false },
   bench: { i: 4, top: 0.55, wf: 0.9, oneway: true },
-  fence: { i: 5, top: 0.96, wf: 0.96, oneway: false },
-  car: { i: 6, top: 0.62, wf: 0.9, oneway: false },
-  crate: { i: 7, top: 1, wf: 1, oneway: false },
+  fence: { i: 5, top: 0.93, wf: 0.96, oneway: false },
+  car: { i: 6, top: 0.7, wf: 0.9, oneway: false, roof: [-43, 26, 0.97] },   // капот/багажник + крыша салона (по картинке)
+  crate: { i: 7, top: 0.88, wf: 1, oneway: false },
   ladder: { i: 8, ladder: true },
   lamp: { i: 9, deco: true },
   tlight: { i: 10, deco: true },
@@ -254,24 +259,39 @@ const PROPS = {
 // здания стоят вплотную к тротуару, слева направо (x — левый край)
 L2.BUILD_LIST = [
   ['gate', 40], ['workshop', 760], ['hrush', 1720], ['shop', 2360], ['garages', 3060], ['dk', 3820], ['stele', 4700], ['nine', 5110],
-  ['pipes', 6060], ['garages', 6700], ['hrush', 7460], ['nine', 8100], ['embank', 9050], ['embank', 9990], ['park', 11030],
+  ['pipes', 6060], ['garages', 6700], ['hrush', 7460], ['nine', 8100], ['garages', 9790], ['garages', 10367], ['park', 11030],
 ];
 L2.build = function () {
   const G0 = L2.GROUND, B = window.BUILDINGS;
   const D = { props: [], plats: [], foes: [], pickups: [], checkpoints: [], spies: [], hints: [], buildings: [], zebra: [8250, 8520] };
   D.plats.push({ x: 0, y: G0, w: L2.W, h: 60, oneway: false, look: 'none' });
+  // крыши гаражей и трубы теплотрассы — по ним можно ходить; SINK — опора на 3 px ниже кромки (стоят на крыше/трубе, а не над ней)
+  const SINK = 3;
   for (const [name, x] of L2.BUILD_LIST) {
-    const b = B[name];
+    const b = B[name]; if (!b) continue;
     D.buildings.push({ name, x, w: b.w, h: b.h });
-    // крыши гаражей и трубы теплотрассы — по ним можно ходить
-    if (b.tops) for (const [x0, x1, top] of b.tops) if (top > 40) D.plats.push({ x: x + x0 + 4, y: G0 - top, w: x1 - x0 - 8, h: 8, oneway: true, look: 'none' });
+    if (!b.tops) continue;
+    if (name === 'garages') {      // одна сплошная крыша (покрышки — декор, раньше между ними были щели и Валера проваливался)
+      const main = b.tops.reduce((m, t) => (t[1] - t[0] > m[1] - m[0] ? t : m));
+      D.plats.push({ x: x + 4, y: G0 - main[2] + SINK, w: b.w - 8, h: 8, oneway: true, look: 'none' });
+    } else for (const [x0, x1, top] of b.tops) if (top > 40) D.plats.push({ x: x + x0 + 4, y: G0 - top + SINK, w: x1 - x0 - 8, h: 8, oneway: true, look: 'none' });
   }
+  // набережная — одна длинная лента (картинка + зеркальное продолжение), уходит за девятиэтажку и за новый дом
+  const nine2 = D.buildings.filter(b => b.name === 'nine')[1], h2 = D.buildings.find(b => b.name === 'house2');
+  if (B.embank) D.buildings.unshift({ name: 'embank', x: nine2.x + nine2.w - 60, w: B.embank.w, h: B.embank.h });   // от девятиэтажки до гаражного кооператива, без зеркальной копии
+  // теплотрасса продолжается за соседние здания: куски прямой трубы с опорой (первые 110 px картинки)
+  const pb0 = D.buildings.find(b => b.name === 'pipes' && !b.slice), nine1 = D.buildings.filter(b => b.name === 'nine')[0], gar2 = D.buildings.filter(b => b.name === 'garages')[1];
+  for (let x = pb0.x - 110; x > nine1.x + nine1.w - 140; x -= 110) D.buildings.unshift({ name: 'pipes', x, w: 110, h: B.pipes.h, slice: 110 });
+  for (let x = pb0.x + pb0.w; x < gar2.x + 60; x += 110) D.buildings.unshift({ name: 'pipes', x, w: 110, h: B.pipes.h, slice: 110 });
+  const lowPipe = B.pipes.tops[0][2];
+  D.plats.push({ x: nine1.x + nine1.w, y: G0 - lowPipe + SINK, w: pb0.x + 8 - (nine1.x + nine1.w), h: 8, oneway: true, look: 'none' });
+  D.plats.push({ x: pb0.x + pb0.w - 8, y: G0 - lowPipe + SINK, w: gar2.x - (pb0.x + pb0.w - 8), h: 8, oneway: true, look: 'none' });
   const shop = D.buildings.find(b => b.name === 'shop');
   D.shopDoor = { x: shop.x + B.shop.door, w: 40 };
   const prop = (type, x, y = G0) => D.props.push({ type, x, y });
   const foe = (type, x, o) => D.foes.push({ type, x, o });
   const pick = (kind, x, y = 0) => D.pickups.push({ kind, x, y });
-  const roofY = name => { const t = B[name].tops.reduce((m, t) => (t[1] - t[0] > m[1] - m[0] ? t : m)); return G0 - t[2]; };
+  const roofY = name => { const t = B[name].tops.reduce((m, t) => (t[1] - t[0] > m[1] - m[0] ? t : m)); return G0 - t[2] + SINK; };
   // 1. проходная и цех
   prop('bench', 520); prop('dumpster', 900); prop('crate', 950); prop('barrel', 1300);
   foe('gopnik', 620); foe('dogS', 1050); foe('gopnik', 1250); foe('punk', 1520);
@@ -300,8 +320,9 @@ L2.build = function () {
   pick('beer', 5720);
   D.hints.push({ x: 5200, w: 260, text: 'Бомж испускает газы — не стой в зелёном облаке!' });
   // 6. теплотрасса — можно пройти поверху
-  const pb = D.buildings.find(b => b.name === 'pipes');
-  prop('crate', pb.x + 150, G0 - 86); prop('crate', pb.x + 400, G0 - 86);
+  const pb = D.buildings.find(b => b.name === 'pipes' && !b.slice);
+  const pipeY = G0 - B.pipes.tops[0][2] + SINK;
+  prop('crate', pb.x + 140, pipeY); prop('crate', pb.x + 410, pipeY);
   foe('bomzh', pb.x + 120); foe('punk', pb.x + 420); foe('alkash', pb.x + 270, { y: G0 - 198, x1: pb.x + 200, x2: pb.x + 340 });
   pick('badge', pb.x + 300, G0 - 199); pick('kefir', pb.x + 470);
   // 7. снова гаражи и хрущёвка
@@ -315,8 +336,8 @@ L2.build = function () {
   pick('beer', 8700);
   D.hints.push({ x: 8050, w: 200, text: 'Бешеный «Матиз»! Жди сигнала «!» и перепрыгивай машину.' });
   // 9. набережная
-  prop('lamp', 9150); prop('crate', 9400); prop('crate', 9434); prop('crate', 9417, G0 - 34); prop('bench', 9800); prop('lamp', 10250); prop('dumpster', 10500);
-  foe('alkash', 9300); foe('punk', 9560); foe('alkash', 9417, { y: G0 - 68, x1: 9405, x2: 9430 }); foe('dogB', 9900); foe('gopnik', 10100); foe('bomzh', 10400); foe('punk', 10700);
+  prop('lamp', 9150); prop('crate', 9400); prop('crate', 9434); prop('crate', 9417, G0 - 30);   // верхний ящик стоит на крышках нижних (верх ящика 0.88 высоты) prop('bench', 9800); prop('lamp', 10250); prop('dumpster', 10500);
+  foe('alkash', 9300); foe('punk', 9560); foe('alkash', 9417, { y: G0 - 60, x1: 9405, x2: 9430 }); foe('dogB', 9900); foe('gopnik', 10100); foe('bomzh', 10400); foe('punk', 10700);
   pick('pie', 9800); pick('badge', 10500); pick('coin', 10250);
   D.checkpoints.push({ x: 10950 });
   // 10. парк
@@ -351,12 +372,22 @@ L2.drawLayers = function (c, camX) {
   L2.tile(c, L2.img.far, camX * 0.28, L2.GROUND - L.far[1] + 12, L.far[0], L.far[1]);
   c.fillStyle = 'rgba(20,26,44,0.18)'; c.fillRect(0, 0, W, L2.GROUND);
 };
+L2.EMB_AX = 921;   // ось зеркала набережной: середина последнего столба с фонарём (логич. px картинки)
 L2.drawBuildings = function (c, camX, list) {
   for (const b of list) {
     const x = b.x - camX;
     if (x > W || x + b.w < 0) continue;
     const img = L2.img['b_' + b.name];
-    if (img) c.drawImage(img, Math.round(x), L2.GROUND - b.h + 2, b.w, b.h);
+    if (!img) continue;
+    const y = L2.GROUND - b.h + 2, k = img.width / (window.BUILDINGS[b.name] || b).w;
+    if (b.slice) c.drawImage(img, 0, 0, b.slice * k, img.height, Math.round(x), y, b.slice, b.h);       // кусок прямой трубы
+    else if (b.mirror) {   // картинка до оси + зеркальная копия: шов приходится на столб, фонарь становится двурогим
+      const A = L2.EMB_AX;
+      c.drawImage(img, 0, 0, A * k, img.height, Math.round(x), y, A, b.h);
+      c.save(); c.translate(Math.round(x) + 2 * A, y); c.scale(-1, 1);
+      c.drawImage(img, 0, 0, A * k, img.height, 0, 0, A, b.h);
+      c.restore();
+    } else c.drawImage(img, Math.round(x), y, b.w, b.h);
   }
 };
 L2.drawGround = function (c, camX, zebra) {
@@ -406,10 +437,17 @@ L2.Run = class {
       const def = PROPS[p.type];
       const [w, h] = Spr.size('street', def.i);
       const o = Object.assign({ w, h, def }, p);
-      if (def.ladder) wd.ladders.push({ x: p.x - 8, y: p.y - h + 2, w: 16, h: h - 2 });
+      if (def.ladder) {
+        // верх лестницы — ровно на уровне крыши, к которой она приставлена (иначе наверху Валера стоит «в воздухе» и падает)
+        let top = p.y - h + 2;
+        const roof = D.plats.filter(q => q.h < 20 && q.x < p.x + 8 && q.x + q.w > p.x - 8 && Math.abs(q.y - top) < 16).sort((a, b) => Math.abs(a.y - top) - Math.abs(b.y - top))[0];
+        if (roof) top = roof.y;
+        wd.ladders.push({ x: p.x - 8, y: top, w: 16, h: p.y - top });
+      }
       else if (!def.deco) {
         const cw = w * def.wf, top = p.y - h * def.top;
         o.col = wd.addPlat({ x: p.x - cw / 2 + (def.dx || 0) * w, y: top, w: cw, h: p.y - top, oneway: def.oneway, look: 'none' });
+        if (def.roof) { const ry = p.y - h * def.roof[2] + 1; o.roof = wd.addPlat({ x: p.x + def.roof[0], y: ry, w: def.roof[1] - def.roof[0], h: 8, oneway: true, look: 'none' }); }
       }
       return o;
     });
@@ -565,7 +603,7 @@ L2.Kesha = class {
     this.t += dt; this.st += dt; this.animT += dt; this.cool -= dt; this.sniffT -= dt; this.quip -= dt;
     if (this.flash > 0) this.flash -= dt; if (this.inv > 0) this.inv -= dt;
     const dx = pl.x - this.x, adx = Math.abs(dx);
-    const face = () => { this.facing = dx > 0 ? 1 : -1; };
+    const face = () => { if (Math.abs(dx) > 6) this.facing = dx > 0 ? 1 : -1; };   // мёртвая зона: без неё враг под/над Валерой разворачивался каждый кадр
     const sp = this.phase === 2 ? 1.25 : 1;
     let a = 'master';
     if (this.quip <= 0 && this.state !== 'down' && this.state !== 'grow') { this.quip = U.rand(5, 8); G.say(this, U.choice(KESHA_LINES), 1.5); }
@@ -605,19 +643,31 @@ L2.Kesha = class {
         if (this.st > 0.4 && Math.random() < dt * 20) FX.spawn({ x: this.x + this.facing * 10, y: this.y - 40 * this.scale, vx: U.rand(-20, 20), vy: -30, grav: -10, life: 0.8, color: '#f0f4ff', size: 3, type: 'puff' });
         if (this.st > 2.2) { this.hp = Math.min(this.maxHp, this.hp + 1); this.set('idle'); G.say(this, 'У-У-УХ! БОДРИТ!', 1.2, { shout: true }); }
         break;
-      case 'aim':
-        face(); a = 'aim';
+      case 'aim': {
+        // целится туда, где Валера: присел — вниз, в прыжке — вверх, стоит — прямо; за 0.25 с до выстрела прицел замирает (успей увернуться)
+        if (this.st < 0.45 || this.aimP == null) {
+          face();
+          this.aimP = pl.crouch ? 2 : !pl.onGround ? 0 : 1;
+          this.aimTx = pl.x; this.aimTy = pl.y - (pl.crouch ? 18 : 46);
+        }
+        a = ['aimU', 'aimS', 'aimD'][this.aimP];
         if (this.st > 0.7) { this.set('shoot'); }
         break;
+      }
       case 'shoot':
-        a = 'shoot';
+        a = ['fireU', 'fireS', 'fireD'][this.aimP ?? 1];
         if (this.st < dt * 1.5) {
-          const s = this.scale;
-          ar.bullets.push({ x: this.x + this.facing * 30 * s, y: this.y - 50, vx: this.facing * 380, t: 0 });
+          // пуля вылетает из дула (точки из листа kesha_c) и летит в замеченную точку
+          const s = this.scale, m = (window.KESHA_MUZ || [])[3 + (this.aimP ?? 1)] || [30, -50];
+          const mx = this.x + this.facing * m[0] * s, my = this.y + m[1] * s;
+          let dx = (this.aimTx ?? pl.x) - mx, dy = (this.aimTy ?? pl.y - 46) - my;
+          if (Math.sign(dx) !== this.facing || Math.abs(dx) < 20) dx = this.facing * 40;
+          const L = Math.hypot(dx, dy) || 1, V = 380;
+          ar.bullets.push({ x: mx, y: my, vx: dx / L * V, vy: dy / L * V, t: 0 });
           Sound.play('shot'); G.shake(2, 0.1);
-          FX.burst(this.x + this.facing * 34 * s, this.y - 52 * s, 5, { colors: ['#fff6a0', '#ffb040'], speed: 80, life: 0.15, grav: 0 });
+          FX.burst(mx, my, 5, { colors: ['#fff6a0', '#ffb040'], speed: 80, life: 0.15, grav: 0 });
         }
-        if (this.st > 0.35) { this.shots++; if (this.shots < 3) this.set('aim'); else { this.set('reload'); G.say(this, 'Патроны! Где патроны?!', 1.5); } }
+        if (this.st > 0.35) { this.shots++; this.aimP = null; if (this.shots < 3) this.set('aim'); else { this.set('reload'); G.say(this, 'Патроны! Где патроны?!', 1.5); } }
         break;
       case 'reload': a = 'shout'; if (this.st > 2.0) { this.cool = 3.5; this.set('idle'); } break;
       case 'hurt': a = 'hurt'; this.x += this.vx * dt; this.vx *= 0.85; if (this.st > 0.25) this.set('idle'); break;
@@ -640,7 +690,7 @@ L2.Kesha = class {
     ar.nat && ar.nat.onHit();
     if (mult > 1) FX.popText(this.x, this.y - 90 * this.scale, 'x2!', '#ffd84a', 16);
     if (this.hp <= 0) { this.hp = 0; this.set('down'); this.scale = 1; ar.bossDown(); return; }
-    if (this.phase === 1 && this.hp <= this.maxHp / 2) { this.set('grow'); Sound.play('boom'); G.shake(6, 0.6); G.say(this, 'НУ ВСЁ! ТЫ МЕНЯ РАЗОЗЛИЛ!', 2, { shout: true }); ar.hint = 'Кеша стреляет! Пригнись {down} — пули пролетят над головой!'; ar.hintT = 6; return; }
+    if (this.phase === 1 && this.hp <= this.maxHp / 2) { this.set('grow'); Sound.play('boom'); G.shake(6, 0.6); G.say(this, 'НУ ВСЁ! ТЫ МЕНЯ РАЗОЗЛИЛ!', 2, { shout: true }); ar.hint = 'Кеша стреляет туда, где ты стоишь! Смени позу перед выстрелом: присядь {down} или прыгни {jump}.'; ar.hintT = 6; return; }
     this.combo2 = this.t - this.lastHit < 1.0 ? (this.combo2 || 0) + 1 : 1; this.lastHit = this.t;
     if (this.combo2 >= 4 && !this.weak) { this.combo2 = 0; this.set('fly'); this.vx = -dir * 200; this.vy = -300; G.say(this, 'Не догонишь!', 1); return; }
     if (this.state === 'idle' || this.state === 'dash') { this.set('hurt'); this.vx = dir * 130; }
@@ -714,10 +764,10 @@ L2.Arena = class {
     if (pl && b && b.update && (this.fighting || b.state === 'down')) b.update(dt, this);
     this.nat.update(dt);
     for (const bl of this.bullets) {
-      bl.t += dt; bl.x += bl.vx * dt;
+      bl.t += dt; bl.x += bl.vx * dt; bl.y += (bl.vy || 0) * dt;
       if (pl && U.overlap({ x: bl.x - 5, y: bl.y - 2, w: 10, h: 4 }, pl.box)) { pl.hurt(12, bl.x - bl.vx, wd); bl.t = 9; }
     }
-    this.bullets = this.bullets.filter(bl => bl.t < 2 && bl.x > L2.ARENA_X - 20 && bl.x < L2.ARENA_X + W + 20);
+    this.bullets = this.bullets.filter(bl => bl.t < 2 && bl.x > L2.ARENA_X - 20 && bl.x < L2.ARENA_X + W + 20 && bl.y < L2.GROUND + 4);
     for (const p of wd.projs) {
       p.update(dt, wd, pl);
       if (b && this.fighting && !p.dead && !p.hitSet.has(b) && U.overlap(p.box, b.box)) { p.hitSet.add(b); b.hit(p.dmg, p.dir, this); if (!p.pierce) { p.dead = true; p.poof(); } }
@@ -748,7 +798,11 @@ L2.Arena = class {
       for (let i = 0; i < 3; i++) { const a = G.t * 3 + i * 2.1, bx = b.x - cx + Math.cos(a) * 16 + 20, by = b.y - 30 + Math.sin(a) * 5; Art.R(c, bx - 2, by - 1, 5, 3, '#f0d040'); Art.R(c, bx + 2, by - 2, 2, 2, '#f0d040'); }
     }
     if (this.player) this.player.draw(c, cx, 0);
-    for (const bl of this.bullets) { Art.R(c, bl.x - cx - 5, bl.y - 1, 10, 3, '#ffe060'); Art.R(c, bl.x - cx - 12 * Math.sign(bl.vx), bl.y, 8, 1, 'rgba(255,220,120,0.5)'); }
+    for (const bl of this.bullets) {   // пуля и след вдоль направления полёта
+      const L = Math.hypot(bl.vx, bl.vy || 0) || 1, ux = bl.vx / L, uy = (bl.vy || 0) / L, x = bl.x - cx;
+      c.strokeStyle = 'rgba(255,220,120,0.5)'; c.lineWidth = 1; c.beginPath(); c.moveTo(x - ux * 16, bl.y - uy * 16); c.lineTo(x, bl.y); c.stroke();
+      c.strokeStyle = '#ffe060'; c.lineWidth = 3; c.beginPath(); c.moveTo(x - ux * 5, bl.y - uy * 5); c.lineTo(x + ux * 5, bl.y + uy * 5); c.stroke();
+    }
     for (const p of wd.projs) p.draw(c, cx, 0);
     c.save(); c.translate(-cx, 0); FX.draw(c); c.restore();
     G.drawBubbles(c, cx, 0);
@@ -812,7 +866,7 @@ L2.sceneShop = function (level) {
   const SX = 400, SY = 230;
   level.drawScene = c => {
     c.drawImage(G.bg.shop, 0, 0, W, H);
-    Spr.draw(c, 'sellera', sf, SX, SY + 4 + Math.sin(G.t * 1.6) * 0.4, 1, { scale: 0.46 });
+    Spr.draw(c, 'sellera', sf, SX, SY + 6 + Math.sin(G.t * 1.6) * 0.4, 1, { scale: 0.7 });   // стоит за прилавком, дальше Валеры — мельче
     // прилавок и витрина — поверх неё (она стоит за ними)
     c.save(); c.beginPath(); c.rect(180, 205, 200, 160); c.rect(380, 227, 125, 140); c.clip(); c.drawImage(G.bg.shop, 0, 0, W, H); c.restore();
     v.draw(c);
@@ -886,9 +940,13 @@ L2.sceneFinale = function (level) {
     if (spy.visible) {
       const sx = spy.x - L2.ARENA_X;
       if (spy.ropeX != null) {
-        const top = spy.anim === 'rope' ? spy.y - 110 + 4 : L2.GROUND - 4;
-        const rx = spy.ropeX - L2.ARENA_X;
-        Art.R(c, rx, 0, 2, top, '#2a2418'); Art.R(c, rx, 0, 1, top, '#6a5a3e');
+        const top = spy.anim === 'rope' ? spy.y - 110 + 1 : L2.GROUND - 4;
+        // верёвка — тот же рисунок, что в кадре спуска (cmd_hide[4], колонки 46..54), продолжается вверх без стыка
+        const rx = spy.ropeX - L2.ARENA_X, sh = Spr.sheets.cmd_hide, f = sh && sh.f[4];
+        if (f && sh.img) {
+          const seg = 40, segL = seg / 2;
+          for (let yy = top; yy > -segL; yy -= segL) c.drawImage(sh.img, f[0] + 46, f[1], 9, seg, Math.round(rx - 2.25), Math.round(yy - segL), 4.5, segL + 0.5);
+        }
       }
       Spr.drawAnim(c, 'spy', spy.anim, spy.animT, sx, spy.y, spy.facing);
     }
@@ -912,7 +970,7 @@ L2.sceneFinale = function (level) {
     yield* Scene.moveTo(v, door, 55, 'walk');
     v.setAnim('stand'); v.facing = 1;
     // спецназовец спускается с соседней крыши
-    spy.visible = true; spy.setAnim('rope'); spy.ropeX = spy.x + 4.5; Sound.play('rope');
+    spy.visible = true; spy.setAnim('rope'); spy.ropeX = spy.x + spy.facing * 4.5;   // верёвка в кадре на 4.5 px от опоры, кадр зеркалится по facing Sound.play('rope');
     yield* Scene.tween(1.2, kk => { spy.y = U.lerp(-60, L2.GROUND, U.easeOut(kk)); });
     spy.setAnim('dart');
     yield 0.5;
