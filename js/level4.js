@@ -35,7 +35,7 @@ L4.img = {};
   Spr.ANIM.girl = { stand: A('patrons', [1]), walk: A('patrons', [1]) };
   // Валера: ползком, по лестнице, кулаками, в чужих руках, неловкий танец
   // Валера в полицейской фуражке — основной набор уровня 4
-  const V = { crawl: A('v7_mv', [0, 1], 6), climb: A('v7_mv', [2, 3], 6), punchA: A('v7_mv', [4]), punchB: A('v7_mv', [5]), held: A('v7_mv', [6]), dance: A('v7_mv', [7, 6], 3) };
+  const V = { crawl: A('v7_mv', [0, 1], 6), climb: A('v7_mv', [2, 3], 6), punchA: A('v7_mv', [4]), punchB: A('v7_mv', [5]), held: A('v7_mv', [6]), dance: A('v7_mv', [7, 8], 3), dizzy: A('v7_mv', [9]) };
   Spr.ANIM.valera4 = Object.assign({}, V, {
     stand: A('v7_act', [0]), angry: A('v7_idle', [7]), hips: A('v7_idle', [0, 1], 4.5), stomp: A('v7_idle', [0, 1], 4.5), scratch: A('v7_idle', [5]), yawn: A('v7_idle', [6]), belly: A('v7_idle', [2, 3, 2, 3, 4], 3),
     run: A('v17_runs', [0, 1, 2, 3, 4, 5, 6, 7], 14), walk: A('v17_runs', [0, 1, 2, 3, 4, 5, 6, 7], 9),
@@ -43,7 +43,12 @@ L4.img = {};
     swatWind: A('v7_cap', [6]), swat: A('v7_act', [7]), fart: A('v7_cap', [7]), shoot: A('v7_act', [7]),
     angry: A('v16_stomp', [0, 1, 2, 3], 6), stomp: A('v16_stomp', [0, 1, 2, 3], 6), ko: A('v14_punch', [4]),
     swatWind: A('v14_swat', [0]), swat: A('v14_swat', [1]), swatLow: A('v14_swat', [2]), swatAir: A('v14_swat', [3]), swatUp: A('v14_swat', [4]),
-    capGrab: A('v13_cap', [0]), capOff: A('v13_cap', [1]), capThrow: A('v13_cap', [2]), capHold: A('v13_cap', [3]), capOn: A('v13_cap', [4]), capFix: A('v13_cap', [5]),
+    cSwatWind: A('v14_swat', [2]), cSwat: A('v14_swat', [2]), capGrab: A('v13_cap', [0]), capOff: A('v13_cap', [1]), capThrow: A('v13_cap', [2]), capHold: A('v13_cap', [3]), capOn: A('v13_cap', [4]), capFix: A('v13_cap', [5]),
+  });
+  // в арбузе (интро уровня): свой набор, чтобы не трогать уровень 3
+  Spr.ANIM.valera4m = Object.assign({}, Spr.ANIM.valera4, {
+    stand: A('v19_mact', [6]), angry: A('v19_mact', [6]), hips: A('v19_mact', [6]), run: A('v19_mrun', [0, 1, 2, 3, 4, 5, 6, 7], 14), walk: A('v19_mrun', [0, 1, 2, 3, 4, 5, 6, 7], 9),
+    crouch: A('v19_mact', [1]), land: A('v19_mact', [1]), jump: A('v19_mact', [2]), fall: A('v19_mact', [3]), hurt: A('v19_mact', [4]), ko: A('v19_mact', [5]), swat: A('v19_mact', [7]),
   });
   // кулаки: без ракетки в руках
   Spr.ANIM.valera4fist = Object.assign({}, Spr.ANIM.valera4, {
@@ -53,7 +58,7 @@ L4.img = {};
     punchA: A('v14_punch', [0]), punchB: A('v14_punch', [1]), punchLow: A('v14_punch', [2]), punchAir: A('v14_punch', [3]), swat: A('v14_punch', [1]), swatWind: A('v12_fist', [0]), shoot: A('v14_punch', [0]),
     angry: A('v14_stomp', [0, 1, 2, 3], 6), stomp: A('v14_stomp', [0, 1, 2, 3], 6), ko: A('v14_punch', [4]), hips: A('v14_stomp', [0]),
   });
-  const GUN = g => ({ stand: A(g, [0]), angry: A(g, [0]), hips: A(g, [0]), scratch: A(g, [0]), yawn: A(g, [0]), belly: A(g, [0]), run: A(g, [1, 2, 3, 4], 10), walk: A(g, [1, 2, 3, 4], 7), shoot: A(g, [0]), jump: A(g, [6]), fall: A(g, [6]), crouch: A(g, [7]), land: A(g, [7]) });
+  const GUN = g => ({ stand: A(g, [0]), angry: A(g, [0]), hips: A(g, [0]), scratch: A(g, [0]), yawn: A(g, [0]), belly: A(g, [0]), run: A(g, [8, 9, 10, 11, 12, 13, 14, 15], 14), walk: A(g, [8, 9, 10, 11, 12, 13, 14, 15], 9), shoot: A(g, [0]), jump: A(g, [6]), fall: A(g, [6]), crouch: A(g, [7]), land: A(g, [7]) });
   Spr.ANIM.valera4green = Object.assign({}, Spr.ANIM.valera4, V, GUN('v11_gun'), { angry: A('v15_gs', [4, 5, 6, 7], 6), stomp: A('v15_gs', [4, 5, 6, 7], 6) });
   Spr.ANIM.valera3gun = Object.assign({}, Spr.ANIM.valera4, V, GUN('v10_gun'), { angry: A('v15_gs', [0, 1, 2, 3], 6), stomp: A('v15_gs', [0, 1, 2, 3], 6) });
   Spr.ANIM.valera3gunOld = Object.assign({}, Spr.ANIM.valera4, V, {
@@ -81,10 +86,10 @@ L4.load = async function () {
   const W3 = window.WALLS3 || {};
   await Promise.all(['club_lobby', 'club_hall', 'club_vip', 'club_leather', 'club_dark', 'club_lobby_z', 'club_hall_z', 'club_leather_z'].map(async k => { if (W3[k]) L3.img[k] = await G.loadImage(W3[k].img); }));
   L4.img.club_sidewall = await G.loadImage('assets/club_sidewall.png?v=104'); L4.img.club_sidewall_z = await G.loadImage('assets/club_sidewall_z.png?v=104'); // боковая стена лобби с дверью в перспективе
-  await Promise.all(['club_back', 'club_back2', 'club_back3', 'club_floor', 'hotel_floor2', 'hotel_f1', 'hotel_f2', 'hotel_f3', 'biker_bg', 'club_room', 'club_wc', 'club_wc2', 'club_wc3', 'comic4_darts', 'comic4_raid', 'comic4_end', 'l4_sq', 'end_street_bg3', 'room0', 'room1', 'room2', 'room3', 'room4', 'room5', 'room6', 'room7', 'room8', 'room9', 'room10', 'room11'].map(async k => { L4.img[k] = await G.loadImage('assets/' + k + '.jpg?v=101'); }));
+  await Promise.all(['club_back', 'club_back2', 'club_back3', 'club_floor', 'hotel_floor2', 'hotel_f1', 'hotel_f2', 'hotel_f3', 'biker_bg', 'club_room', 'club_wc', 'club_wc2', 'club_wc3', 'comic4_darts', 'comic4_raid', 'comic4_end', 'l4_sq', 'end_street_bg3', 'room0', 'room1', 'room2', 'room3', 'room4', 'room5', 'room6', 'room7', 'room8', 'room9', 'room10', 'room11'].map(async k => { L4.img[k] = await G.loadImage('assets/' + k + '.jpg?v=' + (k.startsWith('hotel_f') ? G.VER : 101)); }));
   await Promise.all(['cone_m', 'cone_c', 'cone_g'].map(async k => { L4.img[k] = await G.loadImage('assets/spr/' + k + '.png'); }));
   G.portraits = G.portraits || {};
-  await Promise.all(['maid', 'nurse', 'vova', 'biker', 'hatch', 'valera4'].map(async k => { G.portraits[k] = await G.loadImage('assets/spr/p_' + k + '.png'); }));
+  await Promise.all(['maid', 'nurse', 'vova', 'biker', 'hatch', 'valera4', 'valera4m'].map(async k => { G.portraits[k] = await G.loadImage('assets/spr/p_' + k + '.png'); }));
   G.portraits.valeraOrig = G.portraits.valeraOrig || G.portraits.valera;
   WHO.kesha = WHO.kesha || { name: 'КЕША', color: '#8cc8ff', voice: 210 };
 };
@@ -106,7 +111,7 @@ L4.Player = class extends L3.Player {
   attackUpdate(dt, world, ctl, I) {
     this.animSet = this.weapon === 'seed' ? (this.green ? 'valera4green' : 'valera3gun') : this.weapon === 'fists' ? 'valera4fist' : 'valera4'; this.portraitKey = 'valera4';
     const dir = ctl ? (I.held('right') ? 1 : 0) - (I.held('left') ? 1 : 0) : 0;
-    this.crawling = this.crouch && this.onGround && dir !== 0 && !this.atk;
+    this.crawling = this.crouch && this.onGround && dir !== 0; // ползком можно бить на ходу
     if (this.crawling) { this.x += dir * 80 * dt; this.facing = dir; }
     if (this.weapon === 'fists') {
       if (this.fartCool > 0) this.fartCool -= dt; if (this.fartT > 0) this.fartT -= dt;
@@ -130,7 +135,8 @@ L4.Player = class extends L3.Player {
         const up = I.held('up'), base = up ? (I.held('left') || I.held('right') ? -0.8 : -1.45) : 0;
         for (const a of this.green ? [-0.15, 0, 0.15] : [0]) {
           const ang = base + a, sp = 480;
-          const s = new L3.Shot('juice', this.x + this.facing * 34, this.y - (this.crouch ? 29 : 43), this.facing);
+          const mz = this.green ? (this.crouch ? [34, 37] : [34, 46]) : (this.crouch ? [29, 27] : [30, 45]); // дуло по кадрам v10/v11_gun
+          const s = new L3.Shot('juice', this.x + this.facing * mz[0], this.y - mz[1], this.facing);
           s.vx = Math.cos(ang) * sp * this.facing; s.vy = Math.sin(ang) * sp; if (up && base < -1.2) s.vx = Math.sin(a) * sp * 0.6 + this.facing * 20;
           s.grav = 60; s.dmg = this.green ? 2 : 3; s.green = this.green; s.seed = true; s.pierce = this.green ? 1 : 0;
           world.projs.push(s);
@@ -144,7 +150,7 @@ L4.Player = class extends L3.Player {
   }
   choosePose(dt) {
     if (this.held) { this.setAnim(this.held === 'dance' ? 'dance' : 'held'); return; }
-    if (this.crawling && this.hurtT <= 0) { this.setAnim('crawl'); return; }
+    if (this.crawling && this.hurtT <= 0 && !(this.atk && this.atk.t >= 0.06)) { this.setAnim('crawl'); return; }
     if (this.atk && this.atk.kind === 'punch' && this.hurtT <= 0) { this.setAnim(!this.onGround ? 'punchAir' : this.crouch ? 'punchLow' : this.atk.side ? 'punchB' : 'punchA'); return; }
     if (this.atk && this.atk.kind === 'swat' && this.hurtT <= 0 && this.atk.t >= 0.12 && Spr.ANIM[this.animSet].swatLow) { this.setAnim(!this.onGround ? 'swatAir' : this.crouch ? 'swatLow' : 'swat'); return; }
     if (this.weapon === 'seed' && this.shootT > 0 && this.onGround && Math.abs(this.vx) < 20 && !this.crouch && this.hurtT <= 0) { this.setAnim('shoot'); return; }
@@ -544,7 +550,7 @@ L4.Stage = class {
     if (!this.frozen && !pl.held) pl.update(dt, wd);
     else if (pl.held) { pl.animT += dt; pl.choosePose(dt); }
     this.blockers(pl, prevX);
-    pl.x = this.kind === 'boss' ? U.clamp(pl.x, 62, 578) : U.clamp(pl.x, 12, this.kind === 'tower' ? L4.stairX(this.floor) + 8 : this.W - 12);
+    pl.x = this.kind === 'boss' ? U.clamp(pl.x, 62, 578) : U.clamp(pl.x, 12, this.W - 12);
     for (const p of wd.projs) {
       p.update(dt, wd);
       if (p.dead) continue;
@@ -726,7 +732,8 @@ L4.Door = class {
 
 // 9 номеров — 9 разных фонов (золото, амстердам, сафари, неон, совок, подводный, космос, диско, старый)
 L4.LEVER_SX = 200; L4.INNER_DOOR_X = 75;
-L4.stairX = fl => fl === 2 ? 462 : 446; // у столбика перил: дальше лестница вверх/вниз
+L4.STAIR_UP = 479; L4.STAIR_DN = 586; // два прохода справа: лестница вверх и лестница вниз
+L4.stairX = fl => L4.STAIR_DN;
 L4.ROOM_IMG = [4, 5, 6, 7, 8, 9, 10, 11, 0];
 L4.HOTEL_G = 242; L4.BOSS_G = 296; L4.TOWER_FH = 300; L4.FLOORS = 3; L4.TOWER_H = L4.FLOORS * L4.TOWER_FH + 60;
 L4.floorY = i => L4.TOWER_H - 40 - i * L4.TOWER_FH;
@@ -773,7 +780,8 @@ L4.BUILD = {
       this.doors.push(new L4.Door(x, L4.HOTEL_G, 'НОМЕР ' + (fl + 1) + '0' + (k + 1) + (room.cleared ? ' (ПУСТО)' : ''), st => st.level.enterRoom(id), { icon: 4 }));
     });
     // лестница справа: {up} — выше, {down} — ниже (на 1 этаже вниз — выход в клуб)
-    this.doors.push(new L4.Door(L4.stairX(fl), L4.HOTEL_G, 'ЛЕСТНИЦА', (st, d) => st.level.stairs(d), { dirs: [fl < L4.FLOORS - 1, true], downLabel: fl === 0 ? 'В КЛУБ' : 'НИЖЕ' }));
+    if (fl < L4.FLOORS - 1) this.doors.push(new L4.Door(L4.STAIR_UP, L4.HOTEL_G, 'ЛЕСТНИЦА ВВЕРХ', (st, d) => st.level.stairs(1), { dirs: [true, false] }));
+    this.doors.push(new L4.Door(L4.STAIR_DN, L4.HOTEL_G, 'ЛЕСТНИЦА ВНИЗ', (st, d) => st.level.stairs(-1), { dirs: [false, true], downLabel: fl === 0 ? 'В КЛУБ' : 'НИЖЕ' }));
     this.fgItems = [{ sheet: 'fg2', fr: 6, x: 30, y: H + 30, scale: 1 }];
   },
   room(wd, o) {
@@ -1051,8 +1059,8 @@ L4.Level = class {
   }
   stairs(dir) {
     const fl = this.stage.floor || 0;
-    if (dir < 0) { if (fl === 0) { this.leaveTower(); return; } this.setStage('tower', { x: L4.stairX(fl - 1), y: L4.HOTEL_G, floor: fl - 1, facing: -1 }); Sound.play('jump'); return; }
-    if (fl < L4.FLOORS - 1) { this.setStage('tower', { x: L4.stairX(fl + 1), y: L4.HOTEL_G, floor: fl + 1, facing: -1 }); Sound.play('jump'); }
+    if (dir < 0) { if (fl === 0) { this.leaveTower(); return; } this.setStage('tower', { x: L4.STAIR_UP, y: L4.HOTEL_G, floor: fl - 1, facing: -1 }); Sound.play('jump'); return; }
+    if (fl < L4.FLOORS - 1) { this.setStage('tower', { x: L4.STAIR_DN, y: L4.HOTEL_G, floor: fl + 1, facing: -1 }); Sound.play('jump'); }
   }
   leaveTower() { this.setStage('club', { x: L4.STAIRS_X, facing: -1 }); if (this.hasPassword) this.stage.say('Пароль есть! Теперь — к железной двери.', 4); }
   enterRoom(id) {
@@ -1178,8 +1186,8 @@ L4.Level = class {
 // =====================================================================
 L4.sceneStage = (level, kind, o) => { const st = new L4.Stage(level, kind, Object.assign({ scene: true }, o)); st.fade = 0; level.drawScene = c => st.draw(c); level.updateScene = dt => { for (const p of st.patrons) p.update(dt, st); for (const n of st.npcs) if (n.t != null) n.t += dt; st.world.t += dt; st.player.animT = (st.player.animT || 0) + dt; }; return st; };
 L4.sceneIntro = level => function* () {
-  const st = L4.sceneStage(level, 'club', { x: 60 }); st.player.controls = false; st.player.animSet = 'valera3';
-  if (G.portraits.valera3) G.portraits.valera = G.portraits.valera3;
+  const st = L4.sceneStage(level, 'club', { x: 60 }); st.player.controls = false; st.player.animSet = 'valera4m';
+  if (G.portraits.valera4m || G.portraits.valera3) G.portraits.valera = G.portraits.valera4m || G.portraits.valera3;
   const v = st.player, maid = new G.Actor('maid', 300, L4.GROUND, -1), nurse = new G.Actor('nurse', 350, L4.GROUND, -1);
   st.patrons.push({ update() {}, draw: (c, cx) => { maid.draw(c, cx, 0); nurse.draw(c, cx, 0); } });
   yield* Scene.moveTo(v, 230, 90, 'walk'); v.animSet = 'valera4'; v.setAnim('capGrab');
