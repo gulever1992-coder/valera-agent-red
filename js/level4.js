@@ -86,7 +86,7 @@ L4.load = async function () {
   const W3 = window.WALLS3 || {};
   await Promise.all(['club_lobby', 'club_hall', 'club_vip', 'club_leather', 'club_dark', 'club_lobby_z', 'club_hall_z', 'club_leather_z'].map(async k => { if (W3[k]) L3.img[k] = await G.loadImage(W3[k].img); }));
   L4.img.club_sidewall = await G.loadImage('assets/club_sidewall.png?v=104'); L4.img.club_sidewall_z = await G.loadImage('assets/club_sidewall_z.png?v=104'); // боковая стена лобби с дверью в перспективе
-  await Promise.all(['club_back', 'club_back2', 'club_back3', 'club_floor', 'hotel_floor2', 'hotel_f1', 'hotel_f2', 'hotel_f3', 'biker_bg', 'club_room', 'club_wc', 'club_wc2', 'club_wc3', 'comic4_darts', 'comic4_raid', 'comic4_end', 'l4_sq', 'end_street_bg3', 'room0', 'room1', 'room2', 'room3', 'room4', 'room5', 'room6', 'room7', 'room8', 'room9', 'room10', 'room11'].map(async k => { L4.img[k] = await G.loadImage('assets/' + k + '.jpg?v=' + (k.startsWith('hotel_f') ? G.VER : 101)); }));
+  await Promise.all(['club_back', 'club_back2', 'club_back3', 'club_floor', 'hotel_floor2', 'hotel_f1', 'hotel_f2', 'hotel_f3', 'biker_bg', 'club_room', 'club_wc', 'club_wc2', 'club_wc3', 'comic4_darts', 'comic4_raid', 'comic4_end', 'l4_sq', 'end_street_bg3', 'room0', 'room1', 'room2', 'room3', 'room4', 'room5', 'room6', 'room7', 'room8', 'room9', 'room10', 'room11', ...Object.keys(L4.ROOM_NEW).map(n => 'room' + n + 'n')].map(async k => { L4.img[k] = await G.loadImage('assets/' + k + '.jpg?v=' + (k.startsWith('hotel_f') || k.endsWith('n') ? G.VER : 101)); }));
   await Promise.all(['cone_m', 'cone_c', 'cone_g'].map(async k => { L4.img[k] = await G.loadImage('assets/spr/' + k + '.png'); }));
   G.portraits = G.portraits || {};
   await Promise.all(['maid', 'nurse', 'vova', 'biker', 'hatch', 'valera4', 'valera4m'].map(async k => { G.portraits[k] = await G.loadImage('assets/spr/p_' + k + '.png'); }));
@@ -550,7 +550,7 @@ L4.Stage = class {
     if (!this.frozen && !pl.held) pl.update(dt, wd);
     else if (pl.held) { pl.animT += dt; pl.choosePose(dt); }
     this.blockers(pl, prevX);
-    pl.x = this.kind === 'boss' ? U.clamp(pl.x, 62, 578) : U.clamp(pl.x, 12, this.W - 12);
+    pl.x = this.kind === 'boss' ? U.clamp(pl.x, 62, 578) : this.roomNew ? U.clamp(pl.x, this.roomNew.x0, this.roomNew.x1) : U.clamp(pl.x, 12, this.W - 12);
     for (const p of wd.projs) {
       p.update(dt, wd);
       if (p.dead) continue;
@@ -563,6 +563,7 @@ L4.Stage = class {
     }
     wd.projs = wd.projs.filter(p => !p.dead && p.x > wd.cam.x - 60 && p.x < wd.cam.x + W + 60);
     for (const e of wd.enemies) if (e.update) e.update(dt, this);
+    if (this.roomNew) for (const e of wd.enemies) e.x = U.clamp(e.x, this.roomNew.x0, this.roomNew.x1); // враги не выходят из комнаты
     wd.enemies = wd.enemies.filter(e => !e.dead);
     for (const g of wd.globs) g.update(dt, wd, pl, this.floorY || L4.GROUND, this);
     wd.globs = wd.globs.filter(g => !g.dead);
@@ -609,7 +610,7 @@ L4.Stage = class {
       const fr = p.d.anim ? p.d.fr + (Math.floor(G.t * 1.4 + p.x * 0.01) % 2) * p.d.anim : p.d.fr;
       if (p.type === 'slime') { c.save(); c.translate(sx, (p.y || L4.GROUND) - cy + 6); c.scale(1, 0.45); Spr.draw(c, 'acid', Math.floor(G.t * 4 + p.x) % 4, 0, 0, 1, { scale: 1.2 }); c.restore(); continue; }
       const pl = this.player, under = p.cr && layer === 'front' && pl.crouch && pl.x > p.cr.x0 - 10 && pl.x < p.cr.x1 + 10; // ползущего видно сквозь мебель
-      Spr.draw(c, p.sheet || p.d.sheet, p.fr != null ? p.fr : fr, sx, (p.y || L4.GROUND) - cy + 2, p.flip ? -1 : 1, { alpha: under ? 0.55 : p.alpha, scale: p.scale });
+      Spr.draw(c, p.sheet || p.d.sheet, p.seq ? p.seq[Math.floor(G.t * 2.8) % p.seq.length] : p.fr != null ? p.fr : fr, sx, (p.y || L4.GROUND) - cy + 2, p.flip ? -1 : 1, { alpha: under ? 0.55 : p.alpha, scale: p.scale });
     }
   }
   drawDancers(c, cx, cy, layer) {
@@ -735,6 +736,8 @@ L4.LEVER_SX = 200; L4.INNER_DOOR_X = 75;
 L4.STAIR_UP = 479; L4.STAIR_DN = 586; // два прохода справа: лестница вверх и лестница вниз
 L4.stairX = fl => L4.STAIR_DN;
 L4.ROOM_IMG = [4, 5, 6, 7, 8, 9, 10, 11, 0];
+// новые номера: маленькая комната в кирпичной стене; фон сдвинут на dy, чтобы пол совпал с L4.GROUND
+L4.ROOM_NEW = {}; for (const k of [4, 5, 6, 7, 8, 9, 10, 11, 0]) L4.ROOM_NEW[k] = { dy: 44, x0: 118, x1: 522, door: 230, bed: 452 };
 L4.HOTEL_G = 242; L4.BOSS_G = 296; L4.TOWER_FH = 300; L4.FLOORS = 3; L4.TOWER_H = L4.FLOORS * L4.TOWER_FH + 60;
 L4.floorY = i => L4.TOWER_H - 40 - i * L4.TOWER_FH;
 L4.BUILD = {
@@ -787,11 +790,14 @@ L4.BUILD = {
   room(wd, o) {
     const r = o.room;
     wd.addPlat({ x: 0, y: L4.GROUND, w: 640, h: 60, oneway: false, look: 'none' });
-    this.doors.push(new L4.Door(({ 4: 68, 5: 58, 6: 56, 7: 58, 8: 57, 9: 62, 10: 56, 11: 77, 0: 65 })[L4.ROOM_IMG[r.id % 9]], L4.GROUND, 'ВЫЙТИ', st => st.level.leaveRoom(), { icon: 4, ih: 128 }));
-    this.fgItems = [{ sheet: 'fg2', fr: [7, 1, 5, 4][o.room.id % 4], x: 600, y: H + 30, scale: 1 }];
-    if (!r.cleared) r.foes.forEach((t, k) => wd.enemies.push(new L4.Foe(t, k ? 590 : 290, L4.GROUND, { aggro: true })));
+    const rn = this.roomNew = L4.ROOM_NEW[L4.ROOM_IMG[r.id % 9]];
+    if (rn) this.doors.push(new L4.Door(rn.door, L4.GROUND, 'ВЫЙТИ', st => st.level.leaveRoom(), { icon: 4, ih: 128 }));
+    else this.doors.push(new L4.Door(({ 4: 68, 5: 58, 6: 56, 7: 58, 8: 57, 9: 62, 10: 56, 11: 77, 0: 65 })[L4.ROOM_IMG[r.id % 9]], L4.GROUND, 'ВЫЙТИ', st => st.level.leaveRoom(), { icon: 4, ih: 128 }));
+    this.fgItems = rn ? [] : [{ sheet: 'fg2', fr: [7, 1, 5, 4][o.room.id % 4], x: 600, y: H + 30, scale: 1 }];
+    if (!r.cleared) r.foes.forEach((t, k) => wd.enemies.push(new L4.Foe(t, rn ? (k ? 490 : 330) : k ? 590 : 290, L4.GROUND, { aggro: true })));
     // кровать с ботаником — крупная, неподвижная, стоит на полу; её надо перепрыгивать
-    { const i = L4.ROOM_IMG[r.id % 9], sheet = 'beds9', fr = { 4: 0, 5: 1, 6: 2, 7: 3, 8: 4, 9: 6, 10: 7, 11: 8, 0: 5 }[i], sc = 1;
+    if (rn) { const sheet = 'nerdbed' + L4.ROOM_IMG[r.id % 9], [bw, bh] = Spr.size(sheet, 0); this.props.push({ type: 'bed', x: rn.bed, y: L4.GROUND + 11, sheet, fr: 0, seq: [0, 0, 1, 1, 0, 0, 2, 2, 2, 3, 3, 0, 0, 1, 0, 0], flip: true, scale: 1, layer: 'mid', solid: [bw * 0.8, bh * 0.42] }); }
+    else { const i = L4.ROOM_IMG[r.id % 9], sheet = 'beds9', fr = { 4: 0, 5: 1, 6: 2, 7: 3, 8: 4, 9: 6, 10: 7, 11: 8, 0: 5 }[i], sc = 1;
       const [bw, bh] = Spr.size(sheet, fr); this.props.push({ type: 'bed', x: 470, y: L4.GROUND - 4, sheet, fr, scale: sc, layer: 'mid', solid: [bw * sc * 0.8, bh * sc * 0.42] }); }
     { const i = L4.ROOM_IMG[r.id % 9]; this.nerd = i >= 4 && i <= 8 ? i : [9, 10, 11, 0].indexOf(i); } // ботаник под тему комнаты
     this.roomData = r;
@@ -871,7 +877,9 @@ L4.DRAW_BG = {
   },
   tower(c) { const im = L4.img['hotel_f' + (this.floor + 1)] || L4.img.hotel_floor2; if (im) c.drawImage(im, 0, 0, W, H); G.text('ЭТАЖ ' + (this.floor + 1), 20, 44, { size: 8, color: '#ff8ad8', outline: true }); },
   room(c) { // стена сжата, пол растянут: линия плинтуса поднята на ~20 px, ноги и мебель стоят на полу, а не на стыке
-    const r = this.roomData, k = L4.ROOM_IMG[r.id % 9], img = L4.img['room' + k]; if (!img) return;
+    const r = this.roomData, k = L4.ROOM_IMG[r.id % 9], rn = L4.ROOM_NEW[k], nimg = rn && L4.img['room' + k + 'n'];
+    if (nimg) { c.drawImage(nimg, 0, rn.dy, W, H); c.drawImage(nimg, 0, 0, nimg.width, nimg.height * rn.dy / H, 0, 0, W, rn.dy); return; }
+    const img = L4.img['room' + k]; if (!img) return;
     const b = ({ 4: 600, 5: 597, 6: 600, 7: 608, 8: 608, 9: 582, 10: 600, 11: 600, 0: 600 })[k], wall = L4.GROUND - 20;
     c.drawImage(img, 0, 0, img.width, b * img.height / 720, 0, 0, W, wall); c.drawImage(img, 0, b * img.height / 720, img.width, img.height - b * img.height / 720, 0, wall, W, H - wall);
   },
@@ -1065,7 +1073,7 @@ L4.Level = class {
   leaveTower() { this.setStage('club', { x: L4.STAIRS_X, facing: -1 }); if (this.hasPassword) this.stage.say('Пароль есть! Теперь — к железной двери.', 4); }
   enterRoom(id) {
     const r = this.rooms[id], st = this.stage; this.towerPos = { x: st.player.x, y: st.player.y, floor: st.floor };
-    this.setStage('room', { x: 90, room: r, facing: 1 });
+    this.setStage('room', { x: (L4.ROOM_NEW[L4.ROOM_IMG[r.id % 9]] || {}).door || 90, room: r, facing: 1 });
     if (!r.cleared) G.say(this.stage.player, U.choice(['Опа... У вас тут весело.', 'Здрасьте! Я от Вовы.', 'Кажется, я не вовремя.']), 1.8);
     this.stage.onUpdate = dt => this.roomTick(dt);
   }
