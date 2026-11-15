@@ -5,17 +5,18 @@ import os, sys, json, glob, subprocess, numpy as np
 from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from p4v_height import face_h
+from defringe import defringe
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); SPR = os.path.join(ROOT, 'assets', 'spr'); FR = os.path.join(ROOT, 'art_src/l123walk/frames')
 p = os.path.join(ROOT, 'js', 'sprites_data.js'); s = open(p, encoding='utf-8').read(); i = s.find('window.SPRITES = ') + 17; j = s.find(';\nwindow.BGS', i); D = json.loads(s[i:j])
 def ref_h(sheet, k):
     d = D[sheet]; f = d['f'][k]; a = np.array(Image.open(os.path.join(ROOT, d['img'])).convert('RGBA'))[f[1]:f[1] + f[3], f[0]:f[0] + f[2]]; return face_h(a)
 def build(name, ref):
-    subprocess.run([sys.executable, os.path.join(ROOT, 'tools/p4v_grid.py'), os.path.join(ROOT, 'art_src/l123walk', name + '.jpg'), name, '2', '4', FR], check=True)
+    subprocess.run([sys.executable, os.path.join(ROOT, 'tools/p4v_grid.py'), os.path.join(ROOT, 'art_src/l123walk', name + '.jpg'), name, '1', '4', FR], check=True)
     fr = [Image.open(x).convert('RGBA') for x in sorted(glob.glob(os.path.join(FR, name + '_[0-9][0-9].png')))]
-    hs = [face_h(np.array(f)) for f in fr]; k = 0.95 * ref_h(*ref) / float(np.median([h for h in hs if h]))
+    hs = [face_h(np.array(f)) for f in fr]; k = 1.0 * ref_h(*ref) / float(np.median([h for h in hs if h]))
     imgs, meta = [], []
     for f in fr:
-        f = f.resize((round(f.width * k), round(f.height * k)), Image.LANCZOS); a = np.array(f); a[..., 3] = np.where(a[..., 3] > 90, 255, 0)
+        f = f.resize((round(f.width * k), round(f.height * k)), Image.LANCZOS); a = np.array(f); a[..., 3] = np.where(a[..., 3] > 90, 255, 0); a = defringe(a)
         al = a[..., 3] > 0; ys = np.where(al.any(1))[0]; bot = ys[-1]; band = al[max(0, int(bot - f.height * 0.12)):bot + 1]; xs = np.where(band.any(0))[0]
         hx = np.where(al[ys[0]:ys[0] + 4].any(0))[0]; imgs.append(Image.fromarray(a)); meta.append(((xs[0] + xs[-1]) / 2, bot + 1, (hx[0] + hx[-1]) / 2, ys[0]))
     W = sum(m.width + 2 for m in imgs); H = max(m.height for m in imgs); at = Image.new('RGBA', (W, H)); x = 0; out = []

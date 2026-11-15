@@ -26,3 +26,15 @@ if __name__ == '__main__':
                    ('v10_gun', [0]), ('v10_gun', list(range(8, 16))), ('v11_gun', [0]), ('v11_gun', list(range(8, 16))), ('v15_gs', None), ('v19_mrun', None), ('v19_mact', [6]),
                    ('v7_cap', None), ('v13_cap', None), ('v14_swat', None), ('v14_punch', None)]:
         h = sheet_h(D, n, idx); print(n, idx if idx and len(idx) < 3 else '', h, round(ref / h, 3) if h else '-')
+
+def head_w(c):
+    # ширина головы: непрозрачные пиксели в полосе от верха лица вниз на 9% высоты фигуры (кепка/арбуз выше, ракетка/ствол ниже)
+    c = c.astype(int); al = c[..., 3] > 100
+    sk = al & (c[..., 0] > 185) & (c[..., 1] > 120) & (c[..., 2] > 80) & (c[..., 0] - c[..., 2] > 45) & (c[..., 0] - c[..., 1] > 15) & (c[..., 0] - c[..., 1] < 95)
+    rows = np.where(sk.sum(1) >= 3)[0]; ys = np.where(al.any(1))[0]
+    if not len(rows) or rows[0] > ys[0] + (ys[-1] - ys[0]) * 0.35: return None
+    t = rows[0]; b = t + max(4, int((ys[-1] - ys[0]) * 0.09)); ws = []
+    for y in range(t, min(b, c.shape[0])):
+        xs = np.where(sk[y])[0]
+        if len(xs) > 2: ws.append(xs[-1] - xs[0] + 1)
+    return float(np.median(ws)) if ws else None

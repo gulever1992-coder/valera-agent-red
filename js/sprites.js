@@ -61,8 +61,8 @@ const A = (sheet, frames, fps = 8, o = {}) => Object.assign({ fr: frames.map(i =
 Spr.ANIM = {
   valera: {
     stand: A('v_jump', [0, 1], 1.6),
-    run: A('v_run', [0, 1, 2, 3, 4, 5, 6, 7], 14),
-    walk: A('v_run', [0, 1, 2, 3, 4, 5, 6, 7], 9),
+    run: A('v_run', [0, 1, 2, 3], 9),   // 4 позы из Flow: правка стоящего кадра (tools/walk_flow.py)
+    walk: A('v_run', [0, 1, 2, 3], 6),
     jump: A('v_jump', [2]), fall: A('v_jump', [3]), land: A('v_jump', [4]), hurt: A('v_jump', [5]),
     jab: A('v_fight', [0]), cross: A('v_fight', [1]), upper: A('v_fight', [2]),
     throwA: A('v_fight', [2]), throwB: A('v_fight', [4]), ko: A('v_fight', [5]),

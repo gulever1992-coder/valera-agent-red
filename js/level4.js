@@ -38,7 +38,7 @@ L4.img = {};
   const V = { crawl: A('v7_crawl', [0, 1, 2, 3, 4, 5, 6, 7], 9), climb: A('v7_mv', [2, 3], 6), punchA: A('v7_mv', [4]), punchB: A('v7_mv', [5]), held: A('v7_mv', [6]), dance: A('v7_mv', [7, 8], 3), dizzy: A('v7_mv', [9]) };
   Spr.ANIM.valera4 = Object.assign({}, V, {
     stand: A('v7_act', [0]), angry: A('v7_idle', [7]), hips: A('v7_idle', [0, 1], 4.5), stomp: A('v7_idle', [0, 1], 4.5), scratch: A('v7_idle', [5]), yawn: A('v7_idle', [6]), belly: A('v7_idle', [2, 3, 2, 3, 4], 3),
-    run: A('v17_runs', [0, 1, 2, 3, 4, 5, 6, 7], 14), walk: A('v17_runs', [0, 1, 2, 3, 4, 5, 6, 7], 9),
+    run: A('v17_runs', [0, 1, 2, 3], 9), walk: A('v17_runs', [0, 1, 2, 3], 6),
     crouch: A('v7_act', [1]), land: A('v7_act', [1]), jump: A('v7_act', [2]), fall: A('v7_act', [3]), hurt: A('v7_act', [4]), ko: A('v7_act', [5]),
     swatWind: A('v7_cap', [6]), swat: A('v7_act', [7]), fart: A('v7_cap', [7]), shoot: A('v7_act', [7]),
     angry: A('v16_stomp', [0, 1, 2, 3], 6), stomp: A('v16_stomp', [0, 1, 2, 3], 6), ko: A('v14_punch', [4]),
@@ -47,18 +47,18 @@ L4.img = {};
   });
   // в арбузе (интро уровня): свой набор, чтобы не трогать уровень 3
   Spr.ANIM.valera4m = Object.assign({}, Spr.ANIM.valera4, {
-    stand: A('v19_mact', [6]), angry: A('v19_mact', [6]), hips: A('v19_mact', [6]), run: A('v19_mrun', [0, 1, 2, 3, 4, 5, 6, 7], 14), walk: A('v19_mrun', [0, 1, 2, 3, 4, 5, 6, 7], 9),
+    stand: A('v19_mact', [0]), angry: A('v19_mact', [0]), hips: A('v19_mact', [0]), run: A('v19_mrun', [0, 1, 2, 3], 9), walk: A('v19_mrun', [0, 1, 2, 3], 6),
     crouch: A('v19_mact', [1]), land: A('v19_mact', [1]), jump: A('v19_mact', [2]), fall: A('v19_mact', [3]), hurt: A('v19_mact', [4]), ko: A('v19_mact', [5]), swat: A('v19_mact', [7]),
   });
   // кулаки: без ракетки в руках
   Spr.ANIM.valera4fist = Object.assign({}, Spr.ANIM.valera4, {
     stand: A('v12_fist', [0]), angry: A('v12_fist', [0]), hips: A('v12_fist', [7]), stomp: A('v12_fist', [0, 7], 3), belly: A('v12_fist', [7]), scratch: A('v12_fist', [7]), yawn: A('v12_fist', [7]),
-    run: A('v12_run', [0, 1, 2, 3, 4, 5, 6, 7], 14), walk: A('v12_run', [0, 1, 2, 3, 4, 5, 6, 7], 9),
+    run: A('v12_run', [0, 1, 2, 3], 9), walk: A('v12_run', [0, 1, 2, 3], 6),
     crouch: A('v12_fist', [1]), land: A('v12_fist', [1]), jump: A('v12_fist', [2]), fall: A('v12_fist', [3]), hurt: A('v12_fist', [4]), ko: A('v12_fist', [5]),
     punchA: A('v14_punch', [0]), punchB: A('v14_punch', [1]), punchLow: A('v14_punch', [2]), punchAir: A('v14_punch', [3]), swat: A('v14_punch', [1]), swatWind: A('v12_fist', [0]), shoot: A('v14_punch', [0]),
     angry: A('v14_stomp', [0, 1, 2, 3], 6), stomp: A('v14_stomp', [0, 1, 2, 3], 6), ko: A('v14_punch', [4]), hips: A('v14_stomp', [0]),
   });
-  const GUN = g => ({ stand: A(g, [0]), angry: A(g, [0]), hips: A(g, [0]), scratch: A(g, [0]), yawn: A(g, [0]), belly: A(g, [0]), run: A(g, [8, 9, 10, 11, 12, 13, 14, 15], 14), walk: A(g, [8, 9, 10, 11, 12, 13, 14, 15], 9), shoot: A(g, [0]), jump: A(g, [6]), fall: A(g, [6]), crouch: A(g, [7]), land: A(g, [7]) });
+  const GUN = g => ({ stand: A(g, [0]), angry: A(g, [0]), hips: A(g, [0]), scratch: A(g, [0]), yawn: A(g, [0]), belly: A(g, [0]), run: A(g + 'w', [0, 1, 2, 3], 9), walk: A(g + 'w', [0, 1, 2, 3], 6), shoot: A(g, [0]), jump: A(g, [6]), fall: A(g, [6]), crouch: A(g, [7]), land: A(g, [7]) });
   Spr.ANIM.valera4green = Object.assign({}, Spr.ANIM.valera4, V, GUN('v11_gun'), { angry: A('v15_gs', [4, 5, 6, 7], 6), stomp: A('v15_gs', [4, 5, 6, 7], 6) });
   Spr.ANIM.valera3gun = Object.assign({}, Spr.ANIM.valera4, V, GUN('v10_gun'), { angry: A('v15_gs', [0, 1, 2, 3], 6), stomp: A('v15_gs', [0, 1, 2, 3], 6) });
   Spr.ANIM.valera3gunOld = Object.assign({}, Spr.ANIM.valera4, V, {

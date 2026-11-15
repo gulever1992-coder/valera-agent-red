@@ -7,6 +7,7 @@ from scipy import ndimage
 import sys; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import p4v_preview as PV
 from p4v_hat import hat_w
+from defringe import defringe
 ROOT = PV.ROOT; P = PV.P; SPR = os.path.join(ROOT, 'assets', 'spr')
 
 def load(name, idx):
@@ -35,7 +36,7 @@ def atlas(name, frames, k, anchors=None, pad=2):
     for i, im in enumerate(frames):
         kk = (k[i] if isinstance(k, (list, tuple)) else k) * GF
         im = im.resize((max(1, round(im.width * kk)), max(1, round(im.height * kk))), Image.LANCZOS)
-        a = np.array(im); a[..., 3] = np.where(a[..., 3] > 90, 255, 0)
+        a = np.array(im); a[..., 3] = np.where(a[..., 3] > 90, 255, 0); a = defringe(a)
         ax, ay = anchor(a, anchors[i] if anchors else 'body')
         al = a[..., 3] > 0; top = np.where(al.any(axis=1))[0][0]
         xs = np.where(al[top:top + max(3, int(a.shape[0] * 0.07))].any(axis=0))[0]
@@ -62,17 +63,18 @@ B = ['body'] * 8
 GF = 176 / float(np.median([load('act', [0])[0].height * K['act'], load('idle', [0])[0].height * K['idle'], load('fist', [0])[0].height * K['fist']]))
 print('GF', round(GF, 3))
 # единый масштаб: рост от ступней до лба (без кепки/арбуза) у всех наборов как у стоящего Валеры; на бегу колени согнуты — 0.95
-from p4v_height import face_h
-def fh(name, idx, k):
+from p4v_height import face_h, head_w
+def fh(name, idx, k, f=face_h):
     hs = []
     for im in load(name, idx):
         im = im.resize((max(1, round(im.width * k * GF)), max(1, round(im.height * k * GF))), Image.LANCZOS)
-        a = np.array(im); a[..., 3] = np.where(a[..., 3] > 90, 255, 0); h = face_h(a)
+        a = np.array(im); a[..., 3] = np.where(a[..., 3] > 90, 255, 0); h = f(a)
         if h: hs.append(h)
     return float(np.median(hs)) if hs else None
-STAND = fh('act', [0, 6], K['act']); RUN = STAND * 0.95
+K['mact'] = K['act']   # арбузный лист — правка листа act во Flow (тот же размер и раскладка) -> тот же масштаб
+STAND = fh('act', [0, 6], K['act']); RUN = STAND * 1.0   # ходьба (4 позы, Flow) — в рост стойки, иначе на ходу Валера кажется мельче
 for n, idx, tgt in [('idle', range(8), STAND), ('stomps', range(4), STAND), ('stomp', range(8), STAND), ('fist', [0, 7], STAND), ('gun', [0], STAND), ('gung', [0], STAND),
-                    ('gs', range(8), STAND), ('mact', [6], STAND), ('run2', range(8), RUN), ('runs2', range(8), RUN), ('mrun2', range(8), RUN), ('gunr', range(8), RUN), ('gungr', range(8), RUN)]:
+                    ('gs', range(8), STAND), ('run2', range(4), RUN), ('runs2', range(4), RUN), ('mrun2', range(4), RUN), ('gunr', range(4), RUN), ('gungr', range(4), RUN)]:
     h = fh(n, list(idx), K[n])
     if h: print('масштаб', n, round(tgt / h, 3)); K[n] *= tgt / h
 S['v7_act'] = atlas('v7_act', load('act', range(8)), K['act'], B[:5] + ['center', 'body', 'body'])
@@ -88,8 +90,8 @@ S['v14_punch'] = atlas('v14_punch', load('punch', range(6)), K['punch'], B[:4] +
 S['v14_stomp'] = atlas('v14_stomp', load('stomp', range(8)), K['stomp'])
 S['v16_stomp'] = atlas('v16_stomp', load('stomps', range(4)), K['stomps'])
 S['v12_fist'] = atlas('v12_fist', load('fist', range(8)), K['fist'], B[:5] + ['center', 'body', 'body'])
-S['v12_run'] = atlas('v12_run', load('run2', range(8)), K['run2'])
-S['v17_runs'] = atlas('v17_runs', load('runs2', range(8)), K['runs2'])
+S['v12_run'] = atlas('v12_run', load('run2', range(4)), K['run2'])
+S['v17_runs'] = atlas('v17_runs', load('runs2', range(4)), K['runs2'])
 def cut_puff(im):  # белое облако у дула: обрезаем всё правее синего наконечника
     a = np.array(im); h = a.shape[0]; band = a[int(h * 0.3):int(h * 0.75)].astype(int)
     blue = (band[..., 2] > band[..., 0] + 40) & (band[..., 2] > band[..., 1] + 15) & (band[..., 3] > 0)
@@ -97,14 +99,14 @@ def cut_puff(im):  # белое облако у дула: обрезаем вс�
     im = Image.fromarray(a); return only_largest(im.crop(im.getbbox()))
 gun = load('gun', range(8)); gun[5] = cut_puff(gun[5])      # без нарисованного облака: летят настоящие снаряды
 gung = load('gung', range(8)); gung[5] = only_largest(gung[5])
-S['v10_gun'] = atlas('v10_gun', gun + load('gunr', range(8)), [K['gun']] * 8 + [K['gunr']] * 8)  # 8..15 — новый бег
+S['v10_gun'] = atlas('v10_gun', gun + load('gunr', range(4)), [K['gun']] * 8 + [K['gunr']] * 4)  # 8..15 — новый бег
 # кадр выстрела: стираем облако правее дула (дуло ~ на 31 лог. px от опоры, как в стойке)
 _f = S['v10_gun']['f'][5]; _im = Image.open(os.path.join(SPR, 'v10_gun.png')).convert('RGBA'); _a = np.array(_im)
 _cut = int(_f[0] + _f[4] + 31 * 2 + 3); _a[:, _cut:_f[0] + _f[2], 3] = 0; _f[2] = _cut - _f[0]
 Image.fromarray(_a).save(os.path.join(SPR, 'v10_gun.png'), optimize=True)
-S['v11_gun'] = atlas('v11_gun', gung + load('gungr', range(8)), [K['gung']] * 8 + [K['gungr']] * 8)
+S['v11_gun'] = atlas('v11_gun', gung + load('gungr', range(4)), [K['gung']] * 8 + [K['gungr']] * 4)
 S['v15_gs'] = atlas('v15_gs', load('gs', range(8)), K['gs'])
-S['v19_mrun'] = atlas('v19_mrun', load('mrun2', range(8)), K['mrun2'])
+S['v19_mrun'] = atlas('v19_mrun', load('mrun2', range(4)), K['mrun2'])
 S['v19_mact'] = atlas('v19_mact', load('mact', range(8)), K['mact'], B[:5] + ['center', 'body', 'body'])
 S['spin'] = atlas('spin', load('spin', range(6)), hat_scale('spin', 6), ['feet'] * 6)
 # переноска: Валера в рост мужчин; масштаб — по росту кадра относительно стоящего Валеры
@@ -120,5 +122,5 @@ D.update(S)
 open(path, 'w', encoding='utf-8').write(s[:i] + json.dumps(D) + s[j:])
 print('sprites_data.js обновлён:', ', '.join(S))
 # портрет в арбузе (интро)
-f = S['v19_mact']['f'][6]; im = Image.open(os.path.join(SPR, 'v19_mact.png')).convert('RGBA').crop((f[0], f[1], f[0] + f[2], f[1] + f[3]))
+f = S['v19_mact']['f'][0]; im = Image.open(os.path.join(SPR, 'v19_mact.png')).convert('RGBA').crop((f[0], f[1], f[0] + f[2], f[1] + f[3]))
 w, h = im.size; im.crop((int(0.14 * w), 0, int(0.86 * w), int(0.4 * h))).resize((128, 128), Image.LANCZOS).save(os.path.join(SPR, 'p_valera4m.png'))

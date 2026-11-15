@@ -3,6 +3,8 @@
 import os, json, numpy as np
 from PIL import Image
 from scipy import ndimage
+import sys; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from defringe import defringe
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); SPR = os.path.join(ROOT, 'assets', 'spr')
 p = os.path.join(ROOT, 'js', 'sprites_data.js'); s = open(p, encoding='utf-8').read()
 i = s.find('window.SPRITES = ') + 17; j = s.find(';\nwindow.BGS', i); D = json.loads(s[i:j])
@@ -30,7 +32,7 @@ def atlas(name, frames, scales):
     imgs, meta = [], []
     for f, k in zip(frames, scales):
         f = f.resize((max(1, round(f.width * k)), max(1, round(f.height * k))), Image.LANCZOS)
-        a = np.array(f); a[..., 3] = np.where(a[..., 3] > 100, 255, 0); al = a[..., 3] > 0
+        a = np.array(f); a[..., 3] = np.where(a[..., 3] > 100, 255, 0); a = defringe(a); al = a[..., 3] > 0
         ys = np.where(al.any(1))[0]; bot = ys[-1]; band = al[max(0, int(bot - f.height * 0.12)):bot + 1]; xs = np.where(band.any(0))[0]
         top = ys[0]; hx = np.where(al[top:top + 4].any(0))[0]
         imgs.append(Image.fromarray(a)); meta.append(((xs[0] + xs[-1]) / 2, bot + 1, (hx[0] + hx[-1]) / 2, top))

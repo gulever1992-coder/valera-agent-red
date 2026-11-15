@@ -17,11 +17,15 @@ if os.environ.get('FLOOD'):   # фон = только близкий к мадж
 lab, n = ndimage.label(ndimage.binary_dilation(A > 0.5, iterations=3)); idx = range(1, n + 1)
 sz = np.array(ndimage.sum(np.ones(lab.shape), lab, idx)); cm = ndimage.center_of_mass(np.ones(lab.shape), lab, idx)
 k = 0; sizes = []
+sl = ndimage.find_objects(lab); wide = {i + 1 for i, q in enumerate(sl) if q is not None and (q[1].stop - q[1].start) > W / cols * 1.25}   # слипшиеся фигуры
 for ry in range(rows):
     for rx in range(cols):
-        ids = [i + 1 for i in range(n) if min(rows - 1, int(cm[i][0] * rows / H)) == ry and min(cols - 1, int(cm[i][1] * cols / W)) == rx]
+        ids = [i + 1 for i in range(n) if min(rows - 1, int(cm[i][0] * rows / H)) == ry and min(cols - 1, int(cm[i][1] * cols / W)) == rx and i + 1 not in wide]
         big = max((sz[i - 1] for i in ids), default=0); ids = [i for i in ids if sz[i - 1] > big * 0.08]
-        a = A * np.isin(lab, ids); ys, xs = np.where(a > 0.5)
+        a = A * np.isin(lab, ids)
+        if not ids:   # фигуры слиплись — режем этот кадр по границам ячейки
+            a = np.zeros_like(A); y0, y1, x0, x1 = ry * H // rows, (ry + 1) * H // rows, rx * W // cols, (rx + 1) * W // cols; a[y0:y1, x0:x1] = A[y0:y1, x0:x1]
+        ys, xs = np.where(a > 0.5)
         c = im[ys.min():ys.max() + 1, xs.min():xs.max() + 1]; a = a[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
         Image.fromarray(np.dstack([c, a * 255]).astype(np.uint8), 'RGBA').save(os.path.join(out_dir, '%s_%02d.png' % (name, k))); sizes.append([int(c.shape[1]), int(c.shape[0])]); k += 1
 p = os.path.join(out_dir, 'info.json')

@@ -41,7 +41,7 @@ L3.load = async function () {
 // ---------- анимации Валеры-рэмбо ----------
 Spr.ANIM.valera3 = {
   stand: { fr: [['v4_act', 0]], fps: 1 }, angry: { fr: [['v4_act', 6]], fps: 1 },
-  run: { fr: [0, 1, 2, 3, 4, 5, 6, 7].map(i => ['v4_run', i]), fps: 14 }, walk: { fr: [0, 1, 2, 3, 4, 5, 6, 7].map(i => ['v4_run', i]), fps: 9 },
+  run: { fr: [0, 1, 2, 3].map(i => ['v4_run', i]), fps: 9 }, walk: { fr: [0, 1, 2, 3].map(i => ['v4_run', i]), fps: 6 },   // 4 позы из Flow (tools/walk_flow.py)
   crouch: { fr: [['v4_act', 1]], fps: 1 }, chalkUp: { fr: [['v4_act', 7]], fps: 1 },
   chalkV0: { fr: [['v4_up', 0]], fps: 1 }, chalkV1: { fr: [['v4_up', 1]], fps: 1 }, chalkVair: { fr: [['v4_up', 2]], fps: 1 },
   jump: { fr: [['v4_act', 2]], fps: 1 }, fall: { fr: [['v4_act', 3]], fps: 1 }, land: { fr: [['v4_act', 1]], fps: 1 },
