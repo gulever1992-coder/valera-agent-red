@@ -10,10 +10,10 @@ L2.W = L2.ARENA_X + 640;
 // ---------- враги ----------
 // кадры листов (см. tools/build_assets.py)
 const FOE = {
-  gopnik: { sheet: 'gopnik', hp: 4, w: 20, h: 66, score: 150, voice: 190, fr: { idle: 0, stand: 1, walk: [2, 3], wind: 1, attack: 4, hurt: 5, ko: 6 } },
-  punk: { sheet: 'punk', hp: 5, w: 20, h: 70, score: 200, voice: 230, fr: { idle: 0, stand: 0, walk: [0], wind: 0, attack: 1, hurt: 2, ko: 3 } },
-  bomzh: { sheet: 'bomzh', hp: 4, w: 22, h: 66, score: 150, voice: 140, fr: { idle: 0, stand: 0, walk: [0, 1], wind: 0, attack: 2, hurt: 0, ko: 3 } },
-  alkash: { sheet: 'bomzh', hp: 3, w: 22, h: 66, score: 150, voice: 160, fr: { idle: 4, stand: 4, walk: [4], wind: 4, attack: 5, hurt: 6, ko: 7 } },
+  gopnik: { sheet: 'gopnik', hp: 4, w: 20, h: 66, score: 150, voice: 190, fr: { idle: 0, stand: 1, walk: [['gopw', 0], ['gopw', 1], ['gopw', 2], ['gopw', 3]], wind: 1, attack: 4, hurt: 5, ko: 6 } },
+  punk: { sheet: 'punk2', hp: 5, w: 20, h: 70, score: 200, voice: 230, fr: { idle: 4, stand: 4, walk: [0, 1, 2, 3], wind: 4, attack: 5, hurt: 6, ko: 7 } },   // punk2 — Flow, маджента-фон: гребень не прозрачный
+  bomzh: { sheet: 'bomzh', hp: 4, w: 22, h: 66, score: 150, voice: 140, fr: { idle: 0, stand: 0, walk: [['bomw', 0], ['bomw', 1], ['bomw', 2], ['bomw', 3]], wind: 0, attack: 2, hurt: 0, ko: 3 } },
+  alkash: { sheet: 'bomzh', hp: 3, w: 22, h: 66, score: 150, voice: 160, fr: { idle: 4, stand: 4, walk: [['bomw', 4], ['bomw', 5], ['bomw', 6], ['bomw', 7]], wind: 4, attack: 5, hurt: 6, ko: 7 } },
   dogS: { sheet: 'punk', hp: 1, w: 24, h: 18, score: 100, voice: 600, fr: { idle: 5, stand: 5, walk: [4, 5], wind: 5, attack: 5, hurt: 4, ko: 4 } },
   dogB: { sheet: 'punk', hp: 2, w: 40, h: 30, score: 150, voice: 120, fr: { idle: 7, stand: 7, walk: [7, 6], wind: 7, attack: 6, hurt: 7, ko: 7 } },
 };
@@ -168,9 +168,10 @@ L2.Foe = class {
     const dog = this.type === 'dogS' || this.type === 'dogB';
     if (this.dieT != null && dog) rot = Math.PI;
     if (this.type === 'alkash' && this.state === 'idle') rot = Math.sin(this.t * 2) * 0.06;
-    if (this.type === 'punk' && (this.state === 'chase' || this.state === 'idle')) y -= Math.abs(Math.sin(this.t * 8)) * 2;
+    if (this.type === 'punk' && this.state === 'idle') y -= Math.abs(Math.sin(this.t * 8)) * 2;
     const alpha = this.dieT != null && this.dieT > 1.3 ? (1.8 - this.dieT) / 0.5 : 1;
-    Spr.draw(c, this.d.sheet, this.frame(), this.x - cx, y - (dog && this.dieT != null ? 10 : 0), this.facing,   /* покачивание алкаша — вокруг ступней, без подъёма (раньше висел на 10 px над опорой) */ { rot, flash: this.flash > 0 ? '#ffffff' : null, alpha });
+    const fr = this.frame(), [sh, fi] = Array.isArray(fr) ? fr : [this.d.sheet, fr];   // кадр может быть из другого листа: ['gopw', 2]
+    Spr.draw(c, sh, fi, this.x - cx, y - (dog && this.dieT != null ? 10 : 0), this.facing,   /* покачивание алкаша — вокруг ступней, без подъёма (раньше висел на 10 px над опорой) */ { rot, flash: this.flash > 0 ? '#ffffff' : null, alpha });
   }
 };
 
@@ -209,7 +210,7 @@ L2.Matiz = class {
     const S = L2.MATIZ_S, [bw, bh] = Spr.size('l5msd', 0), w = bw * S, h = bh * S, cy = -h / 2 - 3 * S, r = 0.085 * w;
     c.save(); c.translate(Math.round(this.x - cx), L2.GROUND + ((this.t * 14 | 0) % 2)); c.scale(-1, 1);
     Spr.drawC(c, 'l5msd', 0, 0, cy, 0, S);
-    for (const fx of [0.19, 0.82]) Spr.drawC(c, 'l5msd', 2, (fx - 0.5) * w, cy + h / 2 - r, -this.x / r, S);
+    for (const fx of [0.117, 0.80]) Spr.drawC(c, 'l5msd', 2, (fx - 0.5) * w, cy + h / 2 - r, -this.x / r, S);
     c.restore();
   }
 };
@@ -249,7 +250,7 @@ const PROPS = {
   dumpster: { i: 3, top: 0.8, wf: 0.9, oneway: false },
   bench: { i: 4, top: 0.55, wf: 0.9, oneway: true },
   fence: { i: 5, top: 0.93, wf: 0.96, oneway: false },
-  car: { i: 6, top: 0.7, wf: 0.9, oneway: false, roof: [-43, 26, 0.97] },   // капот/багажник + крыша салона (по картинке)
+  car: { i: 6, top: 0.64, wf: 0.9, oneway: false, roof: [-43, 26, 0.97] },   // капот/багажник + крыша салона (по картинке)
   crate: { i: 7, top: 0.88, wf: 1, oneway: false },
   ladder: { i: 8, ladder: true },
   lamp: { i: 9, deco: true },
@@ -259,7 +260,7 @@ const PROPS = {
 // здания стоят вплотную к тротуару, слева направо (x — левый край)
 L2.BUILD_LIST = [
   ['gate', 40], ['workshop', 760], ['hrush', 1720], ['shop', 2360], ['garages', 3060], ['dk', 3820], ['stele', 4700], ['nine', 5110],
-  ['pipes', 6060], ['garages', 6700], ['hrush', 7460], ['nine', 8100], ['garages', 9790], ['garages', 10367], ['park', 11030],
+  ['pipes', 6060], ['garages', 6700], ['hrush', 7460], ['nine', 8100], ['garages', 9790], ['hrush', 10453], ['park', 10990],
 ];
 L2.build = function () {
   const G0 = L2.GROUND, B = window.BUILDINGS;
@@ -447,7 +448,7 @@ L2.Run = class {
       else if (!def.deco) {
         const cw = w * def.wf, top = p.y - h * def.top;
         o.col = wd.addPlat({ x: p.x - cw / 2 + (def.dx || 0) * w, y: top, w: cw, h: p.y - top, oneway: def.oneway, look: 'none' });
-        if (def.roof) { const ry = p.y - h * def.roof[2] + 1; o.roof = wd.addPlat({ x: p.x + def.roof[0], y: ry, w: def.roof[1] - def.roof[0], h: 8, oneway: true, look: 'none' }); }
+        if (def.roof) { const ry = p.y - h * def.roof[2] + 1; o.roof = wd.addPlat({ x: p.x + def.roof[0], y: ry, w: def.roof[1] - def.roof[0], h: top - ry, oneway: false, look: 'none' }); }   // салон сплошной: стоять на капоте/багажнике или на крыше, а не «в окнах»
       }
       return o;
     });

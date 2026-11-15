@@ -167,7 +167,7 @@ L5.sceneEnd = level => function* () {
     if (mVis && L5.has('l5msd')) {
       // золотистый матиз Граблионка: кузов (кадры 0 цел, 1 разбит) + вращающиеся колёса (кадр 2)
       const [bw, bh] = Spr.size('l5msd', mFr), cy = GY + 12 - (bh || 60) / 2 + 10, rot = mx / 14.5 + (mFr ? t * 3 : 0);
-      for (const fx of [0.19, 0.82]) Spr.drawC(c, 'l5msd', 2, mx + (fx - 0.5) * bw, cy + (bh || 60) / 2 - 0.085 * bw, rot, 1);
+      for (const fx of [0.117, 0.80]) Spr.drawC(c, 'l5msd', 2, mx + (fx - 0.5) * bw, cy + (bh || 60) / 2 - 0.085 * bw, rot, 1);
       Spr.drawC(c, 'l5msd', mFr, mx, cy, 0, 1);
     }
     vov.draw(c); val.draw(c);

@@ -345,6 +345,7 @@ V4.ADMIN_WIN = [1177, 360];   // px на admin.png
 V4.adminWin = a => { const img = V4.img.admin, s = a.s, w = (img ? img.width : 1376) * s, h = (img ? img.height : 768) * s;
   return [a.x - w / 2 - (a.cx || 0) * (a.par || 0) + V4.ADMIN_WIN[0] * s, a.y - h + V4.ADMIN_WIN[1] * s]; };
 V4.drawCable = function (c, x0, y0, x1, y1, sag = 10, col) {   // трос (тонкая линия — как и было согласовано)
+  if (G.bg.rope) { Art.rope(c, x0, y0, x1, y1, 3, sag / 2); return; }   // плетёная стропа, как у крана (sag — провис контрольной точки, у кривой вдвое меньше)
   c.strokeStyle = col || 'rgba(18,18,24,0.95)'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo((x0 + x1) / 2, (y0 + y1) / 2 + sag, x1, y1); c.stroke();
 };
 V4.sceneSlide = function (level) {

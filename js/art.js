@@ -34,13 +34,17 @@ Art.hang = function (c, name, x, y, w, rope) {
   const m = (window.L1PROPS || {})[name], s = Spr.sheets.props;
   if (!m || !s || !s.img) return;
   const f = s.f[m.i], k = w / m.bw, x0 = x - m.x0 * k, top = y - m.top * k, r = s.f[m.rope];
-  if (r) c.drawImage(s.img, r[0], r[1], r[2], r[3], x0, top - rope, f[2] * k, rope + 0.5);
+  // тросы — плетёная стропа (Art.rope) по местам прядей старого кадра: [центр, ширина] в px кадра
+  const ST = { 10: [[96.5, 10], [115.25, 11]], 11: [[20.5, 16], [136.5, 16]] }[m.rope];
+  if (ST && G.bg.rope) for (const [cx, sw] of ST) Art.rope(c, x0 + cx * k, top - rope, x0 + cx * k, top + 2, Math.max(3, sw * k * 0.9));
+  else if (r) c.drawImage(s.img, r[0], r[1], r[2], r[3], x0, top - rope, f[2] * k, rope + 0.5);
   c.drawImage(s.img, f[0], f[1], f[2], f[3], x0, top, f[2] * k, f[3] * k);
 };
 // Тросы крана: кадр cable растягивается по вертикали от y0 до y1, ширина w (логич.), по центру x.
 Art.cable = function (c, x, y0, y1, w) {
   const m = (window.L1PROPS || {}).cable, s = Spr.sheets.props;
   if (!m || !s || !s.img || y1 <= y0) return;
+  if (G.bg.rope) { const k = w / 32; for (const cx of [5.5, 25]) Art.rope(c, x - w / 2 + cx * k, y0, x - w / 2 + cx * k, y1, Math.max(3, 9 * k * 0.9)); return; }   // две плетёные стропы вместо растянутых прядей
   const f = s.f[m.i];
   c.drawImage(s.img, f[0], f[1], f[2], f[3], hp(x - w / 2), y0, w, y1 - y0);
 };
@@ -88,10 +92,31 @@ Art.checkpoint = function (c, x, y, active, t) {
 
 // Паровой отвод: участок той же трубы с вертикальным отводом (тройник), кладётся поверх трубы; x — центр раструба, y — верх трубы.
 Art.teeK = () => { const L = window.L1PROPS || {}, s = Spr.sheets.props; return L.pipe && s ? L.pipe.h / s.f[L.pipe.i][3] : 0; };
-Art.teeH = () => { const m = (window.L1PROPS || {}).tee; return m ? m.top * Art.teeK() : 20; };   // высота раструба над трубой
+Art.teeH = () => { const m = (window.L1PROPS || {}).tee; return m ? m.top * Art.teeK() * 40 / 47 : 20; };   // высота раструба над трубой
 Art.tee = function (c, x, y) {
   const m = (window.L1PROPS || {}).tee, s = Spr.sheets.props;
   if (!m || !s || !s.img) return;
-  const f = s.f[m.i], k = Art.teeK();
+  const f = s.f[m.i], k = Art.teeK() * 40 / 47;   // тело тройника (47 px) = толщине трубы (40 px)
   c.drawImage(s.img, f[0], f[1], f[2], f[3], hp(x - m.x0 * k), hp(y - m.top * k), f[2] * k, f[3] * k);
+};
+
+// Трос/верёвка для всей игры: плетёная стропа со спрайта крана (assets/spr/rope_tile.png, tools/rope_tile.py),
+// тянется от (x0,y0) до (x1,y1); sag — провис посередине (кривая), w — толщина в логических px.
+Art.rope = function (c, x0, y0, x1, y1, w = 4.5, sag = 0) {
+  const img = G.bg && G.bg.rope; if (!img || !img.width) return;
+  const TW = img.width, TH = img.height, k = w / TW;
+  const P = t => { const u = 1 - t; return [u * x0 + t * x1, u * y0 + t * y1 + 4 * sag * t * u]; };
+  const total = Math.hypot(x1 - x0, y1 - y0) + Math.abs(sag), n = sag ? Math.max(2, Math.ceil(total / 8)) : 1;
+  let v = 0;   // пройденная длина по текстуре (в px текстуры)
+  for (let i = 0; i < n; i++) {
+    const [ax, ay] = P(i / n), [bx, by] = P((i + 1) / n), len = Math.hypot(bx - ax, by - ay); if (len < 0.01) continue;
+    c.save(); c.translate(ax, ay); c.rotate(Math.atan2(by - ay, bx - ax) - Math.PI / 2);
+    let done = 0;
+    while (done < len - 0.001) {
+      const sy = v % TH, h = Math.min((len - done) / k, TH - sy);
+      c.drawImage(img, 0, sy, TW, h, -w / 2, done, w, h * k + 0.6);
+      done += h * k; v += h;
+    }
+    c.restore();
+  }
 };

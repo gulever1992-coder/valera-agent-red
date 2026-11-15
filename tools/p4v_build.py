@@ -56,14 +56,29 @@ def hat_scale(name, n, melon=False):
 
 S = {}
 GF = 1.0
-K = {n: PV.scale(n) for n in ['act', 'idle', 'cap6', 'cap8', 'swat', 'punch', 'stomp', 'stomps', 'fist', 'run', 'runs', 'gun', 'gung', 'gs', 'moves', 'held', 'mrun', 'mact', 'run2', 'mrun2', 'gunr', 'gungr', 'runs2']}
+K = {n: PV.scale(n) for n in ['act', 'idle', 'cap6', 'cap8', 'swat', 'punch', 'stomp', 'stomps', 'fist', 'run', 'runs', 'gun', 'gung', 'gs', 'moves', 'held', 'mrun', 'mact', 'run2', 'mrun2', 'gunr', 'gungr', 'runs2', 'crawl2']}
 B = ['body'] * 8
 # общая поправка: стоящий Валера = 176 px (88 логических), как старый
 GF = 176 / float(np.median([load('act', [0])[0].height * K['act'], load('idle', [0])[0].height * K['idle'], load('fist', [0])[0].height * K['fist']]))
 print('GF', round(GF, 3))
+# единый масштаб: рост от ступней до лба (без кепки/арбуза) у всех наборов как у стоящего Валеры; на бегу колени согнуты — 0.95
+from p4v_height import face_h
+def fh(name, idx, k):
+    hs = []
+    for im in load(name, idx):
+        im = im.resize((max(1, round(im.width * k * GF)), max(1, round(im.height * k * GF))), Image.LANCZOS)
+        a = np.array(im); a[..., 3] = np.where(a[..., 3] > 90, 255, 0); h = face_h(a)
+        if h: hs.append(h)
+    return float(np.median(hs)) if hs else None
+STAND = fh('act', [0, 6], K['act']); RUN = STAND * 0.95
+for n, idx, tgt in [('idle', range(8), STAND), ('stomps', range(4), STAND), ('stomp', range(8), STAND), ('fist', [0, 7], STAND), ('gun', [0], STAND), ('gung', [0], STAND),
+                    ('gs', range(8), STAND), ('mact', [6], STAND), ('run2', range(8), RUN), ('runs2', range(8), RUN), ('mrun2', range(8), RUN), ('gunr', range(8), RUN), ('gungr', range(8), RUN)]:
+    h = fh(n, list(idx), K[n])
+    if h: print('масштаб', n, round(tgt / h, 3)); K[n] *= tgt / h
 S['v7_act'] = atlas('v7_act', load('act', range(8)), K['act'], B[:5] + ['center', 'body', 'body'])
 # ползком/лестница/удары + в чужих руках: 6 = подняли, 7/8 = танец, 9 = голова кружится
 S['v7_mv'] = atlas('v7_mv', load('moves', range(6)) + load('held', range(4)), [K['moves']] * 6 + [K['held']] * 4, ['feet'] * 4 + ['body'] * 6)
+S['v7_crawl'] = atlas('v7_crawl', load('crawl2', range(8)), K['crawl2'], ['feet'] * 8)   # ползком: ладони на полу, ноги/руки по диагонали
 S['v7_idle'] = atlas('v7_idle', load('idle', range(8)), K['idle'])
 S['v7_cap'] = atlas('v7_cap', load('cap8', range(8)), K['cap8'])
 cap6 = load('cap6', range(6)); cap6[2] = only_largest(cap6[2])   # арбуз летит отдельно (рисует код)

@@ -35,7 +35,7 @@ L4.img = {};
   Spr.ANIM.girl = { stand: A('patrons', [1]), walk: A('patrons', [1]) };
   // Валера: ползком, по лестнице, кулаками, в чужих руках, неловкий танец
   // Валера в полицейской фуражке — основной набор уровня 4
-  const V = { crawl: A('v7_mv', [0, 1], 6), climb: A('v7_mv', [2, 3], 6), punchA: A('v7_mv', [4]), punchB: A('v7_mv', [5]), held: A('v7_mv', [6]), dance: A('v7_mv', [7, 8], 3), dizzy: A('v7_mv', [9]) };
+  const V = { crawl: A('v7_crawl', [0, 1, 2, 3, 4, 5, 6, 7], 9), climb: A('v7_mv', [2, 3], 6), punchA: A('v7_mv', [4]), punchB: A('v7_mv', [5]), held: A('v7_mv', [6]), dance: A('v7_mv', [7, 8], 3), dizzy: A('v7_mv', [9]) };
   Spr.ANIM.valera4 = Object.assign({}, V, {
     stand: A('v7_act', [0]), angry: A('v7_idle', [7]), hips: A('v7_idle', [0, 1], 4.5), stomp: A('v7_idle', [0, 1], 4.5), scratch: A('v7_idle', [5]), yawn: A('v7_idle', [6]), belly: A('v7_idle', [2, 3, 2, 3, 4], 3),
     run: A('v17_runs', [0, 1, 2, 3, 4, 5, 6, 7], 14), walk: A('v17_runs', [0, 1, 2, 3, 4, 5, 6, 7], 9),
@@ -111,13 +111,14 @@ L4.Player = class extends L3.Player {
   attackUpdate(dt, world, ctl, I) {
     this.animSet = this.weapon === 'seed' ? (this.green ? 'valera4green' : 'valera3gun') : this.weapon === 'fists' ? 'valera4fist' : 'valera4'; this.portraitKey = 'valera4';
     const dir = ctl ? (I.held('right') ? 1 : 0) - (I.held('left') ? 1 : 0) : 0;
-    this.crawling = this.crouch && this.onGround && dir !== 0; // ползком можно бить на ходу
+    this.crawling = this.crouch && this.onGround && dir !== 0; // ползком бить нельзя — только присев на месте
+    const ctlA = ctl && !this.crawling;
     if (this.crawling) { this.x += dir * 80 * dt; this.facing = dir; }
     if (this.weapon === 'fists') {
       if (this.fartCool > 0) this.fartCool -= dt; if (this.fartT > 0) this.fartT -= dt;
       if (ctl && I.pressed('switch')) { this.switchWeapon(); return; }
-      if (ctl && I.pressed('throw') && this.fartCool <= 0 && !this.atk) { this.fartT = 0.6; this.fartCool = 9; Sound.play('fart'); G.say(this, U.choice(['Газовая атака!', 'Получите!']), 1.2); world.clouds.push({ x: this.x - this.facing * 10, y: this.y - 30, t: 0, life: 3.5, r: 70, player: true, row: 0 }); }
-      if (ctl && I.pressed('punch') && !this.atk && this.fartT <= 0) { this.atk = { t: 0, dur: 0.22, kind: 'punch', hit: new Set(), side: this.punchN++ % 2 }; Sound.play('punch'); }
+      if (ctlA && I.pressed('throw') && this.fartCool <= 0 && !this.atk) { this.fartT = 0.6; this.fartCool = 9; Sound.play('fart'); G.say(this, U.choice(['Газовая атака!', 'Получите!']), 1.2); world.clouds.push({ x: this.x - this.facing * 10, y: this.y - 30, t: 0, life: 3.5, r: 70, player: true, row: 0 }); }
+      if (ctlA && I.pressed('punch') && !this.atk && this.fartT <= 0) { this.atk = { t: 0, dur: 0.22, kind: 'punch', hit: new Set(), side: this.punchN++ % 2 }; Sound.play('punch'); }
       if (this.atk) {
         const a = this.atk; a.t += dt;
         if (a.kind === 'punch' && a.t > 0.06 && a.t < 0.14) world.playerAttack({ x: this.x + (this.facing > 0 ? 6 : -40), y: this.y - (this.crouch ? 40 : 66), w: 34, h: 30 }, 2, a, this);
@@ -130,7 +131,7 @@ L4.Player = class extends L3.Player {
       if (this.shootT > 0) this.shootT -= dt;
       if (ctl && I.pressed('switch')) { this.switchWeapon(); return; }
       if (this.ammo3.seed <= 0) { this.weapon = 'swatter'; return; }
-      if (ctl && I.held('punch') && this.fireT <= 0) {
+      if (ctlA && I.held('punch') && this.fireT <= 0) {
         this.fireT = this.green ? 0.22 : 0.2; this.ammo3.seed--; this.shootT = 0.2;
         const up = I.held('up'), base = up ? (I.held('left') || I.held('right') ? -0.8 : -1.45) : 0;
         for (const a of this.green ? [-0.15, 0, 0.15] : [0]) {
@@ -146,11 +147,11 @@ L4.Player = class extends L3.Player {
       return;
     }
     if (this.weapon === 'chalk') this.weapon = 'swatter';
-    super.attackUpdate(dt, world, ctl, I);
+    super.attackUpdate(dt, world, ctlA, I);
   }
   choosePose(dt) {
     if (this.held) { this.setAnim(this.held === 'dance' ? 'dance' : 'held'); return; }
-    if (this.crawling && this.hurtT <= 0 && !(this.atk && this.atk.t >= 0.06)) { this.setAnim('crawl'); return; }
+    if (this.crawling && this.hurtT <= 0) { this.setAnim('crawl'); return; }
     if (this.atk && this.atk.kind === 'punch' && this.hurtT <= 0) { this.setAnim(!this.onGround ? 'punchAir' : this.crouch ? 'punchLow' : this.atk.side ? 'punchB' : 'punchA'); return; }
     if (this.atk && this.atk.kind === 'swat' && this.hurtT <= 0 && this.atk.t >= 0.12 && Spr.ANIM[this.animSet].swatLow) { this.setAnim(!this.onGround ? 'swatAir' : this.crouch ? 'swatLow' : 'swat'); return; }
     if (this.weapon === 'seed' && this.shootT > 0 && this.onGround && Math.abs(this.vx) < 20 && !this.crouch && this.hurtT <= 0) { this.setAnim('shoot'); return; }

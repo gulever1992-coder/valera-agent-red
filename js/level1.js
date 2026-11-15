@@ -813,8 +813,7 @@ L1.Arena = class {
       if (!r.actor || r.actor.anim !== 'rappel') continue;
       const f = Spr.frame('cmd', 0), len = r.actor.y - f[5] / 2 + 6;
       if (len <= 0) continue;
-      Art.R(c, r.x, 0, 2, len, '#2a2418'); Art.R(c, r.x, 0, 1, len, '#6a5a3e');
-      for (let y = (G.t * 60) % 6; y < len; y += 6) Art.R(c, r.x, y, 2, 1, '#1a160e');
+      Art.rope(c, r.x + 1, 0, r.x + 1, len, 4);   // верёвка спецназа — та же плетёная стропа, что у крана
     }
     for (const p of wd.pickups) p.draw(c, 0, 0);
     for (const a of this.actors) a.draw(c, 0, 0);
@@ -904,6 +903,10 @@ L1.sceneIntro = function (level) {
     Spr.draw(c, 'sub', 0, sx, sy, 1);
     Spr.draw(c, 'wk_a', 6, smoker.x, smoker.y, 1);
     v.draw(c);
+    if (v.anim === 'work') {   // тросы крюка в руках Валеры — до тележки крана; поверх обрубков троса в кадре
+      const ty = v.y - 100 + 19;   // обрубки в кадре v_story2:0 — x 92..97 и 110..115, до y 40 (px атласа)
+      for (const dx of [18.25, 27.25]) Art.rope(c, v.x + dx, -20, v.x + dx, ty, 3.4);   // от верха за кадром — без стыка с балкой
+    }
     if (st.helmet) Art.item(c, 'helmet', st.helmet.x, st.helmet.y, st.helmet.r, 1.2);
     if (st.brick) Art.item(c, 'brick', st.brick.x, st.brick.y, st.brick.r, 1.3);
     FX.draw(c);
