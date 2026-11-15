@@ -85,7 +85,7 @@ Object.assign(WHO, {
 L4.load = async function () {
   const W3 = window.WALLS3 || {};
   await Promise.all(['club_lobby', 'club_hall', 'club_vip', 'club_leather', 'club_dark', 'club_lobby_z', 'club_hall_z', 'club_leather_z'].map(async k => { if (W3[k]) L3.img[k] = await G.loadImage(W3[k].img); }));
-  L4.img.club_sidewall = await G.loadImage('assets/club_sidewall.png?v=104'); L4.img.club_sidewall_z = await G.loadImage('assets/club_sidewall_z.png?v=104'); // боковая стена лобби с дверью в перспективе
+  L4.img.club_iside = await G.loadImage('assets/club_iside.png?v=992'); L4.img.club_sidewall = await G.loadImage('assets/club_sidewall.png?v=104'); L4.img.club_sidewall_z = await G.loadImage('assets/club_sidewall_z.png?v=104'); // боковая стена лобби с дверью в перспективе
   await Promise.all(['club_back', 'club_back2', 'club_back3', 'club_floor', 'hotel_floor2', 'hotel_f1', 'hotel_f2', 'hotel_f3', 'biker_bg', 'club_room', 'club_wc', 'club_wc2', 'club_wc3', 'comic4_darts', 'comic4_raid', 'comic4_end', 'l4_sq', 'end_street_bg3', 'room0', 'room1', 'room2', 'room3', 'room4', 'room5', 'room6', 'room7', 'room8', 'room9', 'room10', 'room11', ...Object.keys(L4.ROOM_NEW).map(n => 'room' + n + 'n')].map(async k => { L4.img[k] = await G.loadImage('assets/' + k + '.jpg?v=' + (k.startsWith('hotel_f') || k.endsWith('n') ? G.VER : 101)); }));
   await Promise.all(['cone_m', 'cone_c', 'cone_g'].map(async k => { L4.img[k] = await G.loadImage('assets/spr/' + k + '.png'); }));
   G.portraits = G.portraits || {};
@@ -733,7 +733,7 @@ L4.Door = class {
 };
 
 // 9 номеров — 9 разных фонов (золото, амстердам, сафари, неон, совок, подводный, космос, диско, старый)
-L4.LEVER_SX = 200; L4.INNER_DOOR_X = 75;
+L4.LEVER_SX = 200; L4.INNER_DOOR_X = 84;
 L4.STAIR_UP = 479; L4.STAIR_DN = 586; // два прохода справа: лестница вверх и лестница вниз
 L4.stairX = fl => L4.STAIR_DN;
 L4.ROOM_IMG = [4, 5, 6, 7, 8, 9, 10, 11, 0];
@@ -805,8 +805,8 @@ L4.BUILD = {
   },
   inner(wd, o) {
     wd.addPlat({ x: 0, y: L4.GROUND, w: L4.INNER_W, h: 60, oneway: false, look: 'none' });
-    this.walls = [[-24, 'iwall'], [L4.DARK_X0, 'ddoorwall']];
-    if (o.escort) this.doors.push(new L4.Door(62, L4.GROUND, 'ВЫХОД', st => { st.player.x = 20; }));
+    this.walls = [[L4.DARK_X0, 'ddoorwall']]; // выход в клуб нарисован в фоне (club_iside)
+    if (o.escort) this.doors.push(new L4.Door(L4.INNER_DOOR_X, L4.GROUND, 'ВЫХОД', st => { st.player.x = 20; }));
     else this.doors.push(new L4.Door(L4.INNER_DOOR_X, L4.GROUND, 'ВЫХОД В КЛУБ', st => st.level.leaveInner(), { icon: 4, front: true }));
     this.dark = !o.lightsOn;
     if (!o.escort) {
@@ -886,6 +886,7 @@ L4.DRAW_BG = {
   },
   inner(c, cx) {
     for (const z of L4.ZONES.inner) L4.drawWallStrip(c, this.o.escort && L3.img[z.wall + '_z'] ? z.wall + '_z' : z.wall, z.x0, z.x1, cx, 0, z.x0 > 0 && !this.o.escort ? 'rgba(0,0,0,0.5)' : null);
+    const iw = L4.img.club_iside; if (iw && cx < iw.width / 2) c.drawImage(iw, -Math.floor(cx), 0, iw.width / 2, iw.height / 2); // боковая стена с дверью в клуб
     if (this.dark) { const dx0 = L4.DARK_X0 - cx; if (dx0 < W) { c.fillStyle = '#000'; c.fillRect(Math.max(0, dx0), 0, W, H); } }
   },
   boss(c) {
