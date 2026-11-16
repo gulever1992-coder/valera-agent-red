@@ -1,5 +1,5 @@
 # Ползание Валеры на ур.1 и ур.4 — тот же цикл, что на ур.7 (лист val4, 6 кадров), в одежде уровня.
-# Flow (Nano Banana Pro) по образцам art_src/l1/crawl/ref_crawl7.jpg + ref_look1/ref_look4.jpg
+# Flow (Nano Banana Pro) по образцам art_src/l1/crawl/ref_crawl7.jpg + ref_look1b.jpg (ур.1: стоит/присел/старое ползание) / ref_look4.jpg
 # -> art_src/l1/crawl/crawl_l1.jpg, crawl_l4.jpg (3x2, пурпурный фон) -> атласы v1_crawl6, v4_crawl6 в js/sprites_data.js.
 # Высота: ур.1 — val4 * 0.84 (как ур.7 рисует ползание), ур.4 — как прежний v7_crawl; опора — низ кадра.
 import os, sys, json

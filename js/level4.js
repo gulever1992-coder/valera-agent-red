@@ -539,7 +539,7 @@ L4.Stage = class {
     if (!this.frozen && !pl.held) pl.update(dt, wd);
     else if (pl.held) { pl.animT += dt; pl.choosePose(dt); }
     this.blockers(pl, prevX);
-    pl.x = this.kind === 'boss' ? U.clamp(pl.x, 62, 578) : this.roomNew ? U.clamp(pl.x, this.roomNew.x0, this.roomNew.x1) : U.clamp(pl.x, 12, this.W - 12);
+    pl.x = this.kind === 'boss' ? U.clamp(pl.x, 62, 578) : (this.roomNew || this.bounds) ? U.clamp(pl.x, (this.roomNew || this.bounds).x0, (this.roomNew || this.bounds).x1) : U.clamp(pl.x, 12, this.W - 12);
     for (const p of wd.projs) {
       p.update(dt, wd);
       if (p.dead) continue;
@@ -726,7 +726,21 @@ L4.STAIR_UP = 479; L4.STAIR_DN = 586; // два прохода справа: л�
 L4.stairX = fl => L4.STAIR_DN;
 L4.ROOM_IMG = [4, 5, 6, 7, 8, 9, 10, 11, 0];
 // новые номера: маленькая комната в кирпичной стене; фон сдвинут на dy, чтобы пол совпал с L4.GROUND
-L4.ROOM_NEW = {}; for (const k of [4, 5, 6, 7, 8, 9, 10, 11, 0]) L4.ROOM_NEW[k] = { dy: 44, x0: 118, x1: 522, door: 230, bed: 452 };
+// комната крупнее (владелец: дверь выше Валеры) — картинка растянута в ROOM_K раз вокруг точки (320, пол), персонажи прежнего размера
+L4.ROOM_K = 1.3; L4.roomX = x => Math.round(320 + (x - 320) * L4.ROOM_K);
+// туалет меньше (владелец: двери кабинок были огромные рядом с Валерой) — картинка сжата в WC_K раз вокруг (320, пол),
+// вокруг кирпич и рамка из картинки номера (room4n), как в номерах
+L4.WC_K = 0.73; L4.wcX = x => Math.round(320 + (x - 320) * L4.WC_K);
+// рамка номера с кирпичом вокруг заданного проёма: кирпич в масштабе номеров (0.65 от исходника 1280x720), рамка растянута по проёму
+L4.FRAME = { o: [190, 130, 1088, 584], i: [210, 146, 1070, 540], k: 0.65 };
+L4.drawBrickFrame = function (c, img, ix0, iy0, ix1, iy1) {
+  const F = L4.FRAME, k = F.k, [o0, o1, o2, o3] = F.o, [i0, i1, i2, i3] = F.i;
+  const fx0 = ix0 - (i0 - o0) * k, fx1 = ix1 + (o2 - i2) * k, fy0 = iy0 - (i1 - o1) * k, fy1 = iy1 + (o3 - i3) * k;
+  const cols = [[0, fx0, o0 - fx0 / k, o0], [fx0, fx1, o0, o2], [fx1, W, o2, o2 + (W - fx1) / k]];
+  const rows = [[0, fy0, o1 - fy0 / k, o1], [fy0, fy1, o1, o3], [fy1, H, o3, o3 + (H - fy1) / k]];
+  for (const [y0, y1, sy0, sy1] of rows) for (const [x0, x1, sx0, sx1] of cols) if (x1 > x0 && y1 > y0) c.drawImage(img, sx0, sy0, sx1 - sx0, sy1 - sy0, x0, y0, x1 - x0, y1 - y0);
+};
+L4.ROOM_NEW = {}; for (const k of [4, 5, 6, 7, 8, 9, 10, 11, 0]) L4.ROOM_NEW[k] = { dy: 44, x0: L4.roomX(118), x1: L4.roomX(522), door: L4.roomX(230), bed: L4.roomX(452) };
 L4.HOTEL_G = 242; L4.BOSS_G = 296; L4.TOWER_FH = 300; L4.FLOORS = 3; L4.TOWER_H = L4.FLOORS * L4.TOWER_FH + 60;
 L4.floorY = i => L4.TOWER_H - 40 - i * L4.TOWER_FH;
 L4.BUILD = {
@@ -818,11 +832,13 @@ L4.BUILD = {
   },
   wc(wd, o) {
     wd.addPlat({ x: 0, y: L4.GROUND, w: 640, h: 60, oneway: false, look: 'none' });
-    this.doors.push(new L4.Door(82, L4.GROUND, 'ВЫЙТИ', st => st.level.leaveWC()));
+    this.doors.push(new L4.Door(L4.wcX(82), L4.GROUND, 'ВЫЙТИ', st => st.level.leaveWC()));
+    this.bounds = { x0: L4.wcX(40), x1: L4.wcX(615) };     // стены уменьшенного туалета
     const esc = !!o.escort;
     this.stalls = [{ x: 236, x0: 189, x1: 282, what: 'kesha', locked: esc }, { x: 341, x0: 293, x1: 388, what: 'hookah' }, { x: 448, x0: 400, x1: 497, what: 'bum' }, { x: 556, x0: 509, x1: 603, what: 'gun' }];
+    for (const s of this.stalls) { s.o = { x: s.x, x0: s.x0, x1: s.x1, what: s.what }; s.x = L4.wcX(s.x); s.x0 = L4.wcX(s.x0); s.x1 = L4.wcX(s.x1); }     // o — в координатах картинки (для рисования)
     for (const s of this.stalls) { s.open = this.level.stallsOpen && this.level.stallsOpen[s.what] && !s.locked; this.doors.push(new L4.Door(s.x, L4.GROUND, s.locked ? 'ЗАПЕРТО' : 'ОТКРЫТЬ КАБИНКУ', st => st.level.openStall(s), { icon: s.locked ? 5 : 3 })); }
-    this.fgItems = [{ sheet: 'fg2', fr: 5, x: 20, y: H + 30, scale: 1.1 }];
+    this.fgItems = [];     // шляпа с боа слева убрана (владелец)
   },
   boss(wd) {
     wd.addPlat({ x: -40, y: L4.BOSS_G, w: 720, h: 60, oneway: false, look: 'none' });
@@ -844,19 +860,24 @@ L4.drawWallStrip = function (c, key, x0, x1, cx, cy, tint) {
 };
 L4.DRAW_BG = {
   wc(c) {
+    const K = L4.WC_K, ix0 = L4.wcX(0), ix1 = L4.wcX(W), iy0 = Math.round(L4.GROUND - L4.GROUND * K), iy1 = 318;
+    if (L4.img.room4n) L4.drawBrickFrame(c, L4.img.room4n, ix0, iy0, ix1, iy1);
+    c.save(); c.beginPath(); c.rect(ix0, iy0, ix1 - ix0, iy1 - iy0); c.clip();
+    c.translate(320, L4.GROUND); c.scale(K, K); c.translate(-320, -L4.GROUND);     // дальше — в исходных координатах картинки туалета
     if (L4.img.club_wc2) c.drawImage(L4.img.club_wc2, 0, 0, W, H);
-    for (const s of this.stalls) {
-      if (!s.open) continue;
+    for (const s0 of this.stalls) { const s = s0.o;
       // внутренность кабинки — ровно в проём между столбиками, до пола; створка открыта от правого столбика
+      if (!s0.open) continue;
       const fr = s.what === 'hookah' ? 1 : s.what === 'gun' ? (this.level.gunTaken ? 0 : 2) : s.what === 'bum' ? 3 : 0;
       // открытая кабинка — тот же фон, только с распахнутой дверцей; внутри унитаз
-      const k = this.stalls.indexOf(s), ox = 178 + k * 108; if (L4.img.club_wc3) c.drawImage(L4.img.club_wc3, ox * 2, 170, 216, 354, ox, 85, 108, 177);
+      const k = this.stalls.indexOf(s0), ox = 178 + k * 108; if (L4.img.club_wc3) c.drawImage(L4.img.club_wc3, ox * 2, 170, 216, 354, ox, 85, 108, 177);
       c.save(); c.beginPath(); c.rect(s.x0, 60, s.x1 - s.x0, 262 - 60); c.clip();
       Spr.draw(c, 'toilets', fr, (s.x0 + s.x1) / 2, 249, 1);
-      if (s.what === 'kesha') Spr.drawAnim(c, 'kesha4', Math.floor(G.t * 0.7) % 2 ? 'thumbs' : 'sniff', G.t, s.x, 258, 1, { scale: 0.9 });
+      if (s.what === 'kesha') Spr.drawAnim(c, 'kesha4', Math.floor(G.t * 0.7) % 2 ? 'thumbs' : 'sniff', G.t, s.x, 258, 1, { scale: 0.9 / K });     // Кеша в росте Валеры
       c.restore();
 
     }
+    c.restore();
   },
   club(c, cx) {
     if (cx < 0) { const k = this.o.escort && L3.img.club_lobby_z ? 'club_lobby_z' : 'club_lobby', m = window.WALLS3[k]; L4.drawWallStrip(c, k, -m.w / m.h * (L4.GROUND / m.floor), 0, cx, 0, null); } // пол под боковой стеной, левее нуля
@@ -867,7 +888,7 @@ L4.DRAW_BG = {
   tower(c) { const im = L4.img['hotel_f' + (this.floor + 1)] || L4.img.hotel_floor2; if (im) c.drawImage(im, 0, 0, W, H); G.text('ЭТАЖ ' + (this.floor + 1), 20, 44, { size: 8, color: '#ff8ad8', outline: true }); },
   room(c) { // стена сжата, пол растянут: линия плинтуса поднята на ~20 px, ноги и мебель стоят на полу, а не на стыке
     const r = this.roomData, k = L4.ROOM_IMG[r.id % 9], rn = L4.ROOM_NEW[k], nimg = rn && L4.img['room' + k + 'n'];
-    if (nimg) { c.drawImage(nimg, 0, rn.dy, W, H); c.drawImage(nimg, 0, 0, nimg.width, nimg.height * rn.dy / H, 0, 0, W, rn.dy); return; }
+    if (nimg) { const K = L4.ROOM_K; c.save(); c.translate(320, L4.GROUND); c.scale(K, K); c.translate(-320, -L4.GROUND); c.drawImage(nimg, 0, rn.dy, W, H); c.drawImage(nimg, 0, 0, nimg.width, nimg.height * rn.dy / H, 0, 0, W, rn.dy); c.restore(); return; }
     const img = L4.img['room' + k]; if (!img) return;
     const b = ({ 4: 600, 5: 597, 6: 600, 7: 608, 8: 608, 9: 582, 10: 600, 11: 600, 0: 600 })[k], wall = L4.GROUND - 20;
     c.drawImage(img, 0, 0, img.width, b * img.height / 720, 0, 0, W, wall); c.drawImage(img, 0, b * img.height / 720, img.width, img.height - b * img.height / 720, 0, wall, W, H - wall);
@@ -1093,7 +1114,7 @@ L4.Level = class {
   enterWC() {
     this.guided = true; // горничная уже довела — после туалета она не появляется снова в начале
     const esc = !!this.stage.vova, hp = esc ? this.stage.vova.hp : 0;
-    this.setStage('wc', { x: 110, facing: 1, escort: esc });
+    this.setStage('wc', { x: L4.wcX(110), facing: 1, escort: esc });
     const st = this.stage;
     if (esc) { this.addVova(true); st.vova.hp = hp; st.zombieSpawner = true; }
     st.onTick = () => {
