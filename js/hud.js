@@ -71,7 +71,10 @@ const HUD = {};
     else { const empty = typeof w.n === 'number' && w.n <= 0; G.text(String(w.n), bx + bw / 2, by + bh + 2, { size: 8, align: 'center', color: empty ? '#ff6a4a' : '#fff', outline: true }); }
     if (pl.bottleHits > 0 && pl.weapon === 'bottles') G.text('БЬЁТ ' + pl.bottleHits, bx + bw / 2, by + bh + 12, { size: 7, align: 'center', color: '#8cf08c', outline: true });
     // здоровье
-    const hx = 54, hy = 6, hw = 116, k = U.clamp(pl.hp / pl.maxHp, 0, 1);
+    const hx = 66, hy = 6, hw = 104, k = U.clamp(pl.hp / pl.maxHp, 0, 1);
+    // сердечко (Flow: assets/spr/hud_heart.png); при малом здоровье бьётся
+    const hb = k < 0.3 ? 1 + Math.abs(Math.sin(G.t * 7)) * 0.18 : 1 + Math.abs(Math.sin(G.t * 2.5)) * 0.06;
+    if (HUD.img.heart) { const s = 16 * hb / HUD.img.heart.height, w = HUD.img.heart.width * s; c.drawImage(HUD.img.heart, 59 - w / 2, 12 - 8 * hb, w, 16 * hb); }
     R(c, hx, hy, hw, 12, '#000'); R(c, hx + 1, hy + 1, hw - 2, 10, '#e8e2d0'); R(c, hx + 2, hy + 2, hw - 4, 8, '#3a1010');
     R(c, hx + 2, hy + 2, Math.round((hw - 4) * k), 8, k > 0.5 ? '#48c048' : k > 0.25 ? '#e0b020' : '#e03030');
     R(c, hx + 2, hy + 2, Math.round((hw - 4) * k), 2, 'rgba(255,255,255,0.35)');
@@ -87,15 +90,25 @@ const HUD = {};
     const lv = App.level || {}, st = lv.stats || (world && world.stats) || {};
     const score = world && world.score != null ? world.score : lv.score || 0;
     G.text('ОЧКИ ' + String(score).padStart(6, '0'), W - 8, 6, { size: 8, align: 'right', color: '#ffd84a', outline: true });
-    const got = Math.min(3, st.secrets || 0);
-    G.text(got + '/3', W - 8, 21, { size: 8, align: 'right', color: got >= 3 ? '#8cf08c' : '#e8e0c8', outline: true });
+    // значки «Ударник»: плашка с подписью, 3 ячейки и счёт
+    const got = Math.min(3, st.secrets || 0), px = W - 132, py = 17, pw = 126, ph = 24;
+    R(c, px, py, pw, ph, '#000'); R(c, px + 1, py + 1, pw - 2, ph - 2, '#e8e2d0'); R(c, px + 2, py + 2, pw - 4, ph - 4, '#23262b');
+    G.text('УДАРНИК', px + 5, py + 4, { size: 7, color: '#ffd84a' });
+    G.text(got + '/3', px + 5, py + 13, { size: 8, color: got >= 3 ? '#8cf08c' : '#fff' });
+    if (HUD.badgeT > 0) HUD.badgeT -= G.dt;
+    if (got > HUD._got) HUD.badgeT = 1; HUD._got = got;
     for (let i = 0; i < 3; i++) {
-      const x = W - 36 - (2 - i) * 15, on = i < got;
-      c.save(); c.globalAlpha = on ? 1 : 0.25; Art.item(c, 'badge', x, 25, 0, 0.8); c.restore();
+      const x = px + 68 + i * 19, y = py + ph / 2, on = i < got;
+      R(c, x - 8, y - 9, 16, 18, on ? '#3a3020' : '#16181c');
+      const pop = on && i === got - 1 && HUD.badgeT > 0 ? 1 + Math.sin(HUD.badgeT * 12) * 0.25 * HUD.badgeT : 1;
+      c.save(); c.globalAlpha = on ? 1 : 0.3; Art.item(c, 'badge', x, y, 0, 0.95 * pop); c.restore();
     }
   };
 
-  HUD.swapT = 0; HUD._last = null;
+  HUD.swapT = 0; HUD._last = null; HUD.badgeT = 0; HUD._got = 0;
+  // картинки интерфейса из Flow
+  HUD.img = {};
+  for (const [k, f] of [['heart', 'hud_heart'], ['pager', 'hud_pager']]) G.loadImage('assets/spr/' + f + '.png').then(im => HUD.img[k] = im, () => {});
   const swap = id => { if (HUD._last !== id) { if (HUD._last != null) HUD.swapT = 0.25; HUD._last = id; } HUD.swapT = Math.max(0, HUD.swapT - G.dt); };
   HUD.draw = function (c, pl, world) {
     swap(pl.weapon);
@@ -116,6 +129,59 @@ const HUD = {};
     ws.forEach((t, i) => G.text(t, x, y - 4 - (ws.length - 1) * 4 + i * 8, { size: sz, align: 'center', color: col }));
   };
 }
+
+// ======================= МЕНЮ ОРУЖИЯ (долгое удержание Q) =======================
+// Держишь Q — время останавливается, по центру меню оружия; стрелки — выбор, отпустил Q (или Z) — взял.
+const WeaponWheel = {
+  open: false, holdT: 0, sel: 0, ws: null, set: null, t: 0, HOLD: 0.35,
+  source(lv) {
+    const pl = Pager.player(lv);
+    if (pl && (pl.ammo || pl.ammo3 || (typeof L6 !== 'undefined' && pl instanceof L6.Player)))
+      return { ws: HUD.weapons(pl), set: id => { if (typeof L6 !== 'undefined' && pl instanceof L6.Player) pl.wmode = id === 'wand' ? 'wand' : 'fist'; else pl.weapon = id; } };
+    const P = lv.P;
+    if (P && P.hudWeap && P.wpn !== undefined) return { ws: P.hudWeap(), set: id => { P.wpn = id; P.swingT = 0; } };
+    return null;
+  },
+  update(dt, lv, I) {
+    if (!this.open) {
+      if (I.held('switch') && Pager.live(lv)) {
+        this.holdT += dt;
+        if (this.holdT >= this.HOLD) {
+          const s = this.source(lv);
+          if (s && s.ws.list.length > 1) { Object.assign(this, s); this.open = true; this.t = 0; this.sel = s.ws.cur; Sound.play('select'); Sound.noise && Sound.noise(0.18, { freq: 3000, slide: 600, vol: 0.08, filter: 'bandpass' }); }
+          else this.holdT = -99;     // выбирать не из чего — не открываем до отпускания
+        }
+      } else this.holdT = 0;
+      return false;
+    }
+    this.t += dt;
+    const n = this.ws.list.length;
+    if (I.pressed('left') || I.pressed('up')) { this.sel = (this.sel + n - 1) % n; Sound.play('blip', 900); }
+    if (I.pressed('right') || I.pressed('down')) { this.sel = (this.sel + 1) % n; Sound.play('blip', 1100); }
+    if (!I.held('switch') || I.pressed('jump') || I.pressed('start')) {
+      this.set(this.ws.list[this.sel].id); this.open = false; this.holdT = -99; Sound.play('pickup');
+    }
+    return true;
+  },
+  draw(c) {
+    if (!this.open) return;
+    const R = HUD.R, e = Math.min(1, this.t / 0.15), list = this.ws.list, n = list.length;
+    c.fillStyle = 'rgba(0,0,0,' + 0.55 * e + ')'; c.fillRect(0, 0, W, H);
+    const cw = 52, ch = 48, gap = 8, pw = n * cw + (n - 1) * gap + 24, ph = ch + 52, px = Math.round(W / 2 - pw / 2), py = Math.round(H / 2 - ph / 2 - 10 + (1 - e) * 12);
+    c.globalAlpha = e;
+    R(c, px, py, pw, ph, '#000'); R(c, px + 1, py + 1, pw - 2, ph - 2, '#e8e2d0'); R(c, px + 2, py + 2, pw - 4, ph - 4, '#23262b');
+    G.text('ВЫБОР ОРУЖИЯ', W / 2, py + 6, { size: 8, align: 'center', color: '#ffd84a' });
+    list.forEach((w, i) => {
+      const x = px + 12 + i * (cw + gap), y = py + 20, on = i === this.sel, bob = on ? Math.round(Math.sin(G.t * 8) * 1) : 0;
+      R(c, x - 1, y - 1 + bob, cw + 2, ch + 2, on ? '#ffd84a' : '#000'); R(c, x, y + bob, cw, ch, on ? '#3a3020' : '#16181c');
+      c.save(); c.beginPath(); c.rect(x, y + bob, cw, ch); c.clip(); if (!on) c.globalAlpha = e * 0.55; c.translate(x + cw / 2, y + bob + ch / 2 - 5); c.scale(1.5, 1.5); w.icon(c, 0, 0); c.restore();
+      if (w.n === Infinity) HUD.inf(c, x + cw / 2, y + bob + ch - 7, 5, on ? '#fff' : '#999');
+      else G.text(String(w.n), x + cw / 2, y + bob + ch - 11, { size: 8, align: 'center', color: on ? '#fff' : '#999' });
+    });
+    G.text('СТРЕЛКИ — ВЫБОР   ОТПУСТИ ' + (Game.keyName ? Game.keyName('switch') : 'Q') + ' — ВЗЯТЬ', W / 2, py + ph - 12, { size: 7, align: 'center', color: '#c8d0d8' });
+    c.globalAlpha = 1;
+  },
+};
 
 // ======================= ПЕЙДЖЕР =======================
 // Сообщения банка (списания), «никому не говорите код», подсказки по боссам. Пока на экране — игра на паузе.
@@ -209,6 +275,7 @@ const Pager = {
     Sound.noise(0.26, { freq: 2600, slide: 700, vol: 0.13, filter: 'bandpass', delay: 0.04 });    // уезжает
   },
   IN: 0.35, OUT: 0.3,
+  SCR: [0.1577, 0.2792, 0.8515, 0.6168],     // экран на картинке пейджера (доли), см. tools/build_ui.py
   show(m) { this.msg = Object.assign({ t: 0, out: null }, m); this.sfxIn(); },
   // вызывается из main.js каждый кадр игры; true — игра на паузе (читаем пейджер)
   update(dt, lv, I) {
@@ -253,6 +320,20 @@ const Pager = {
     const R = HUD.R, k = Math.min(1, m.t / this.IN), e = m.out != null ? 1 - Math.min(1, m.out / this.OUT) ** 2 : 1 - (1 - k) ** 3;   // выезд справа / уезд вправо
     c.fillStyle = 'rgba(0,0,0,' + (0.35 * e) + ')'; c.fillRect(0, 0, W, H);
     const pw = 190, ph = 124, px = Math.round(W - 8 - pw + (1 - e) * (pw + 20)), py = 62 + (m.t < 0.5 ? Math.round(Math.sin(m.t * 70) * 1.5) : 0);
+    const im = HUD.img.pager;
+    if (im) {     // корпус — картинка из Flow (assets/spr/hud_pager.png, tools/build_ui.py); экран — доли SCR
+      const S = this.SCR, iw = 256, ih = Math.round(iw * im.height / im.width), ix = Math.round(W - 8 - iw + (1 - e) * (iw + 20)), iy = Math.round(H / 2 - ih / 2 - 20) + (m.t < 0.5 ? Math.round(Math.sin(m.t * 70) * 1.5) : 0);
+      c.save(); c.imageSmoothingEnabled = true; c.drawImage(im, ix, iy, iw, ih); c.restore();
+      const sx = ix + Math.round(iw * S[0]), sy = iy + Math.round(ih * S[1]), sw = Math.round(iw * (S[2] - S[0])), sh = Math.round(ih * (S[3] - S[1]));
+      if (m.big) { c.fillStyle = 'rgba(255,120,40,' + (0.25 + 0.15 * Math.sin(m.t * 8)) + ')'; c.fillRect(sx, sy, sw, sh); }
+      const ink = '#1c2a10';
+      G.text(m.from, sx + 3, sy + 2, { size: 6, color: ink, shadow: false });
+      R(c, sx + 2, sy + 10, sw - 4, 1, 'rgba(28,42,16,0.45)');
+      G.wrap(m.text, sw - 6, 7).slice(0, 5).forEach((l, i) => G.text(l, sx + 3, sy + 13 + i * 9, { size: 7, color: ink, shadow: false }));
+      if ((m.t * 2 | 0) % 2 === 0) { c.fillStyle = 'rgba(255,60,40,0.85)'; c.fillRect(ix + Math.round(iw * 0.815), iy + Math.round(ih * 0.13), 7, 5); }     // мигает лампочка
+      if (m.out == null && m.t > 0.7 && (G.t * 2 | 0) % 2 === 0) G.text((Game.keyName ? Game.keyName('jump') : 'Z') + ' — ДАЛЬШЕ', ix + iw / 2, iy + ih + 4, { size: 8, align: 'center', color: '#ffd84a', outline: true });
+      return;
+    }
     // корпус
     R(c, px, py, pw, ph, '#000'); R(c, px + 2, py + 2, pw - 4, ph - 4, '#3a3d44'); R(c, px + 2, py + 2, pw - 4, 3, '#555a63'); R(c, px + 4, py + ph - 6, pw - 8, 2, '#24262b');
     // экран

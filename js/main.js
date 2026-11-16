@@ -319,6 +319,7 @@ function update(dt) {
       }
       if (lv.canPause && I.pressed('pause')) { App.paused = true; App.pauseSel = 0; Sound.play('select'); return; }
       if (Pager.update(dt, lv, I)) return;   // пейджер на экране — игра на паузе
+      if (WeaponWheel.update(dt, lv, I)) return;   // меню оружия (держать Q) — время стоит
       lv.update(dt);
       break;
     }
@@ -580,7 +581,7 @@ function draw() {
     case 'credits': Extras.drawCredits(c); break;
     case 'difficulty': drawDifficulty(c); break;
     case 'levels': drawLevels(c); break;
-    case 'play': App.level.draw(c); Pager.draw(c); if (App.paused) drawPause(c); break;
+    case 'play': App.level.draw(c); WeaponWheel.draw(c); Pager.draw(c); if (App.paused) drawPause(c); break;
     case 'results': drawResults(c); break;
     case 'soon': drawSoon(c); break;
     case 'sprites': drawSprites(c); break;
