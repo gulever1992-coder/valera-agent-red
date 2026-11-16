@@ -365,16 +365,7 @@ L1.Climb = class {
     wd.playerAttack = (hb, dmg, atk, pl) => this.playerAttack(hb, dmg, atk, pl);
     wd.spawnPlayerProj = (k, x, y, d) => wd.projs.push(new Game.Proj(k, x, y, d));
     this.quipT = 25;
-    this.tut = new Game.Tutorial([
-      { id: 'move', text: 'Идти', prompt: 'Иди вправо' },
-      { id: 'jump', text: 'Прыжок', prompt: 'Перепрыгни ящик' },
-      { id: 'crouch', text: 'Присесть', prompt: 'Присядь' },
-      { id: 'punch', text: 'Удар', prompt: 'Ударь крысу' },
-      { id: 'upper', text: 'Серия+апперкот', prompt: 'Жми 3 раза подряд' },
-      { id: 'throw', text: 'Бросок', prompt: 'Подбери гайки и брось' },
-      { id: 'climb', text: 'Лестница', prompt: 'Лезь по лестнице' },
-    ]);
-    wd.ev = id => this.tut.ev(id);
+    // список «ОБУЧЕНИЕ» убран (2026-11-16): кнопкам учит экзамен Юрика в катсцене цеха (js/level1tut.js)
   }
   spawnAll() {
     const wd = this.world, D = this.D;
@@ -408,8 +399,6 @@ L1.Climb = class {
     const wd = this.world, pl = this.player, D = this.D;
     wd.t += dt;
     if (!this.done) this.level.stats.time += dt;
-    this.tut.update(dt);
-    if (pl.y < D.floorY - 400) this.tut.hidden = true;
     if (this.fade > 0 && !this.respawning && !this.done) this.fade = Math.max(0, this.fade - dt * 2);
     wd.updatePlats(dt);
     pl.update(dt, wd);
@@ -593,7 +582,6 @@ L1.Climb = class {
       G.text(w.good ? '+' : '!', w.x, 30, { align: 'center', size: 8, color: '#fff', shadow: false });
     }
     Game.drawHUD(c, this.player, wd);
-    this.tut.draw(c, this.player.x, this.player.y - cy);
     const m = Math.max(0, Math.round((this.player.y - this.D.topY) / 16));
     G.text('ДО КАБИНЫ: ' + m + ' м', W - 8, 22, { align: 'right', color: '#c8d0d8' });
     if (this.hint) Game.drawHint(c, this.hint.text, this.hintA);
@@ -890,6 +878,7 @@ L1.sceneIntro = function (level) {
   const FL = 332;
   const v = new G.Actor('valera', 330, FL, 1); v.helmet = true; v.setAnim('work');
   const smoker = { x: 70, y: FL };
+  st.tut = new L1.Tut(FL, v);   // обучение: экзамен Юрика (js/level1tut.js)
   level.drawScene = c => {
     const img = G.bg.hall;
     c.drawImage(img, 0, 0, W, H);
@@ -908,9 +897,10 @@ L1.sceneIntro = function (level) {
       for (const dx of [18.25, 27.25]) Art.rope(c, v.x + dx, -20, v.x + dx, ty, 3.4);   // от верха за кадром — без стыка с балкой
     }
     if (st.helmet) Art.item(c, 'helmet', st.helmet.x, st.helmet.y, st.helmet.r, 1.2);
-    if (st.brick) Art.item(c, 'brick', st.brick.x, st.brick.y, st.brick.r, 1.3);
+    st.tut.draw(c);
     FX.draw(c);
     G.drawBubbles(c, 0, 0);
+    st.tut.drawUI(c);
     Scene.drawDialog(c);
     if (st.obj > 0) {
       c.globalAlpha = Math.min(1, st.obj);
@@ -922,13 +912,12 @@ L1.sceneIntro = function (level) {
     if (st.fade > 0) { c.fillStyle = `rgba(0,0,0,${st.fade})`; c.fillRect(0, 0, W, H); }
   };
   level.updateScene = dt => {
-    v.update(dt);
+    v.update(dt); st.tut.update(dt);
     if (Math.random() < dt * 1.2) FX.spawn({ x: smoker.x + 10, y: smoker.y - 58, vx: 8, vy: -14, grav: -5, life: 1.8, color: '#8a8f94', size: 2, type: 'puff' });
     if (st.helmet && !st.helmet.rest) {
       const h = st.helmet; h.vy += 900 * dt; h.x += h.vx * dt; h.y += h.vy * dt; h.r += h.vr * dt;
       if (h.y > FL - 5) { h.y = FL - 5; if (Math.abs(h.vy) > 80) { h.vy *= -0.4; h.vx *= 0.6; Sound.play('clank', 0.8); } else { h.rest = true; h.r = 0; } }
     }
-    if (st.brick && !st.brick.rest) { const b = st.brick; b.vy += 1400 * dt; b.y += b.vy * dt; b.r += 6 * dt; if (b.y > FL - 5) { b.y = FL - 5; b.rest = true; b.r = 0.2; Sound.play('brick'); G.shake(6, 0.3); FX.dust(b.x, FL, 10); FX.burst(b.x, FL - 4, 8, { colors: ['#a8452e', '#7a2e1e'], speed: 120, size: 3 }); } }
     FX.update(dt); G.updateBubbles(dt);
   };
   const liftTry = function* () {
@@ -943,6 +932,7 @@ L1.sceneIntro = function (level) {
   return function* () {
     Music.play('cutscene');
     yield* Scene.tween(0.8, k => { st.fade = 1 - k; });
+    if (!L1.TUT_ONLY) {   // ?tut — сразу к экзамену Юрика
     yield 1.4;
     v.setAnim('walk');
     yield* Scene.moveTo(v, 250, 55, 'walk');
@@ -972,17 +962,13 @@ L1.sceneIntro = function (level) {
     st.helmet = { x: v.x + 23, y: FL - 5, r: 0, rest: true };
     v.setAnim('hips');
     yield* Scene.say('valera', 'Приходится всё делать самому!', v);
+    } else { v.helmet = false; v.x = 250; st.helmet = { x: v.x + 23, y: FL - 5, r: 0, rest: true }; }
     v.setAnim('stand');
     yield 0.3;
-    Sound.play('warn');
-    st.brick = { x: v.x + 26, y: -20, vy: 200, r: 0 };
-    yield () => st.brick.rest;
-    v.setAnim('scared');
-    G.say(v, '!!!', 1.0, { shout: true });
-    yield 1.0;
+    yield* L1.tutScene(st, v, FL);   // Юрик: приседания, ползком, прыжки, кирпич и птицы
     v.setAnim('lookUp');
-    G.say(v, 'Та-а-ак...', 1.4);
-    yield 1.4;
+    G.say(v, 'Та-а-ак... А кирпичи-то с крана летят!', 2.0);
+    yield 2.0;
     yield* Scene.tween(0.4, k => { st.obj = k; });
     Sound.play('confirm');
     yield 1.6;
@@ -1135,6 +1121,7 @@ L1.Level = class {
   }
   start(skipIntro) {
     if (skipIntro) return this.startClimb();
+    if (L1.TUT_ONLY) return this.playScene(L1.sceneIntro(this), () => this.startClimb());
     this.playScene(L1.sceneAerial(this), () => this.playScene(L1.sceneIntro(this), () => this.startClimb()));
   }
   playScene(gen, next) {
@@ -1159,6 +1146,7 @@ L1.Level = class {
     }, 500);
   }
   startBoss(restart) {
+    if (!restart) Pager.boss(1);
     const ar = this.arena;
     FX.list = []; G.bubbles = [];
     ar.actors = [];

@@ -533,7 +533,7 @@ L2.Run = class {
     if (hint) { this.hint = hint; this.hintA = Math.min(1, this.hintA + dt * 4); } else this.hintA = Math.max(0, this.hintA - dt * 3);
     // магазин
     if (!this.shopDone && pl.x > D.shopDoor.x - 20 && pl.x < D.shopDoor.x + 20 && pl.onGround && !pl.dead) {
-      this.shopDone = true; this.level.shopDone = true; this.level.enterShop(this);
+      this.shopDone = true; this.level.shopDone = true; this.level.enterShop(this); Pager.shop();
     }
     // реплики
     this.quipT -= dt;
@@ -1025,7 +1025,7 @@ L2.Level = class {
     this.carry = { ammo: run.player.ammo, bottleHits: run.player.bottleHits, weapon: run.player.weapon };
     this.arena = new L2.Arena(this, run);
     this.mode = 'boss';
-    this.playScene(L2.sceneBossIntro(this), () => { this.mode = 'boss'; this.arena.startFight(); });
+    this.playScene(L2.sceneBossIntro(this), () => { this.mode = 'boss'; this.arena.startFight(); Pager.boss(2); });
   }
   restartBoss() {
     const run = this.run;

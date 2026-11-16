@@ -168,19 +168,10 @@ L4.Player = class extends L3.Player {
 L4.drawHUD = function (c, pl, wd) {
   const R = Art.R;
   Game.drawHUD(c, pl, wd);
-  const ws = [['swatter', pl.ammo3.swatter + '%'], ['fists', ''], ['seed', pl.hasSeed ? String(pl.ammo3.seed) : '']];
-  ws.forEach(([wn, n], i) => {
-    const x = 174 + i * 56, sel = pl.weapon === wn, has = wn !== 'seed' || pl.hasSeed;
-    R(c, x - 1, 5, 54, 24, sel ? '#ffd84a' : '#111'); R(c, x, 6, 52, 22, sel ? '#3a3020' : '#1c1f24');
-    c.save(); if (!has) c.globalAlpha = 0.35;
-    if (wn === 'swatter') Art.item(c, 'swatter', x + 12, 17, -0.5, 0.8); else Spr.drawC(c, 'icons4', wn === 'fists' ? 0 : pl.green ? 2 : 1, x + 12, 17, 0, 0.9);
-    c.restore();
-    G.text(n, x + 24, 13, { size: 8, color: has ? '#fff' : '#666' });
-  });
   const fc = pl.fartCool > 0 ? pl.fartCool / 9 : 0;
-  R(c, 346, 6, 40, 22, '#111'); R(c, 347, 7, 38, 20, fc > 0 ? '#1c2418' : '#2a4a1a');
-  G.text('ГАЗ', 366, 13, { size: 8, align: 'center', color: fc > 0 ? '#5a6a50' : '#b8ff70' });
-  if (fc > 0) R(c, 347, 25, Math.round(38 * (1 - fc)), 2, '#8cd040');
+  R(c, 176, 6, 40, 22, '#111'); R(c, 177, 7, 38, 20, fc > 0 ? '#1c2418' : '#2a4a1a');
+  G.text('ГАЗ', 196, 13, { size: 8, align: 'center', color: fc > 0 ? '#5a6a50' : '#b8ff70' });
+  if (fc > 0) R(c, 177, 25, Math.round(38 * (1 - fc)), 2, '#8cd040');
 };
 
 // =====================================================================
@@ -1133,6 +1124,7 @@ L4.Level = class {
   leaveInner() { this.stage.carry(); this.setStage('club', { x: L4.DOOR_X, facing: -1 }); }
   pullLever() { this.stage.carry(); this.leverOn = false; this.playScene(L4.sceneLever(this), () => this.startBoss()); }
   startBoss() {
+    Pager.boss(4);
     this.setStage('boss', { x: 80, y: L4.BOSS_G });
     this.bikerDown = null; const st = this.stage; st.boss = new L4.Biker(st);
     st.onUpdate = dt => { st.boss.update(dt, st); st.dropT = (st.dropT == null ? 4 : st.dropT) - dt; if (st.dropT <= 0 && st.boss.dieT == null) { st.dropT = U.rand(7, 10); const pk = new Game.Pickup(Math.random() < 0.8 ? 'tank' : 'bread', U.rand(100, 540), 0); pk.falling = true; st.world.pickups.push(pk); } };

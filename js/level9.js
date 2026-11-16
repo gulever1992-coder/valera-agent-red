@@ -90,15 +90,20 @@ WHO.mrx = WHO.mrx || { name: 'ГОСПОДИН ИКС', color: '#ff4040', voice:
     }
     drawHud(c) {      // интерфейс — единственное, что рисуется кодом
       const P = this.P; if (P.noHud) return;
-      c.fillStyle = 'rgba(0,0,0,0.55)'; c.fillRect(6, 6, 148, 16); c.fillStyle = '#400'; c.fillRect(9, 9, 142, 10);
-      c.fillStyle = P.hp > 35 ? '#3c3' : '#e33'; c.fillRect(9, 9, 142 * L9.clamp(P.hp / 100, 0, 1), 10);
-      G.text('ВАЛЕРА', 12, 10, { size: 8 });
-      c.fillStyle = 'rgba(0,0,0,0.55)'; c.fillRect(574, 6, 60, 16); G.text(String(this.score).padStart(6, '0'), 630, 10, { align: 'right', size: 8, color: '#ffd84a' });
+      HUD.drawFor(c, { hp: P.hp, maxHp: 100, score: this.score, weapons: L9.hudWeap(P) });     // общий HUD (hud.js)
       if (P.drawHud) P.drawHud(this, c);
     }
   };
 })();
 
+// оружие для общего HUD: у части своё (hudWeap) или оружие лаборатории (WEAP по P.weap)
+L9.hudWeap = function (P) {
+  if (P.hudWeap) return P.hudWeap();
+  const S = P.weap != null ? P : (L9.PARTS && L9.PARTS.lab && L9.PARTS.lab.weap != null ? L9.PARTS.lab : null);
+  const w = S && L9.WEAP && L9.WEAP[S.weap];
+  if (!w) return null;
+  return { list: [{ id: S.weap, icon: HUD.textIcon(w.seed ? 'ОСЕМ. 6000' : w.name === 'ПЛАЗМОГАН' ? 'ПЛАЗМА' : w.name === 'РАКЕТНИЦА' ? 'РАКЕТЫ' : w.name, w.seed ? '#9cff40' : '#ffd84a'), n: w.ammo == null ? Infinity : S.ammo[S.weap] }], cur: 0 };
+};
 function startLevel9(opts = {}) {
   if (G.portraits && G.portraits.valera6) G.portraits.valera = G.portraits.valera6;
   App.level = new L9.Level();

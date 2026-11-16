@@ -669,17 +669,10 @@ L3.drawFG = function (c, camX) {
 L3.drawHUD = function (c, pl, wd) {
   const R = Art.R;
   Game.drawHUD(c, pl, wd);
-  const ws = [['swatter', 'swatter', pl.ammo3.swatter + '%'], ['chalk', 'chalk', pl.ammo3.chalk]];
-  ws.forEach(([wn, icon, n], i) => {
-    const x = 174 + i * 56, sel = pl.weapon === wn, has = wn === 'swatter' || pl.ammo3[wn] > 0;
-    R(c, x - 1, 5, 54, 24, sel ? '#ffd84a' : '#111'); R(c, x, 6, 52, 22, sel ? '#3a3020' : '#1c1f24');
-    c.save(); if (!has) c.globalAlpha = 0.35; Art.item(c, icon, x + 12, 17, icon === 'swatter' ? -0.5 : 0, 0.8); c.restore();
-    G.text(String(n), x + 24, 13, { size: 8, color: has ? '#fff' : '#666' });
-  });
   const fc = pl.fartCool > 0 ? pl.fartCool / 9 : 0;
-  R(c, 290, 6, 40, 22, '#111'); R(c, 291, 7, 38, 20, fc > 0 ? '#1c2418' : '#2a4a1a');
-  G.text('ГАЗ', 310, 13, { size: 8, align: 'center', color: fc > 0 ? '#5a6a50' : '#b8ff70' });
-  if (fc > 0) R(c, 291, 25, Math.round(38 * (1 - fc)), 2, '#8cd040');
+  R(c, 176, 6, 40, 22, '#111'); R(c, 177, 7, 38, 20, fc > 0 ? '#1c2418' : '#2a4a1a');
+  G.text('ГАЗ', 196, 13, { size: 8, align: 'center', color: fc > 0 ? '#5a6a50' : '#b8ff70' });
+  if (fc > 0) R(c, 177, 25, Math.round(38 * (1 - fc)), 2, '#8cd040');
 };
 
 // =====================================================================
@@ -1272,6 +1265,7 @@ L3.Level = class {
   reachToilet(run) { this.carry3 = { ammo3: Object.assign({}, run.player.ammo3), weapon: run.player.weapon }; this.goBoss(); }
   goBoss() { Music.stop(); this.playScene(L3.sceneBoss(this), () => this.startBoss()); }
   startBoss(restart) {
+    if (!restart) Pager.boss(3);
     this.arena = new L3.Arena(this);
     const pl = new L3.Player(40, L3.AG);
     Object.assign(pl.ammo3, this.carry3 ? this.carry3.ammo3 : {}); pl.ammo3.chalk = Math.max(pl.ammo3.chalk, 25);

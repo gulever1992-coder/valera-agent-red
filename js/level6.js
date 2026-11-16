@@ -180,20 +180,8 @@ L6.Player = class extends Game.Player {
 };
 
 // индикатор оружия (кулаки / волшебная палочка) под шкалой здоровья
-L6.drawWeaponHUD = function (c, pl) {   // в стиле ур. 3: ячейки оружия справа от здоровья, выбранная — в жёлтой рамке
-  const R = Art.R, on = pl.hasWand && pl.wmode === 'wand', sel0 = v => v ? 1 + Math.sin(G.t * 6) * 0.06 : 0.9;   // выбранная иконка «дышит»
-  const cell = (x, sel, icon, label) => {
-    R(c, x - 1, 5, 54, 24, sel ? '#ffd84a' : '#111'); R(c, x, 6, 52, 22, sel ? '#3a3020' : '#1c1f24');
-    c.save(); c.beginPath(); c.rect(x, 6, 52, 22); c.clip(); if (!sel) c.globalAlpha = 0.45; icon(x); c.restore();
-    G.text(label, x + 50, 19, { size: 7, align: 'right', color: sel ? '#fff' : '#777' });
-  };
-  cell(174, !on, x => Spr.drawC(c, 'hud6', 0, x + 12, 17, 0, sel0(!on) * 0.8), 'УДАР');
-  if (pl.hasWand) {
-    cell(230, on, x => Spr.drawC(c, 'hud6', 1, x + 13, 17, 0, sel0(on)), pl.castCool > 0.2 && !pl.rapid ? Math.ceil(pl.castCool) + ' С' : 'ЧАРЫ');
-    if (pl.castCool > 0 && !pl.rapid) { R(c, 230, 25, 52, 3, '#101216'); R(c, 230, 25, Math.round(52 * (1 - pl.castCool / (pl.castMax || 5))), 3, '#c8a0ff'); }
-    G.text((Game.keyName('switch') || 'Q') + ' — смена', 174, 32, { size: 6, color: '#a8b0b8' });
-    if (pl.spellT > 0) G.text(pl.spellName, 288, 13, { size: 7, color: '#c8a0ff' });
-  }
+L6.drawWeaponHUD = function (c, pl) {   // оружие рисует общий HUD (hud.js); здесь — название заклинания
+  if (pl.hasWand && pl.spellT > 0) G.text(pl.spellName, 176, 8, { size: 7, color: '#c8a0ff', outline: true });
 };
 
 // ---------- заклинания ----------

@@ -364,5 +364,5 @@
   };
 
   // часть уровня: движок платформера ур.9 с картой x10run
-  L10.PARTS.run = new Proxy(L9.PARTS.lab, { get(t, k) { if (k === 'start') return (lv, ck) => t.start(lv, ck, 'x10run'); if (k === 'deathText') return 'СЕМЁН ПОБЕДИЛ'; if (k === 'drawHud') return (lv, c) => { c.fillStyle = 'rgba(0,0,0,0.55)'; c.fillRect(6, 25, 148, 16); G.text('ПЛАЗМОГАН', 12, 29, { size: 8, color: '#ffd84a' }); t.M.drawHud && t.M.drawHud(c, t, lv); }; return t[k]; }, set(t, k, v) { t[k] = v; return true; } });
+  L10.PARTS.run = new Proxy(L9.PARTS.lab, { get(t, k) { if (k === 'start') return (lv, ck) => t.start(lv, ck, 'x10run'); if (k === 'deathText') return 'СЕМЁН ПОБЕДИЛ'; if (k === 'hudWeap') return () => ({ list: [{ id: 'plasma10', icon: HUD.textIcon('ПЛАЗМА'), n: Infinity }], cur: 0 }); if (k === 'drawHud') return (lv, c) => { t.M.drawHud && t.M.drawHud(c, t, lv); }; return t[k]; }, set(t, k, v) { t[k] = v; return true; } });
 })();

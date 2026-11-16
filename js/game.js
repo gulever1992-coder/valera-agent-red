@@ -273,7 +273,7 @@ Game.Player = class {
     // ---- бросок ----
     if (ctl && I.pressed('switch')) this.switchWeapon();
     if (ctl && I.pressed('throw') && this.throwT <= 0 && !this.atk) {
-      if (this.ammo[this.weapon] <= 0) this.switchWeapon(true);
+      if (!(this.ammo[this.weapon] > 0)) this.switchWeapon(true);
       if (this.ammo[this.weapon] > 0) { this.throwT = 0.32; this.throwDone = false; this.throwLow = this.crouch && !this.noLowAtk; }
       else { FX.popText(this.x, this.y - 80, 'НЕТ СНАРЯДОВ', '#ff6a4a'); Sound.play('warn'); }
     }
@@ -318,12 +318,13 @@ Game.Player = class {
 
     this.choosePose(dt);
   }
-  switchWeapon(silent) {
-    const order = ['nuts', 'wrench', 'bricks', 'bottles'];
-    let i = order.indexOf(this.weapon);
+  switchWeapon(silent) {     // Q — по кругу: кулаки и всё, к чему есть снаряды
+    const order = Game.WEAPONS;
+    let i = Math.max(0, order.indexOf(this.weapon));
     for (let k = 1; k <= order.length; k++) {
       const n = order[(i + k) % order.length];
-      if (this.ammo[n] > 0) { this.weapon = n; if (!silent) Sound.play('select'); return; }
+      if (silent && n === 'fists') continue;
+      if (n === 'fists' || this.ammo[n] > 0) { this.weapon = n; if (!silent) Sound.play('select'); return; }
     }
   }
   moveY(dt, world) {
@@ -627,36 +628,9 @@ Game.Pickup = class {
   }
 };
 
-// ---------- HUD ----------
-Game.drawHUD = function (c, pl, world) {
-  // портрет
-  R(c, 5, 5, 34, 34, '#0a0a0c'); R(c, 6, 6, 32, 32, '#c8601a'); R(c, 7, 7, 30, 30, '#3a2414');
-  const pv = G.portraits && G.portraits[pl.portraitKey || 'valera'];
-  if (pv) { c.save(); c.beginPath(); c.rect(7, 7, 30, 30); c.clip(); c.drawImage(pv, 4, 5, 36, 36); c.restore(); }
-  if (pl.hp / pl.maxHp < 0.3 && (G.t * 4 | 0) % 2) R(c, 7, 7, 30, 30, 'rgba(220,40,40,0.35)');
-  // здоровье
-  R(c, 42, 8, 124, 12, '#111');
-  const k = U.clamp(pl.hp / pl.maxHp, 0, 1);
-  R(c, 44, 10, 120, 8, '#3a1010');
-  R(c, 44, 10, Math.round(120 * k), 8, k > 0.5 ? '#48c048' : k > 0.25 ? '#e0b020' : '#e03030');
-  R(c, 44, 10, Math.round(120 * k), 2, 'rgba(255,255,255,0.35)');
-  for (let i = 1; i < 10; i++) R(c, 44 + i * 12, 10, 1, 8, 'rgba(0,0,0,0.4)');
-  G.text('ВАЛЕРА', 42, 23, { size: 8, color: '#ffb070' });
-  if (!pl.ammo3) {
-  // оружие
-  R(c, 172, 6, 60, 22, '#111'); R(c, 173, 7, 58, 20, '#23262b');
-  const wk = pl.weapon === 'nuts' ? 'nut' : pl.weapon === 'wrench' ? 'wrench' : pl.weapon === 'bottles' ? 'bottle' : 'brick';
-  Art.item(c, wk, 186, 17, pl.weapon === 'wrench' ? 0.7 : 0);
-  G.text('x' + pl.ammo[pl.weapon], 198, 13, { size: 8, color: pl.ammo[pl.weapon] > 0 ? '#fff' : '#777' });
-  if (pl.bottleHits > 0) {
-    R(c, 236, 6, 64, 22, '#111'); R(c, 237, 7, 62, 20, '#1c2a1c');
-    Art.item(c, 'bottle', 248, 17, -0.6);
-    G.text('БЬЁТ ' + pl.bottleHits, 258, 13, { size: 8, color: '#8cf08c' });
-  }
-  }
-  // очки
-  G.text('ОЧКИ ' + String(world.score).padStart(6, '0'), W - 8, 8, { size: 8, align: 'right', color: '#ffd84a' });
-};
+// ---------- HUD (общий макет — js/hud.js) ----------
+Game.WEAPONS = ['fists', 'nuts', 'wrench', 'bricks', 'bottles'];
+Game.drawHUD = function (c, pl, world) { HUD.draw(c, pl, world); };
 
 // ---------- клавиши на экране ----------
 G.keycap = function (c, x, y, label, pulse = 0) {

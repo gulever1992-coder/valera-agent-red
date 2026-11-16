@@ -246,7 +246,7 @@ L6.Level = class {
     this.carry = { hp: run.player.hp };
     this.arena = new L6.Arena(this, run);
     this.mode = 'boss';
-    this.playScene(L6.sceneBossIntro(this), () => { this.mode = 'boss'; this.arena.player.forcePose = null; this.arena.startFight(); });
+    this.playScene(L6.sceneBossIntro(this), () => { this.mode = 'boss'; this.arena.player.forcePose = null; this.arena.startFight(); Pager.boss(6); });
   }
   restartBoss() {
     const run = this.run;

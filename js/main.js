@@ -318,6 +318,7 @@ function update(dt) {
         return;
       }
       if (lv.canPause && I.pressed('pause')) { App.paused = true; App.pauseSel = 0; Sound.play('select'); return; }
+      if (Pager.update(dt, lv, I)) return;   // пейджер на экране — игра на паузе
       lv.update(dt);
       break;
     }
@@ -579,7 +580,7 @@ function draw() {
     case 'credits': Extras.drawCredits(c); break;
     case 'difficulty': drawDifficulty(c); break;
     case 'levels': drawLevels(c); break;
-    case 'play': App.level.draw(c); if (App.paused) drawPause(c); break;
+    case 'play': App.level.draw(c); Pager.draw(c); if (App.paused) drawPause(c); break;
     case 'results': drawResults(c); break;
     case 'soon': drawSoon(c); break;
     case 'sprites': drawSprites(c); break;
@@ -658,6 +659,7 @@ function frame(now) {
   else if (q.has('l2')) startLevel2();
   else if (q.has('boss')) { Sound.unlock(); startLevel1({ boss: true }); }
   else if (q.has('climb')) { startLevel1({ skip: true }); }
+  else if (q.has('tut')) { Sound.unlock(); L1.TUT_ONLY = true; startLevel1(); }   // обучение Юрика в цеху
   else {
     // заставка держится минимум SPLASH_MIN секунд, затем гаснет
     while (App.t < SPLASH_MIN) await new Promise(r => setTimeout(r, 50));

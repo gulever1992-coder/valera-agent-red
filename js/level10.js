@@ -177,12 +177,8 @@ WHO.semen = WHO.semen || { name: 'СЕМЁН', color: '#7cff6a', voice: 60 };
     }
     drawHud(c) {
       const P = this.P;
-      c.fillStyle = 'rgba(0,0,0,0.55)'; c.fillRect(6, 6, 148, 16); c.fillStyle = '#400'; c.fillRect(9, 9, 142, 10);
-      c.fillStyle = P.hp > 35 ? '#3c3' : '#e33'; c.fillRect(9, 9, 142 * L10.clamp(P.hp / 100, 0, 1), 10);
-      G.text('ВАЛЕРА', 12, 10, { size: 8 });
-      c.fillStyle = 'rgba(0,0,0,0.55)'; c.fillRect(574, 6, 60, 16); G.text(String(this.score).padStart(6, '0'), 630, 10, { align: 'right', size: 8, color: '#ffd84a' });
+      HUD.drawFor(c, { hp: P.hp, maxHp: 100, score: this.score, weapons: P.hudWeap ? P.hudWeap() : P.weap != null ? L9.hudWeap(P) : null });     // общий HUD (hud.js), значки — справа
       if (P.drawHud) P.drawHud(this, c);
-      if (L10.Drops) L10.Drops.hud(this, c);
     }
   };
   // шкала босса: сегменты фазы, таймер сегмента

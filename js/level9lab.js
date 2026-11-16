@@ -283,10 +283,7 @@
       else S(c, 'fxL9', b.w === 'plasma' ? 'plasma' : b.w === 'rocket' ? 'rocket' : 'tracer', b.x, b.y, b.w === 'plasma' ? 0.5 : b.w === 'rocket' ? 0.45 : 0.32, { rot: a });
     },
     drawHud(lv, c) {
-      const w = WEAP[P.weap];
-      c.fillStyle = 'rgba(0,0,0,0.55)'; c.fillRect(6, 25, 148, 16);
-      G.text(w.name + (w.ammo != null ? ' ' + P.ammo[P.weap] : ''), 12, 29, { size: 8, color: '#ffd84a' });
-      c.fillStyle = 'rgba(0,0,0,0.55)'; c.fillRect(6, 43, 60, 14); G.text('ГРАНАТЫ ' + P.gren, 10, 46, { size: 8 });
+      G.text('ГРАНАТЫ ' + P.gren, 54, 33, { size: 8, outline: true, color: P.gren > 0 ? '#fff' : '#777' });     // оружие — в общем HUD
       if (P.M.drawHud) P.M.drawHud(c, P, lv);
     },
   };

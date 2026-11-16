@@ -306,9 +306,9 @@ L7.Run = class {
     R(c, 254, 8, 150, 12, '#111'); R(c, 256, 10, 146, 8, '#1a2a1a');
     R(c, 256, 10, Math.round(146 * k), 8, k < 0.4 ? '#e0c040' : k < 0.75 ? '#f08a30' : '#ff3020');
     G.text(pl.hidden ? (pl.hidden.blown ? 'ВИДЕЛИ, КАК ТЫ ПРЯТАЛСЯ!' : 'СПРЯТАН') : k > 0 ? 'ТЕБЯ ЗАМЕЧАЮТ!' : pl.crouch ? 'КРАДЁШЬСЯ' : 'НЕЗАМЕТНОСТЬ', 329, 23, { align: 'center', size: 8, color: pl.hidden && !pl.hidden.blown ? '#8cf08c' : k > 0 ? '#ff8a6a' : '#c8d0d8' });
-    if (this.flags.camsB > 0) G.text('КАМЕРЫ ВЫКЛ: ' + Math.ceil(this.flags.camsB), W - 8, 22, { align: 'right', size: 8, color: '#8cf08c' });
+    if (this.flags.camsB > 0) G.text('КАМЕРЫ ВЫКЛ: ' + Math.ceil(this.flags.camsB), W - 8, 40, { align: 'right', size: 8, color: '#8cf08c' });
     const task = this.map === 'sewer' ? 'Канализация: пройти к люку' : this.map === 'in' ? (this.flags.note ? 'Код замка: ' + this.code : 'Найти код от главного зала') : (pl.x < L7.FENCE_X ? 'Найти проход к зданию' : pl.x < L7.YARD_X ? 'Пробраться вдоль стены' : 'Во двор, к воротам');
-    G.text(task, W - 8, 34, { align: 'right', size: 8, color: '#e8e0c8' });
+    G.text(task, W - 8, 52, { align: 'right', size: 8, color: '#e8e0c8' });
     if (this.near && !this.mg && !this.caught) Game.drawHint(c, '{up} — ' + this.near.label, 1, H - 52);
     else if (this.hint && !this.caught) Game.drawHint(c, this.hint.text, this.hintA);
   }

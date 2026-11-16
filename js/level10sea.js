@@ -493,6 +493,11 @@
         const im = L10.img['mid_' + n]; if (im) { const H = P.K * 0.5 * (AT().rkH ?? 172) * im.height / L10.img.mid_ri0.height, w = im.width * H / im.height; c.save(); c.translate(P.x, P.y + 1); if (fl) c.scale(-1, 1); c.imageSmoothingEnabled = true; c.drawImage(im, -w * 0.5, -H, w, H); c.restore(); return; } }
       S9(c, sh, fr, P.x, P.y + 1, P.K, { flip: fl });
     },
+    hudWeap() {     // ракетка и гранатомёт (C — сменить)
+      const l = [{ id: 'racket', icon: HUD.textIcon('РАКЕТКА', '#7fd8ff'), n: Infinity }];
+      if (P.gun) l.push({ id: 'rpg', icon: HUD.textIcon('РПГ'), n: Infinity });
+      return { list: l, cur: P.gun && P.wpn !== 'racket' ? 1 : 0 };
+    },
     drawHud(lv, c) {
       for (const q of P.scr) { const im = L10.img['mid_scr' + q.i]; if (!im) continue; const r = q.r ?? 1; if (r <= 0) continue; const h = 230 * q.s, w = im.width * h / im.height;     // царапины на «стекле» экрана: проявляются за когтями, тают последние 2 с
         c.save(); c.globalAlpha = clamp((q.life - q.t) / 2, 0, 1); c.translate(q.x, q.y);
@@ -502,7 +507,7 @@
         const u = clamp((k - 0.3) / 0.75, 0, 1), x = lerp(q.x0, q.x1, u), y = lerp(q.y0, q.y1, u), sIn = clamp(k / 0.2, 0, 1), sOut = clamp((1.35 - k) / 0.3, 0, 1), h = (AT().clawH ?? 330) * (0.6 + 0.4 * sIn), w = im.width * h / im.height;
         c.save(); c.globalAlpha = Math.min(sIn, sOut); c.translate(x, y); c.imageSmoothingEnabled = true; c.drawImage(im, -w * 0.5, -h * 0.18, w, h); c.restore(); }
       L10.bossBar(c, P.B, P.B.inv ? 'СЕМЁН — ЩИТ! ВЗОРВИ СТАНЦИИ' : 'СЕМЁН', 346);     /* владелец 2026-11-08: шкала снизу, у самого края — под плотами */
-      c.fillStyle = 'rgba(0,0,0,0.55)'; c.fillRect(6, 25, 148, 16); const RKh = P.wpn === 'racket' || !P.gun; G.text(RKh ? 'РАКЕТКА' : 'ГРАНАТОМЁТ', 12, 29, { size: 8, color: RKh ? '#7fd8ff' : '#ffd84a' }); c.fillStyle = 'rgba(0,0,0,0.55)'; c.fillRect(6, 42, 148, 14); G.text(P.gun ? 'C — СМЕНИТЬ ОРУЖИЕ' : 'X — УДАР', 12, 45, { size: 8, color: '#c8d0d8' });
+      G.text(P.gun ? 'C — СМЕНИТЬ ОРУЖИЕ' : 'X — УДАР', 54, 33, { size: 8, color: '#c8d0d8', outline: true });     // оружие — в общем HUD (hudWeap)
       if (P.dive) { const k = 1 - P.dive.t / AT().breath; c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(P.x - 22, P.swimY() - 18, 44, 6); c.fillStyle = k > 0.3 ? '#7fd8ff' : '#ff5a3a'; c.fillRect(P.x - 21, P.swimY() - 17, 42 * k, 4); }     // запас воздуха
     },
   };
