@@ -102,7 +102,7 @@ L9.hudWeap = function (P) {
   const S = P.weap != null ? P : (L9.PARTS && L9.PARTS.lab && L9.PARTS.lab.weap != null ? L9.PARTS.lab : null);
   const w = S && L9.WEAP && L9.WEAP[S.weap];
   if (!w) return null;
-  return { list: [{ id: S.weap, icon: HUD.textIcon(w.seed ? 'ОСЕМ. 6000' : w.name === 'ПЛАЗМОГАН' ? 'ПЛАЗМА' : w.name === 'РАКЕТНИЦА' ? 'РАКЕТЫ' : w.name, w.seed ? '#9cff40' : '#ffd84a'), n: w.ammo == null ? Infinity : S.ammo[S.weap] }], cur: 0 };
+  return { list: [{ id: S.weap, icon: HUD.imgIcon(S.weap, w.name), n: w.ammo == null ? Infinity : S.ammo[S.weap] }], cur: 0 };
 };
 function startLevel9(opts = {}) {
   if (G.portraits && G.portraits.valera6) G.portraits.valera = G.portraits.valera6;

@@ -582,8 +582,6 @@ L1.Climb = class {
       G.text(w.good ? '+' : '!', w.x, 30, { align: 'center', size: 8, color: '#fff', shadow: false });
     }
     Game.drawHUD(c, this.player, wd);
-    const m = Math.max(0, Math.round((this.player.y - this.D.topY) / 16));
-    G.text('ДО КАБИНЫ: ' + m + ' м', W - 8, 22, { align: 'right', color: '#c8d0d8' });
     if (this.hint) Game.drawHint(c, this.hint.text, this.hintA);
     if (this.fade > 0) { c.fillStyle = `rgba(0,0,0,${this.fade})`; c.fillRect(0, 0, W, H); }
   }

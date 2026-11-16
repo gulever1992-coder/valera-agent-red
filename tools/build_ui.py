@@ -50,3 +50,20 @@ print('pager out', save(pc, pa, 400, 'assets/spr/hud_pager.png'))
 col, al = unmix('art_src/ui/ui_pager_2.png')
 hc, ha = cut(col, al, parts(al)[1])
 print('heart out', save(hc, ha, 40, 'assets/spr/hud_heart.png'))
+
+# иконки оружия ур.9–10 — art_src/ui/ui_weap.png, сетка 3x3 (порядок как в промпте)
+import os, sys
+WEAP = ['rifle', 'pist', 'mini', 'plasma', 'rocket', 'seed', 'cap', 'racket', 'rpg']
+src = sys.argv[1] if len(sys.argv) > 1 else 'art_src/ui/ui_weap.png'
+if os.path.exists(src):
+    col, al = unmix(src)
+    lab, n = ndimage.label(ndimage.binary_closing(al > 0.5, iterations=3))
+    sl = ndimage.find_objects(lab)
+    sizes = ndimage.sum(np.ones_like(al), lab, range(1, n + 1))
+    top = sorted(np.argsort(-sizes)[:9])
+    boxes = [sl[i] for i in top]
+    boxes.sort(key=lambda s: (s[0].start + s[0].stop) / 2)
+    rows = [sorted(boxes[i:i + 3], key=lambda s: s[1].start) for i in (0, 3, 6)]
+    for name, s in zip(WEAP, [b for r in rows for b in r]):
+        c_, a_ = cut(col, al, s)
+        print(name, save(c_, a_, 96, f'assets/spr/hud_w_{name}.png'))

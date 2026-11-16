@@ -283,7 +283,7 @@
       else S(c, 'fxL9', b.w === 'plasma' ? 'plasma' : b.w === 'rocket' ? 'rocket' : 'tracer', b.x, b.y, b.w === 'plasma' ? 0.5 : b.w === 'rocket' ? 0.45 : 0.32, { rot: a });
     },
     drawHud(lv, c) {
-      G.text('ГРАНАТЫ ' + P.gren, 54, 33, { size: 8, outline: true, color: P.gren > 0 ? '#fff' : '#777' });     // оружие — в общем HUD
+      HUD.sub(c, 'ГРАНАТЫ', { n: P.gren });     // под здоровьем     // оружие — в общем HUD
       if (P.M.drawHud) P.M.drawHud(c, P, lv);
     },
   };

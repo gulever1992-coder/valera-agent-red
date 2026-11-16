@@ -71,10 +71,10 @@ const HUD = {};
     else { const empty = typeof w.n === 'number' && w.n <= 0; G.text(String(w.n), bx + bw / 2, by + bh + 2, { size: 8, align: 'center', color: empty ? '#ff6a4a' : '#fff', outline: true }); }
     if (pl.bottleHits > 0 && pl.weapon === 'bottles') G.text('БЬЁТ ' + pl.bottleHits, bx + bw / 2, by + bh + 12, { size: 7, align: 'center', color: '#8cf08c', outline: true });
     // здоровье
-    const hx = 66, hy = 6, hw = 104, k = U.clamp(pl.hp / pl.maxHp, 0, 1);
+    const hx = 74, hy = 6, hw = 96, k = U.clamp(pl.hp / pl.maxHp, 0, 1);
     // сердечко (Flow: assets/spr/hud_heart.png); при малом здоровье бьётся
     const hb = k < 0.3 ? 1 + Math.abs(Math.sin(G.t * 7)) * 0.18 : 1 + Math.abs(Math.sin(G.t * 2.5)) * 0.06;
-    if (HUD.img.heart) { const s = 16 * hb / HUD.img.heart.height, w = HUD.img.heart.width * s; c.drawImage(HUD.img.heart, 59 - w / 2, 12 - 8 * hb, w, 16 * hb); }
+    if (HUD.img.heart) { const s = 16 * hb / HUD.img.heart.height, w = HUD.img.heart.width * s; c.drawImage(HUD.img.heart, 61 - w / 2, 12 - 8 * hb, w, 16 * hb); }     // между рамкой оружия (до 48) и шкалой (с 74)
     R(c, hx, hy, hw, 12, '#000'); R(c, hx + 1, hy + 1, hw - 2, 10, '#e8e2d0'); R(c, hx + 2, hy + 2, hw - 4, 8, '#3a1010');
     R(c, hx + 2, hy + 2, Math.round((hw - 4) * k), 8, k > 0.5 ? '#48c048' : k > 0.25 ? '#e0b020' : '#e03030');
     R(c, hx + 2, hy + 2, Math.round((hw - 4) * k), 2, 'rgba(255,255,255,0.35)');
@@ -91,24 +91,38 @@ const HUD = {};
     const score = world && world.score != null ? world.score : lv.score || 0;
     G.text('ОЧКИ ' + String(score).padStart(6, '0'), W - 8, 6, { size: 8, align: 'right', color: '#ffd84a', outline: true });
     // значки «Ударник»: плашка с подписью, 3 ячейки и счёт
-    const got = Math.min(3, st.secrets || 0), px = W - 132, py = 17, pw = 126, ph = 24;
-    R(c, px, py, pw, ph, '#000'); R(c, px + 1, py + 1, pw - 2, ph - 2, '#e8e2d0'); R(c, px + 2, py + 2, pw - 4, ph - 4, '#23262b');
-    G.text('УДАРНИК', px + 5, py + 4, { size: 7, color: '#ffd84a' });
-    G.text(got + '/3', px + 5, py + 13, { size: 8, color: got >= 3 ? '#8cf08c' : '#fff' });
+    const got = Math.min(3, st.secrets || 0), lw = Math.ceil(Math.max(G.textWidth('УДАРНИК', 7), G.textWidth('3/3', 8))) + 10, pw = lw + 3 * 19 + 6, px = W - 6 - pw, py = 17, ph = 24;     // ширина — по тексту, ячейки после подписи
+    // без рамки: подпись, счёт и 3 значка; несобранный — серый и тёмный, поднятый — загорается
+    G.text('УДАРНИК', px + 5, py + 4, { size: 7, color: '#ffd84a', outline: true });
+    G.text(got + '/3', px + 5, py + 13, { size: 8, color: got >= 3 ? '#8cf08c' : '#fff', outline: true });
     if (HUD.badgeT > 0) HUD.badgeT -= G.dt;
     if (got > HUD._got) HUD.badgeT = 1; HUD._got = got;
     for (let i = 0; i < 3; i++) {
-      const x = px + 68 + i * 19, y = py + ph / 2, on = i < got;
-      R(c, x - 8, y - 9, 16, 18, on ? '#3a3020' : '#16181c');
-      const pop = on && i === got - 1 && HUD.badgeT > 0 ? 1 + Math.sin(HUD.badgeT * 12) * 0.25 * HUD.badgeT : 1;
-      c.save(); c.globalAlpha = on ? 1 : 0.3; Art.item(c, 'badge', x, y, 0, 0.95 * pop); c.restore();
+      const x = px + lw + 10 + i * 19, y = py + ph / 2, on = i < got, fresh = on && i === got - 1 && HUD.badgeT > 0;
+      const pop = fresh ? 1 + Math.sin(HUD.badgeT * 12) * 0.25 * HUD.badgeT : 1;
+      if (fresh) { c.save(); c.globalAlpha = HUD.badgeT * 0.6; c.fillStyle = '#fff6a0'; c.beginPath(); c.arc(x, y, 12 * pop, 0, Math.PI * 2); c.fill(); c.restore(); }     // вспышка при подборе
+      c.save(); if (!on) { c.filter = 'grayscale(1) brightness(0.75)'; c.globalAlpha = 0.85; } Art.item(c, 'badge', x, y, 0, 0.95 * pop); c.restore();
     }
   };
 
+  // вторая способность — строка под балансом: шкала перезарядки (k 0..1) или количество (n)
+  // o: { k } | { n }, icon(c, x, y) — необязательная иконка 12x12
+  HUD.sub = function (c, label, o = {}) {
+    let x = 74; const y = 31;
+    if (o.icon) { o.icon(c, x + 6, y + 4); x += 14; }
+    const ready = o.k != null ? o.k >= 1 : o.n > 0;
+    G.text(label, x, y, { size: 7, color: ready ? '#b8ff70' : '#8a948a', outline: true });
+    x += Math.ceil(G.textWidth(label, 7)) + 4;
+    if (o.k != null) {
+      const w = 170 - x, k = U.clamp(o.k, 0, 1);
+      R(c, x, y + 1, w, 7, '#000'); R(c, x + 1, y + 2, w - 2, 5, '#1c2418');
+      R(c, x + 1, y + 2, Math.round((w - 2) * k), 5, ready ? ((G.t * 3 | 0) % 2 ? '#b8ff70' : '#9cff40') : '#587030');
+    } else G.text('x' + o.n, x, y, { size: 8, color: o.n > 0 ? '#fff' : '#777', outline: true });
+  };
   HUD.swapT = 0; HUD._last = null; HUD.badgeT = 0; HUD._got = 0;
   // картинки интерфейса из Flow
   HUD.img = {};
-  for (const [k, f] of [['heart', 'hud_heart'], ['pager', 'hud_pager']]) G.loadImage('assets/spr/' + f + '.png').then(im => HUD.img[k] = im, () => {});
+  for (const [k, f] of [['heart', 'hud_heart'], ['pager', 'hud_pager'], ...['rifle', 'pist', 'mini', 'plasma', 'rocket', 'seed', 'cap', 'racket', 'rpg'].map(n => ['w_' + n, 'hud_w_' + n])]) G.loadImage('assets/spr/' + f + '.png').then(im => HUD.img[k] = im, () => {});
   const swap = id => { if (HUD._last !== id) { if (HUD._last != null) HUD.swapT = 0.25; HUD._last = id; } HUD.swapT = Math.max(0, HUD.swapT - G.dt); };
   HUD.draw = function (c, pl, world) {
     swap(pl.weapon);
@@ -124,9 +138,19 @@ const HUD = {};
   };
   HUD.fist = fistIcon;
   // иконка-надпись, когда картинки оружия нет (короткое название в две строки)
-  HUD.textIcon = (label, col = '#ffd84a') => (c, x, y) => {
-    const ws = String(label).split(' '), sz = Math.max(...ws.map(t => t.length)) > 6 ? 6 : 7;
-    ws.forEach((t, i) => G.text(t, x, y - 4 - (ws.length - 1) * 4 + i * 8, { size: sz, align: 'center', color: col }));
+  // миниатюра оружия из Flow (assets/spr/hud_w_*.png) — вписывается в рамку 30x22; пока не загрузилась — подпись
+  HUD.imgIcon = (name, label) => (c, x, y) => {
+    const im = HUD.img['w_' + name];
+    if (!im) return HUD.textIcon(label || name)(c, x, y);
+    const k = Math.min(30 / im.width, 22 / im.height), w = im.width * k, h = im.height * k;
+    c.save(); c.imageSmoothingEnabled = true; c.drawImage(im, x - w / 2, y - h / 2, w, h); c.restore();
+  };
+  HUD.textIcon = (label, col = '#ffd84a') => (c, x, y) => {     // каждое слово ужимается до ширины рамки (30 px)
+    const ws = String(label).split(' ');
+    ws.forEach((t, i) => {
+      const k = Math.min(1, 30 / Math.max(1, G.textWidth(t, 7))), yy = y - 4 - (ws.length - 1) * 4 + i * 8;
+      c.save(); c.translate(x, yy); c.scale(k, 1); G.text(t, 0, 0, { size: 7, align: 'center', color: col }); c.restore();
+    });
   };
 }
 
@@ -186,7 +210,7 @@ const WeaponWheel = {
 // ======================= ПЕЙДЖЕР =======================
 // Сообщения банка (списания), «никому не говорите код», подсказки по боссам. Пока на экране — игра на паузе.
 const Pager = {
-  seen: {}, bal: 37420, flashT: 0, msg: null, lv: null, lvId: 0, playT: 0, events: [], queue: [], said: 0,
+  seen: {}, tips: {}, bal: 37420, flashT: 0, msg: null, lv: null, lvId: 0, playT: 0, events: [], queue: [], said: 0,
   // баланс на старте каждого уровня (чтобы выбор уровня тоже был последовательным)
   START: { 1: 37420, 2: 33180, 3: 27950, 4: 21300, 5: 15870, 6: 11240, 7: 6890, 8: 2615, 9: -31740, 10: -48900 },
   BANK: 'ЛЕМУРБАНК',
@@ -195,11 +219,7 @@ const Pager = {
   RAGE: ['Гребаные мажоры из столицы! Все деньги у меня выкачали!', 'Опять?! Да чтоб вас, мажоры столичные!', 'Это ж полсмены! Ворюги столичные!',
     'Я на пельмени копил! Гребаные мажоры!', 'Кто им разрешил?! Все деньги выкачали!'],
   BOSS: {
-    1: 'Наташка открыта, когда пьёт или шатается. Бутылку можно отбить ударом обратно!',
-    2: 'Кеша открыт, когда шмыгает носом. Апперкот — после серии ударов.',
-    3: 'Бей Царя-таракана в голову, когда он опускает лапы. Мел — снизу вверх.',
     4: 'Байкер боится канистр «Осеменителя». После 4 попаданий он побежит — догоняй!',
-    6: 'Ванделорд открыт после удара о землю. Не стой под кислотным дождём.',
     '5:race': 'Граблионок на «Матизе» быстрый, но резко поворачивать не умеет. Срезай повороты!',
     '7:chief': 'Главарь спецназа после трёх твоих ударов уходит кувырком. Бей серией и отходи.',
     '8:boss': 'Боссов бей ВОГами — они больнее автомата. От атак уходи перекатом.',
@@ -228,7 +248,7 @@ const Pager = {
     return 1;
   },
   onLevel(lv) {
-    this.lv = lv; this.lvId = this.levelId(lv); this.playT = 0; this.msg = null; this.queue = this.queue.filter(m => m.lv === lv); this.said = 0; this.seen = {};
+    this.lv = lv; this.lvId = this.levelId(lv); this.playT = 0; this.msg = null; this.queue = this.queue.filter(m => m.lv === lv); this.said = 0; this.seen = {}; this.tips = {};
     this.bal = this.START[this.lvId] != null ? this.START[this.lvId] : this.bal;
     const id = this.lvId, ev = [];
     if (id === 8) ev.push({ t: U.rand(25, 60), kind: 'wipe' });
@@ -237,6 +257,11 @@ const Pager = {
     this.events = ev.sort((a, b) => a.t - b.t);
   },
   // внешние вызовы
+  // подсказка уровня (из Game.drawHint): один раз за уровень, без повторов в очереди
+  tip(text) {
+    if (!text || this.tips[text]) return; this.tips[text] = 1;
+    this.queue.push({ kind: 'tip', from: 'ДОБРОЖЕЛАТЕЛЬ', text, lv: App.level });
+  },
   boss(id) { const t = this.BOSS[id]; if (this.seen[id]) return; this.seen[id] = 1; if (t && !this.queue.some(m => m.kind === 'boss')) this.queue.push({ kind: 'boss', from: 'ДОБРОЖЕЛАТЕЛЬ', text: t, lv: App.level }); },
   shop() { this.queue.push(Object.assign(this.debitMsg('Магазин «Под горлышко»: покупка', U.randi(18, 34) * 100), { lv: App.level })); },
 
@@ -322,14 +347,19 @@ const Pager = {
     const pw = 190, ph = 124, px = Math.round(W - 8 - pw + (1 - e) * (pw + 20)), py = 62 + (m.t < 0.5 ? Math.round(Math.sin(m.t * 70) * 1.5) : 0);
     const im = HUD.img.pager;
     if (im) {     // корпус — картинка из Flow (assets/spr/hud_pager.png, tools/build_ui.py); экран — доли SCR
-      const S = this.SCR, iw = 256, ih = Math.round(iw * im.height / im.width), ix = Math.round(W - 8 - iw + (1 - e) * (iw + 20)), iy = Math.round(H / 2 - ih / 2 - 20) + (m.t < 0.5 ? Math.round(Math.sin(m.t * 70) * 1.5) : 0);
+      const S = this.SCR, iw = 200, ih = Math.round(iw * im.height / im.width), ix = Math.round(W - 8 - iw + (1 - e) * (iw + 20)), iy = Math.round(H / 2 - ih / 2 - 20) + (m.t < 0.5 ? Math.round(Math.sin(m.t * 70) * 1.5) : 0);
       c.save(); c.imageSmoothingEnabled = true; c.drawImage(im, ix, iy, iw, ih); c.restore();
       const sx = ix + Math.round(iw * S[0]), sy = iy + Math.round(ih * S[1]), sw = Math.round(iw * (S[2] - S[0])), sh = Math.round(ih * (S[3] - S[1]));
       if (m.big) { c.fillStyle = 'rgba(255,120,40,' + (0.25 + 0.15 * Math.sin(m.t * 8)) + ')'; c.fillRect(sx, sy, sw, sh); }
       const ink = '#1c2a10';
       G.text(m.from, sx + 3, sy + 2, { size: 6, color: ink, shadow: false });
       R(c, sx + 2, sy + 10, sw - 4, 1, 'rgba(28,42,16,0.45)');
-      G.wrap(m.text, sw - 6, 7).slice(0, 5).forEach((l, i) => G.text(l, sx + 3, sy + 13 + i * 9, { size: 7, color: ink, shadow: false }));
+      // текст ползёт титрами снизу вверх по экрану (по кругу), шапка с отправителем стоит
+      const lines = G.wrap(m.text, sw - 6, 7), LH = 9, top = sy + 12, bot = sy + sh - 1, hgt = lines.length * LH, run = hgt + (bot - top);
+      const off = (m.t * 13) % (run + 6), y0 = bot - off;
+      c.save(); c.beginPath(); c.rect(sx, top, sw, bot - top); c.clip();
+      lines.forEach((l, i) => G.text(l, sx + 3, y0 + i * LH, { size: 7, color: ink, shadow: false }));
+      c.restore();
       if ((m.t * 2 | 0) % 2 === 0) { c.fillStyle = 'rgba(255,60,40,0.85)'; c.fillRect(ix + Math.round(iw * 0.815), iy + Math.round(ih * 0.13), 7, 5); }     // мигает лампочка
       if (m.out == null && m.t > 0.7 && (G.t * 2 | 0) % 2 === 0) G.text((Game.keyName ? Game.keyName('jump') : 'Z') + ' — ДАЛЬШЕ', ix + iw / 2, iy + ih + 4, { size: 8, align: 'center', color: '#ffd84a', outline: true });
       return;

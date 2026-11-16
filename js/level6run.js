@@ -391,8 +391,6 @@ L6.Run = class {
     c.restore();
     G.drawBubbles(c, cx, -cu);
     Game.drawHUD(c, this.player, wd);
-    const left = Math.max(0, Math.round((L6.ARENA_X - this.player.x) / 16));
-    G.text('ДО ЛОГОВА: ' + left + ' м', W - 8, 22, { align: 'right', color: '#c8d0d8' });
     L6.drawWeaponHUD(c, this.player);
     if (this.hint) Game.drawHint(c, this.hint.text, this.hintA);
     if (this.fade > 0) { c.fillStyle = `rgba(0,0,0,${this.fade})`; c.fillRect(0, 0, W, H); }

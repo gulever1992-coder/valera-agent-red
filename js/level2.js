@@ -581,8 +581,6 @@ L2.Run = class {
     L2.drawForeground(c, cx, this.fg);
     G.drawBubbles(c, cx, 0);
     Game.drawHUD(c, this.player, wd);
-    const left = Math.max(0, Math.round((L2.ARENA_X - this.player.x) / 16));
-    G.text('ДО ДОМА: ' + left + ' м', W - 8, 22, { align: 'right', color: '#c8d0d8' });
     if (this.hint) Game.drawHint(c, this.hint.text, this.hintA);
     if (this.fade > 0) { c.fillStyle = `rgba(0,0,0,${this.fade})`; c.fillRect(0, 0, W, H); }
   }

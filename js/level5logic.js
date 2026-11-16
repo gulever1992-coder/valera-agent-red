@@ -683,9 +683,9 @@ L5.Level = class {
     const seedIc = (c, x, y) => Spr.drawC(c, Spr.sheets.seedcan ? 'seedcan' : 'icons4', Spr.sheets.seedcan ? 0 : 2, x, y, 0, 1.1);
     HUD.drawFor(c, { hp, maxHp: 1, score: this.score, weapons: { list: [{ id: 'seed5', icon: seedIc, n: Math.floor(this.ammo) }], cur: 0 } });
     const gk = 1 - this.gasCd / 7;
-    R(c, 176, 6, 60, 22, '#111'); R(c, 177, 7, 58, 20, '#1c2a1c'); G.text('C', 182, 13, { size: 8, color: gk >= 1 ? '#9cff40' : '#667' }); R(c, 194, 14, 36, 6, '#111'); R(c, 195, 15, Math.round(34 * gk), 4, gk >= 1 ? '#9cff40' : '#587030');
-    if (pl.nitro > 0) { const ny = (this.mode === 'race' || this.mode === 'win' || this.mode === 'lose') ? 58 : 36; R(c, 54, ny, 116, 8, '#0a0a0c'); R(c, 56, ny + 2, Math.round(112 * pl.nitro / 3.2), 4, '#60b0ff'); }
-    G.text(Math.round(pl.speed * 0.4) + ' км/ч', 170, 22, { size: 8, align: 'right', color: '#c8d0d8' });
+    HUD.sub(c, 'ГАЗ', { k: gk });     // газовая граната (C) — шкала под здоровьем
+    if (pl.nitro > 0) { const ny = (this.mode === 'race' || this.mode === 'win' || this.mode === 'lose') ? 64 : 54; R(c, 74, ny, 96, 8, '#0a0a0c'); R(c, 76, ny + 2, Math.round(92 * pl.nitro / 3.2), 4, '#60b0ff'); }
+    G.text(Math.round(pl.speed * 0.4) + ' км/ч', 74, 42, { size: 8, align: 'right', color: '#c8d0d8' });
     const boss = this.cars.find(b => b.d.boss && !b.dead && this.onScreen(b, 120));
     if (boss) { const bw = 200, bx = (W - bw) / 2; R(c, bx - 2, H - 34, bw + 4, 14, '#0a0a0c'); R(c, bx, H - 32, bw, 10, '#2a1010'); R(c, bx, H - 32, Math.round(bw * U.clamp(boss.hp / boss.maxhp, 0, 1)), 10, '#e03030'); G.text(boss.d.name, W / 2, H - 31, { size: 8, align: 'center', color: '#fff' }); }
     const mx = W - 134, my = 38, mw = 128, mh = 74, bx0 = 190, by0 = 140, bw0 = 1075 - 190, bh0 = 640 - 140, sc = Math.min((mw - 12) / bw0, (mh - 12) / bh0);
@@ -701,8 +701,7 @@ L5.Level = class {
     if (this.mode === 'count') { const n = Math.ceil(this.race.t); if (n <= 3 && n > 0) G.text(String(n), W / 2, 120, { size: 48, align: 'center', color: '#ffd84a', outline: true }); else G.text('ПРИГОТОВИЛСЯ!', W / 2, 130, { size: 16, align: 'center', color: '#fff', outline: true }); }
     if (this.mode === 'race' || this.mode === 'win' || this.mode === 'lose') {
       const m = this.matiz, gap = Math.round((pl.s - m.s) / 10); const ahead = gap >= 0;
-      G.text(ahead ? 'ВПЕРЕДИ НА ' + gap + ' м' : 'ОТСТАВАНИЕ ' + (-gap) + ' м', 54, 36, { size: 8, color: ahead ? '#8cf08c' : '#ff7a5a' });
-      const left = Math.max(0, Math.round((L5.S_END - pl.s) / 10)); G.text('ДО ФИНИША: ' + left + ' м', 54, 47, { size: 8, color: '#fff' });
+      G.text(ahead ? 'ВПЕРЕДИ НА ' + gap + ' м' : 'ОТСТАВАНИЕ ' + (-gap) + ' м', 74, 52, { size: 8, color: ahead ? '#8cf08c' : '#ff7a5a' });
     }
     if (this.hint > 0 && (this.mode === 'drive' || this.mode === 'race')) { const t = this.hintText || 'Стрелки — руль.  Пробел — ручник.  X — Вова стреляет.  C — газовая граната.  Q — гудок'; G.text(t, W / 2, H - 20, { size: 8, align: 'center', color: '#fff', outline: true }); }
     if (this.titleT > 0) G.bigTitle(c, this.titleText, Math.min(1, this.titleT), { size: this.titleText === 'ГОНИ!' || this.titleText === 'ПОБЕДА!' ? 32 : 16, y: 70, color: this.titleText === 'ГОНИ!' ? '#6adc50' : '#ffd84a' });

@@ -642,8 +642,6 @@ L3.Run = class {
     L3.drawFG(c, cx);
     c.restore();
     L3.drawHUD(c, this.player, wd);
-    const left = Math.max(0, Math.round((L3.W - this.player.x) / 16));
-    G.text('ДО ТУАЛЕТА: ' + left + ' м', W - 8, 22, { align: 'right', color: '#c8d0d8' });
     if (this.roomT > 0 && this.roomIdx >= 0) G.bigTitle(c, L3.ROOMS[this.roomIdx].name, Math.min(1, this.roomT), { size: 24, y: 110, color: '#ffd84a' });
     if (this.hint) Game.drawHint(c, this.hint.text, this.hintA);
     if (this.fade > 0) { c.fillStyle = `rgba(0,0,0,${this.fade})`; c.fillRect(0, 0, W, H); }
@@ -669,10 +667,7 @@ L3.drawFG = function (c, camX) {
 L3.drawHUD = function (c, pl, wd) {
   const R = Art.R;
   Game.drawHUD(c, pl, wd);
-  const fc = pl.fartCool > 0 ? pl.fartCool / 9 : 0;
-  R(c, 176, 6, 40, 22, '#111'); R(c, 177, 7, 38, 20, fc > 0 ? '#1c2418' : '#2a4a1a');
-  G.text('ГАЗ', 196, 13, { size: 8, align: 'center', color: fc > 0 ? '#5a6a50' : '#b8ff70' });
-  if (fc > 0) R(c, 177, 25, Math.round(38 * (1 - fc)), 2, '#8cd040');
+  HUD.sub(c, 'ГАЗ', { k: 1 - (pl.fartCool > 0 ? pl.fartCool / 9 : 0) });     // под здоровьем: шкала перезарядки
 };
 
 // =====================================================================

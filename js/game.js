@@ -709,6 +709,8 @@ Game.keyName = function (a) {
 Game.fmtHint = s => s.replace(/\{(\w+)\}/g, (m, a) => Game.keyName(a) || a);
 Game.drawHint = function (c, text, alpha, top) {
   if (alpha <= 0) return;
+  // подсказки — только через пейджер (по одному разу); на экране остаются лишь «{up} — действие» у дверей/предметов
+  if (!/^\{up\} — /.test(text) && typeof Pager !== 'undefined') { Pager.tip(Game.fmtHint(text)); return; }
   c.globalAlpha = Math.min(1, alpha);
   const lines = G.wrap(Game.fmtHint(text), 440, 8);
   const bh = lines.length * 12 + 10, bw = 460, bx = (W - bw) / 2, by = top != null ? top : H - bh - 10;

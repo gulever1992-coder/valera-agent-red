@@ -168,10 +168,7 @@ L4.Player = class extends L3.Player {
 L4.drawHUD = function (c, pl, wd) {
   const R = Art.R;
   Game.drawHUD(c, pl, wd);
-  const fc = pl.fartCool > 0 ? pl.fartCool / 9 : 0;
-  R(c, 176, 6, 40, 22, '#111'); R(c, 177, 7, 38, 20, fc > 0 ? '#1c2418' : '#2a4a1a');
-  G.text('ГАЗ', 196, 13, { size: 8, align: 'center', color: fc > 0 ? '#5a6a50' : '#b8ff70' });
-  if (fc > 0) R(c, 177, 25, Math.round(38 * (1 - fc)), 2, '#8cd040');
+  HUD.sub(c, 'ГАЗ', { k: 1 - (pl.fartCool > 0 ? pl.fartCool / 9 : 0) });     // под здоровьем: шкала перезарядки
 };
 
 // =====================================================================
