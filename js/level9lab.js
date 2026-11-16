@@ -10,7 +10,6 @@
     mini: { name: 'МИНИГАН', rate: 0.055, dmg: 0.8, sp: 700, ammo: 320, fx: 'tracer', spread: 0.09 },
     plasma: { name: 'ПЛАЗМОГАН', rate: 0.32, dmg: 3.5, sp: 460, ammo: 40, fx: 'plasma', pierce: 1 },
     rocket: { name: 'РАКЕТНИЦА', rate: 0.75, dmg: 6, sp: 380, ammo: 12, fx: 'rocket', blast: 46 },
-    seed: { name: 'ОСЕМЕНИТЕЛЬ 6000', rate: 0.2, dmg: 1, sp: 520, ammo: 30, fx: 'seed', seed: 1 },
   };
   L9.WEAP = WEAP;
   // направления прицела -> [кадр стоя, кадр бега-префикс, смещение дула (вперёд, вверх), угол]
@@ -163,11 +162,9 @@
       for (const b of P.bul) {
         b.t += dt; if (b.grav) b.vy += GRAV * 0.8 * dt;
         b.x += b.vx * dt; b.y += b.vy * dt;
-        if (b.w === 'seed' && b.stuck) continue;
         // стены и полы
         if (LAB.solidAt(M, b.x, b.y) || (b.grav && LAB.floorBelow(M, b.x, b.y - 4, b.y + 2) !== null)) {
           if (b.w === 'gren' || b.w === 'rocket') { b.dead = true; P.blast(b.x, b.y, b.blast || WEAP.rocket.blast, b.dmg); continue; }
-          if (b.w === 'seed') { b.stuck = 1; b.vx = b.vy = 0; b.boomT = 1; continue; }
           b.dead = true; P.fx.push({ sh: 'fxL9', fr: ['spark'], x: b.x, y: b.y, s: 0.35, t: 0, life: 0.12, add: 1 }); continue;
         }
         // враги
@@ -175,7 +172,6 @@
           if (f.dead || b.hits.includes(f)) continue; const bx = f.box();
           if (b.x > bx[0] && b.x < bx[0] + bx[2] && b.y > bx[1] && b.y < bx[1] + bx[3]) {
             if (b.w === 'rocket' || b.w === 'gren') { b.dead = true; P.blast(b.x, b.y, b.blast || WEAP.rocket.blast, b.dmg); break; }
-            if (b.w === 'seed') { b.stuck = f; b.ox = b.x - f.x; b.oy = b.y - f.y; b.boomT = 1; f.hit(1, Math.sign(b.vx), 'seed'); break; }
             const blocked = f.blocks && f.blocks(b);
             if (blocked) { b.dead = true; Sound.play('deflect'); P.fx.push({ sh: 'fxL9', fr: ['spark'], x: b.x, y: b.y, s: 0.4, t: 0, life: 0.1, add: 1 }); break; }
             f.hit(b.dmg, Math.sign(b.vx), b.w); lv.stats.hits++; b.hits.push(f);
@@ -187,7 +183,6 @@
         if (b.t > 1.6 || b.x < P.cam.x - 60 || b.x > P.cam.x + 640 / (M.zoom || 1) + 60 || b.y < P.cam.y - 80 || b.y > P.cam.y + 360 / (M.zoom || 1) + 80) b.dead = true;
       }
       // семечки: прорастают в подсолнух-мину и взрываются (цепная реакция)
-      for (const b of P.bul) if (b.w === 'seed' && b.stuck) { if (b.stuck !== 1) { b.x = b.stuck.x + b.ox; b.y = b.stuck.y + b.oy; } b.boomT -= dt; if (b.boomT <= 0) { b.dead = true; P.blast(b.x, b.y, 34, 4); } }
       P.bul = P.bul.filter(b => !b.dead);
       // вражеские снаряды
       for (const e of P.ebul) {
@@ -278,12 +273,11 @@
     drawBullet(c, b) {
       const a = Math.atan2(b.vy, b.vx);
       if (b.w === 'gren') { S(c, 'pick9', 'grenades', b.x, b.y, 0.35, { rot: b.t * 10 }); return; }
-      if (b.w === 'seed') { S(c, 'fxL9', 'seed', b.x, b.y, b.stuck ? 0.5 + Math.sin(b.t * 30) * 0.1 : 0.4, { rot: a }); return; }
       if (b.w === 'rocket' && L9D.rocketL9) S(c, 'rocketL9', 'rocket', b.x, b.y, 0.45, { rot: a });     // ракета целиком (корпус + пламя), без сложения цветов
       else S(c, 'fxL9', b.w === 'plasma' ? 'plasma' : b.w === 'rocket' ? 'rocket' : 'tracer', b.x, b.y, b.w === 'plasma' ? 0.5 : b.w === 'rocket' ? 0.45 : 0.32, { rot: a });
     },
     drawHud(lv, c) {
-      HUD.sub(c, 'ГРАНАТЫ', { n: P.gren });     // под здоровьем     // оружие — в общем HUD
+      HUD.sub(c, 'ГРАНАТЫ', { n: P.gren, icon: (c, x, y) => S(c, 'pick9', 'grenades', x, y, 0.3) });     // под здоровьем     // оружие — в общем HUD
       if (P.M.drawHud) P.M.drawHud(c, P, lv);
     },
   };

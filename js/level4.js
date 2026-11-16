@@ -35,7 +35,7 @@ L4.img = {};
   Spr.ANIM.girl = { stand: A('patrons', [1]), walk: A('patrons', [1]) };
   // Валера: ползком, по лестнице, кулаками, в чужих руках, неловкий танец
   // Валера в полицейской фуражке — основной набор уровня 4
-  const V = { crawl: A('v7_crawl', [0, 1, 2, 3, 4, 5, 6, 7], 9), climb: A('v7_mv', [2, 3], 6), punchA: A('v7_mv', [4]), punchB: A('v7_mv', [5]), held: A('v7_mv', [6]), dance: A('v7_mv', [7, 8], 3), dizzy: A('v7_mv', [9]) };
+  const V = { crawl: A('v4_crawl6', [0, 1, 2, 3, 4, 5], 9)     /* цикл ур.7 в фуражке, tools/build_crawl14.py */, climb: A('v7_mv', [2, 3], 6), punchA: A('v7_mv', [4]), punchB: A('v7_mv', [5]), held: A('v7_mv', [6]), dance: A('v7_mv', [7, 8], 3), dizzy: A('v7_mv', [9]) };
   Spr.ANIM.valera4 = Object.assign({}, V, {
     stand: A('v7_act', [0]), angry: A('v7_idle', [7]), hips: A('v7_idle', [0, 1], 4.5), stomp: A('v7_idle', [0, 1], 4.5), scratch: A('v7_idle', [5]), yawn: A('v7_idle', [6]), belly: A('v7_idle', [2, 3, 2, 3, 4], 3),
     run: A('v17_runs', [0, 1, 2, 3], 9), walk: A('v17_runs', [0, 1, 2, 3], 6),

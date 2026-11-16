@@ -234,11 +234,11 @@
       S(c, 'hcap9', fr, P.x, yy, k, { a: blink ? 0.5 : 1, rot });
       if (P.inv > 0.5 && P.lv.stats.dmg) S(c, 'hcap9', fr, P.x, yy, k, { rot, add: 1, a: 0.35 });
     },
-    hudWeap() { return { list: [{ id: 'cap9', icon: HUD.imgIcon('cap', 'ПУШКА'), n: Infinity }], cur: 0 }; },
+    hudWeap() { return { list: [{ id: 'cap9', icon: HUD.imgIcon('rifle', 'АВТОМАТ'), n: Infinity }], cur: 0 }; },
     drawHud(lv, c) {
       const k = clamp(P.t / DUR, 0, 1);
       c.fillStyle = 'rgba(0,0,0,0.55)'; c.fillRect(220, 6, 200, 16); c.fillStyle = '#123'; c.fillRect(223, 15, 194, 4); c.fillStyle = '#3cf'; c.fillRect(223, 15, 194 * k, 4);
-      G.text(Math.round(P.v / 4) + ' КМ/Ч', 74, 31, { size: 8, color: P.v > 850 ? '#ff6a4a' : P.v > 650 ? '#ffd84a' : '#fff' });
+      HUD.useRow(); G.text(Math.round(P.v / 4) + ' КМ/Ч', 74, 21, { size: 8, color: P.v > 850 ? '#ff6a4a' : P.v > 650 ? '#ffd84a' : '#fff' });
       if (P.truck && P.truck.x > P.x - 330 && (P.t * 3 | 0) % 2) G.text('БЫСТРЕЕ! >>>', 320, 60, { align: 'center', size: 16, color: '#ff4a3a', outline: true });
     },
   };

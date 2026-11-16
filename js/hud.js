@@ -26,16 +26,16 @@ const HUD = {};
   HUD.weapons = function (pl) {
     if (pl.hudWeapons) return pl.hudWeapons();
     if (typeof L6 !== 'undefined' && L6.Player && pl instanceof L6.Player) {
-      const l = [{ id: 'fist', icon: sp('hud6', 0, 1), n: Infinity }];
-      if (pl.hasWand) l.push({ id: 'wand', icon: sp('hud6', 1, 1.15), n: Infinity, cool: pl.castCool > 0 && !pl.rapid ? 1 - pl.castCool / (pl.castMax || 5) : 0 });
+      const l = [{ id: 'fist', icon: fistIcon, n: Infinity }];     // кулак — один значок на всю игру
+      if (pl.hasWand) l.push({ id: 'wand', icon: HUD.imgIcon('wand', 'ПАЛОЧКА'), n: Infinity, cool: pl.castCool > 0 && !pl.rapid ? 1 - pl.castCool / (pl.castMax || 5) : 0 });
       return { list: l, cur: pl.hasWand && pl.wmode === 'wand' ? 1 : 0 };
     }
     if (pl.ammo3) {
       const l4 = 'seed' in pl.ammo3;
-      const l = [{ id: 'swatter', icon: it('swatter', -0.5, 1), n: pl.ammo3.swatter + '%' }];
+      const l = [{ id: 'swatter', icon: HUD.imgIcon('racket', 'МУХОБОЙКА'), n: pl.ammo3.swatter + '%' }];     // та же электромухобойка, что в руках (и ракетка ур.10)
       if (l4) {
         l.push({ id: 'fists', icon: fistIcon, n: Infinity });
-        if (pl.hasSeed) l.push({ id: 'seed', icon: sp('icons4', pl.green ? 2 : 1, 1.1), n: pl.ammo3.seed });
+        if (pl.hasSeed) l.push({ id: 'seed', icon: HUD.imgIcon(pl.green ? 'o3000g' : 'o3000', 'О-3000'), n: pl.ammo3.seed });
       } else if (pl.ammo3.chalk > 0 || pl.weapon === 'chalk') l.push({ id: 'chalk', icon: it('chalk', 0, 1), n: pl.ammo3.chalk });
       let cur = l.findIndex(w => w.id === pl.weapon); if (cur < 0) cur = 0;
       return { list: l, cur };
@@ -81,8 +81,9 @@ const HUD = {};
     if (k < 0.3 && (G.t * 4 | 0) % 2) R(c, hx + 2, hy + 2, hw - 4, 8, 'rgba(255,60,60,0.25)');
     // баланс в банке
     const b = Pager.bal, neg = b < 0, col = neg ? ((G.t * 3 | 0) % 2 ? '#ff4a3a' : '#ff9a8a') : Pager.flashT > 0 ? '#ff8a6a' : '#e8e0c8';
-    HUD.rub(c, hx, hy + 16, col);
-    G.text((neg ? '-' : '') + Pager.fmt(Math.abs(b)), hx + 9, hy + 16, { size: 8, color: col, outline: true });
+    const by2 = hy + (G.t - HUD._subT < 0.3 ? 29 : 16);     // баланс — нижней строкой; нет строки гранат/газа (HUD.sub / HUD.useRow) — подтягивается к здоровью
+    HUD.rub(c, hx, by2, col);
+    G.text((neg ? '-' : '') + Pager.fmt(Math.abs(b)), hx + 9, by2, { size: 8, color: col, outline: true });
   };
 
   // правый верхний угол: очки и значки
@@ -105,24 +106,37 @@ const HUD = {};
     }
   };
 
-  // вторая способность — строка под балансом: шкала перезарядки (k 0..1) или количество (n)
-  // o: { k } | { n }, icon(c, x, y) — необязательная иконка 12x12
+  // вторая способность — строка сразу под здоровьем (баланс уходит ниже):
+  // { n } — столько картинок гранат, без цифр; { k } — подпись и шкала перезарядки 0..1
+  // icon(c, x, y) — картинка одной гранаты (центр)
+  HUD._subT = -9;
   HUD.sub = function (c, label, o = {}) {
-    let x = 74; const y = 31;
-    if (o.icon) { o.icon(c, x + 6, y + 4); x += 14; }
-    const ready = o.k != null ? o.k >= 1 : o.n > 0;
-    G.text(label, x, y, { size: 7, color: ready ? '#b8ff70' : '#8a948a', outline: true });
-    x += Math.ceil(G.textWidth(label, 7)) + 4;
-    if (o.k != null) {
-      const w = 170 - x, k = U.clamp(o.k, 0, 1);
-      R(c, x, y + 1, w, 7, '#000'); R(c, x + 1, y + 2, w - 2, 5, '#1c2418');
-      R(c, x + 1, y + 2, Math.round((w - 2) * k), 5, ready ? ((G.t * 3 | 0) % 2 ? '#b8ff70' : '#9cff40') : '#587030');
-    } else G.text('x' + o.n, x, y, { size: 8, color: o.n > 0 ? '#fff' : '#777', outline: true });
+    HUD._subT = G.t;
+    let x = 74; const y = 21;
+    if (o.k == null) {
+      const n = Math.min(10, Math.max(0, o.n | 0)), ic = o.icon || HUD.grenIcon;
+      for (let i = 0; i < n; i++) ic(c, x + 6 + i * 13, y + 5);
+      if (!n) { c.save(); c.globalAlpha = 0.35; c.filter = 'grayscale(1)'; ic(c, x + 6, y + 5); c.restore(); }     // кончились — бледный силуэт
+      return;
+    }
+    const ready = o.k >= 1, ic = o.icon || (label === 'ГАЗ' && HUD.gasIcon);
+    if (ic) {     // значок вместо подписи (газ — облачко из спрайтов игры), при готовности покачивается
+      c.save(); ic(c, x + 7, y + 4 + (ready ? Math.sin(G.t * 6) : 0)); c.restore(); x += 17;
+    } else {
+      G.text(label, x, y, { size: 7, color: ready ? '#b8ff70' : '#8a948a', outline: true });
+      x += Math.ceil(G.textWidth(label, 7)) + 4;
+    }
+    const w = 170 - x, k = U.clamp(o.k, 0, 1);
+    R(c, x, y + 1, w, 7, '#000'); R(c, x + 1, y + 2, w - 2, 5, '#1c2418');
+    R(c, x + 1, y + 2, Math.round((w - 2) * k), 5, ready ? ((G.t * 3 | 0) % 2 ? '#b8ff70' : '#9cff40') : '#587030');
   };
+  HUD.grenIcon = () => {};
+  HUD.useRow = () => { HUD._subT = G.t; };     // уровень пишет свой текст в строку под здоровьем — баланс уходит ниже
+  HUD.gasIcon = (c, x, y) => Spr.drawC(c, 'gas', 0, x, y - 1, 0, 0.27);     // облачко газа (лист gas, кадр 96x76)
   HUD.swapT = 0; HUD._last = null; HUD.badgeT = 0; HUD._got = 0;
   // картинки интерфейса из Flow
   HUD.img = {};
-  for (const [k, f] of [['heart', 'hud_heart'], ['pager', 'hud_pager'], ...['rifle', 'pist', 'mini', 'plasma', 'rocket', 'seed', 'cap', 'racket', 'rpg'].map(n => ['w_' + n, 'hud_w_' + n])]) G.loadImage('assets/spr/' + f + '.png').then(im => HUD.img[k] = im, () => {});
+  for (const [k, f] of [['heart', 'hud_heart'], ['pager', 'hud_pager'], ...['rifle', 'pist', 'mini', 'plasma', 'rocket', 'o3000', 'o3000g', 'racket', 'wand'].map(n => ['w_' + n, 'hud_i_' + n])]) G.loadImage('assets/spr/' + f + '.png').then(im => HUD.img[k] = im, () => {});
   const swap = id => { if (HUD._last !== id) { if (HUD._last != null) HUD.swapT = 0.25; HUD._last = id; } HUD.swapT = Math.max(0, HUD.swapT - G.dt); };
   HUD.draw = function (c, pl, world) {
     swap(pl.weapon);
@@ -138,7 +152,7 @@ const HUD = {};
   };
   HUD.fist = fistIcon;
   // иконка-надпись, когда картинки оружия нет (короткое название в две строки)
-  // миниатюра оружия из Flow (assets/spr/hud_w_*.png) — вписывается в рамку 30x22; пока не загрузилась — подпись
+  // миниатюра оружия (assets/spr/hud_i_*.png — из тех же спрайтов, что оружие в руках; tools/build_hud_icons.py) — вписывается в рамку 30x22; пока не загрузилась — подпись
   HUD.imgIcon = (name, label) => (c, x, y) => {
     const im = HUD.img['w_' + name];
     if (!im) return HUD.textIcon(label || name)(c, x, y);
@@ -211,11 +225,13 @@ const WeaponWheel = {
 // Сообщения банка (списания), «никому не говорите код», подсказки по боссам. Пока на экране — игра на паузе.
 const Pager = {
   seen: {}, tips: {}, bal: 37420, flashT: 0, msg: null, lv: null, lvId: 0, playT: 0, events: [], queue: [], said: 0,
-  // баланс на старте каждого уровня (чтобы выбор уровня тоже был последовательным)
-  START: { 1: 37420, 2: 33180, 3: 27950, 4: 21300, 5: 15870, 6: 11240, 7: 6890, 8: 2615, 9: -31740, 10: -48900 },
+  // баланс на старте каждого уровня (выбор уровня тоже последователен): к ур.7 — ноль, к ур.9 — минус 4 500
+  START: { 1: 37420, 2: 31600, 3: 25200, 4: 18900, 5: 12700, 6: 6400, 7: 0, 8: -2100, 9: -4500, 10: -6900, 11: -9400 },
   BANK: 'ЛЕМУРБАНК',
-  WHY: ['Комиссия за обслуживание счёта', 'Абонентская плата за пейджер', 'Подписка «Столичный стиль»', 'Услуга «Мажор-плюс»', 'Страховка от падения кирпича',
-    'Перевод: ООО «Столичные мажоры»', 'Комиссия за комиссию', 'Штраф за неуплату штрафа', 'Пожертвование на яхту', 'Обслуживание карты «Золотая»'],
+  WHY: ['Налог на плитку для столицы', 'Сбор на подогрев столичных тротуаров', 'Налог на воздух (не столичный)', 'Взнос на фонтан для мажоров',
+    'Сбор за проживание вне столицы', 'Налог на дождь', 'Взнос на ёлку главной площади', 'Налог на пельмени', 'Сбор на парковку столичных мажоров',
+    'Налог на усталость', 'Взнос на столичный салют', 'Сбор за тишину', 'Налог на гордость за столицу', 'Взнос на яхту для столичного фонда',
+    'Сбор за пользование солнцем', 'Налог на отсутствие налогов', 'Взнос на новый газон столицы', 'Сбор за дыхание'],
   RAGE: ['Гребаные мажоры из столицы! Все деньги у меня выкачали!', 'Опять?! Да чтоб вас, мажоры столичные!', 'Это ж полсмены! Ворюги столичные!',
     'Я на пельмени копил! Гребаные мажоры!', 'Кто им разрешил?! Все деньги выкачали!'],
   BOSS: {
@@ -248,12 +264,13 @@ const Pager = {
     return 1;
   },
   onLevel(lv) {
-    this.lv = lv; this.lvId = this.levelId(lv); this.playT = 0; this.msg = null; this.queue = this.queue.filter(m => m.lv === lv); this.said = 0; this.seen = {}; this.tips = {};
+    this.lv = lv; this.lvId = this.levelId(lv); this.playT = 0; this.lastT = -99; this.msg = null; this.queue = this.queue.filter(m => m.lv === lv); this.said = 0; this.seen = {}; this.tips = {};
     this.bal = this.START[this.lvId] != null ? this.START[this.lvId] : this.bal;
     const id = this.lvId, ev = [];
-    if (id === 8) ev.push({ t: U.rand(25, 60), kind: 'wipe' });
-    else { ev.push({ t: U.rand(25, 90), kind: 'debit' }); if (Math.random() < 0.5) ev.push({ t: U.rand(110, 200), kind: 'debit' }); }
-    if (Math.random() < 0.45) ev.push({ t: U.rand(60, 160), kind: 'code' });
+    // 2-3 налога за уровень, суммы сходятся к балансу следующего уровня
+    ev.push({ t: U.rand(40, 100), kind: 'debit' }, { t: U.rand(170, 260), kind: 'debit' });
+    if (id === 6 || Math.random() < 0.25) ev.push({ t: U.rand(320, 400), kind: 'debit' });
+    if (Math.random() < 0.3) ev.push({ t: U.rand(110, 230), kind: 'code' });
     this.events = ev.sort((a, b) => a.t - b.t);
   },
   // внешние вызовы
@@ -270,17 +287,24 @@ const Pager = {
     return { kind: 'debit', from: this.BANK, text: 'СПИСАНИЕ ' + this.fmt(sum) + ' Р\n' + why + '\nОСТАТОК: ' + (this.bal < 0 ? '-' : '') + this.fmt(Math.abs(this.bal)) + ' Р', rage: U.choice(this.RAGE) };
   },
   make(e) {
-    if (e.kind === 'debit') return this.debitMsg(U.choice(this.WHY), Math.round(U.rand(900, Math.max(1200, Math.min(6500, this.bal * 0.25))) / 10) * 10);
-    if (e.kind === 'wipe') {
-      const sum = Math.max(0, this.bal) + 34355;
-      const m = this.debitMsg('Взыскание задолженности по услуге «Мажор-плюс»', sum);
-      m.rage = 'ВСЁ?! В МИНУС?! Гребаные мажоры из столицы, всё до копейки выкачали!'; m.big = true; return m;
+    if (e.kind === 'debit') {
+      const id = this.lvId, end = this.START[id + 1] != null ? this.START[id + 1] : this.bal - 2500, was = this.bal;
+      const left = 1 + this.events.filter(x => x.kind === 'debit' && !x.done).length;     // +1: текущий уже отмечен done
+      let sum = (this.bal - end) / Math.max(1, left);
+      if (left > 1) sum *= U.rand(0.7, 1.25);
+      sum = Math.max(300, Math.round(sum / 10) * 10);
+      const m = this.debitMsg(U.choice(this.WHY), sum);
+      if (was > 0 && this.bal === 0) { m.rage = 'НОЛЬ?! Гребаные мажоры из столицы, всё до копейки выкачали!'; m.big = true; }
+      else if (was >= 0 && this.bal < 0) { m.text += '\nСЧЁТ УШЁЛ В МИНУС'; m.rage = 'В минус?! Я теперь ещё и должен этим мажорам?!'; m.big = true; }
+      return m;
     }
     if (e.kind === 'code') return { kind: 'code', from: this.BANK, text: 'Никому не говорите код: 3671. Даже сотруднику банка.', rage: 'Три... шесть... семь... один. Ага, никому не скажу!', calm: true };
   },
   // есть ли сейчас нормальная игра (не катсцена, Валера жив)
   live(lv) {
     if (Scene.active || lv.scene || lv.mode === 'scene' || lv.resetting) return false;
+    // экран в затемнении (вход в комнату, переход, возрождение) — пейджер ждёт, иначе пауза замораживает чёрный экран
+    for (const o of [lv, lv.run, lv.arena, lv.stage, lv.cur]) if (o && (o.fade > 0.02 || o.cutFade > 0.02 || o.respawning || o.transT > 0 || o.trans)) return false;
     const pl = this.player(lv); return !(pl && pl.dead);
   },
   player(lv) {
@@ -312,16 +336,19 @@ const Pager = {
       if (m.t > 0.7 && (I.pressed('jump') || I.pressed('start') || I.pressed('punch') || I.pressed('throw'))) { m.out = 0; this.sfxOut(); }
       return true;
     }
-    if (!this.live(lv)) return false;
+    if (!this.live(lv)) { this.calmT = 0; return false; }
     this.playT += dt;
     const bk = this.detect(lv); if (bk) this.boss(this.lvId + ':' + bk);
-    if (this.queue.length) { this.show(this.queue.shift()); return true; }
-    const e = this.events.find(e => !e.done && this.playT >= e.t);
+    // не дёргать игрока: подсказки не чаще раза в 12 с, банк — не чаще раза в 50 с и не во время боя с боссом
+    this.calmT = (this.calmT || 0) + dt; if (this.calmT < 2.5) return false;     // после затемнения дать игроку 2,5 с осмотреться
+    const gap = this.playT - this.lastT, qi = this.queue.findIndex(m => m.kind === 'boss' || gap >= 12);
+    if (qi >= 0) { this.show(this.queue.splice(qi, 1)[0]); return true; }
+    const e = !bk && !this.queue.length && gap >= 50 && this.events.find(e => !e.done && this.playT >= e.t);
     if (e) { e.done = true; const m = this.make(e); if (m) { this.show(m); return true; } }
     return false;
   },
   close(lv) {
-    const m = this.msg; this.msg = null;
+    const m = this.msg; this.msg = null; this.lastT = this.playT;
     if (m.kind === 'debit') this.flashT = 2.5;
     if (!m.rage) return;
     const pl = this.player(lv);
@@ -343,7 +370,6 @@ const Pager = {
     }
     const m = this.msg; if (!m) return;
     const R = HUD.R, k = Math.min(1, m.t / this.IN), e = m.out != null ? 1 - Math.min(1, m.out / this.OUT) ** 2 : 1 - (1 - k) ** 3;   // выезд справа / уезд вправо
-    c.fillStyle = 'rgba(0,0,0,' + (0.35 * e) + ')'; c.fillRect(0, 0, W, H);
     const pw = 190, ph = 124, px = Math.round(W - 8 - pw + (1 - e) * (pw + 20)), py = 62 + (m.t < 0.5 ? Math.round(Math.sin(m.t * 70) * 1.5) : 0);
     const im = HUD.img.pager;
     if (im) {     // корпус — картинка из Flow (assets/spr/hud_pager.png, tools/build_ui.py); экран — доли SCR

@@ -10,8 +10,9 @@
   Spr.ANIM.yurik1 = has('yurik1')
     ? { stand: A('yurik1', [0]), walk: A('yurik1', [1, 2, 3, 2], 7), talk: A('yurik1', [4]), point: A('yurik1', [5]), arms: A('yurik1', [6]), ok: A('yurik1', [7]) }
     : { stand: A('wk_b', [1]), walk: A('wk_b', [1, 3], 5), talk: A('wk_b', [3]), point: A('wk_b', [1]), arms: A('wk_b', [1]), ok: A('wk_b', [3]) };
-  const CR = has('v1_crawl') ? 'v1_crawl' : 'v7_crawl';
-  Spr.ANIM.valera.crawl = A(CR, [0, 1, 2, 3, 4, 5, 6, 7], 10);
+  // ползком — цикл ур.7 (val4), перерисованный в одежде ур.1 (tools/build_crawl14.py)
+  const CR = has('v1_crawl6') ? 'v1_crawl6' : 'val4';
+  Spr.ANIM.valera.crawl = A(CR, [0, 1, 2, 3, 4, 5], 9);
   Spr.ANIM.valera.crawlIdle = A(CR, [0]);
 
   const NUM = ['', 'Раз!', 'Два!', 'Три!', 'Четыре!', 'Пять!', 'Шесть!', 'Семь!', 'Восемь!', 'Девять!', 'Десять!'];
@@ -66,6 +67,7 @@
       wd.spawnPlayerProj = (k, x, y, d) => { const p = new Game.Proj(k, x, y, d); p.poof = () => {}; wd.projs.push(p); };
       wd.ev = id => this.ev(id);
       const pl = this.pl = new Game.Player(v.x, FL); pl.onGround = true; pl.controls = false; pl.facing = 1;
+      if (!has('v1_crawl6')) pl.drawOpts = () => (pl.anim === 'crawl' || pl.anim === 'crawlIdle' ? { scale: 0.84 } : {});
       this.yurik = new G.Actor('yurik1', W + 40, FL, -1); this.yurik.headH = 90;
       this.brick = null; this.warnT = 0; this.dodged = false; this.told = false;
       // голубь на ящике у левой стены, чайка под потолком, голубь на полу
@@ -147,6 +149,7 @@
     draw(c) {
       for (const b of this.birds) if (b.type !== 'floor') b.draw(c);
       this.yurik.draw(c);
+      if (G.bg.hallFg) c.drawImage(G.bg.hallFg, 520, 278, 120, 72);     // ящики справа: Юрик выходит из-за них (tools/p1/build_hall_fg.py)
       this.birds[2].draw(c);
       const br = this.brick;
       if (br) {
@@ -214,7 +217,7 @@
     yield 0.7;
     y.setAnim('talk');
     yield* Scene.say('yurik1', 'Колени гнутся. Годится!', y);
-    yield* Scene.moveTo(y, 566, 95, 'walk');
+    yield* Scene.moveTo(y, 498, 95, 'walk');     // ящики начинаются с x 521 — Юрик стоит левее
     y.facing = -1; y.setAnim('point');
     yield* Scene.say('yurik1', 'А теперь проползи на четвереньках ко мне!', y);
     y.setAnim('arms');
@@ -244,7 +247,7 @@
     y.setAnim('point');
     yield* Scene.say('yurik1', 'О, кирпич! Очень кстати. Подними этот кирпич и убери этих птиц — весь цех загадили!', y);
     T.birds.forEach(b => b.startle());
-    yield* Scene.moveTo(y, 612, 95, 'walk');
+    yield* Scene.moveTo(y, 500, 95, 'walk');
     y.facing = -1; y.setAnim('arms');
     // 5. птицы
     T.maxX = 584;

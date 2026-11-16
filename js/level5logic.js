@@ -680,7 +680,7 @@ L5.Level = class {
     if (this.mode === 'scene') return;
     // общий HUD (hud.js): оружие — «Осеменитель» Вовы, здоровье копейки, баланс, очки, значки
     const hp = U.clamp(pl.hp / pl.maxhp, 0, 1);
-    const seedIc = (c, x, y) => Spr.drawC(c, Spr.sheets.seedcan ? 'seedcan' : 'icons4', Spr.sheets.seedcan ? 0 : 2, x, y, 0, 1.1);
+    const seedIc = HUD.imgIcon('o3000g', 'О-3000');     // «Осеменитель 3000» после переделки Вовой (конец ур.4)
     HUD.drawFor(c, { hp, maxHp: 1, score: this.score, weapons: { list: [{ id: 'seed5', icon: seedIc, n: Math.floor(this.ammo) }], cur: 0 } });
     const gk = 1 - this.gasCd / 7;
     HUD.sub(c, 'ГАЗ', { k: gk });     // газовая граната (C) — шкала под здоровьем

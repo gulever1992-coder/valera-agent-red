@@ -209,7 +209,6 @@
       else if (k.kind === 'pelmeni') { P.hp = Math.min(100, P.hp + 60); lv.stats.food++; lv.say('Пельмешки!!! +60', 1.4); }
       else if (k.kind === 'pies') { P.hp = Math.min(100, P.hp + 25); lv.stats.food++; lv.say('Пирожки! +25', 1.2); }
       else if (k.kind === 'grenades') { P.gren = Math.min(9, P.gren + 3); lv.say('Гранаты +3', 1.2); }
-      else if (k.kind === 'seed') { P.weap = 'seed'; P.ammo.seed += 30; lv.stats.secrets++; lv.say('ОСЕМЕНИТЕЛЬ 6000!!! СЕКРЕТ!', 2.5); }
     };
     // выстрелы по укрытиям, предметам и телевизорам
     M.shootProps = (b, P) => {

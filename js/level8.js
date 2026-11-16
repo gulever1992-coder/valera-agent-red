@@ -488,7 +488,7 @@ G.loadImage('assets/l8/card.jpg').then(im => { L8.card = im; });
       const p = this.pl; if (this.cutImg) return;
       if (this.bars) this.bars.forEach((b, i, a) => { const w = a.length > 1 ? 150 : 240, x0 = 320 - (a.length * (w + 8) - 8) / 2 + i * (w + 8); c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(x0, 6, w, 16); c.fillStyle = '#501'; c.fillRect(x0 + 3, 9, w - 6, 10); c.fillStyle = b.inv ? '#3bd' : '#e33'; c.fillRect(x0 + 3, 9, (w - 6) * clamp(b.hp / b.max, 0, 1), 10); if (b.half != null) { c.fillStyle = '#fff'; c.fillRect(x0 + 3 + (w - 6) * b.half / b.max, 8, 1, 12); } G.text(b.name, x0 + w / 2, 10, { align: 'center', size: 8 }); });
       // общий HUD (hud.js): автомат (магазин/запас), здоровье, баланс, очки, значки; ВОГи и бронежилет — под балансом
-      HUD.drawFor(c, { hp: p.hp, maxHp: 100, score: this.score, weapons: { list: [{ id: 'rifle8', icon: (c, x, y) => L8.spr(c, 'fx8', FXN.mag, x, y, 0.5), n: p.st === 'reload' ? '--' : p.ammo + '/' + p.res }], cur: 0 } });
+      HUD.drawFor(c, { hp: p.hp, maxHp: 100, score: this.score, weapons: { list: [{ id: 'rifle8', icon: HUD.imgIcon('rifle', 'АВТОМАТ'), n: p.st === 'reload' ? '--' : p.ammo + '/' + p.res }], cur: 0 } });
       HUD.sub(c, 'ВОГ', { n: p.vog, icon: (c, x, y) => L8.spr(c, 'fx8', FXN.vog, x, y + 2, 0.3) });     // гранаты — под здоровьем
       if (p.vest > 0) for (let i = 0; i < p.vest; i++) L8.spr(c, 'fx8', FXN.vest, 130 + i * 14, 37, 0.28);
       if (this.boss && !this.boss.gone) { const b = this.boss; c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(220, 6, 200, 16); c.fillStyle = '#501'; c.fillRect(223, 9, 194, 10); c.fillStyle = '#e33'; c.fillRect(223, 9, 194 * clamp(b.hp / b.max, 0, 1), 10); G.text(b.name, 320, 10, { align: 'center', size: 8 }); }
