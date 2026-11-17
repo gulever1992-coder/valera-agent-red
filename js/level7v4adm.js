@@ -292,20 +292,118 @@
 
   // ---------- БОЙ С ГЛАВАРЁМ (карта FB, фон assets/l7v4/aboss.jpg): очень живучий, очень быстрый, почти не оглушается ----------
   const BSC = 169 / 177;   // ростом как рядовые спецназовцы
+  // ИИ: уклоны с перезарядкой (отскок/пригнуться/кувырок за спину/прыжок), серии ударов с замахом, рывок, захват-бросок, очереди верх/низ,
+  // стол: запрыгивает, бьёт сверху «прыжком-топом», спрыгивает, когда Валера лезет к нему. Стоящего на месте наказывает (граната/рывок/низкие пули).
+  // Окна уязвимости (полоса жёлтая «БЕЙ!»): перезарядка, отдышка после серии, промах рывком/захватом/топом, приземление, кривляние, курица.
+  const CH_V = ['reload', 'eat', 'dizzy', 'land', 'hurt', 'recover', 'tired', 'taunt'], CH_EV = ['idle', 'walk', 'guard', 'aim', 'run'];
+  const pick = (opts, last) => { let s = 0; const o2 = opts.map(o => [o[0] * (o[1] === last ? 0.45 : 1), o[1]]); for (const o of o2) s += o[0]; let r = Math.random() * s; for (const o of o2) if ((r -= o[0]) <= 0 && o[0] > 0) return o[1]; return (o2.find(o => o[0] > 0) || o2[0])[1]; };
   V4.Chief = class extends V4.Boss {
-    constructor(x, run) { super(x, run); this.hp = this.max = 22; this.table = { x1: 94, x2: 216, y: V4.GY - 31 }; this.row = 0; }
+    constructor(x, run) { super(x, run); this.hp = this.max = 60; this.table = { x1: 94, x2: 216, y: V4.GY - 31 }; this.row = 0; this.q = []; this.dcd = 0; this.ifr = 0; this.camp = 0; this.anc = 0; this.blocks = 0; this.blockT = 0; this.ate = 0; this.stats = { ev: 0, blk: 0, hits: 0, acts: {} }; }
     get box() { return { x: this.x - 13, y: this.y - 78, w: 26, h: 78 }; }
-    think(run, pl) {   // здоровье упало до половины — ест курицу; доел — здоров полностью (сбить можно только ударом, пока жуёт)
-      if (this.hp <= this.max / 2 && this.cool <= 0) { this.face(pl); this.set('eat'); G.say(this, U.choice(['Перерыв на обед. Курочка!', 'Без курицы — не бой. Ням.', 'Сейчас подкреплюсь — и продолжим.']), 1.4); return; }
-      super.think(run, pl); }
-    update(dt, run) { const pl = run.player, was = this.state;
-      if (this.state === 'escape') { this.set('roll'); this.rollDir = Math.sign(this.x - pl.x) || 1; if (this.ammo <= 0) this.ammo = 4; this.row = 0; if (Math.random() < 0.5) G.say(this, U.choice(['Не дождёшься!', 'Хватит с тебя!', 'Дважды — и хватит!']), 0.9); }
+    get vuln() { return CH_V.includes(this.state); }
+    get ph() { return this.hp > this.max * 0.64 ? 1 : this.hp > this.max * 0.32 ? 2 : 3; }
+    next() { this.set('idle'); this.t = 10; }   // сразу решить, что делать дальше
+    tele(txt) { Sound.play('clank'); FX.burst(this.x + this.facing * 18, this.y - 62, 6, { colors: ['#fff', '#ff5a48', '#ffd84a'], speed: 70, life: 0.28, grav: 0 }); if (txt) FX.popText(this.x, this.y - 100, txt, '#ff5a48'); }
+    leap(tx, vy, ty) { const h = (ty == null ? V4.GY : ty) - this.y, T = (-vy + Math.sqrt(vy * vy + 1800 * h)) / 900; this.air = true; this.vy = vy; this.vx = (U.clamp(tx, 36, W - 36) - this.x) / T; this.set('jump'); this.jumpShot = false; }
+    act(a, pl) { const ph = this.ph, d = Math.abs(pl.x - this.x); this.last = a; this.stats.acts[a] = (this.stats.acts[a] || 0) + 1; this.face(pl);
+      if ((a === 'aim' || a === 'aimLow' || a === 'aimHigh') && this.ammo <= 0) a = 'reload';
+      switch (a) {
+        case 'aim': case 'aimLow': case 'aimHigh': this.set('aim'); this.forceLow = a === 'aimLow' ? true : a === 'aimHigh' ? false : null;
+          this.pLow = this.forceLow != null ? this.forceLow : pl.crouch ? true : pl.y < V4.GY - 12 ? false : Math.random() < 0.45; this.anim = this.pLow ? 'crouchShoot' : 'aim'; Sound.play('clank'); break;   // стойка видна заранее: присел — пули низом (прыгай), стоя — верхом (пригнись)
+        case 'reload': this.set('reload'); if (this.rlGo != null) { this.t = this.rlGo; this.rlGo = null; } G.say(this, U.choice(['Перезарядка!', 'Магазин пустой... Секунду!', 'Не подходи, я перезаряжаюсь!']), 1.2); Sound.play('clank'); break;
+        case 'combo': this.set('combo', 'block'); this.cs = 0; this.cn = ph === 1 ? U.choice([1, 2]) : ph === 2 ? U.choice([2, 3]) : 3; this.cHit = false; this.wu = [0.36, 0.3, 0.26][ph - 1]; this.tele(); break;
+        case 'jab': this.set('combo', 'block'); this.cs = 0; this.cn = 1; this.cHit = false; this.wu = 0.24; this.tele(); break;
+        case 'dash': this.set('dash', 'prejump'); this.tele('!'); if (Math.random() < 0.3) G.say(this, U.choice(['Тара-а-ан!', 'С дороги!', 'Поберегись!']), 0.9); break;
+        case 'grab': this.set('grab', 'point'); this.tele('!'); break;
+        case 'flank': this.set('flank', 'roll'); this.rollDir = Math.sign(pl.x - this.x) || 1; this.ifr = 0.6; this.cnt = true; break;
+        case 'rollaway': this.set('flank', 'roll'); this.rollDir = Math.sign(this.x - pl.x) || 1; if ((this.rollDir > 0 ? W - 30 - this.x : this.x - 30) < 50) this.rollDir = -this.rollDir; this.ifr = 0.6; this.cnt = false; break;
+        case 'backshot': this.set('evade', 'dodge'); this.ev = 'back'; this.evDir = Math.sign(this.x - pl.x) || 1; this.ifr = 0.35; this.q.unshift('aim'); break;
+        case 'walk': this.set('walk', 'walk'); break;
+        case 'table': this.leap((this.table.x1 + this.table.x2) / 2, -400, this.table.y); this.anim = 'jump'; break;
+        case 'leapOff': this.leap(pl.x < this.x ? Math.min(W - 60, this.x + 160) : Math.max(60, this.x - 160), -340); break;
+        case 'stomp': this.set('stompw', 'prejump'); this.tele('!'); break;
+        case 'grenade': if (!this.smokes.length && !this.nades.length) this.set('grenade'); else this.act('aim', pl); break;
+        case 'taunt': this.set('taunt'); G.say(this, U.choice(['Стропальщик? Ха! Я стропы на завтрак ем!', 'Ну давай, Мистер Рэд, удиви меня!', 'Я в армии пять лет в карри-роте служил!']), 1.6); break;
+        case 'retreat': this.set('run'); break;
+        case 'eat': this.set('eat'); this.eatN = (this.eatN || 0) + 1; G.say(this, U.choice(['Перерыв на обед. Курочка!', 'Без курицы — не бой. Ням.', 'Сейчас подкреплюсь — и продолжим.']), 1.4); break;
+      } }
+    think(run, pl) {
+      this.face(pl); const d = Math.abs(pl.x - this.x), ph = this.ph, onT = this.y < V4.GY - 1, plT = pl.y < V4.GY - 12, L = this.last, free = !this.smokes.length && !this.nades.length;
+      if (this.q.length) return this.act(this.q.shift(), pl);
+      if (this.hp <= this.max / 2 && this.ate < 1 && (this.eatN || 0) < 2 && this.cool <= 0) { if (d < 170 && !this.re) { this.re = 1; return this.act('retreat', pl); } this.re = 0; return this.act('eat', pl); }   // доест — здоров полностью (один раз за бой)
+      if (this.ammo <= 0) { if (d < 110 && !this.rr) { this.rr = 1; return this.act('rollaway', pl); } this.rr = 0; return this.act('reload', pl); }
+      if (this.camp > 2.2 && pl.onGround) {   // стоит столбом — наказать
+        if (Math.random() < 0.3) G.say(this, U.choice(['Стоишь? Ну стой!', 'Мишень неподвижная — красота!', 'Пустил корни, стропальщик?']), 1.1);
+        return this.act(pick([[free ? 3 : 0, 'grenade'], [d > 90 && !onT ? 3 : 0, 'dash'], [d <= 90 && !onT ? 3 : 0, 'combo'], [pl.crouch ? 4 : 1.5, 'aimLow'], [pl.crouch ? 0 : 2, 'aimHigh'], [onT && ph >= 2 ? 2 : 0, 'stomp']], L), pl); }
+      let a;
+      if (onT) a = pick([[plT && d < 130 ? 7 : 0, 'leapOff'], [2.5, 'aim'], [!plT ? (ph >= 2 ? 3 : 1.5) : 0, 'stomp'], [1.2, 'leapOff']], L);
+      else if (plT) a = pick([[3, 'table'], [2.5, 'aimHigh'], [1, 'walk'], [free ? 1 : 0, 'grenade']], L);
+      else if (d < 75) a = pick([[4, 'combo'], [pl.crouch ? 4 : 2, 'grab'], [2, 'backshot'], [ph >= 2 ? 1.5 : 0.5, 'flank']], L);
+      else if (d < 190) a = pick([[3, 'dash'], [2, 'walk'], [ph >= 2 ? 2.5 : 1, 'flank'], [2, 'aim'], [2, 'table'], [ph === 1 ? 1 : 0.3, 'taunt']], L);
+      else a = pick([[3, 'aim'], [ph >= 2 ? 2.5 : 1.5, 'dash'], [2, 'walk'], [free ? 1.5 : 0, 'grenade'], [2, 'table'], [ph === 1 ? 1 : 0.3, 'taunt']], L);
+      this.act(a, pl); }
+    evade(pl) { const ph = this.ph, away = Math.sign(this.x - pl.x) || 1, wall = (away > 0 ? W - 30 - this.x : this.x - 30) < 70, onT = this.y < V4.GY - 1;
+      this.dcd = [2.0, 1.5, 1.1][ph - 1] + Math.random() * 0.5; this.ifr = 0.45; this.hitDone = false; this.stats.ev++; G.hitStop = 0.04;
+      const v = pick([[wall ? 0 : 3, 'back'], [2, 'duck'], [ph >= 2 || wall ? 3 : 1, 'roll'], [onT ? 0 : 1.5, 'hop']]);
+      if (Math.random() < 0.35) G.say(this, U.choice(['Мимо!', 'Матрица, детка!', 'Слишком медленно!', 'Хе-хе!', 'Не попал!']), 0.9);
+      if (v === 'hop') return this.leap(this.x + (wall ? -away : away) * 120, -360);
+      if (v === 'roll') { this.set('flank', 'roll'); this.rollDir = -away; this.ifr = 0.6; this.cnt = ph >= 2; return; }
+      this.set('evade', 'dodge'); this.ev = v; this.evDir = away; if (v === 'duck') this.ifr = 0.45; }
+    update(dt, run) { const m0 = G.DMG_MULT; G.DMG_MULT = (m0 || 1.5) * 0.7; try { this.upd(dt, run); } finally { G.DMG_MULT = m0; } }   // атак у главаря много — каждая бьёт слабее
+    upd(dt, run) { const pl = run.player, was = this.state;
+      if (this.dcd > 0) this.dcd -= dt; if (this.ifr > 0) this.ifr -= dt; if (this.blockT > 0) this.blockT -= dt; else this.blocks = 0;
+      if (Math.abs(pl.x - this.anc) > 36 || !pl.onGround) { this.anc = pl.x; this.camp = 0; } else this.camp += dt;   // сколько Валера стоит на месте
+      if (this.state === 'escape') { this.row = 0; this.q.length = 0; this.rlKeep = null; this.dcd = 0; if (this.ammo < 5) this.ammo = 5;   // магазин вставил на ходу — сразу отвечает
+        this.q.push(U.choice(this.ph >= 2 ? ['aim', 'dash', 'flank', 'grenade', 'walk'] : ['aim', 'dash', 'walk'])); if (Math.random() < 0.5) G.say(this, U.choice(['Не дождёшься!', 'Хватит с тебя!', 'Дважды — и хватит!']), 0.9);
+        if (this.y >= V4.GY - 1 && Math.abs(this.x - 155) < 260 && Math.abs(pl.x - 155) > 90 && Math.random() < 0.5) { this.leap(155, -400, this.table.y); this.safeLand = 1; } else this.act('rollaway', pl); }
       if (!this.vuln) this.row = 0;
-      super.update(dt * (this.vuln ? 1.2 : this.hp <= this.max / 2 ? 1.85 : 1.6), run);
-      if (was === 'eat' && this.state === 'idle') { this.hp = this.max; Sound.play('coin'); FX.popText(this.x, this.y - 112, 'ГЛАВАРЬ ЗДОРОВ!', '#ff8a6a'); G.say(this, U.choice(['Как новенький!', 'Курица — сила!', 'Ну что, сначала?']), 1.2); } }   // всё делает быстрее; во второй половине боя — ещё быстрее
-    playerHit(hb, dmg, atk, pl) { const hp0 = this.hp; super.playerHit(hb, dmg, atk, pl);
-      if (this.hp < hp0 && this.state === 'hurt') { this.row++; if (this.combo >= 3 && Math.random() > 0.08) this.combo = 0;   // оглушить почти нереально
-        if (this.row >= 3) { this.row = 0; this.after = 'escape'; } } }
+      const k = this.vuln ? 1 : [1.15, 1.3, 1.45][this.ph - 1], sdt = dt * k;   // окна уязвимости — в обычном темпе
+      super.update(sdt, run);
+      const S = this.state, ph = this.ph, d = Math.abs(pl.x - this.x), dy = Math.abs(pl.y - this.y);
+      if (was === 'aim' && S === 'shoot') { this.shots = Math.min(this.ammo, [3, 3, 4][ph - 1]); this.low = this.pLow != null ? this.pLow : Math.random() < 0.45; this.anim = this.low ? 'crouchShoot' : 'shoot';
+        if (ph >= 3 && this.ammo - this.shots >= 2 && this.forceLow == null) this.q.push(this.low ? 'aimHigh' : 'aimLow'); else if (ph >= 2 && Math.random() < 0.35) this.q.push('dash'); }
+      if (was === 'jump' && S === 'land' && this.stomp) { this.stomp = 0; G.shake(4, 0.2); FX.burst(this.x, this.y - 2, 10, { colors: ['#c8b8a0', '#fff'], speed: 140, grav: 300, life: 0.4 }); Sound.play('stomp');
+        if (d < 36 && dy < 20) { pl.hurt(14, this.x, run.world); this.set('land'); } else { this.set('tired', 'land'); this.tT = [1.3, 1.1, 0.95][ph - 1]; } }
+      if (was === 'hurt' && S === 'reload' && this.rlKeep != null) { this.t = this.rlKeep; this.rlKeep = null; }
+      if (was === 'reload' && S === 'idle') this.ammo = 8;   // у главаря магазин побольше
+      if (was === 'jump' && S === 'land' && this.safeLand) { this.safeLand = 0; this.next(); }   // уходил прыжком — приземлился и сразу в бой
+      if (S === 'reload' && this.ph >= 2 && this.dcd <= 0 && this.t < 1.6 && d < 70 && dy < 40) { this.rlGo = this.t; this.dcd = 1.6; this.act('rollaway', pl); G.say(this, U.choice(['Не так быстро!', 'Я перезаряжусь в сторонке!']), 0.9); }   // подошёл к перезаряжающемуся — откатывается, досчитывает там
+      if (was === 'eat' && S === 'idle') { this.hp = this.max; this.ate++; Sound.play('coin'); FX.popText(this.x, this.y - 112, 'ГЛАВАРЬ ЗДОРОВ!', '#ff8a6a'); G.say(this, U.choice(['Как новенький!', 'Курица — сила!', 'Ну что, сначала?']), 1.2); }
+      const t = this.t;
+      if (S === 'walk') { this.face(pl); const tx = pl.x - this.facing * 58; this.x = U.approach(this.x, tx, 115 * sdt); if (Math.abs(this.x - tx) < 6 || t > 1.2) this.next(); }
+      else if (S === 'combo') {
+        if (!this.cHit) { this.anim = 'block'; if (t < this.wu * 0.6) this.face(pl);
+          if (t >= this.wu) { this.cHit = true; this.t = 0; this.anim = this.cs % 2 ? 'kick' : 'punch'; this.animT = 0; this.x += this.facing * 12; Sound.play('swing');
+            if (Math.abs(pl.x - this.x) < 58 && dy < 40 && Math.sign(pl.x - this.x) !== -this.facing) { if (pl.hurt(this.cs % 2 ? 13 : 10, this.x, run.world)) G.shake(3, 0.12); } } }
+        else if (t > 0.24) { this.cs++; this.cHit = false; this.t = 0; this.wu = 0.2; if (this.cs >= this.cn) { this.set('recover', 'land'); this.rec = [0.9, 0.75, 0.65][ph - 1]; } else Sound.play('clank'); } }
+      else if (S === 'recover') { if (t > this.rec) this.set('idle'); }
+      else if (S === 'tired') { if (t > this.tT) this.set('idle'); }
+      else if (S === 'dash') { this.face(pl); if (t > [0.5, 0.42, 0.36][ph - 1]) { this.set('dashgo', 'run'); this.dDir = this.facing; } }
+      else if (S === 'dashgo') { this.x += this.dDir * 340 * sdt; this.facing = this.dDir;
+        if (U.overlap(this.box, pl.box) && pl.y > this.y - 36 && pl.inv <= 0 && !pl.dead) { pl.hurt(12, this.x - this.dDir * 20, run.world); pl.vx = this.dDir * 260; G.shake(4, 0.15); this.set('idle', 'punch'); }
+        else if (t > 0.8 || (this.x - pl.x) * this.dDir > 55 || this.x <= 31 || this.x >= W - 31) { this.set('tired', 'land'); this.tT = [1.1, 0.95, 0.8][ph - 1]; if (Math.random() < 0.3) G.say(this, U.choice(['Уф...', 'Промазал!', 'Тормоза отказали...']), 0.9); } }
+      else if (S === 'grab') { this.face(pl); if (t > [0.45, 0.4, 0.34][ph - 1]) {
+          if (d < 50 && dy < 30 && pl.inv <= 0 && !pl.dead && !pl.hidden) { this.set('hold', 'punch'); G.say(this, U.choice(['Попался!', 'Иди сюда!', 'Строп — это я!']), 0.9); }
+          else { this.set('recover', 'land'); this.rec = 0.8; } } }
+      else if (S === 'hold') { this.animT = 0; pl.x = this.x + this.facing * 24; pl.vx = 0; pl.vy = 0; pl.atk = null;
+        if (t > 0.6) { pl.hurt(13, this.x, run.world); pl.vx = this.facing * 320; pl.vy = -260; Sound.play('hit'); G.shake(4, 0.2); this.set('recover', 'land'); this.rec = 0.6; } }
+      else if (S === 'flank') { this.anim = 'roll'; this.x += this.rollDir * 240 * sdt;
+        if ((this.cnt && (this.x - pl.x) * this.rollDir > 40) || t > 0.6 || this.x <= 31 || this.x >= W - 31) { this.face(pl); if (this.cnt && d < 80) this.act('jab', pl); else this.next(); } }
+      else if (S === 'evade') { if (this.ev === 'back' && t < 0.28) this.x += this.evDir * 210 * sdt;
+        if (t > (this.ev === 'duck' ? 0.4 : 0.35)) { if (this.ev === 'duck' && ph >= 2 && d < 70 && Math.random() < 0.6) this.act('jab', pl); else if (this.ev === 'back' && ph >= 2 && this.ammo > 0 && Math.random() < 0.5 && !this.q.length) this.act('aim', pl); else this.next(); } }
+      else if (S === 'guard') { if (t > 0.3) { if (this.blocks >= 2 && d < 70) { this.blocks = 0; this.act('jab', pl); } else this.next(); } }
+      else if (S === 'stompw') { this.face(pl); if (t > 0.42) { this.leap(pl.x, -330); this.stomp = 1; } } }
+    playerHit(hb, dmg, atk, pl) {
+      if (['ko', 'sit', 'wait'].includes(this.state) || atk.hit.has(this) || !U.overlap(hb, this.box)) return;
+      if (this.vuln) { const hp0 = this.hp, rl = this.state === 'reload' ? this.t : this.state === 'hurt' && this.after === 'reload' ? this.rlKeep : null; super.playerHit(hb, dmg, atk, pl);
+        if (rl != null) this.rlKeep = Math.min(2.3, rl + 0.35);   // удар не продлевает перезарядку: досчитает с того же места
+        if (this.hp < hp0) { this.stats.hits++; this.q.length = 0; if (this.state === 'hurt') { this.row++; if (this.combo >= 3 && Math.random() > 0.08) this.combo = 0;   // оглушить почти нереально
+          if (this.row >= 2) { this.row = 0; this.ifr = 0.7; this.set('escape'); } } } return; }   // серия пропущена — сразу уходит (без «станлока»)
+      atk.hit.add(this);
+      if (this.air || this.ifr > 0) return;
+      if (this.dcd <= 0 && CH_EV.includes(this.state)) return this.evade(pl);
+      this.stats.blk++; Sound.play('clank'); FX.burst(this.x + this.facing * 10, this.y - 54, 5, { colors: ['#fff', '#9ad0ff'], speed: 90, life: 0.2, grav: 0 });   // блок: урона нет
+      if (CH_EV.includes(this.state)) { this.blocks++; this.blockT = 1.6; this.set('guard', 'block'); } }
     draw(c, cx) { const d0 = Spr.drawAnim; Spr.drawAnim = (c2, sh, an, t, x, y, f, o) => d0.call(Spr, c2, sh, an, t, x, y, f, sh === 'boss4' ? Object.assign({ scale: BSC }, o) : o); try { super.draw(c, cx); } finally { Spr.drawAnim = d0; } }
   };
   const say4 = (who, text, actor, auto = 2.4) => Scene.say(who, text, actor, { auto });
@@ -320,8 +418,8 @@
     update: (dt, r) => { const b = r.boss; if (b && b.state === 'ko' && !r.level.scene && !r.bossWon) { r.bossWon = true; r.level.playOnMap(function* () { const pl = r.player; r.camLock = true; b.bullets = []; b.nades = []; b.smokes = []; yield 1.0;
         yield* say4('cmdr7', 'Ох... Кто ж знал, что стропальщики... так бьют...', b, 2.6); yield* say4('valera', 'Отдыхай, Главный. Мне ещё в главный зал — на собрание.', pl, 2.6);
         r.flags.bossDone = 1; r.flags.fAt = 0; Music.play('stealth'); r.go('F', window.V4_LAYF.xc - 120, 'Этаж 1', 1); }); }
-      if (b && !r.level.scene && !['sit', 'wait', 'ko'].includes(b.state)) {   // раз в 40 с сверху падает кефир (+30 здоровья)
-        const pl = r.player; r.hpT = (r.hpT || 0) + dt; if (r.hpT >= 40 && !r.hpDrop) { r.hpT = 0; r.hpDrop = { x: U.rand(60, W - 60), y: -20, vy: 0 }; }
+      if (b && !r.level.scene && !['sit', 'wait', 'ko'].includes(b.state)) {   // раз в 30 с сверху падает кефир (+30 здоровья)
+        const pl = r.player; r.hpT = (r.hpT || 0) + dt; if (r.hpT >= 30 && !r.hpDrop) { r.hpT = 0; r.hpDrop = { x: U.rand(60, W - 60), y: -20, vy: 0 }; }
         const d = r.hpDrop; if (d) { if (d.y < V4.GY) { d.vy += 500 * dt; d.y = Math.min(V4.GY, d.y + d.vy * dt); if (d.y >= V4.GY) Sound.play('land'); }
           else if (Math.abs(pl.x - d.x) < 20 && Math.abs(pl.y - V4.GY) < 12 && !pl.dead) { pl.heal(30); Sound.play('coin'); FX.popText(d.x, V4.GY - 70, '+30 ЗДОРОВЬЯ', '#8cf08c'); r.hpDrop = null; } } }
       if (r.bossHint > 0) { r.bossHint -= dt; r.hint = 'Бей, когда перезаряжается или ест! Не дай доесть курицу — вылечится'; r.hintA = 1; } },
