@@ -126,18 +126,18 @@ L6.Mark = class {
   update(dt, ar) {
     this.t += dt; const pl = ar.player, k = this.t - this.delay;
     if (k < 0) { if (Math.random() < dt * 28) FX.spawn({ x: this.x + U.rand(-15, 15), y: L6.GROUND - 2, vx: U.rand(-25, 25), vy: U.rand(-110, -40), grav: 260, life: 0.35, size: 2, color: ['#6a4020', '#c8a070', '#ff4060'][U.randi(0, 2)] }); }
-    else if (!this.popped) { this.popped = true; G.shake(2, 0.12); Sound.play('punch', 0.5); FX.dust(this.x, L6.GROUND, 4); }
+    else if (!this.popped) { this.popped = true; G.shake(2, 0.12); Sound.play('punch', 0.5); FX.dust(this.x, L6.GROUND, 4);
+      FX.burst(this.x, L6.GROUND - 4, 14, { colors: ['#6a4020', '#c8a070', '#ff4060', '#401030'], speed: 170, life: 0.5, grav: 500 }); }
     if (this.popped && !this.hitDone && k < 0.32 && !pl.dead && Math.abs(pl.x - this.x) < 20 * Math.max(1, pl.sc * 0.8) && pl.y > L6.GROUND - 52) { this.hitDone = true; if (pl.hurt(this.dmg, this.x, ar.world)) pl.vy = -300; }
     return k < 0.8;
   }
-  draw(c, cx) {
-    const k = this.t - this.delay;
-    if (k < 0) {   // росток-предупреждение: дрожит и растёт
-      const g = Math.min(1, this.t / Math.max(0.01, this.delay)), f = Spr.frame('vfx6', 6), h = f ? f[3] / 2 : 30;
-      c.globalAlpha = 0.55 + 0.45 * ((G.t * 10 | 0) % 2); const sc = 0.35 + 0.25 * g; Spr.drawC(c, 'vfx6', 6, this.x - cx + Math.sin(this.t * 40) * 1.5, L6.GROUND + 3 - h * sc, 0, sc); c.globalAlpha = 1; return;
+  draw(c, cx) {   // трещина в земле (vande2:5): дрожит и растёт, потом раскрывается с выбросом земли
+    const k = this.t - this.delay, x = this.x - cx;
+    if (k < 0) {
+      const g = Math.min(1, this.t / Math.max(0.01, this.delay)), sc = 0.55 + 0.45 * g;
+      c.globalAlpha = 0.6 + 0.4 * ((G.t * 10 | 0) % 2); Spr.draw(c, 'vande2', 5, x + Math.sin(this.t * 40) * 1.2, L6.GROUND + 3, 1, { scale: sc }); c.globalAlpha = 1; return;
     }
-    const fr = k < 0.08 ? 7 : 8, a = k > 0.55 ? Math.max(0, 1 - (k - 0.55) / 0.25) : 1, rise = Math.min(1, k / 0.1);
-    c.globalAlpha = a; const f = Spr.frame('vfx6', fr), h = f ? f[3] / 2 : 40; Spr.drawC(c, 'vfx6', fr, this.x - cx, L6.GROUND + 6 - h * 0.5 * rise, 0, 0.8); c.globalAlpha = 1;
+    c.globalAlpha = k > 0.5 ? Math.max(0, 1 - (k - 0.5) / 0.3) : 1; Spr.draw(c, 'vande2', 5, x, L6.GROUND + 3, 1, { scale: 1.25 }); c.globalAlpha = 1;
   }
 };
 
@@ -209,7 +209,7 @@ L6.Vande = class {
     if (this.state === 'hop') { this.hopUpdate(dt, ar); return; }
     if (this.state !== 'act') this.aggro -= dt * (camping ? 1.7 : 1);
     if (this.stun > 0) { this.stun -= dt; this.play('dizzy'); if (this.stun <= 0) { this.state = 'idle'; this.st = 0; } return; }
-    if (this.state === 'tired') { this.tiredT -= dt; this.play('knee'); if (Math.random() < dt * 6) FX.spawn({ x: this.x + U.rand(-8, 8), y: this.y - 92, vx: U.rand(-20, 20), vy: -30, grav: 60, life: 0.5, size: 2, color: '#bfe8ff' }); if (this.tiredT <= 0) { this.state = 'idle'; this.st = 0; } return; }
+    if (this.state === 'tired') { this.tiredT -= dt; this.play('tired'); if (Math.random() < dt * 6) FX.spawn({ x: this.x + U.rand(-8, 8), y: this.y - 92, vx: U.rand(-20, 20), vy: -30, grav: 60, life: 0.5, size: 2, color: '#bfe8ff' }); if (this.tiredT <= 0) { this.state = 'idle'; this.st = 0; } return; }
     if (this.platX) { this.perchT = Math.max(0.01, this.perchT - dt); if (this.perchT <= 0.01 && this.state === 'idle') { this.perchT = 0; this.perform('dive', ar); return; } }   // на дюне недолго: время идёт и во время колдовства
     // ---- уклонения: видит снаряды (успеет ли долететь и на какой высоте) и замах кулака ----
     const canDodge = (this.state === 'idle' || this.state === 'hurt') && this.stam >= 1 && this.dodgeCool <= 0 && this.vuln <= 0;
@@ -295,7 +295,7 @@ L6.Vande = class {
     if (k >= 1) { this.y = this.baseY = h.y1; this.platX = h.plat ? [h.plat.x + 10, h.plat.x + h.plat.w - 10] : null;
       this.perchT = h.plat ? (this.phase === 3 ? 3 : 3.8) : 0; this.play('land'); FX.dust(this.x, this.y, 5); G.shake(2, 0.15);
       if (h.plat) this.say(U.choice(['Достань меня тут!', 'Сверху виднее!', 'Ха! Не дотянешься!']));
-      if (h.onLand) h.onLand();
+      if (h.onLand) { h.onLand(); if (this.state === 'act') return; }   // удар о землю — своя короткая поза (окно для атаки)
       this.afterAct(); this.st = 0; if (!h.onLand && !this.chain.length) this.aggro = Math.min(this.aggro, 0.5); }
   }
   slam(ar) {   // приземление с прыжка: ударная волна под ногами
@@ -303,6 +303,7 @@ L6.Vande = class {
     FX.burst(this.x, L6.GROUND - 4, 12, { colors: ['#6a4020', '#c8a070', '#ffd84a'], speed: 120, life: 0.5, grav: 300 });
     if (!pl.dead && Math.abs(pl.x - this.x) < 40 * Math.max(1, pl.sc * 0.8) && pl.y > L6.GROUND - 46) pl.hurt(9, this.x, ar.world);
     if (this.phase >= 2) ar.quakes.push(new L6.Quake(this.x, -1, 280, 130), new L6.Quake(this.x, 1, 280, 130));
+    this.perchT = 0; this.platX = null; this.doSeq(this.lastAct || 'leap', [{ a: 'slamLand', d: 0.45, fixed: true }, { a: 'idle', d: 0.1 }]);
   }
   seqLocked() { return this.state === 'act' && this.seq && this.seq[this.sq] && this.seq[this.sq].lock; }
   dodge(s, ar) {
@@ -379,8 +380,8 @@ L6.Vande = class {
   }
   palmSteps(ar) {   // удар ладонью вплотную: замах (телеграф) — шаг вперёд — вспышка
     const pl = ar.player;
-    return [{ a: 'raise', d: 0.42, lock: true, tele: true, move: 50, on: () => { this.facing = pl.x > this.x ? 1 : -1; Sound.play('squeak', 0.7); FX.burst(this.x + this.facing * 20, this.y - 70, 8, { colors: ['#ffd84a', '#ff2060', '#fff'], speed: 50, life: 0.45, grav: 0 }); } },
-      { a: 'burst', d: 0.24, lock: true, on: () => { const hx = this.x + this.facing * 34; G.shake(3, 0.2); Sound.play('boom', 0.8);
+    return [{ a: 'palmWind', d: 0.42, lock: true, tele: true, move: 50, on: () => { this.facing = pl.x > this.x ? 1 : -1; Sound.play('squeak', 0.7); FX.burst(this.x + this.facing * 20, this.y - 70, 8, { colors: ['#ffd84a', '#ff2060', '#fff'], speed: 50, life: 0.45, grav: 0 }); } },
+      { a: 'palmHit', d: 0.24, lock: true, on: () => { const hx = this.x + this.facing * 34; G.shake(3, 0.2); Sound.play('boom', 0.8);
         FX.burst(hx, this.y - 50, 14, { colors: ['#ff2060', '#ffd84a', '#ffffff', '#802040'], speed: 170, life: 0.4, grav: 0 });
         if (!pl.dead && Math.abs(pl.x - hx) < 44 * Math.max(1, pl.sc * 0.8) && pl.y > this.y - 100 && pl.y < this.y + 30) pl.hurt(8, this.x, ar.world); } },
       { a: 'recoil', d: 0.45 }];

@@ -52,6 +52,7 @@ Spr.ANIM.vande = {
   hood: A6('b_taunt', [8]), stare: A6('b_taunt', [9]), clap: A6('b_taunt', [10]), bow: A6('b_taunt', [11]),
   hurt1: A6('b_hurt', [0]), hurt2: A6('b_hurt', [1]), stagger: A6('b_hurt', [2]), dizzy: A6('b_hurt', [3]), knee: A6('b_hurt', [4]), clutch: A6('b_hurt', [5]), fallBack: A6('b_hurt', [6]),
   lieShrooms: A6('b_hurt', [7]), lieSide: A6('b_hurt', [8]), sit: A6('b_hurt', [9]), reach: A6('b_hurt', [10]), ko: A6('b_hurt', [11]),
+  tired: A6('vande2', [0, 1], 3), slamLand: A6('vande2', [2]), palmHit: A6('vande2', [3]), palmWind: A6('vande2', [4]),   // build_bossposes.py: выдохся, удар о землю, ладонь, замах
 };
 Spr.ANIM.vande.stand = Spr.ANIM.vande.idle;
 
