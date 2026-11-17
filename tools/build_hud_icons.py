@@ -50,3 +50,14 @@ if __name__ == '__main__':
 if __name__ == '__main__':
     for n, out in [('ak', 'rifle'), ('racket', 'racket'), ('o3000', 'o3000'), ('o3000g', 'o3000g')]:
         save(out, unmix('art_src/ui/wref/flow_%s.jpg' % n))
+    # сердце «под мухомором» (ур.6): Flow по образцу hud_heart -> art_src/ui/heart_veins.jpg
+    hv = unmix('art_src/ui/heart_veins.jpg'); a = np.array(hv); from scipy import ndimage
+    lab, n = ndimage.label(a[..., 3] > 128); big = int(np.argmax(ndimage.sum(np.ones(lab.shape), lab, range(1, n + 1)))) + 1     # только само сердце, без мусора по краям
+    a[..., 3] = np.where(ndimage.binary_dilation(lab == big, iterations=3), a[..., 3], 0); ys, xs = np.where(a[..., 3] > 0)
+    hv = Image.fromarray(a).crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1))
+    hv.resize((round(hv.width * 66 / hv.height), 66), Image.LANCZOS).save('assets/spr/hud_heart_veins.png')
+    # бак «О-3000» с водой (ур.4, подбор): Flow по образцу seedcan + бутыли на спине -> art_src/ui/seedcan_w.jpg, высота 64 как seedcan
+    tw = unmix('art_src/ui/seedcan_w.jpg'); a = np.array(tw)
+    lab, n = ndimage.label(a[..., 3] > 128); big = int(np.argmax(ndimage.sum(np.ones(lab.shape), lab, range(1, n + 1)))) + 1
+    m = ndimage.binary_fill_holes(lab == big); a[..., 3] = np.where(m, 255, np.where(ndimage.binary_dilation(m, iterations=2), a[..., 3], 0)); ys, xs = np.where(a[..., 3] > 0)
+    tw = Image.fromarray(a).crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1)); tw.resize((round(tw.width * 64 / tw.height), 64), Image.LANCZOS).save('assets/spr/seedcan_w.png')

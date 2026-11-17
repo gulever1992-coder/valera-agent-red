@@ -466,7 +466,7 @@ L2.Run = class {
     this.hints = D.hints.map(h => Object.assign({ shown: 0 }, h));
     this.spies = D.spies.map(s => new L2.Spy(s));
     this.matiz = new L2.Matiz(D.zebra[0], D.zebra[1]);
-    this.player = new Game.Player(level.startX || 80, L2.GROUND);
+    this.player = Object.assign(new Game.Player(level.startX || 80, L2.GROUND), { crawlSpeed: 62 });
     if (level.carry) { Object.assign(this.player.ammo, level.carry.ammo); this.player.bottleHits = level.carry.bottleHits || 0; this.player.weapon = level.carry.weapon || 'nuts'; }
     this.respawn = { x: this.player.x };
     wd.cam.x = U.clamp(this.player.x - 200, 0, L2.W - W);
@@ -547,7 +547,7 @@ L2.Run = class {
       this.fade = Math.min(1, this.fade + dt * 2.5);
       if (this.fade >= 1) {
         this.respawning = false; this.level.stats.deaths++;
-        const np = new Game.Player(this.respawn.x, L2.GROUND);
+        const np = Object.assign(new Game.Player(this.respawn.x, L2.GROUND), { crawlSpeed: 62 });
         np.ammo = Object.assign({}, pl.ammo); np.bottleHits = Math.max(pl.bottleHits, this.shopDone ? 4 : 0); np.weapon = pl.weapon;
         this.player = np; wd.hazards = []; wd.clouds = [];
         wd.cam.x = U.clamp(np.x - 200, 0, L2.W - W);
@@ -1027,7 +1027,7 @@ L2.Level = class {
   }
   restartBoss() {
     const run = this.run;
-    const pl = new Game.Player(L2.ARENA_X + 150, L2.GROUND);
+    const pl = Object.assign(new Game.Player(L2.ARENA_X + 150, L2.GROUND), { crawlSpeed: 62 });
     pl.ammo = Object.assign({}, this.carry.ammo); pl.ammo.bottles = Math.max(pl.ammo.bottles || 0, 3); pl.bottleHits = 8; pl.weapon = 'bottles';
     run.player = pl;
     this.arena = new L2.Arena(this, run);

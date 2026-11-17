@@ -74,11 +74,17 @@ const HUD = {};
     const hx = 74, hy = 6, hw = 96, k = U.clamp(pl.hp / pl.maxHp, 0, 1);
     // сердечко (Flow: assets/spr/hud_heart.png); при малом здоровье бьётся
     const hb = k < 0.3 ? 1 + Math.abs(Math.sin(G.t * 7)) * 0.18 : 1 + Math.abs(Math.sin(G.t * 2.5)) * 0.06;
-    if (HUD.img.heart) { const s = 16 * hb / HUD.img.heart.height, w = HUD.img.heart.width * s; c.drawImage(HUD.img.heart, 61 - w / 2, 12 - 8 * hb, w, 16 * hb); }     // между рамкой оружия (до 48) и шкалой (с 74)
+    const boost = pl.growT > 0 ? pl.growT : 0;     // ур.6: съел мухомор — сердце крупное, в белых венах, с таймером (рисуется поверх, ниже)
+    if (!boost && HUD.img.heart) { const s = 16 * hb / HUD.img.heart.height, w = HUD.img.heart.width * s; c.drawImage(HUD.img.heart, 61 - w / 2, 12 - 8 * hb, w, 16 * hb); }     // между рамкой оружия (до 48) и шкалой (с 74)
     R(c, hx, hy, hw, 12, '#000'); R(c, hx + 1, hy + 1, hw - 2, 10, '#e8e2d0'); R(c, hx + 2, hy + 2, hw - 4, 8, '#3a1010');
     R(c, hx + 2, hy + 2, Math.round((hw - 4) * k), 8, k > 0.5 ? '#48c048' : k > 0.25 ? '#e0b020' : '#e03030');
     R(c, hx + 2, hy + 2, Math.round((hw - 4) * k), 2, 'rgba(255,255,255,0.35)');
     if (k < 0.3 && (G.t * 4 | 0) % 2) R(c, hx + 2, hy + 2, hw - 4, 8, 'rgba(255,60,60,0.25)');
+    if (boost) {     // вдвое больше, жёсткий пульс (двойной удар), внутри — секунды до конца эффекта
+      const im = HUD.img.heartv || HUD.img.heart, ph = (G.t * 2.2) % 1, beat = 1 + 0.2 * Math.max(Math.exp(-ph * 14), 0.75 * Math.exp(-Math.max(0, ph - 0.22) * 14) * (ph > 0.22 ? 1 : 0));
+      if (im) { const h = 32 * beat, w = im.width * h / im.height; c.drawImage(im, 61 - w / 2, 19 - h / 2, w, h); }
+      G.text(String(Math.ceil(boost)), 61, 14, { size: 8, align: 'center', color: '#fff', outline: true });
+    }
     // баланс в банке
     const b = Pager.bal, neg = b < 0, col = neg ? ((G.t * 3 | 0) % 2 ? '#ff4a3a' : '#ff9a8a') : Pager.flashT > 0 ? '#ff8a6a' : '#e8e0c8';
     const by2 = hy + (G.t - HUD._subT < 0.3 ? 29 : 16);     // баланс — нижней строкой; нет строки гранат/газа (HUD.sub / HUD.useRow) — подтягивается к здоровью
@@ -120,8 +126,8 @@ const HUD = {};
       return;
     }
     const ready = o.k >= 1, ic = o.icon || (label === 'ГАЗ' && HUD.gasIcon);
-    if (ic) {     // значок вместо подписи (газ — облачко из спрайтов игры), при готовности покачивается
-      c.save(); ic(c, x + 7, y + 4 + (ready ? Math.sin(G.t * 6) : 0)); c.restore(); x += 17;
+    if (ic) {     // значок вместо подписи (газ — облачко из спрайтов игры)
+      c.save(); ic(c, x + 7, y + 4); c.restore(); x += 17;     // значок неподвижный (владелец)
     } else {
       G.text(label, x, y, { size: 7, color: ready ? '#b8ff70' : '#8a948a', outline: true });
       x += Math.ceil(G.textWidth(label, 7)) + 4;
@@ -136,7 +142,7 @@ const HUD = {};
   HUD.swapT = 0; HUD._last = null; HUD.badgeT = 0; HUD._got = 0;
   // картинки интерфейса из Flow
   HUD.img = {};
-  for (const [k, f] of [['heart', 'hud_heart'], ['pager', 'hud_pager'], ...['rifle', 'pist', 'mini', 'plasma', 'rocket', 'o3000', 'o3000g', 'racket', 'wand'].map(n => ['w_' + n, 'hud_i_' + n])]) G.loadImage('assets/spr/' + f + '.png').then(im => HUD.img[k] = im, () => {});
+  for (const [k, f] of [['heart', 'hud_heart'], ['heartv', 'hud_heart_veins'], ['pager', 'hud_pager'], ...['rifle', 'pist', 'mini', 'plasma', 'rocket', 'o3000', 'o3000g', 'racket', 'wand'].map(n => ['w_' + n, 'hud_i_' + n])]) G.loadImage('assets/spr/' + f + '.png').then(im => HUD.img[k] = im, () => {});
   const swap = id => { if (HUD._last !== id) { if (HUD._last != null) HUD.swapT = 0.25; HUD._last = id; } HUD.swapT = Math.max(0, HUD.swapT - G.dt); };
   HUD.draw = function (c, pl, world) {
     swap(pl.weapon);

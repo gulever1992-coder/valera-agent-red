@@ -358,7 +358,7 @@ L1.Climb = class {
     this.bg = new L1.BG(D);
     const rng = U.seeded(77);
     this.groups = D.galleries.map(g => new L1.Group(g, rng));
-    this.player = new Game.Player(60, D.floorY);
+    this.player = Object.assign(new Game.Player(60, D.floorY), { crawlSpeed: 62 });
     this.respawn = { x: 60, y: D.floorY };
     wd.cam.y = D.worldH - H;
     this.spawnT = 3; this.gullT = 4; this.hint = null; this.hintA = 0; this.fade = 1; this.done = false; this.respawning = 0;
@@ -520,7 +520,7 @@ L1.Climb = class {
       if (this.fade >= 1) {
         this.respawning = 0;
         this.level.stats.deaths++;
-        const np = new Game.Player(this.respawn.x, this.respawn.y);
+        const np = Object.assign(new Game.Player(this.respawn.x, this.respawn.y), { crawlSpeed: 62 });
         np.ammo = { nuts: Math.max(pl.ammo.nuts, 5), wrench: pl.ammo.wrench, bricks: pl.ammo.bricks }; np.weapon = pl.weapon;
         this.player = np;
         wd.hazards = []; wd.warnings = []; this.spawnT = 3;
@@ -1150,7 +1150,7 @@ L1.Level = class {
     ar.actors = [];
     ar.world.hazards = []; ar.world.projs = []; ar.world.pickups = [];
     ar.dropped = {};
-    const pl = new Game.Player(150, L1.FLOOR);
+    const pl = Object.assign(new Game.Player(150, L1.FLOOR), { crawlSpeed: 62 });
     pl.ammo = Object.assign({}, this.carry.ammo); pl.weapon = this.carry.weapon;
     pl.ammo.nuts = Math.max(pl.ammo.nuts, 8);
     pl.hp = restart ? 100 : Math.max(this.carry.hp, 70);

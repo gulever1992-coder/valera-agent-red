@@ -24,11 +24,15 @@ L4.img = {};
   Spr.ANIM.maid = { stand: A('maidgum', [0, 1, 0, 1, 2, 3, 4, 4, 5, 0], 2.5, F), walk: A('maidw', [0, 1, 2, 3, 4, 5, 6, 7], 8, F), beckon: A('hostess', [3], 1, F) };
   Spr.ANIM.nurse = { stand: A('hostess', [4], 1, F), walk: A('walk4', [4, 5, 6, 7], 6, F), shrug: A('hostess', [7], 1, F) };
   Spr.ANIM.vova = { stand: A('vova', [0]), walk: A('vova', [1, 2, 3, 4], 8), hurt: A('vova', [5]), ko: A('vova', [6]), chained: A('vova', [7]) };
+  // финал у клуба (tools/build_endvova.py): ch0..ch5 — вешает цепь на ручки, bg0..bg7 — бульбулятор, sway — штормит
+  for (let i = 0; i < 6; i++) Spr.ANIM.vova['ch' + i] = A('vovachain', [i]);
+  for (let i = 0; i < 8; i++) Spr.ANIM.vova['bg' + i] = A('vovabong', [i]);
+  Spr.ANIM.vova.sway = A('vovabong', [6, 7], 1.6);
   Spr.ANIM.bouncerA = { stand: A('bouncers', [0], 1, F), shove: A('bouncers', [1], 1, F), aside: A('bouncers', [2], 1, F), flex: A('bouncers', [3], 1, F) };
   Spr.ANIM.bouncerB = { stand: A('bouncers', [4], 1, F), shove: A('bouncers', [5], 1, F), lean: A('bouncers', [6], 1, F), laugh: A('bouncers', [7], 1, F) };
   Spr.ANIM.biker.sing = A('l4fx2', [4], 1, F); Spr.ANIM.biker.taunt = A('l4fx2', [5], 1, F);
   Spr.ANIM.couple = { walk: A('couple', [0, 1, 2, 3], 7), climb: A('couple', [4, 5], 4), wink: A('couple', [6]), kiss: A('couple', [7]) };
-  Spr.ANIM.vovagun = { hold: A('vovagun3', [0]), open: A('vovagun3', [1]), flip: A('vovagun3', [2]), green: A('vovagun3', [3]), proud: A('vovagun3', [4]), give: A('vovagun3', [5]) };
+  Spr.ANIM.vovagun = { hold: A('vovagun4', [0]), open: A('vovagun4', [1]), flip: A('vovagun4', [2]), green: A('vovagun4', [3]), proud: A('vovagun4', [4]), give: A('vovagun4', [5]) };
   Spr.ANIM.zharness = { crawl: A('zharness', [0, 1], 5), drop: A('zharness', [2]), pounce: A('zharness', [3], 1, F), land: A('zharness', [4], 1, F), bite: A('zharness', [5], 1, F), leap: A('zharness', [6]), ko: A('zharness', [7]) };
   Spr.ANIM.kesha4 = { sniff: A('kesha_a', [5]), thumbs: A('kesha_b', [5]) };
   Spr.ANIM.guy = { stand: A('patrons', [0]), walk: A('patrons', [0]) };
@@ -99,7 +103,12 @@ L4.load = async function () {
 // =====================================================================
 Game.PICK.seedgun = { name: '«ОСЕМЕНИТЕЛЬ 3000»!', special: 'seedgun' };
 Game.PICK.tank = { name: 'Бак +60', ammo3: ['seed', 60] };
-{ const dOld = Game.Pickup.prototype.draw; Game.Pickup.prototype.draw = function (c, cx, cy) { if (this.kind === 'tank') { Spr.drawC(c, Spr.sheets.seedcan ? 'seedcan' : 'icons4', Spr.sheets.seedcan ? 0 : 2, this.x - cx, this.y - cy - 18 + Math.sin(this.t * 4) * 2, 0, 1); return; } dOld.call(this, c, cx, cy); }; }
+// бак «О-3000» как бутыль у Валеры на спине: обычный — прозрачная вода (assets/spr/seedcan_w.png, Flow по seedcan), после переделки Вовой — зелёный
+G.loadImage('assets/spr/seedcan_w.png').then(im => { L4.tankW = im; }, () => {});
+{ const dOld = Game.Pickup.prototype.draw; Game.Pickup.prototype.draw = function (c, cx, cy) { if (this.kind === 'tank') {
+  const st = App.level && App.level.stage, green = st && st.player && st.player.green, y = this.y - cy - 18 + Math.sin(this.t * 4) * 2, im = L4.tankW;
+  if (!green && im) { const h = 32,     /* как seedcan: 64 px атласа = 32 логических */ w = im.width * h / im.height; c.drawImage(im, this.x - cx - w / 2, y - h / 2, w, h); return; }
+  Spr.drawC(c, Spr.sheets.seedcan ? 'seedcan' : 'icons4', Spr.sheets.seedcan ? 0 : 2, this.x - cx, y, 0, 1); return; } dOld.call(this, c, cx, cy); }; }
 L4.WNAME = { swatter: 'МУХОБОЙКА', fists: 'КУЛАКИ', seed: 'ОСЕМЕНИТЕЛЬ 3000' };
 L4.Player = class extends L3.Player {
   constructor(x, y) { super(x, y); this.animSet = 'valera4'; this.portraitKey = 'valera4'; this.ammo3 = { swatter: 100, chalk: 0, seed: 0 }; this.hasSeed = false; this.green = false; this.weapon = 'swatter'; this.punchN = 0; }
@@ -649,7 +658,7 @@ L4.Stage = class {
     this.drawProps(c, cx, cy, 'front');
     for (const d of this.doors) if (d.front) d.draw(c, cx, cy, this.nearDoor === d);
     for (const w of this.walls) { const [wx, sp] = Array.isArray(w) ? w : [w, 'cdoorwall'], sx = wx - cx; if (wx <= 40 || sx < -200 || sx > W + 200) continue;
-      const pw = 27, top = 184 - cy; c.save(); c.beginPath(); if (sp === 'cdoorwall') c.rect(sx - 110, -cy - 10, 110 + pw + 2, H + cy + 20); else c.rect(sx - 1, -cy - 10, pw + 2, top + cy + 10); c.clip(); Spr.draw(c, sp, 0, sx, H - cy, 1); c.restore(); }
+      const pw = 27, top = 184 - cy; c.save(); c.beginPath(); if (sp === 'cdoorwall') c.rect(sx - 110, -cy - 10, 110 + pw + 2, H + cy + 20); else if (sp === 'ddoorwall') c.rect(sx - 1, -cy - 10, pw + 2, H + cy + 20); /* косяк чёрной комнаты на всю высоту — Валера уходит в тёмный проём, а не поверх стены */ else c.rect(sx - 1, -cy - 10, pw + 2, top + cy + 10); c.clip(); Spr.draw(c, sp, 0, sx, H - cy, 1); c.restore(); }
     for (const g of wd.globs) g.draw(c, cx, cy);
     for (const cl of wd.clouds) L3.drawCloud(c, cl, cx, cy);
     c.save(); c.translate(0, -cy); for (const p of wd.projs) p.draw(c, cx); c.restore();
@@ -735,7 +744,8 @@ L4.WC_K = 0.73; L4.wcX = x => Math.round(320 + (x - 320) * L4.WC_K);
 L4.FRAME = { o: [190, 130, 1088, 584], i: [210, 146, 1070, 540], k: 0.65 };
 L4.drawBrickFrame = function (c, img, ix0, iy0, ix1, iy1) {
   const F = L4.FRAME, k = F.k, [o0, o1, o2, o3] = F.o, [i0, i1, i2, i3] = F.i;
-  const fx0 = ix0 - (i0 - o0) * k, fx1 = ix1 + (o2 - i2) * k, fy0 = iy0 - (i1 - o1) * k, fy1 = iy1 + (o3 - i3) * k;
+  const sx = (ix1 - ix0) / (i2 - i0), sy = (iy1 - iy0) / (i3 - i1);     // масштаб рамки — так, чтобы её проём совпал с заданным точно (иначе по краям видна комната из картинки)
+  const fx0 = ix0 - (i0 - o0) * sx, fx1 = ix1 + (o2 - i2) * sx, fy0 = iy0 - (i1 - o1) * sy, fy1 = iy1 + (o3 - i3) * sy;
   const cols = [[0, fx0, o0 - fx0 / k, o0], [fx0, fx1, o0, o2], [fx1, W, o2, o2 + (W - fx1) / k]];
   const rows = [[0, fy0, o1 - fy0 / k, o1], [fy0, fy1, o1, o3], [fy1, H, o3, o3 + (H - fy1) / k]];
   for (const [y0, y1, sy0, sy1] of rows) for (const [x0, x1, sx0, sx1] of cols) if (x1 > x0 && y1 > y0) c.drawImage(img, sx0, sy0, sx1 - sx0, sy1 - sy0, x0, y0, x1 - x0, y1 - y0);
@@ -1359,13 +1369,15 @@ L4.raidScene = function* (level) {
   yield 1.8;
 };
 // ФИНАЛ: Валера и Вова выходят из клуба, запирают дверь на засов (зомби ломятся), идут к «копейке»; Вова достаёт бульбулятор
-L4.END = { doorX: 107, doorY: 291, doorTop: 198, carX: 308 };
+L4.END = { doorX: 107, doorY: 291, doorTop: 198, carX: 308, chainX: 107, chainY: 240 };
 L4.sceneEnd = level => function* () {
   const bg = L4.img.end_street_bg3 || L4.img.comic4_end, E = L4.END, GY = L4.GROUND;
   const val = new G.Actor('valera4green', E.doorX, GY, 1), vov = new G.Actor('vova', E.doorX, GY, 1);
   val.visible = vov.visible = false;
-  let bolt0 = false, boltK = 0, bang = 0, shake = 0, bong = false, smoke = [], t = 0, glow = 0;
-  const hasBolt = !!Spr.sheets.endbolt, hasBong = !!Spr.sheets.endbong;
+  let bang = 0, shake = 0, smoke = [], t = 0, glow = 0, chained = false, sway = 0;
+  const hasAnim = !!(Spr.sheets.vovachain && Spr.sheets.vovabong);
+  if (!L4.img.endchain) G.loadImage('assets/spr/endchain.png').then(im => { L4.img.endchain = im; }, () => {});
+  const play = function* (seq) { for (const [a, d] of seq) { vov.setAnim(a); yield d; } };     // кадры Вовы по очереди
   level.drawScene = c => {
     c.drawImage(bg, 0, 0, W, H);
     if (shake > 0 && bg === L4.img.end_street_bg3) { // дверь содрогается под ударами
@@ -1373,9 +1385,8 @@ L4.sceneEnd = level => function* () {
       c.save(); c.beginPath(); c.rect(dx, dy, dw, dh); c.clip(); c.drawImage(bg, dx * 2, dy * 2, dw * 2, dh * 2, dx + o, dy, dw, dh); c.restore();
     }
     if (glow > 0) { c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = glow * 0.45; c.fillStyle = '#ff2050'; c.fillRect(E.doorX - 31, E.doorTop + 6, 62, E.doorY - E.doorTop - 10); c.restore(); }
-    if (hasBolt && boltK > 0) Spr.drawC(c, 'endbolt', 0, E.doorX + (1 - boltK) * 45 + (shake > 0 ? Math.sin(t * 60) * 0.8 : 0), E.doorY - 46, 0, 0.32);
-    vov.draw(c); val.draw(c);
-    if (bong && hasBong) Spr.drawC(c, 'endbong', 0, vov.x + vov.facing * 15, vov.y - 42, 0, 0.42);
+    if (chained && L4.img.endchain) c.drawImage(L4.img.endchain, E.chainX - 6 + (shake > 0 ? Math.sin(t * 60) * 0.6 : 0), E.chainY, 12, 17);     // цепь с замком ровно от ручки к ручке (владелец: так корректно)
+    const vx = vov.x; vov.x += sway; vov.draw(c); vov.x = vx; val.draw(c);
     for (const p of smoke) { c.globalAlpha = Math.max(0, 0.55 - p.t * 0.25); c.fillStyle = '#d8dce8'; c.beginPath(); c.arc(p.x + Math.sin(p.t * 3 + p.s) * 5, p.y - p.t * 28, 3 + p.t * 5, 0, 7); c.fill(); c.globalAlpha = 1; }
   };
   level.updateScene = dt => {
@@ -1383,31 +1394,44 @@ L4.sceneEnd = level => function* () {
     for (const p of smoke) p.t += dt; smoke = smoke.filter(p => p.t < 2.2);
     if (glow > 0) glow = Math.max(0, glow - dt * 1.4);
     if (shake > 0) { bang -= dt; if (bang <= 0) { bang = U.rand(0.5, 0.9); Sound.play('punch'); G.shake(2, 0.12); if (Math.random() < 0.5) G.say({ x: E.doorX + 20, y: E.doorTop + 40, headH: 0, voice: 150 }, U.choice(['Ы-ы-ы... мозги...', 'Откр-р-рой...', 'У-у-у!', 'Танцу-у-уем...']), 1.1); } }
-    if (bong && Math.random() < dt * 2.2) smoke.push({ x: vov.x + vov.facing * 18, y: vov.y - 70, t: 0, s: Math.random() * 6 });
+    if (vov.anim === 'sway') sway = Math.sin(t * 2.6) * 3;     // штормит — покачивается
   };
   // 1. выход из клуба
   Sound.play('door'); glow = 1;
   vov.visible = val.visible = true; val.x = E.doorX - 6; vov.x = E.doorX + 6;
   yield* Scene.tween(0.4, k => { val.alpha = vov.alpha = k; });
   yield* Scene.moveTo(val, E.doorX + 55, 90, 'run'); val.facing = -1; val.setAnim('stand');
-  yield* Scene.moveTo(vov, E.doorX + 28, 90, 'walk'); vov.facing = -1;
+  yield* Scene.moveTo(vov, E.doorX + 24, 90, 'walk'); vov.facing = -1;     // у ручек двери — вешать цепь
   // 2. дверь закрывается, засов
   shake = 1; bang = 0.2;
-  yield* Scene.say('valera', 'На засов, быстро! Они прут!', val);
+  yield* Scene.say('valera', 'Запирай, быстро! Они прут!', val);
   Sound.play('door'); yield 0.3;
-  yield* Scene.tween(0.8, k => { boltK = k; if (k > 0.9 && !bolt0) { bolt0 = true; Sound.play('clank'); G.shake(3, 0.2); } });
-  yield* Scene.say('vova', 'Задвинул! Теперь пусть стучат сколько влезет.', vov);
+  if (hasAnim) {     // Вова лицом к двери: достаёт цепь, продевает в ручки, затягивает, щёлкает замком
+    vov.facing = -1;
+    yield* play([['ch0', 0.6], ['ch1', 0.5], ['ch2', 0.6]]);
+    Sound.play('clank', 0.5); yield* play([['ch3', 0.7]]);
+    chained = true; vov.setAnim('ch4'); Sound.play('clank'); G.shake(3, 0.2); FX.popText(E.chainX, E.chainY - 6, 'ЩЁЛК!', '#ffd84a'); yield 0.6;
+    yield* play([['ch5', 0.4]]);
+  } else { chained = true; Sound.play('clank'); }
+  yield* Scene.say('vova', 'Цепью замотал! Теперь пусть стучат сколько влезет.', vov);
+  vov.setAnim('stand');
   yield* Scene.say('valera', 'Железная... Надеюсь, надолго её хватит.', val);
   // 3. к машине
   shake = 0.6;
   val.setAnim('run'); vov.setAnim('walk');
   yield* Scene.moveTo(val, E.carX - 20, 85, 'run'); val.facing = 1;
-  yield* Scene.moveTo(vov, E.carX - 55, 70, 'walk'); vov.facing = 1;
+  yield* Scene.moveTo(vov, E.carX - 80, 70, 'walk'); vov.facing = 1;     // левее Валеры — бульбулятор не перекрыт
   shake = 0.3;
   yield* Scene.say('valera', 'Твоя «копейка» всё ещё на ходу? Ключи есть?', val);
   // 4. бульбулятор
-  bong = true; Sound.play('squeak'); yield 0.8;
-  yield* Scene.say('vova', '(затягивается из бульбулятора) Валера... спасибо. Нам нужно кое с кем срочно встретиться.', vov);
+  if (hasAnim) {     // достаёт из кармана, подкуривает, втягивает, выдыхает — и его штормит
+    yield* play([['bg0', 0.5], ['bg1', 0.6]]);
+    Sound.play('zap', 0.3); yield* play([['bg2', 0.9]]);
+    Sound.play('squeak'); yield* play([['bg3', 0.9], ['bg4', 0.8]]);
+    vov.setAnim('bg5'); for (let i = 0; i < 7; i++) smoke.push({ x: vov.x + vov.facing * (16 + i * 3), y: vov.y - 80 - i * 3, t: i * 0.05, s: Math.random() * 6 }); yield 1.1;
+    vov.setAnim('sway');
+  } else { Sound.play('squeak'); yield 0.8; }
+  yield* Scene.say('vova', 'Ва-а-алера... спасибо. Нам нужно кое с кем срочно встретиться.', vov);
   yield* Scene.say('valera', 'С кем?', val);
   yield* Scene.say('vova', 'Садись назад. По дороге расскажу. Я за рулём.', vov);
   Sound.play('door'); yield 0.6;

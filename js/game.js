@@ -379,6 +379,7 @@ Game.Player = class {
     else if (this.atk) a = this.atk.kind === 'bottle' ? (this.atk.t < 0.12 ? 'bWind' : 'bSwing') : this.atk.kind === 'upper' ? 'upper' : this.atk.side ? 'cross' : 'jab';
     else if (this.throwT > 0 && this.throwLow && (Spr.ANIM[this.animSet || 'valera'] || {}).cPunch) a = this.weapon === 'bottles' ? (this.throwT > 0.2 ? 'cBWind' : 'cBSwing') : this.throwT > 0.2 ? 'cThrowA' : 'cThrowB';
     else if (this.throwT > 0) a = this.weapon === 'bottles' ? (this.throwT > 0.2 ? 'bWind' : 'bThrow') : this.throwT > 0.2 ? 'throwA' : 'throwB';
+    else if (this.crouch && this.crawlSpeed && Math.abs(this.vx) > 5 && (Spr.ANIM[this.animSet || 'valera'] || {}).crawl) a = 'crawl';     // ур.1-2: присел + в сторону — ползёт
     else if (this.crouch) a = this.bottleHits > 0 ? 'bCrouch' : 'crouch';
     else if (!this.onGround) a = this.vy < 0 ? 'jump' : 'fall';
     else if (this.landT > 0) a = 'land';
