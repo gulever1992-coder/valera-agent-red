@@ -276,7 +276,8 @@ const Pager = {
     // 2-3 налога за уровень, суммы сходятся к балансу следующего уровня
     ev.push({ t: U.rand(40, 100), kind: 'debit' }, { t: U.rand(170, 260), kind: 'debit' });
     if (id === 6 || Math.random() < 0.25) ev.push({ t: U.rand(320, 400), kind: 'debit' });
-    if (Math.random() < 0.3) ev.push({ t: U.rand(110, 230), kind: 'code' });
+    // смс с кодом: на ур.2 всегда, на остальных — шанс 30%
+    if (id === 2 || Math.random() < 0.3) ev.push({ t: U.rand(110, 230), kind: 'code' });
     this.events = ev.sort((a, b) => a.t - b.t);
   },
   // внешние вызовы
@@ -285,7 +286,7 @@ const Pager = {
     if (!text || this.tips[text]) return; this.tips[text] = 1;
     this.queue.push({ kind: 'tip', from: 'ДОБРОЖЕЛАТЕЛЬ', text, lv: App.level });
   },
-  boss(id) { const t = this.BOSS[id]; if (this.seen[id]) return; this.seen[id] = 1; if (t && !this.queue.some(m => m.kind === 'boss')) this.queue.push({ kind: 'boss', from: 'ДОБРОЖЕЛАТЕЛЬ', text: t, lv: App.level }); },
+  boss(id) { return; /* подсказки боссов отключены владельцем (pager_messages.xlsx) */ const t = this.BOSS[id]; if (this.seen[id]) return; this.seen[id] = 1; if (t && !this.queue.some(m => m.kind === 'boss')) this.queue.push({ kind: 'boss', from: 'ДОБРОЖЕЛАТЕЛЬ', text: t, lv: App.level }); },
   shop() { this.queue.push(Object.assign(this.debitMsg('Магазин «Под горлышко»: покупка', U.randi(18, 34) * 100), { lv: App.level })); },
 
   debitMsg(why, sum) {
@@ -304,7 +305,7 @@ const Pager = {
       else if (was >= 0 && this.bal < 0) { m.text += '\nСЧЁТ УШЁЛ В МИНУС'; m.rage = 'В минус?! Я теперь ещё и должен этим мажорам?!'; m.big = true; }
       return m;
     }
-    if (e.kind === 'code') return { kind: 'code', from: this.BANK, text: 'Никому не говорите код: 3671. Даже сотруднику банка.', rage: 'Три... шесть... семь... один. Ага, никому не скажу!', calm: true };
+    if (e.kind === 'code') return { kind: 'code', from: this.BANK, text: 'Ваш 7816 ни кому не говорите этот код от входа в кабинет вашего банка. Остерегайтесь мошенников!', rage: 'Мой код 7816... ой!', calm: true };
   },
   // есть ли сейчас нормальная игра (не катсцена, Валера жив)
   live(lv) {

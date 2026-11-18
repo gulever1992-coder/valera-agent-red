@@ -709,10 +709,22 @@ Game.keyName = function (a) {
   return { left: 'СТРЕЛКИ', right: '(или A/D)', jump: '[Z]/[ПРОБЕЛ]', punch: '[X]', throw: '[C]', up: '[ВВЕРХ]', down: '[ВНИЗ]', switch: '[Q]' }[a];
 };
 Game.fmtHint = s => s.replace(/\{(\w+)\}/g, (m, a) => Game.keyName(a) || a);
+Game.PAGER_TIPS = [
+  'Бей Наташку {punch}!',                         // ур.1, босс
+  'Маленькую собачку бей присев',                 // ур.2
+  'Пароль есть! Теперь',                          // ур.4
+  'Из номера не уйти, пока не победишь обоих',    // ур.4
+  'Выведи Вову из клуба!',                        // ур.4
+  '{punch} или {throw} — заклинание',             // ур.6
+];
 Game.drawHint = function (c, text, alpha, top) {
   if (alpha <= 0) return;
   // подсказки — только через пейджер (по одному разу); на экране остаются лишь «{up} — действие» у дверей/предметов
-  if (!/^\{up\} — /.test(text) && typeof Pager !== 'undefined') { Pager.tip(Game.fmtHint(text)); return; }
+  if (!/^\{up\} — /.test(text) && typeof Pager !== 'undefined') {
+    // на пейджер идут только подсказки, оставленные владельцем (docs/pager_messages.xlsx); остальные не показываются вовсе
+    if (Game.PAGER_TIPS.some(p => text.startsWith(p))) Pager.tip(Game.fmtHint(text));
+    return;
+  }
   c.globalAlpha = Math.min(1, alpha);
   const lines = G.wrap(Game.fmtHint(text), 440, 8);
   const bh = lines.length * 12 + 10, bw = 460, bx = (W - bw) / 2, by = top != null ? top : H - bh - 10;

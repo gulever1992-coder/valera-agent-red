@@ -30,7 +30,7 @@ L4.img = {};
   Spr.ANIM.vova.sway = A('vovabong', [6, 7], 1.6);
   Spr.ANIM.bouncerA = { stand: A('bouncers', [0], 1, F), shove: A('bouncers', [1], 1, F), aside: A('bouncers', [2], 1, F), flex: A('bouncers', [3], 1, F) };
   Spr.ANIM.bouncerB = { stand: A('bouncers', [4], 1, F), shove: A('bouncers', [5], 1, F), lean: A('bouncers', [6], 1, F), laugh: A('bouncers', [7], 1, F) };
-  Object.assign(Spr.ANIM.biker, { duck: A('biker3', [1]), duckHi: A('biker2', [0]), hopback: A('biker2', [1]), windup: A('biker2', [2]), slam: A('biker2', [3]), dazed: A('biker2', [4]), shove: A('biker2', [5]) }); // biker2 смотрит ВПРАВО — без flip
+  Object.assign(Spr.ANIM.biker, { duck: A('biker3', [1]), duckHi: A('biker2', [0]), hopback: A('biker2', [1]), windup: A('biker2', [2]), slam: A('biker2', [3]), dazed: A('biker2', [4]), shove: A('biker2', [5]), pull0: A('l4bikerlever', [0]), pull1: A('l4bikerlever', [1]), pull2: A('l4bikerlever', [2]), pull3: A('l4bikerlever', [3]) }); // biker2 смотрит ВПРАВО — без flip
   Spr.ANIM.biker.sing = A('l4fx2', [4], 1, F); Spr.ANIM.biker.taunt = A('l4fx2', [5], 1, F);
   Spr.ANIM.couple = { walk: A('couple', [0, 1, 2, 3], 7), climb: A('couple', [4, 5], 4), wink: A('couple', [6]), kiss: A('couple', [7]) };
   Spr.ANIM.vovagun = { hold: A('vovagun4', [0]), open: A('vovagun4', [1]), flip: A('vovagun4', [2]), green: A('vovagun4', [3]), proud: A('vovagun4', [4]), give: A('vovagun4', [5]) };
@@ -924,32 +924,32 @@ L4.Biker = class {
   // Байкер с «интеллектом»: фазы по HP (66%/33%), уклонения от снарядов с перезарядкой, отход при серии попаданий,
   // наказание за стояние на месте (прыжок на позицию, волны по полу, радуга с упреждением), окна уязвимости после серий.
   constructor(st) {
-    Object.assign(this, { st, x: 520, y: L4.BOSS_G, vx: 0, vy: 0, facing: -1, hp: Math.round(280 * (G.BOSS_MULT || 1)), t: 0, s: 'idle', stT: 0, cool: 1.5, onGround: true, flash: 0, headH: 140, voice: 110, dieT: null, waves: [], rays: [], shocks: [], blackout: false, blackT: 0 });
+    Object.assign(this, { st, x: 520, y: L4.BOSS_G, vx: 0, vy: 0, facing: -1, hp: Math.round(400 * (G.BOSS_MULT || 1)), t: 0, s: 'idle', stT: 0, cool: 1.5, onGround: true, flash: 0, headH: 140, voice: 110, dieT: null, waves: [], rays: [], shocks: [], tires: [], blackout: false, blackT: 0, leverCD: 7, leverT: 0 });
     Object.assign(this, { maxHp: this.hp, phase: 1, dodgeCD: 2, retreatCD: 3, hitLog: [], combo: 0, comboMax: 3, stillT: 0, ax: null, ay: 0, plVx: 0, lastPX: null, tele: 0, dodges: 0, zx: null, zy: 0, zoneT: 0, punCD: 4, punT: 0 });
   }
   static get PH() { return [null,
-    { spd: 1.0, dodge: 0.75, dcd: 0.9, combo: 3, tired: 2.7, still: 2.0, streak: 7 },
-    { spd: 1.2, dodge: 0.85, dcd: 0.7, combo: 3, tired: 2.5, still: 1.6, streak: 6 },
-    { spd: 1.4, dodge: 0.92, dcd: 0.5, combo: 3, tired: 2.3, still: 1.3, streak: 5 }]; }
+    { spd: 1.0, dodge: 0.9, dcd: 0.5, combo: 3, tired: 2.7, still: 2.0, streak: 7 },
+    { spd: 1.2, dodge: 0.95, dcd: 0.35, combo: 3, tired: 2.5, still: 1.6, streak: 6 },
+    { spd: 1.4, dodge: 0.98, dcd: 0.25, combo: 3, tired: 2.3, still: 1.3, streak: 5 }]; }
   get K() { return L4.Biker.PH[this.phase]; }
   get box() { return this.s === 'duck' || this.s === 'slide' ? { x: this.x - 30, y: this.y - 70, w: 60, h: 70 } : { x: this.x - 26, y: this.y - 126, w: 52, h: 126 }; }
   set(s) { this.s = s; this.stT = 0; this.hitDone = false; this.recKind = null; this.afterDuck = null; }
   // читаемое предупреждение: «!» над головой, звук, красное мигание силуэта (this.tele)
   warn(txt, col) { FX.popText(this.x, this.y - 150, txt || '!', col || '#ff4a3a', 12); Sound.play('warn'); this.tele = 0.5; }
-  toIdle(k) { this.vx = 0; this.set('idle'); this.cool = U.rand(0.25, 0.5) * (k == null ? 1 : k) / this.K.spd; }
+  toIdle(k) { this.vx = 0; this.set('idle'); this.cool = U.rand(0.2, 0.4) * (k == null ? 1 : k) / this.K.spd; }
   endAttack(k) { this.combo++; this.toIdle(k); }
   takeHit(dmg, fx, melee) {
     if (this.dieT != null) return;
-    const camp = this.stillT > this.K.still + 1.2, mul = camp ? 0.12 : this.s === 'taunt' ? 3 : this.s === 'stun' ? 2 : 0.35; // стоит столбом — окна не работают // вне окон уязвимости почти не берёт
+    const camp = this.stillT > this.K.still + 1.2, mul = camp ? 0.12 : this.s === 'taunt' ? 2 : this.s === 'stun' ? 1.5 : 0.35; // стоит столбом — окна не работают // вне окон уязвимости почти не берёт
     this.hp -= dmg * mul; this.flash = mul < 1 ? 0.05 : 0.1; Sound.play(mul < 1 ? 'clank' : 'hit'); this.st.world.addScore(Math.round(40 * dmg * mul));
     if (camp && Math.random() < 0.04) G.say(this, U.choice(['Стоишь столбом? Не пробьёшь!', 'Хе! Как комар!']), 1.2);
     if (mul < 1) FX.burst(fx, this.y - 60, 3, { colors: ['#9a9a9a', '#fff'], speed: 90, grav: 300, life: 0.25 });
-    else if (mul === 2 && Math.random() < 0.5) FX.popText(this.x, this.y - 140, 'x2!', '#ffd84a');
-    if (mul > 1) { FX.popText(this.x, this.y - 140, 'x3!', '#ffd84a'); if (Math.random() < 0.3) G.say(this, U.choice(['Ай-ай-ай!', 'Больно же!']), 1); }
-    if (this.hp <= 0) { this.hp = 0; this.dieT = 0; this.blackout = false; this.blackT = 0; this.rays = []; this.waves = []; this.shocks = []; this.st.level.bossDown(); return; }
+    if (mul > 1) { FX.popText(this.x, this.y - 140, 'x' + mul + '!', '#ffd84a'); if (Math.random() < 0.3) G.say(this, U.choice(['Ай-ай-ай!', 'Больно же!']), 1); }
+    if (this.hp <= 0) { this.hp = 0; this.dieT = 0; this.blackout = false; this.blackT = 0; this.rays = []; this.waves = []; this.shocks = []; this.tires = []; this.st.level.leverOn = false; this.st.level.bossDown(); return; }
     // смена фазы: рёв-веер, дальше быстрее и хитрее
     const ph = this.hp < this.maxHp * 0.33 ? 3 : this.hp < this.maxHp * 0.66 ? 2 : 1;
     if (ph > this.phase) { this.phase = ph; this.combo = 0; this.aim = null; this.snd = false; this.vx = 0; this.set('rage'); this.tele = 0.5; Sound.play('shout'); return; }
+    if (!this.lever50 && this.hp <= this.maxHp * 0.5 && this.s !== 'lever_run' && this.s !== 'lever_pull') { this.lever50 = true; this.combo = 0; this.vx = 0; this.tires = []; this.set('lever_run'); this.leverCD = 12; G.say(this, 'Ну всё! Щас устрою шиномонтаж!', 1.4); return; }   // половина HP — сразу к статуе за рычагом
     // серия попаданий — отходит (не во время «подставленного зада» и оглушения: окно наказания честное)
     // 2 попадания за ~1 с — срочная реакция: таран прямо на Валеру или отход на балкон/другой край.
     // В окнах (зад, оглушение) не перебивается — реагирует сразу после окна.
@@ -998,10 +998,10 @@ L4.Biker = class {
     if (!pl.onGround && pl.vy > -80 && Math.abs(pl.x - this.x) < 120 && pl.y < this.y - 40 && Math.random() < this.K.dodge) { this.dodgeCD = this.K.dcd; this.dodges++; this.set('duck'); FX.dust(this.x, this.y, 5); return; }   // Валера прыгает на него сверху — пригнулся, пропустил над собой
     for (const p of wd.projs) {
       if (p.dead || !p.vx) continue;
-      const rel = this.x - p.x; if (Math.sign(p.vx) !== Math.sign(rel) || Math.abs(rel) > 190) continue;
-      const tt = (Math.abs(rel) - 28) / Math.abs(p.vx); if (tt < 0.03 || tt > 0.42) continue;
+      const rel = this.x - p.x; if (Math.sign(p.vx) !== Math.sign(rel) || Math.abs(rel) > 250) continue;
+      const tt = (Math.abs(rel) - 28) / Math.abs(p.vx); if (tt < 0.03 || tt > 0.5) continue;
       const yy = p.y + (p.vy || 0) * tt; if (yy < this.y - 130 || yy > this.y + 4) continue;
-      if (Math.random() > this.K.dodge + (this.stillT > this.K.still ? 0.1 : 0)) { this.dodgeCD = 0.45; return; } // не заметил
+      if (Math.random() > this.K.dodge + (this.stillT > this.K.still ? 0.1 : 0)) { this.dodgeCD = 0.2; return; } // не заметил
       this.dodgeCD = this.K.dcd; this.dodges++;
       const high = yy < this.y - 78,   // присед (biker3) ~72 px: уходит под выстрел только из прыжка; от выстрела стоя (45 px) — прыжок/отскок
       d = Math.abs(pl.x - this.x), late = tt < 0.13, toPl = pl.x > this.x ? 1 : -1;
@@ -1016,6 +1016,14 @@ L4.Biker = class {
       return;
     }
   }
+  weave() {   // финт под прицелом: не даёт Валере спокойно целиться
+    const pl = this.st.player, toPl = pl.x > this.x ? 1 : -1, r = Math.random(), sp = this.K.spd, edge = this.x < 130 || this.x > 510;
+    this.dodgeCD = this.K.dcd + 0.25; this.dodges++; this.facing = toPl; FX.dust(this.x, this.y, 5);
+    if (r < 0.35 && !edge) { this.set('slide'); this.vx = -toPl * 260 * sp; }                          // перекат назад пригнувшись
+    else if (r < 0.65) { this.set('djump'); this.vy = -520; this.vx = (edge ? toPl : U.choice([-1, 1])) * 160 * sp; this.onGround = false; Sound.play('jump'); } // прыжок вбок
+    else if (r < 0.85 && Math.abs(pl.x - this.x) > 140) { this.set('slide'); this.vx = toPl * 320 * sp; Sound.play('throw'); }   // рывок под прицел — к Валере
+    else { this.set('duck'); }                                                                        // присел
+  }
   punishZone() {   // ПРАВИЛО ВЛАДЕЛЬЦА: топчется на пятачке — подбегает и выталкивает (таран/толчок с сильным отбросом)
     const pl = this.st.player, d = Math.abs(pl.x - this.x); this.zoneT = 0; this.punCD = [0, 7, 6, 5][this.phase]; this.punT = 3.5; this.combo = 0;
     G.say(this, U.choice(['Прописался тут? Выселяю!', 'Это моя парковка!', 'А ну, подвинься!']), 1.4);
@@ -1027,7 +1035,7 @@ L4.Biker = class {
   backstep() { const pl = this.st.player, away = pl.x > this.x ? -1 : 1; this.set('djump'); this.facing = -away; this.vy = -470; this.vx = (this.x + away * 120 < 80 || this.x + away * 120 > 560 ? -away : away) * 170; this.onGround = false; Sound.play('jump'); this.noCounter = true; }
   counter() { // мгновенная контратака после уклонения
     const pl = this.st.player, d = Math.abs(pl.x - this.x); if (this.noCounter) { this.noCounter = false; return false; }
-    if (Math.random() < 0.3 + this.phase * 0.12) {
+    if (Math.random() < 0.45 + this.phase * 0.15) {
       if (d < 150) { this.set('bash_w'); this.stT = 0.15; this.warn('!'); return true; }
       if (pl.y > L4.BOSS_G - 20 && this.y > L4.BOSS_G - 10) { this.set('charge_w'); this.stT = 0.2; this.warn('!'); return true; }
     }
@@ -1052,6 +1060,8 @@ L4.Biker = class {
     add(this.waves.length < 1 + this.phase ? (hid ? 1.6 : 0.5) : 0, () => this.set('sing'));
     add(this.phase >= 2 && !this.blackT ? 0.7 : 0, () => this.set('remote'));
     add(this.phase >= 3 ? 0.5 : 0, () => this.set('rage'));
+    // «дождь колёс»: подбегает к статуе, дёргает рычаг в пряжке — с потолка сыплются мотоколёса
+    add(this.leverCD <= 0 && !onPlat && !this.tires.length ? (still ? 2.6 : 1.5) : 0, () => { this.set('lever_run'); this.leverCD = [0, 16, 13, 11][this.phase]; G.say(this, U.choice(['Щас устрою шиномонтаж!', 'Запасные колёса — к бою!', 'Лови резину!']), 1.3); });
     // смена позиции: на платформу / вниз / подойти ближе
     add(onPlat ? 1.4 : 1, () => this.reposition(st, true));
     add(!onPlat && d > 130 ? (still ? 4.5 : d > 230 ? 2.4 : 1.8) : 0, () => { this.set('move'); this.tx = U.clamp(pl.x - Math.sign(pl.x - this.x) * 70, 80, 560); this.repo = true; });
@@ -1075,7 +1085,8 @@ L4.Biker = class {
     // ЗОНА: Валера топчется на пятачке ~150 px (≈5 м) — набегает «кемпинг», босс приходит выселять
     if (this.zx == null || Math.abs(pl.x - this.zx) > 75 || Math.abs(pl.y - this.zy) > 90) { this.zx = pl.x; this.zy = pl.y; this.zoneT = 0; } else if (!pl.dead) this.zoneT += dt;
     this.punCD -= dt; if (this.punT > 0) this.punT -= dt;
-    this.dodgeCD -= dt; this.retreatCD -= dt;
+    this.dodgeCD -= dt; this.retreatCD -= dt; this.leverCD -= dt;
+    if (this.leverT > 0 && (this.leverT -= dt) <= 0) this.st.level.leverOn = false;
     const py = this.y; this.vy = Math.min(800, this.vy + 1500 * dt); this.y += this.vy * dt; this.x += this.vx * dt;
     const wasAir = !this.onGround, g = wd.groundAt(this.x, py, this.y, 6);
     if (g && this.vy > 0) { if (!this.onGround && this.vy > 300) { G.shake(6, 0.25); Sound.play('stomp'); FX.dust(this.x, g.y, 10); } this.y = g.y; this.vy = 0; this.onGround = true; } else if (!g) this.onGround = false;
@@ -1103,6 +1114,17 @@ L4.Biker = class {
       if (s.x < 56 || s.x > 584) s.dead = true;
     }
     this.shocks = this.shocks.filter(s => !s.dead);
+    // колёса с потолка: сначала «!» на полу (0.75 с), потом падают, отскакивают и катятся — перепрыгнуть/отбежать
+    for (const r of this.tires) {
+      r.t += dt; if (r.t < 0.75) continue;
+      if (!r.fall) { r.fall = true; Sound.play('throw'); }
+      const py0 = r.y; r.vy = Math.min(900, r.vy + 1500 * dt); r.y += r.vy * dt; r.x += r.vx * dt; r.rot += (r.vx || r.vy * 0.2 * r.dir) * dt / 15;
+      const g = r.y > 120 ? wd.groundAt(r.x, py0, r.y, 6) : null, gy = g ? g.y : r.y >= L4.BOSS_G ? L4.BOSS_G : null;
+      if (gy != null && r.vy > 0) { r.y = gy; if (r.bounce < 1) { r.bounce++; r.vy = -320; r.vx = r.dir * 150 * K.spd; Sound.play('stomp'); FX.dust(r.x, gy, 6); G.shake(2, 0.1); } else { r.vy = 0; r.roll = (r.roll || 0) + dt; } }
+      if (!r.hit && !pl.dead && Math.abs(pl.x - r.x) < 18 + pl.box.w / 2 && pl.y > r.y - 24 && pl.y - 70 < r.y) { r.hit = true; pl.hurt(8, r.x, wd); }
+      if (r.x < 50 || r.x > 590 || r.roll > 1.4) r.dead = true;
+    }
+    this.tires = this.tires.filter(r => !r.dead);
     const shock = (n, delay) => { for (let i = 0; i < n; i++) for (const dir of [-1, 1]) this.shocks.push({ x: this.x + dir * 24, dir, sp: 230 * K.spd, t: -i * delay }); };
     this.rays = [];
     this.tryUrgent();
@@ -1111,6 +1133,8 @@ L4.Biker = class {
       case 'idle':
         this.vx *= 0.8; this.facing = pl.x > this.x ? 1 : -1;
         if (this.zoneT > [0, 3.6, 3.1, 2.6][this.phase] && this.punCD <= 0 && this.onGround && this.y > L4.BOSS_G - 10) { this.punishZone(); break; }
+        // под прицелом не стоит: пританцовывает — отскок, перекат пригнувшись, прыжок (сбивает прицел Валере)
+        if (this.onGround && this.cool > 0.15 && this.dodgeCD <= 0 && this.y > L4.BOSS_G - 10 && (pl.facing || 1) === (this.x > pl.x ? 1 : -1) && Math.abs(pl.y - this.y) < 60 && Math.random() < dt * (1.2 + this.phase * 0.6)) { this.weave(); break; }
         if (this.cool <= 0 && this.onGround) this.choose(st);
         break;
       case 'move': { // сокращает дистанцию
@@ -1179,6 +1203,25 @@ L4.Biker = class {
         if (this.stT > 0.4 && !this.blackT) { this.blackT = U.rand(4, 7); Sound.play('lever'); G.say(this, 'А теперь — интим!', 1.4); }
         if (this.stT > 0.9) this.toIdle();
         break;
+      case 'lever_run': { // бежит к статуе дёрнуть рычаг
+        const tx = L4.LEVER_SX + (this.x < L4.LEVER_SX ? -30 : 30), dx = tx - this.x; this.facing = Math.sign(dx) || this.facing; this.vx = this.facing * 300 * K.spd;
+        if (Math.abs(dx) < 10 || this.stT > 2.5) { this.vx = 0; this.facing = L4.LEVER_SX > this.x ? 1 : -1; this.set('lever_pull'); }
+        break;
+      }
+      case 'lever_pull':
+        this.vx = 0;
+        if (this.stT > 0.3 && !this.pulled) {
+          this.pulled = true; this.st.level.leverOn = true; Sound.play('lever'); G.shake(4, 0.3); G.say(this, U.choice(['Дождь из колёс!', 'Резиновый ливень!', 'Шины-шины-шины!']), 1.4);
+          const n = [0, 7, 9, 11][this.phase], span = 2.4, lead = this.phase >= 2 ? this.plVx * 0.5 : 0; let last = -999;
+          for (let i = 0; i < n; i++) { // каждое второе — по Валере (с упреждением), остальные — вразброс, не кучей
+            let x = i % 2 === 0 || this.stillT > K.still ? pl.x + lead + U.rand(-20, 20) : U.rand(80, 560);
+            if (Math.abs(x - last) < 40) x += 60 * (Math.random() < 0.5 ? -1 : 1); x = U.clamp(x, 76, 564); last = x;
+            this.tires.push({ x, y: -40, vx: 0, vy: 60, t: -i * span / n, rot: Math.random() * 6, dir: Math.random() < 0.5 ? -1 : 1, bounce: 0, f: i % 4 });
+          }
+          this.leverT = span + 1.2;
+        }
+        if (this.stT > 1.3) { this.pulled = false; this.endAttack(1.4); } // хохочет у статуи — можно бить
+        break;
       case 'rainbow': {
         this.vx = 0; this.facing = pl.x > this.x ? 1 : -1;
         const lead = this.phase >= 2 ? this.plVx * 0.35 : 0, [mx, my] = this.mouth(), want = Math.atan2(pl.y - 50 - my, pl.x + lead - mx);
@@ -1189,7 +1232,7 @@ L4.Biker = class {
         if (this.stT > 2.0) { this.snd = false; this.aim = null; this.endAttack(); }
         break;
       }
-      case 'taunt': // подставляет зад: урон x3, не уклоняется
+      case 'taunt': // подставляет зад: урон x2, не уклоняется
         this.vx = 0; this.facing = pl.x > this.x ? -1 : 1;
         if (this.stT - dt <= 0) G.say(this, U.choice(['Ну давай, ударь!', 'Слабо сюда, рыжий?', 'Вот сюда, по мишени!', 'Уф... перекур!']), 2.2);
         if (this.stT > K.tired * (this.stillT > K.still ? 0.4 : 1)) { this.backstep(); this.dodgeCD = Math.min(this.dodgeCD, 0.3); }   // игрок стоит столбом — перекур короткий
@@ -1208,17 +1251,23 @@ L4.Biker = class {
   draw(c, cx, cy) {
     const s = this.s, air = !this.onGround;
     const anim = this.dieT != null ? 'ko' : s === 'stun' ? 'dazed' : s === 'duck' || s === 'slide' ? 'duck' : this.flash > 0 && s !== 'taunt' ? 'hurt'
-      : s === 'charge' || s === 'flee' || s === 'move' ? 'run' : s === 'remote' ? 'throw' : s === 'bash' ? 'shove' : s === 'sing' ? 'sing'
+      : s === 'charge' || s === 'flee' || s === 'move' || s === 'lever_run' ? 'run' : s === 'lever_pull' ? 'pull' + (this.stT < 0.15 ? 0 : this.stT < 0.3 ? 1 : this.stT < 0.8 ? 2 : 3) : s === 'remote' ? 'throw' : s === 'bash' ? 'shove' : s === 'sing' ? 'sing'
       : s === 'charge_w' || s === 'bash_w' ? 'windup' : s === 'rainbow' || s === 'rage' ? 'roar' : s === 'taunt' ? 'taunt'
       : s === 'djump' || (air && this.vx * this.facing < -40) ? 'hopback' : air ? 'jump' : s === 'recover' && this.recKind === 'slam' ? 'slam' : s === 'slam_w' || s === 'drop_w' ? 'duckHi' : s === 'recover' ? 'land' : 'stand';
     const tilt = this.tiltNow(), wind = s === 'charge_w' || s === 'bash_w' || s === 'slam_w' || s === 'drop_w';
     const fl = this.flash > 0 ? '#ffffff' : (wind || this.tele > 0) && (G.t * 14 | 0) % 2 ? '#ff5a3a' : null;
     Spr.drawAnim(c, 'biker', anim, this.t, this.x - cx, this.y - cy, this.facing, { flash: fl, rot: tilt });
-    if (s === 'taunt' && (G.t * 6 | 0) % 2) G.text('x3', this.x - this.facing * 26 - cx, this.y - 80 - cy, { align: 'center', size: 16, color: '#ffd84a', outline: true });
+    if (s === 'taunt' && (G.t * 6 | 0) % 2) G.text('x2', this.x - this.facing * 26 - cx, this.y - 80 - cy, { align: 'center', size: 16, color: '#ffd84a', outline: true });
     if ((s === 'drop_w' || s === 'drop_air') && this.tgt != null && (G.t * 8 | 0) % 2) G.text('!', this.tgt - cx, L4.BOSS_G - 14 - cy, { align: 'center', size: 16, color: '#ff4a3a', outline: true });
     if (s === 'rainbow' && this.stT < 0.75 && this.aim != null) { const r = this.castRay(this.aim); c.save(); c.globalAlpha = 0.3 + Math.sin(G.t * 30) * 0.2; L4.drawRay(c, r, cx, cy, 0.25); c.restore(); }
     for (const r of this.rays) L4.drawRay(c, r, cx, cy, 1);
     for (const w of this.waves) { c.save(); c.translate(w.x - cx, w.y - cy); c.rotate(Math.atan2(w.vy, w.vx)); c.globalAlpha = w.t > 8 ? Math.max(0, 1 - (w.t - 8) / 3) : 1; Spr.drawC(c, 'l4fx2', 3, 0, 0, 0, 1 + Math.sin(w.t * 8) * 0.1); c.restore(); }
+    for (const r of this.tires) {
+      if (r.t < 0) continue;
+      if (r.t < 0.75) { if ((G.t * 8 | 0) % 2) G.text('!', r.x - cx, L4.BOSS_G - 14 - cy, { align: 'center', size: 16, color: '#ff4a3a', outline: true }); continue; }
+      if (!r.bounce) { const k = Math.max(0.25, Math.min(1, (r.y + 40) / (L4.BOSS_G + 40))); c.save(); c.globalAlpha = 0.25 + k * 0.35; c.fillStyle = '#000'; c.beginPath(); c.ellipse(r.x - cx, L4.BOSS_G - 2 - cy, 16 * k, 4 * k, 0, 0, Math.PI * 2); c.fill(); c.restore(); }   // тень на полу — куда упадёт
+      Spr.drawC(c, 'l4tire', r.f, r.x - cx, r.y - 18 - cy, r.rot, 1);
+    }
     for (const w of this.shocks) if (w.t >= 0) Spr.drawC(c, 'l4fx2', 3, w.x - cx, L4.BOSS_G - 12 - cy, w.dir > 0 ? 0 : Math.PI, 0.7 + Math.sin(w.t * 20) * 0.08);
   }
 };
