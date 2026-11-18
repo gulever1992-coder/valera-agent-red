@@ -286,7 +286,7 @@ const Pager = {
     if (!text || this.tips[text]) return; this.tips[text] = 1;
     this.queue.push({ kind: 'tip', from: 'ДОБРОЖЕЛАТЕЛЬ', text, lv: App.level });
   },
-  boss(id) { return; /* подсказки боссов отключены владельцем (pager_messages.xlsx) */ const t = this.BOSS[id]; if (this.seen[id]) return; this.seen[id] = 1; if (t && !this.queue.some(m => m.kind === 'boss')) this.queue.push({ kind: 'boss', from: 'ДОБРОЖЕЛАТЕЛЬ', text: t, lv: App.level }); },
+  boss(id) { this.bossLv = App.level; return; /* подсказки боссов отключены владельцем (pager_messages.xlsx) */ const t = this.BOSS[id]; if (this.seen[id]) return; this.seen[id] = 1; if (t && !this.queue.some(m => m.kind === 'boss')) this.queue.push({ kind: 'boss', from: 'ДОБРОЖЕЛАТЕЛЬ', text: t, lv: App.level }); },
   shop() { this.queue.push(Object.assign(this.debitMsg('Магазин «Под горлышко»: покупка', U.randi(18, 34) * 100), { lv: App.level })); },
 
   debitMsg(why, sum) {
@@ -348,9 +348,11 @@ const Pager = {
     const bk = this.detect(lv); if (bk) this.boss(this.lvId + ':' + bk);
     // не дёргать игрока: подсказки не чаще раза в 12 с, банк — не чаще раза в 50 с и не во время боя с боссом
     this.calmT = (this.calmT || 0) + dt; if (this.calmT < 2.5) return false;     // после затемнения дать игроку 2,5 с осмотреться
-    const gap = this.playT - this.lastT, qi = this.queue.findIndex(m => m.kind === 'boss' || gap >= 12);
+    // бой с боссом: только оставленные подсказки, никаких списаний/смс
+    const fight = !!bk || lv.mode === 'boss' || this.bossLv === lv;
+    const gap = this.playT - this.lastT, qi = this.queue.findIndex(m => (m.kind === 'boss' || gap >= 12) && (!fight || m.kind === 'tip'));
     if (qi >= 0) { this.show(this.queue.splice(qi, 1)[0]); return true; }
-    const e = !bk && !this.queue.length && gap >= 50 && this.events.find(e => !e.done && this.playT >= e.t);
+    const e = !fight && !this.queue.length && gap >= 50 && this.events.find(e => !e.done && this.playT >= e.t);
     if (e) { e.done = true; const m = this.make(e); if (m) { this.show(m); return true; } }
     return false;
   },

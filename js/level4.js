@@ -30,7 +30,7 @@ L4.img = {};
   Spr.ANIM.vova.sway = A('vovabong', [6, 7], 1.6);
   Spr.ANIM.bouncerA = { stand: A('bouncers', [0], 1, F), shove: A('bouncers', [1], 1, F), aside: A('bouncers', [2], 1, F), flex: A('bouncers', [3], 1, F) };
   Spr.ANIM.bouncerB = { stand: A('bouncers', [4], 1, F), shove: A('bouncers', [5], 1, F), lean: A('bouncers', [6], 1, F), laugh: A('bouncers', [7], 1, F) };
-  Object.assign(Spr.ANIM.biker, { duck: A('biker3', [1]), duckHi: A('biker2', [0]), hopback: A('biker2', [1]), windup: A('biker2', [2]), slam: A('biker2', [3]), dazed: A('biker2', [4]), shove: A('biker2', [5]), pull0: A('l4bikerlever', [0]), pull1: A('l4bikerlever', [1]), pull2: A('l4bikerlever', [2]), pull3: A('l4bikerlever', [3]) }); // biker2 смотрит ВПРАВО — без flip
+  Object.assign(Spr.ANIM.biker, { duck: A('biker3', [1], 1, { sc: 1.3 }), duckHi: A('biker2', [0]), hopback: A('biker2', [1]), windup: A('biker2', [2]), slam: A('biker2', [3]), dazed: A('biker2', [4]), shove: A('biker2', [5]), pull0: A('l4bikerlever', [0], 1, { sc: 1.2 }), pull1: A('l4bikerlever', [1], 1, { sc: 1.2 }), pull2: A('l4bikerlever', [2], 1, { sc: 1.2 }), pull3: A('l4bikerlever', [3], 1, { sc: 1.2 }) }); // biker2 смотрит ВПРАВО — без flip
   Spr.ANIM.biker.sing = A('l4fx2', [4], 1, F); Spr.ANIM.biker.taunt = A('l4fx2', [5], 1, F);
   Spr.ANIM.couple = { walk: A('couple', [0, 1, 2, 3], 7), climb: A('couple', [4, 5], 4), wink: A('couple', [6]), kiss: A('couple', [7]) };
   Spr.ANIM.vovagun = { hold: A('vovagun4', [0]), open: A('vovagun4', [1]), flip: A('vovagun4', [2]), green: A('vovagun4', [3]), proud: A('vovagun4', [4]), give: A('vovagun4', [5]) };
@@ -553,6 +553,12 @@ L4.Stage = class {
     for (const p of wd.projs) {
       p.update(dt, wd);
       if (p.dead) continue;
+      const wHit = this.projWalls && this.projWalls.find(r => p.x > r[0] && p.x < r[2] && p.y > r[1] && p.y < r[3]);
+      if (p.wallIn === undefined) p.wallIn = wHit || null;   // вылетела изнутри стола (Валера стоит у него) — этот стол её не гасит
+      else if (p.wallIn && wHit !== p.wallIn) p.wallIn = null;
+      const wBlock = wHit && wHit !== p.wallIn;
+      if (wBlock && p.kind !== 'wrench') { p.dead = true; p.poof(); Sound.play('hit'); continue; }
+      if (wBlock && p.kind === 'wrench' && !p.back) { p.vx = -p.dir * 60; p.back = true; }
       if (this.boss && this.boss.dieT == null && U.overlap(p.box, this.boss.box)) { this.boss.takeHit(p.dmg, p.x - p.vx, false); p.dead = true; p.poof(); continue; }
       for (const e of wd.enemies) if (e.dieT == null && !(p.hitSet && p.hitSet.has(e)) && U.overlap(p.box, e.box)) {
         const killed = e.hit(p.dmg, Math.sign(p.vx) || 1); Sound.play('hit');
@@ -856,6 +862,8 @@ L4.BUILD = {
     this.platsB = [[22, 212, 160], [456, 212, 164], [222, 116, 196]];
     for (const [x, y, w] of this.platsB) wd.addPlat({ x, y, w, h: 10, oneway: true, look: 'none' });
     for (const x of [26, 614]) this.props.push({ type: 'bigspk', x, y: L4.BOSS_G });
+    // столы и колонки — укрытия: снаряды Валеры о них гаснут (бока/низ; сверху по столу можно стоять и стрелять)
+    this.projWalls = [[22, 212, 182, 296], [456, 212, 620, 296], [222, 118, 418, 160], [0, 178, 52, 296], [588, 178, 640, 296]];
     this.floorY = L4.BOSS_G;
   },
 };
@@ -1109,9 +1117,10 @@ L4.Biker = class {
     // ударные волны по полу — перепрыгнуть
     for (const s of this.shocks) {
       s.t += dt; if (s.t < 0) continue; s.x += s.dir * s.sp * dt;
-      if ((s.dT = (s.dT || 0) - dt) <= 0) { s.dT = 0.05; FX.dust(s.x, L4.BOSS_G, 2); }
-      if (!s.hit && !pl.dead && Math.abs(pl.x - s.x) < 16 && pl.y > L4.BOSS_G - 22) { s.hit = true; pl.hurt(10, s.x - s.dir * 20, wd); }
-      if (s.x < 56 || s.x > 584) s.dead = true;
+      const gy = s.gy || L4.BOSS_G;
+      if ((s.dT = (s.dT || 0) - dt) <= 0) { s.dT = 0.05; FX.dust(s.x, gy, 2); }
+      if (!s.hit && !pl.dead && Math.abs(pl.x - s.x) < 16 && pl.y > gy - 22 && pl.y < gy + 6) { s.hit = true; pl.hurt(10, s.x - s.dir * 20, wd); }
+      if (s.x < (s.x0 || 56) || s.x > (s.x1 || 584)) s.dead = true;
     }
     this.shocks = this.shocks.filter(s => !s.dead);
     // колёса с потолка: сначала «!» на полу (0.75 с), потом падают, отскакивают и катятся — перепрыгнуть/отбежать
@@ -1125,7 +1134,7 @@ L4.Biker = class {
       if (r.x < 50 || r.x > 590 || r.roll > 1.4) r.dead = true;
     }
     this.tires = this.tires.filter(r => !r.dead);
-    const shock = (n, delay) => { for (let i = 0; i < n; i++) for (const dir of [-1, 1]) this.shocks.push({ x: this.x + dir * 24, dir, sp: 230 * K.spd, t: -i * delay }); };
+    const shock = (n, delay) => { const pb = this.y < L4.BOSS_G - 10 && (st.platsB || []).find(q => this.x > q[0] - 8 && this.x < q[0] + q[2] + 8 && Math.abs(this.y - q[1]) < 14), gy = pb ? pb[1] : L4.BOSS_G, x0 = pb ? pb[0] + 4 : 56, x1 = pb ? pb[0] + pb[2] - 4 : 584; for (let i = 0; i < n; i++) for (const dir of [-1, 1]) this.shocks.push({ x: this.x + dir * 24, dir, sp: 230 * K.spd, t: -i * delay, gy, x0, x1 }); };   // волна идёт по той поверхности, по которой ударил
     this.rays = [];
     this.tryUrgent();
     this.scanDodge(wd);
@@ -1268,7 +1277,7 @@ L4.Biker = class {
       if (!r.bounce) { const k = Math.max(0.25, Math.min(1, (r.y + 40) / (L4.BOSS_G + 40))); c.save(); c.globalAlpha = 0.25 + k * 0.35; c.fillStyle = '#000'; c.beginPath(); c.ellipse(r.x - cx, L4.BOSS_G - 2 - cy, 16 * k, 4 * k, 0, 0, Math.PI * 2); c.fill(); c.restore(); }   // тень на полу — куда упадёт
       Spr.drawC(c, 'l4tire', r.f, r.x - cx, r.y - 18 - cy, r.rot, 1);
     }
-    for (const w of this.shocks) if (w.t >= 0) Spr.drawC(c, 'l4fx2', 3, w.x - cx, L4.BOSS_G - 12 - cy, w.dir > 0 ? 0 : Math.PI, 0.7 + Math.sin(w.t * 20) * 0.08);
+    for (const w of this.shocks) if (w.t >= 0) Spr.drawC(c, 'l4fx2', 3, w.x - cx, (w.gy || L4.BOSS_G) - 12 - cy, w.dir > 0 ? 0 : Math.PI, 0.7 + Math.sin(w.t * 20) * 0.08);
   }
 };
 L4.drawRay = function (c, r, cx, cy, sc) {

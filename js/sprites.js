@@ -107,7 +107,7 @@ Spr.drawAnim = function (c, set, name, t, x, y, facing, o = {}) {
   const anim = S[name] || S.stand || S.idle || S[Object.keys(S)[0]];
   if (!anim) return;
   const [sheet, i] = Spr.frameOf(anim, t);
-  Spr.draw(c, sheet, i, x, y, anim.flip ? -facing : facing, o);
+  Spr.draw(c, sheet, i, x, y, anim.flip ? -facing : facing, anim.sc ? Object.assign({}, o, { scale: (o.scale || 1) * anim.sc }) : o);   // sc — подгонка листа, нарисованного мельче
 };
 
 // ---------- 3-slice для платформ ----------
