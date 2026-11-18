@@ -4,6 +4,7 @@
 #   art_src/bosses/vande_new.jpg -> vande2 (выдохся x2, удар о землю, ладонь, замах ладони, трещина-ловушка)
 # Масштаб: эталонный кадр нового листа = росту эталонного кадра старого листа. Все новые фигуры смотрят ВПРАВО.
 import os, json
+import numpy as np
 from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 A = lambda *p: os.path.join(ROOT, *p)
@@ -18,3 +19,24 @@ for name, f, ref, refi, newi in [('biker2', 'biker_new.jpg', 'biker', 0, 4), ('c
     S[name] = atlas(name, fs, S[ref]['f'][refi][3] / float(fs[newi].shape[0]), 'feet')
 s = s[:i] + json.dumps(S) + s[j:]
 open(A('js', 'sprites_data.js'), 'w', encoding='utf-8', newline='').write(s)
+
+# низкий присед байкера (art_src/bosses/biker_duck.jpg, 3x1) -> biker3; в исходнике фигуры крупнее, масштаб по росту приседа
+s = open(A('js', 'sprites_data.js'), encoding='utf-8').read()
+i = s.find('window.SPRITES = ') + 17; j = s.find(';\nwindow.BGS', i); S = json.loads(s[i:j])
+fs = figures(key(A('art_src', 'bosses', 'biker_duck.jpg')), 3, 1, small=True, minpx=150)
+S['biker3'] = atlas('biker3', fs, S['biker']['f'][0][3] * 0.55 / float(fs[1].shape[0]), 'feet')   # средний кадр (на колене) = 55% роста стоя
+s = s[:i] + json.dumps(S) + s[j:]
+open(A('js', 'sprites_data.js'), 'w', encoding='utf-8', newline='').write(s)
+
+# кадр прыжка байкера (biker:2): убрать летящий камень с линиями движения (отдельные мелкие куски над плечом) — владелец 2026-11-17
+from scipy import ndimage
+im = Image.open(A('assets', 'spr', 'biker.png')).convert('RGBA'); a = np.array(im)
+f = S['biker']['f'][2]; sub = a[f[1]:f[1] + f[3], f[0]:f[0] + f[2]]
+lab, n = ndimage.label(sub[..., 3] > 20); sz = ndimage.sum(np.ones_like(lab), lab, range(1, n + 1))
+big = 1 + int(np.argmax(sz))
+for k in range(1, n + 1):
+    if k == big: continue
+    ys, xs = np.where(lab == k)
+    if ys.max() < f[3] * 0.2 and xs.min() > f[2] * 0.6: sub[lab == k] = 0
+a[f[1]:f[1] + f[3], f[0]:f[0] + f[2]] = sub
+Image.fromarray(a, 'RGBA').save(A('assets', 'spr', 'biker.png'))

@@ -42,7 +42,7 @@ Spr.ANIM.vova6 = {
   stand: A6('vova6', [0]), run: A6('vovarun', [0, 1, 2, 3], 10), walk: A6('vovarun', [4, 5, 6, 7], 7), point: A6('vova6', [3]), push: A6('vova6', [4]), laugh: A6('vova6', [5]), head: A6('vova6', [6]), shroom: A6('vova6', [7]),
 };
 Spr.ANIM.vande = {
-  idle: A6('b_loco', [0, 1, 2, 3], 4), walk: A6('vandewalk', [4, 5, 6, 7], 7), run: A6('vandewalk', [0, 1, 2, 3], 11),
+  idle: A6('b_loco', [0, 1, 2, 3], 7), walk: A6('vandewalk', [4, 5, 6, 7], 7), run: A6('vandewalk', [0, 1, 2, 3], 11),
   crouch: A6('b_evade', [0]), jumpUp: A6('b_evade', [1]), apex: A6('b_evade', [2]), fall: A6('b_evade', [3]), land: A6('b_evade', [4]),
   side: A6('b_evade', [5]), flip: A6('b_evade', [6, 7], 8, { once: true }), dash: A6('b_evade', [8]), slide: A6('b_evade', [9]), duck: A6('b_evade', [10]), vanish: A6('b_evade', [11]),
   raise: A6('b_cast', [0]), draw: A6('b_cast', [1]), slam: A6('b_cast', [2]), glow: A6('b_cast', [3]), kneelCast: A6('b_cast', [4]), burst: A6('b_cast', [5]), orbA: A6('b_cast', [6]),
@@ -51,7 +51,7 @@ Spr.ANIM.vande = {
   skyArms: A6('b_taunt', [0]), laugh: A6('b_taunt', [1]), shout: A6('b_taunt', [2]), aura: A6('b_taunt', [3]), rage: A6('b_taunt', [4]), point: A6('b_taunt', [5]), crossed: A6('b_taunt', [6]), cackle: A6('b_taunt', [7]),
   hood: A6('b_taunt', [8]), stare: A6('b_taunt', [9]), clap: A6('b_taunt', [10]), bow: A6('b_taunt', [11]),
   hurt1: A6('b_hurt', [0]), hurt2: A6('b_hurt', [1]), stagger: A6('b_hurt', [2]), dizzy: A6('b_hurt', [3]), knee: A6('b_hurt', [4]), clutch: A6('b_hurt', [5]), fallBack: A6('b_hurt', [6]),
-  lieShrooms: A6('b_hurt', [7]), lieSide: A6('b_hurt', [8]), sit: A6('b_hurt', [9]), reach: A6('b_hurt', [10]), ko: A6('b_hurt', [11]),
+  lieShrooms: A6('b_hurt', [8]), lieSide: A6('b_hurt', [8]), sit: A6('b_hurt', [9]), reach: A6('b_hurt', [10]), ko: A6('b_hurt', [11]),
   tired: A6('vande2', [0, 1], 3), slamLand: A6('vande2', [2]), palmHit: A6('vande2', [3]), palmWind: A6('vande2', [4]),   // build_bossposes.py: выдохся, удар о землю, ладонь, замах
 };
 Spr.ANIM.vande.stand = Spr.ANIM.vande.idle;
@@ -112,7 +112,11 @@ L6.Player = class extends Game.Player {
     if (this.castT > 0) this.castT -= dt;
     const s = this.sc, big = s > 1.2 ? 2 : 1;
     if (ctl && this.hasWand && I.pressed('switch')) { this.wmode = this.wmode === 'wand' ? 'fist' : 'wand'; Sound.play('select'); FX.popText(this.x, this.y - 92 * s, this.wmode === 'wand' ? 'ПАЛОЧКА' : 'КУЛАКИ', '#ffffff'); }
-    const wandOn = this.hasWand && this.wmode === 'wand' && (this.rapid || this.castCool <= 0);   // пока палочка перезаряжается — бьём кулаками
+    if (this.rapid) {   // на арене палочка греется: непрерывная стрельба -> ПЕРЕГРЕВ, отпустил — остывает
+      if (this.overheat) { this.heat = Math.max(0, (this.heat || 0) - dt * 0.42); if (this.heat <= 0) { this.overheat = false; FX.popText(this.x, this.y - 92 * s, 'ОСТЫЛА!', '#8cd0ff'); } }
+      else if (G.t - (this.lastCastT || -9) > 0.3) this.heat = Math.max(0, (this.heat || 0) - dt * 0.6);
+    }
+    const wandOn = this.hasWand && this.wmode === 'wand' && (this.rapid || this.castCool <= 0) && !this.overheat;   // пока палочка перезаряжается — бьём кулаками
     if (ctl && !wandOn && I.pressed('punch') && (!this.atk || this.atk.t > this.atk.dur * 0.7) && this.castT <= 0) {
       const idx = this.comboT > 0 || this.atk ? (this.combo + 1) % 3 : 0;
       this.combo = idx;
@@ -133,7 +137,9 @@ L6.Player = class extends Game.Player {
       if (a.t >= a.dur) { this.atk = null; this.comboT = 0.35; }
     }
     const want = this.rapid ? (I.pressed('throw') || (wandOn && I.pressed('punch'))) : (I.held('throw') || (wandOn && I.held('punch')));
-    if (ctl && this.hasWand && want && this.castCool <= 0 && !this.atk) { this.cast(world, I); this.castMax = this.castCool = this.rapid ? 0.22 : 5; }   // в бою с боссом — выстрел на каждое нажатие, иначе перезарядка 5 с
+    if (ctl && this.hasWand && want && this.castCool <= 0 && !this.atk && !this.overheat) { this.cast(world, I); this.castMax = this.castCool = this.rapid ? 0.22 : 5;
+      if (this.rapid) { this.lastCastT = G.t; this.heat = (this.heat || 0) + 0.13; if (this.heat >= 1) { this.heat = 1; this.overheat = true; Sound.play('clank'); FX.popText(this.x, this.y - 104 * s, 'ПЕРЕГРЕВ!', '#ff6040'); G.say(this, 'Палочка перегрелась!', 1.0); } } }
+    else if (ctl && this.overheat && I.pressed('throw') && Math.random() < 0.5) FX.popText(this.x, this.y - 92 * s, 'ПЕРЕГРЕВ!', '#ff6040');   // в бою с боссом — выстрел на каждое нажатие, иначе перезарядка 5 с
     else if (ctl && this.hasWand && !this.rapid && I.pressed('throw') && this.castCool > 0) FX.popText(this.x, this.y - 92 * this.sc, 'ПЕРЕЗАРЯДКА ' + Math.ceil(this.castCool) + ' С', '#8a93a0');
   }
   cast(world, I) {

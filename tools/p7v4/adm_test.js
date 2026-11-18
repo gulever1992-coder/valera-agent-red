@@ -11,7 +11,7 @@ window.__A = (() => {
   const floorOf = () => { const y = P().y; for (let i = 3; i > 0; i--) if (y < T[i] + 6) return i; return 0; };
   const shot = async n => { draw(); await fetch('http://127.0.0.1:8783/', { method: 'POST', body: '_ad_' + n + '.jpg|' + document.querySelector('canvas').toDataURL('image/jpeg', 0.92) }); return n; };
   const bot = async () => {
-    if (window.Pager) Pager.update = () => {};   // пейджер ставит паузу, а бот его не закрывает
+    if (typeof Pager !== 'undefined') Pager.update = () => {};   // пейджер ставит паузу, а бот его не закрывает
     const out = [], ok = (n, v) => out.push(n + ':' + (v ? 'ok' : 'FAIL')), r0 = R(), X = r0.D.X, K = r0.D.KEY;
     try {
       step(0.5); ok('start_floor4', floorOf() === 3 && Math.abs(P().x - K.START) < 30);

@@ -391,7 +391,7 @@ V4.Level = class {
     FX.list = []; G.bubbles = [];
     this.run = new V4.Run(this);
     const st = opts.stage || 'intro';
-    const at = { A: ['A', 700, 1], B: ['B', 200, 1], A2: ['A2', 140, 1], C: ['C', 90, 1], E: ['E', 80, 1], D: ['D', 40, 1], D1: ['D', 40, 1], F: ['F', 700, -1], RA1: ['RA1', 600, -1], RA2: ['RA2', 600, -1], RB1: ['RB1', 600, -1], RA0: ['RA0', 600, -1], RB3: ['RB3', 40, 1] }[st];
+    const at = { A: ['A', 700, 1], B: ['B', 200, 1], A2: ['A2', 140, 1], C: ['C', 90, 1], E: ['E', 80, 1], D: ['D', 40, 1], D1: ['D', 40, 1], F: ['F', 700, -1], RA1: ['RA1', 600, -1], RA2: ['RA2', 600, -1], RB1: ['RB1', 600, -1], RA0: ['RA0', 600, -1], RB3: ['RB3', 40, 1], FB: ['FB', 270, 1] }[st];   // FB — сразу бой с главарём (?l7v4=FB)
     if (opts.flags) Object.assign(this.run.flags, opts.flags);
     if (st === 'hall') return this.toHall(this.run);
     if (st === 'roof') { this.run.flags.dIn = 1; this.run.load('D', 40, 1); return this.roofExit(this.run); }

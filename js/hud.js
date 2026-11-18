@@ -27,7 +27,7 @@ const HUD = {};
     if (pl.hudWeapons) return pl.hudWeapons();
     if (typeof L6 !== 'undefined' && L6.Player && pl instanceof L6.Player) {
       const l = [{ id: 'fist', icon: fistIcon, n: Infinity }];     // кулак — один значок на всю игру
-      if (pl.hasWand) l.push({ id: 'wand', icon: HUD.imgIcon('wand', 'ПАЛОЧКА'), n: Infinity, cool: pl.castCool > 0 && !pl.rapid ? 1 - pl.castCool / (pl.castMax || 5) : 0 });
+      if (pl.hasWand) l.push({ id: 'wand', icon: HUD.imgIcon('wand', 'ПАЛОЧКА'), n: Infinity, cool: pl.rapid ? (pl.heat || 0) : pl.castCool > 0 ? 1 - pl.castCool / (pl.castMax || 5) : 0, hot: pl.rapid ? (pl.overheat ? 2 : 1) : 0 });   // на арене ур.6 — шкала нагрева палочки
       return { list: l, cur: pl.hasWand && pl.wmode === 'wand' ? 1 : 0 };
     }
     if (pl.ammo3) {
@@ -65,7 +65,7 @@ const HUD = {};
     R(c, bx + 2, by + 2, bw - 4, 2, 'rgba(255,255,255,0.08)');
     if (HUD.swapT > 0) { c.globalAlpha = HUD.swapT * 2; R(c, bx + 2, by + 2, bw - 4, bh - 4, '#ffd84a'); c.globalAlpha = 1; }
     c.save(); c.beginPath(); c.rect(bx + 2, by + 2, bw - 4, bh - 4); c.clip(); w.icon(c, bx + bw / 2, by + bh / 2); c.restore();
-    if (w.cool) { R(c, bx + 2, by + bh - 4, bw - 4, 2, '#101216'); R(c, bx + 2, by + bh - 4, Math.round((bw - 4) * w.cool), 2, '#c8a0ff'); }
+    if (w.cool) { R(c, bx + 2, by + bh - 4, bw - 4, 2, '#101216'); R(c, bx + 2, by + bh - 4, Math.round((bw - 4) * w.cool), 2, w.hot === 2 ? ((G.t * 8 | 0) % 2 ? '#ff3020' : '#ffd84a') : w.hot ? (w.cool > 0.7 ? '#ff6040' : '#ffb040') : '#c8a0ff'); }
     // патроны под рамкой
     if (w.n === Infinity) HUD.inf(c, bx + bw / 2, by + bh + 7, 6);
     else { const empty = typeof w.n === 'number' && w.n <= 0; G.text(String(w.n), bx + bw / 2, by + bh + 2, { size: 8, align: 'center', color: empty ? '#ff6a4a' : '#fff', outline: true }); }
@@ -243,7 +243,7 @@ const Pager = {
   BOSS: {
     4: 'Байкер боится канистр «Осеменителя». После 4 попаданий он побежит — догоняй!',
     '5:race': 'Граблионок на «Матизе» быстрый, но резко поворачивать не умеет. Срезай повороты!',
-    '7:chief': 'Главарь уворачивается и наказывает, если стоишь на месте. Бей, когда он перезаряжается, выдохся после серии или промахнулся рывком.',
+    '7:chief': 'Не стой на месте! Бей, когда главарь выдохся, промахнулся рывком или перезаряжается.',
     '8:boss': 'Боссов бей ВОГами — они больнее автомата. От атак уходи перекатом.',
     '9:sanya': 'Профессор Саня прячется за щитом. Взрывай аккумуляторы — щит упадёт.',
     '9:semen': 'Семён открыт, когда шатается. От ракетной руки уходи перекатом.',
