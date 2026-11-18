@@ -925,7 +925,7 @@ L4.Biker = class {
   // наказание за стояние на месте (прыжок на позицию, волны по полу, радуга с упреждением), окна уязвимости после серий.
   constructor(st) {
     Object.assign(this, { st, x: 520, y: L4.BOSS_G, vx: 0, vy: 0, facing: -1, hp: Math.round(280 * (G.BOSS_MULT || 1)), t: 0, s: 'idle', stT: 0, cool: 1.5, onGround: true, flash: 0, headH: 140, voice: 110, dieT: null, waves: [], rays: [], shocks: [], blackout: false, blackT: 0 });
-    Object.assign(this, { maxHp: this.hp, phase: 1, dodgeCD: 2, retreatCD: 3, hitLog: [], combo: 0, comboMax: 3, stillT: 0, ax: null, ay: 0, plVx: 0, lastPX: null, tele: 0, dodges: 0 });
+    Object.assign(this, { maxHp: this.hp, phase: 1, dodgeCD: 2, retreatCD: 3, hitLog: [], combo: 0, comboMax: 3, stillT: 0, ax: null, ay: 0, plVx: 0, lastPX: null, tele: 0, dodges: 0, zx: null, zy: 0, zoneT: 0, punCD: 4, punT: 0 });
   }
   static get PH() { return [null,
     { spd: 1.0, dodge: 0.75, dcd: 0.9, combo: 3, tired: 2.7, still: 2.0, streak: 7 },
@@ -1016,6 +1016,14 @@ L4.Biker = class {
       return;
     }
   }
+  punishZone() {   // ПРАВИЛО ВЛАДЕЛЬЦА: топчется на пятачке — подбегает и выталкивает (таран/толчок с сильным отбросом)
+    const pl = this.st.player, d = Math.abs(pl.x - this.x); this.zoneT = 0; this.punCD = [0, 7, 6, 5][this.phase]; this.punT = 3.5; this.combo = 0;
+    G.say(this, U.choice(['Прописался тут? Выселяю!', 'Это моя парковка!', 'А ну, подвинься!']), 1.4);
+    if (d < 130) { this.set('bash_w'); this.warn('!'); }
+    else if (pl.y > L4.BOSS_G - 20 && d > 160) { this.set('charge_w'); this.warn('!'); }
+    else { this.set('move'); this.tx = U.clamp(pl.x - Math.sign(pl.x - this.x) * 70, 80, 560); }
+  }
+  flingPl() { if (this.punT <= 0) return; this.punT = 0; this.st.player.fling(this.x, 470, 430); Sound.play('boom'); FX.dust(this.st.player.x, L4.BOSS_G, 12); G.say(this, U.choice(['Вон с моей поляны!', 'Не стой на дороге!']), 1.2); }
   backstep() { const pl = this.st.player, away = pl.x > this.x ? -1 : 1; this.set('djump'); this.facing = -away; this.vy = -470; this.vx = (this.x + away * 120 < 80 || this.x + away * 120 > 560 ? -away : away) * 170; this.onGround = false; Sound.play('jump'); this.noCounter = true; }
   counter() { // мгновенная контратака после уклонения
     const pl = this.st.player, d = Math.abs(pl.x - this.x); if (this.noCounter) { this.noCounter = false; return false; }
@@ -1064,6 +1072,9 @@ L4.Biker = class {
     if (this.lastPX != null) this.plVx = U.lerp(this.plVx, (pl.x - this.lastPX) / Math.max(dt, 1e-3), Math.min(1, dt * 4)); this.lastPX = pl.x;
     if (pl.hurtT > 0 || pl.dead) { this.ax = pl.x; this.ay = pl.y; this.stillT += dt; } // отброс от удара — не считается движением
     else if (this.ax == null || Math.hypot(pl.x - this.ax, pl.y - this.ay) > 60) { this.ax = pl.x; this.ay = pl.y; this.stillT = 0; } else this.stillT += dt;
+    // ЗОНА: Валера топчется на пятачке ~150 px (≈5 м) — набегает «кемпинг», босс приходит выселять
+    if (this.zx == null || Math.abs(pl.x - this.zx) > 75 || Math.abs(pl.y - this.zy) > 90) { this.zx = pl.x; this.zy = pl.y; this.zoneT = 0; } else if (!pl.dead) this.zoneT += dt;
+    this.punCD -= dt; if (this.punT > 0) this.punT -= dt;
     this.dodgeCD -= dt; this.retreatCD -= dt;
     const py = this.y; this.vy = Math.min(800, this.vy + 1500 * dt); this.y += this.vy * dt; this.x += this.vx * dt;
     const wasAir = !this.onGround, g = wd.groundAt(this.x, py, this.y, 6);
@@ -1071,7 +1082,7 @@ L4.Biker = class {
     this.x = U.clamp(this.x, 70, 570); if (this.y > L4.BOSS_G) { this.y = L4.BOSS_G; this.vy = 0; this.onGround = true; } if (this.y < 40) this.y = 40;
     const landed = wasAir && this.onGround;
     // таран идёт плечом вперёд — через него можно перепрыгнуть (ударная зона 78 px от пола)
-    if (U.overlap({ x: this.x - 26, y: this.y - 78, w: 52, h: 78 }, pl.box) && ['charge', 'flee'].includes(this.s) && !pl.dead && (this.hitT = (this.hitT || 0) - dt) <= 0) { this.hitT = 0.8; pl.hurt(14, this.x, wd); }
+    if (U.overlap({ x: this.x - 26, y: this.y - 78, w: 52, h: 78 }, pl.box) && ['charge', 'flee'].includes(this.s) && !pl.dead && (this.hitT = (this.hitT || 0) - dt) <= 0) { this.hitT = 0.8; if (pl.hurt(14, this.x, wd)) this.flingPl(); }
     this.cool -= dt;
     for (const w of this.waves) {
       w.t += dt;
@@ -1099,6 +1110,7 @@ L4.Biker = class {
     switch (this.s) {
       case 'idle':
         this.vx *= 0.8; this.facing = pl.x > this.x ? 1 : -1;
+        if (this.zoneT > [0, 3.6, 3.1, 2.6][this.phase] && this.punCD <= 0 && this.onGround && this.y > L4.BOSS_G - 10) { this.punishZone(); break; }
         if (this.cool <= 0 && this.onGround) this.choose(st);
         break;
       case 'move': { // сокращает дистанцию
@@ -1135,7 +1147,7 @@ L4.Biker = class {
       case 'bash_w': this.vx = 0; this.facing = pl.x > this.x ? 1 : -1; if (this.stT > 0.4 / K.spd) { this.set('bash'); Sound.play('punch'); } break;
       case 'bash': // толчок с подшагом
         this.vx = this.facing * 220;
-        if (!this.hitDone && !pl.dead && U.overlap({ x: this.x + (this.facing > 0 ? 0 : -64), y: this.y - 110, w: 64, h: 100 }, pl.box)) { this.hitDone = true; pl.hurt(12, this.x, wd); }
+        if (!this.hitDone && !pl.dead && U.overlap({ x: this.x + (this.facing > 0 ? 0 : -64), y: this.y - 110, w: 64, h: 100 }, pl.box)) { this.hitDone = true; if (pl.hurt(12, this.x, wd)) this.flingPl(); }
         if (this.stT > 0.3) { this.vx = 0; this.combo++; if (Math.random() < 0.6) this.backstep(); else { this.set('recover'); this.recT = 0.5; } }
         break;
       case 'slam_w': this.vx = 0; if (this.stT > 0.45 / K.spd) { this.set('slam_air'); this.vy = -640; this.onGround = false; Sound.play('jump'); } break;

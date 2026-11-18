@@ -305,6 +305,7 @@
     get vuln() { return CH_V.includes(this.state); }
     get ph() { return this.hp > this.max * 0.64 ? 1 : this.hp > this.max * 0.32 ? 2 : 3; }
     next() { this.set('idle'); this.t = 10; }   // сразу решить, что делать дальше
+    flingPl(pl) { if (!(this.pun > 0) || pl.dead) return; this.pun = 0; pl.fling(this.x, 480, 420); Sound.play('boom'); G.say(this, U.choice(['Вон с участка!', 'Следующий!', 'Свободен!']), 1); }   // выпихнул с пятачка — сильный отброс
     tele(txt) { Sound.play('clank'); FX.burst(this.x + this.facing * 18, this.y - 62, 6, { colors: ['#fff', '#ff5a48', '#ffd84a'], speed: 70, life: 0.28, grav: 0 }); if (txt) FX.popText(this.x, this.y - 100, txt, '#ff5a48'); }
     leap(tx, vy, ty) { const h = (ty == null ? V4.GY : ty) - this.y, T = (-vy + Math.sqrt(vy * vy + 1800 * h)) / 900; this.air = true; this.vy = vy; this.vx = (U.clamp(tx, 36, W - 36) - this.x) / T; this.set('jump'); this.jumpShot = false; }
     act(a, pl) { const ph = this.ph, d = Math.abs(pl.x - this.x); this.last = a; this.stats.acts[a] = (this.stats.acts[a] || 0) + 1; this.face(pl);
@@ -342,6 +343,9 @@
       if (this.hp <= this.max / 2 && this.ate < 1 && (this.eatN || 0) < 2 && this.cool <= 0) { if (d < 170 && !this.re) { this.re = 1; return this.act('retreat', pl); } this.re = 0; return this.act('eat', pl); }   // доест — здоров полностью (один раз за бой)
       if (this.ammo <= 0) { if (d < 110 && !this.rr) { this.rr = 1; return this.act('rollaway', pl); } this.rr = 0; return this.act('reload', pl); }
       const uT = pl.x > this.table.x1 - 12 && pl.x < this.table.x2 + 12 && !plT;   // Валера под столом — сверху не достать
+      if (this.zoneT > [3.4, 2.9, 2.4][ph - 1] && (this.punCD || 0) <= 0 && pl.onGround && !onT) {   // ПРАВИЛО ВЛАДЕЛЬЦА: топчется на пятачке ~5 м — подбегает и выпихивает
+        this.zoneT = 0; this.punCD = [7, 6, 5][ph - 1]; this.pun = 3.5; G.say(this, U.choice(['Окопался? Выкурю!', 'Тут тебе не курилка!', 'Освободи место!']), 1.2);
+        return this.act(d > 90 ? 'dash' : 'kickback', pl); }
       if (this.camp > 2.2 && pl.onGround) {   // стоит столбом — наказать
         if (Math.random() < 0.3) G.say(this, U.choice(['Стоишь? Ну стой!', 'Мишень неподвижная — красота!', 'Пустил корни, стропальщик?']), 1.1);
         return this.act(pick([[free ? 3 : 0, 'grenade'], [d > 90 && !onT ? 3 : 0, 'dash'], [d <= 90 && !onT ? 3 : 0, 'grab'], [d > 60 && !onT && !uT ? 2.5 : 0, 'pounce'], [uT ? 3 : 0, 'dash'], [pl.crouch ? 4 : 1.5, 'aimLow'], [pl.crouch ? 0 : 2, 'aimHigh'], [onT && ph >= 2 && !uT ? 2 : 0, 'stomp'], [onT && uT ? 4 : 0, 'leapOff']], L), pl); }
@@ -365,6 +369,8 @@
       if (pl.hurtT > 0) this.kb = 1; else if (pl.onGround) this.kb = 0;   // отброс ударом — не считается движением
       const mv = !this.kb && (!pl.onGround || Math.abs(pl.vx) > 30); this.mvT = mv ? (this.mvT || 0) + dt : 0;
       if (this.mvT > 0.2) this.camp = 0; else this.camp += dt;   // сколько Валера стоит на месте (сам не двигается)
+      if (this.zx == null || Math.abs(pl.x - this.zx) > 75 || Math.abs(pl.y - this.zy) > 90) { this.zx = pl.x; this.zy = pl.y; this.zoneT = 0; } else if (!pl.dead) this.zoneT = (this.zoneT || 0) + dt;   // топчется на пятачке ~150 px
+      if (this.punCD > 0) this.punCD -= dt; if (this.pun > 0) this.pun -= dt;
       if (this.state === 'escape') { this.row = 0; this.q.length = 0; this.rlKeep = null; this.dcd = 0; if (this.ammo < 5) this.ammo = 5;   // магазин вставил на ходу — сразу отвечает
         this.q.push(U.choice(this.ph >= 2 ? ['aim', 'dash', 'flank', 'grenade', 'walk'] : ['aim', 'dash', 'walk'])); if (Math.random() < 0.5) G.say(this, U.choice(['Не дождёшься!', 'Хватит с тебя!', 'Дважды — и хватит!']), 0.9);
         if (Math.abs(pl.x - this.x) < 70 && Math.abs(pl.y - this.y) < 40 && Math.random() < 0.3) { this.act('kickback', pl); this.ifr = 0.7; }   // отпихнул ногой и остался
@@ -390,14 +396,14 @@
       else if (S === 'combo') {
         if (!this.cHit) { this.anim = t < this.wu * 0.45 ? 'block' : 'c2punch'; if (t < this.wu * 0.6) this.face(pl);   // замах: стойка -> кулак вперёд, потом удар
           if (t >= this.wu) { this.cHit = true; this.t = 0; this.anim = this.cs % 2 ? 'kick' : 'punch'; this.animT = 0; this.x += this.facing * 12; Sound.play('swing');
-            if (Math.abs(pl.x - this.x) < 58 && dy < 40 && Math.sign(pl.x - this.x) !== -this.facing) { if (pl.hurt(this.cs % 2 ? 13 : 10, this.x, run.world)) { G.shake(3, 0.12); if (this.cs % 2) { pl.vx = this.facing * 340; pl.vy = -280; } } } } }
+            if (Math.abs(pl.x - this.x) < 58 && dy < 40 && Math.sign(pl.x - this.x) !== -this.facing) { if (pl.hurt(this.cs % 2 ? 13 : 10, this.x, run.world)) { G.shake(3, 0.12); if (this.cs % 2) { pl.vx = this.facing * 340; pl.vy = -280; } this.flingPl(pl); } } } }
         else if (t > 0.24) { this.cs++; this.cHit = false; this.t = 0; this.wu = 0.2; if (this.cs >= this.cn) { this.set('recover', 'c2tired'); this.rec = [0.9, 0.75, 0.65][ph - 1]; } else Sound.play('clank'); } }
       else if (S === 'recover') { if (t > this.rec * (this.camp > 2 ? 0.5 : 1)) this.set('idle'); }   // стоящему столбом окна короче
       else if (S === 'tired') { if (this.anim === 'c2stomp' && t > 0.4) this.anim = 'c2tired'; if (t > this.tT * (this.camp > 2 ? 0.5 : 1)) this.set('idle'); }
       else if (S === 'dash') { this.face(pl); if (t > (this.dWu || [0.5, 0.42, 0.36][ph - 1])) { this.dGrab = !this.dRam && Math.random() < 0.5; this.dWu = 0; this.ramGo = this.dRam; this.dRam = 0; this.set('dashgo', this.dGrab ? 'c2grab' : this.ramGo ? 'c2punch' : 'run'); this.dDir = this.facing; this.dLeg = Math.random() < 0.2; this.dCrash = Math.random() < 0.5; } }   // половина рывков — с вытянутой рукой (захват на бегу)
       else if (S === 'dashgo') { this.x += this.dDir * 340 * sdt; this.facing = this.dDir;
         if (U.overlap(this.box, pl.box) && pl.y > this.y - 36 && pl.inv <= 0 && !pl.dead && this.dGrab && !pl.hidden) { this.set('hold', 'c2grab'); G.say(this, U.choice(['Попался!', 'Иди сюда!']), 0.9); }
-        else if (U.overlap(this.box, pl.box) && pl.y > this.y - 36 && pl.inv <= 0 && !pl.dead) { pl.hurt(12, this.x - this.dDir * 20, run.world); pl.vx = this.dDir * 260; G.shake(4, 0.15); this.set('idle', 'punch'); }
+        else if (U.overlap(this.box, pl.box) && pl.y > this.y - 36 && pl.inv <= 0 && !pl.dead) { pl.hurt(12, this.x - this.dDir * 20, run.world); pl.vx = this.dDir * 260; G.shake(4, 0.15); this.flingPl(pl); this.set('idle', 'punch'); }
         else if (!(this.dzCd > 0) && (((this.x <= 31 || this.x >= W - 31) && this.dCrash) || (this.dLeg && this.y >= V4.GY - 1 && [this.table.x1 + 8, this.table.x2 - 8].some(L => (this.x - L) * (this.x - this.dDir * 340 * sdt - L) <= 0)))) { this.set('dizzy'); this.dzT = 0.9; this.dzEsc = 0; this.dzCd = 12; Sound.play('hit'); G.shake(4, 0.2); FX.burst(this.x + this.dDir * 12, this.y - 60, 8, { colors: ['#fff', '#ffd84a'], speed: 110, life: 0.35, grav: 0 }); G.say(this, U.choice(['Ой... Стена...', 'Кто тут стол поставил?!', 'Звёздочки...']), 1); }   // врезался — оглушён (окно)
         else if (t > 0.8 || (this.x - pl.x) * this.dDir > 55 || this.x <= 31 || this.x >= W - 31) { if (this.ramGo) { this.ramGo = 0; this.face(pl); this.q.push(this.ammo > 0 && Math.random() < 0.75 ? 'aimLow' : U.choice(['pounce', 'grab', 'kickback'])); this.next(); } else { this.set('tired', 'c2tired'); this.tT = [1.1, 0.95, 0.8][ph - 1]; } if (Math.random() < 0.3) G.say(this, U.choice(['Уф...', 'Промазал!', 'Тормоза отказали...']), 0.9); } }
       else if (S === 'grab') { this.face(pl); if (d > 34) this.x += this.facing * Math.min(d - 34, 160 * sdt);   // тянется к Валере

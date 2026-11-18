@@ -152,6 +152,7 @@ Game.Player = class {
     else if (Math.random() < 0.35) G.say(this, U.choice(['Ай!', 'Больно же!', 'Кто кидает?!', 'Ну ёлки!', 'Моя голова!']), 1.1);
     return true;
   }
+  fling(fromX, vx, vy) { if (this.dead) return; const d = this.x < fromX ? -1 : 1; this.vx = d * vx; this.vy = -vy; this.hurtT = 0.6; this.onGround = false; this.climb = null; G.shake(9, 0.35); }   // сильный отброс (наказание боссом за «кемпинг»)
   heal(n) { this.hp = Math.min(this.maxHp, this.hp + Math.round(n * (G.HEAL_MULT || 1))); }
   update(dt, world) {
     const I = G.Input;

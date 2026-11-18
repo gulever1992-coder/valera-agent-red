@@ -141,6 +141,32 @@ L6.Mark = class {
   }
 };
 
+// бесконечный портал (наказание за «прописку» на пятачке): телеграф — вихрь в земле; стоишь на нём — проваливаешься и падаешь сверху обратно на него
+L6.Void = class {
+  constructor(x, delay, max) { this.x = x; this.t = 0; this.delay = delay; this.max = max; this.n = 0; this.lastSw = -9; this.cool = 0; Sound.play('squeak', 0.6); }
+  get open() { const k = this.t - this.delay; return k >= 0 && (k < 0.55 || (this.n > 0 && this.n < this.max && this.t - this.lastSw < 2.2)); }
+  update(dt, ar) {
+    this.t += dt; this.cool -= dt; const pl = ar.player, k = this.t - this.delay;
+    const cols = ['#b040ff', '#6020a0', '#ff60ff', '#201030'];
+    if (k < 0 || this.open) { if (Math.random() < dt * (k < 0 ? 30 : 55)) { const a = Math.random() * 6.28, r = U.rand(10, 34);
+      FX.spawn({ x: this.x + Math.cos(a) * r, y: L6.GROUND - 2 + Math.sin(a) * 4, vx: -Math.cos(a) * r * 2, vy: U.rand(-60, -10), grav: 0, life: 0.4, size: 2, color: cols[U.randi(0, 3)] }); } }
+    if (k >= 0 && !this.popped) { this.popped = true; G.shake(3, 0.2); Sound.play('boom', 0.6); FX.burst(this.x, L6.GROUND - 4, 16, { colors: cols, speed: 150, life: 0.5, grav: 0 }); }
+    if (this.open && this.cool <= 0 && !pl.dead && pl.onGround && Math.abs(pl.x - this.x) < 30 * Math.max(1, pl.sc * 0.8)) {
+      this.n++; this.lastSw = this.t; this.cool = 0.5;
+      FX.burst(pl.x, L6.GROUND - 20, 18, { colors: cols, speed: 120, life: 0.5, grav: 0 }); Sound.play('squeak', 0.9);
+      pl.hurt(this.n === 1 ? 6 : 4, this.x, ar.world); pl.x = this.x; pl.vx = 0; pl.vy = 60; pl.y = 24; pl.onGround = false; pl.climb = null;
+      FX.burst(pl.x, 10, 14, { colors: cols, speed: 110, life: 0.5, grav: 0 });
+      G.say(pl, this.n === 1 ? U.choice(['Ааа, куда?!', 'Пол пропал!']) : this.n < this.max ? U.choice(['Опять?!', 'Да сколько можно!', 'Отойти надо было!']) : 'Выплюнуло...', 1);
+    }
+    return k < 0 || this.open;
+  }
+  draw(c, cx) {
+    const k = this.t - this.delay, x = this.x - cx;
+    if (k < 0) { c.globalAlpha = 0.5 + 0.4 * ((G.t * 10 | 0) % 2); Spr.draw(c, 'vande2', 5, x + Math.sin(this.t * 40), L6.GROUND + 3, 1, { scale: 0.6 + 0.4 * Math.min(1, this.t / this.delay) }); c.globalAlpha = 1; return; }
+    if (this.open) Spr.draw(c, 'vande2', 5, x, L6.GROUND + 3, 1, { scale: 1.3 + Math.sin(this.t * 12) * 0.05 });
+  }
+};
+
 // ---------- Ванделорд ----------
 // ИИ: «часы агрессии» тикают и во время уклонов/попаданий — босс атакует, даже если его закидывают заклинаниями.
 // Уклоны — по запасу сил (stam), видит снаряды (время до попадания и высоту) и кулаки. Стояние на месте (campT) наказывается
@@ -152,7 +178,7 @@ L6.Vande = class {
     this.seq = null; this.sq = 0; this.sqT = 0; this.think = 1.2; this.vx = 0; this.vy = 0; this.slow = 0; this.stun = 0; this.invul = false;
     this.headH = 100; this.voice = 150; this.quip = 5; this.pyCool = 2; this.pyAway = false; this.lastAct = ''; this.combo = 0; this.lastHit = -9; this.dodgeCool = 0; this.actCool = {};
     this.vanishT = 0; this.alpha = 1; this.dying = 0; this.vuln = 0; this.wasInvul = false; this.baseY = L6.GROUND; this.perchT = 0; this.platX = null;
-    this.stam = 2; this.stamT = 0; this.aggro = 1.6; this.campX = x; this.campT = 0; this.flinchCool = 0; this.fleeCool = 0; this.stunCool = 0; this.danceCool = 0;
+    this.stam = 2; this.stamT = 0; this.aggro = 1.6; this.campX = x; this.campT = 0; this.zx = null; this.zy = 0; this.zoneT = 0; this.punCD = 4; this.flinchCool = 0; this.fleeCool = 0; this.stunCool = 0; this.danceCool = 0;
     this.chain = []; this.comboN = 0; this.tiredT = 0; this.counter = null; this.shroomPh = {}; this.reactCool = 0; this.strafeT = 0; this.strafeX = x; this.pauseT = 0; this.gloatN = 0; this.lastPlHp = 100; this.stats = { dodges: 0, acts: 0, tired: 0 };
   }
   get box() { return { x: this.x - 13, y: this.y - 90, w: 26, h: 90 }; }
@@ -205,6 +231,9 @@ L6.Vande = class {
     // стоит ли Валера на месте
     if (Math.abs(pl.x - this.campX) > 48) { this.campX = pl.x; this.campT = 0; } else this.campT += dt;
     const camping = this.campT > [0, 1.8, 1.4, 1.1][P]; this.camping = camping;
+    // «прописка» в радиусе ~5 м: копится время, потом бесконечный портал под ноги
+    if (this.zx == null || Math.abs(pl.x - this.zx) > 75 || Math.abs(pl.y - this.zy) > 90) { this.zx = pl.x; this.zy = pl.y; this.zoneT = 0; } else this.zoneT += dt;
+    this.punCD -= dt;
     const dx = pl.x - this.x, adx = Math.abs(dx), faceP = () => { this.facing = dx > 0 ? 1 : -1; };
     const sp = (P === 3 ? 1.35 : P >= 2 ? 1.2 : 1) * (this.slow > 0 ? 0.6 : 1);
     if (this.quip <= 0 && this.state !== 'dying' && this.state !== 'down' && this.state !== 'wait') { this.quip = U.rand(7, 11); this.say(camping ? U.choice(['Стоишь? Прорастёшь!', 'Пустил корни, Валера?', 'Стой-стой, я прицелюсь.']) : U.choice(['Грибочки мои, грибочки!', 'Не мешай нашему раю!', 'Ты ещё не гриб? Исправим.', 'Вова мой, и точка.'])); }
@@ -371,6 +400,7 @@ L6.Vande = class {
     const opts = [];
     const ok = k => !(A[k] > 0);
     const perched = this.perchT > 0;
+    if (!perched && this.zoneT > [0, 3.6, 3.1, 2.6][P] && this.punCD <= 0 && !ar.marks.some(m => m instanceof L6.Void)) { this.chain = []; this.comboN = 1; this.perform('void', ar); return; }
     if (perched) {   // с дюны: навесной обстрел и ловушки (прицельные лучи сверху вниз — нечестно, их нет), потом прыжок вниз на Валеру
       if (ok('lob')) opts.push(['lob', 3]);
       if (ok('mark')) opts.push(['mark', camping ? 5 : 2]);
@@ -478,6 +508,12 @@ L6.Vande = class {
           ...this.palmSteps(ar).map(s => Object.assign({}, s, { move: 0 }))]);
         break;
       }
+      case 'void': {   // бесконечный портал под Валерой: телеграф ~1 с — успел отойти, не провалился
+        this.punCD = [0, 8, 7, 6][P]; this.zoneT = 0; const vx = U.clamp(pl.x, BG6() + 20, BG6() + 620);
+        this.doSeq('void', [{ a: 'raise', d: 0.5, lock: true, tele: true, on: () => { this.say(U.choice(['Прописался? Провались!', 'Стоишь? Падай!', 'Бездна, прими гостя!']), true);
+            ar.marks.push(new L6.Void(vx, 1.0, [0, 2, 3, 3][P])); } },
+          { a: 'pointGround', d: 0.5, lock: true }, { a: 'smirk', d: 0.6 }]);
+        break; }
       case 'mark':   // ловушки в земле под Валерой (с упреждением)
         A.mark = [0, 4, 3.2, 2.6][P];
         this.doSeq('mark', [{ a: 'pointGround', d: 0.4, lock: true, tele: true, on: () => { if (Math.random() < 0.5) this.say(U.choice(['Расти, грибница!', 'Под ногами смотри!', 'Корни, хватай!'])); } },
