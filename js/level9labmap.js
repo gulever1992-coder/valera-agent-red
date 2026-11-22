@@ -55,11 +55,11 @@
       cks: [[140, 330], [2380, 330], [4560, 330], [5000, LIFT_TOP], [6160, LIFT_TOP], [6950, 330], [8890, 330], [10390, 330], [11470, 330], [12360, 330], [15790, DY], [16650, DY]],
       picks: [
         { kind: 'pist', x: 1600, y: WY }, { kind: 'pelmeni', x: 1220, y: WY }, { kind: 'kefir', x: 2100, y: 330 }, { kind: 'grenades', x: 2700, y: WY },
-        { kind: 'pelmeni', x: 3760, y: 330 }, { kind: 'rocket', x: 4200, y: WY }, { kind: 'kefir', x: 3850, y: WY }, { kind: 'pies', x: 4640, y: 330 },
+        { kind: 'badge', bi: 0, x: 3300, y: 330 }, { kind: 'pelmeni', x: 3760, y: 330 }, { kind: 'rocket', x: 4200, y: WY }, { kind: 'kefir', x: 3850, y: WY }, { kind: 'pies', x: 4640, y: 330 },
         { kind: 'pelmeni', x: 5300, y: LIFT_TOP }, { kind: 'plasma', x: 5950, y: UY }, { kind: 'kefir', x: 6150, y: LIFT_TOP }, { kind: 'pies', x: 6600, y: LIFT_TOP },
-        { kind: 'pelmeni', x: 7120, y: 330 }, { kind: 'kefir', x: 7700, y: 330 }, { kind: 'grenades', x: 8300, y: WY }, { kind: 'pelmeni', x: 8420, y: 330 }, { kind: 'kefir', x: 8905, y: 330 },
+        { kind: 'pelmeni', x: 7120, y: 330 }, { kind: 'badge', bi: 1, x: 7400, y: 330 }, { kind: 'kefir', x: 7700, y: 330 }, { kind: 'grenades', x: 8300, y: WY }, { kind: 'pelmeni', x: 8420, y: 330 }, { kind: 'kefir', x: 8905, y: 330 },
         { kind: 'pelmeni', x: 9620, y: 330 }, { kind: 'kefir', x: 10180, y: 330 }, { kind: 'mini', x: 10400, y: 330 }, { kind: 'rocket', x: 11060, y: WY },
-        { kind: 'kefir', x: 11450, y: 330 }, { kind: 'pelmeni', x: 12260, y: 330 },
+        { kind: 'kefir', x: 11450, y: 330 }, { kind: 'badge', bi: 2, x: 11850, y: 330 }, { kind: 'pelmeni', x: 12260, y: 330 },
         { kind: 'kefir', x: 15790, y: DY }, { kind: 'rocket', x: 16400, y: DY }, { kind: 'pelmeni', x: 16220, y: RY }, { kind: 'kefir', x: 17190, y: DY - 240 }, { kind: 'pelmeni', x: 17360, y: DY },
       ],
       pits: [[955, 1045], [2280, 2370], [3615, 3705], [7300, 7550], [7950, 8200], [8960, 9050], [16700, 17150, DY]],     // широкие (>120) — только по мосту, лифтам или колесу
@@ -119,7 +119,7 @@
       L9.LAB.moversInit(M, ck >= rkCk);
       M.onFall = P2 => { const L = M.movers && M.movers.bigL, b = M.movers && M.movers.big; if (L && b && P2.ck < rkCk && L.on) { L.x = b.x; L.y = b.y0; L.on = 0; L.wv = 0; M.picks = M.picks.filter(k => k.lift !== L); } };     // упал в пропасть до низа спуска -> грузовой лифт снова наверху
       if (ck < rkCk) LEV_SAVE = 0; M.levers.forEach((l, i) => l.on = i < LEV_SAVE ? 1 : 0);
-      M.picks = M.picks.filter(k => k.x > x0 + 40); M.picks.forEach(k => k.t = k.t || 0);     // без начального t координата анимации — NaN, предмет не рисуется
+      M.picks = M.picks.filter(k => k.x > x0 + 40 && !(k.kind === 'badge' && (lv.badgeGot || {})[k.bi])); M.picks.forEach(k => k.t = k.t || 0);     // без начального t координата анимации — NaN, предмет не рисуется
       M.covers.forEach(c => c.hp = 6); M.props.forEach(p => p.hp = 2);
       M.lastZone = null; M.tvIdx = 0; M.ar = ck > arCk ? { w: WAVES.length, t: 0, gate: 0, done: 1 } : null; if (ck < arCk) AR_SAVE = 0;
       if (!ck) lv.say('ПРИЦЕЛ {up}/{down}+СТРЕЛКИ   КУВЫРОК [Q]   ГРАНАТА {throw}', 4);
@@ -203,6 +203,7 @@
     };
     M.take = (k, P, lv) => {
       k.dead = true; Sound.play('pickup'); lv.score += 100;
+      if (k.kind === 'badge') { lv.badgeGot = lv.badgeGot || {}; if (!lv.badgeGot[k.bi]) { lv.badgeGot[k.bi] = 1; lv.stats.secrets++; lv.score += 900; lv.say('Значок «Ударник»! ' + lv.stats.secrets + ' / 3', 1.6); } return; }
       const W = L9.WEAP;
       if (W[k.kind]) { P.weap = k.kind; P.ammo[k.kind] = (P.ammo[k.kind] || 0) + W[k.kind].ammo; lv.say(W[k.kind].name + '!', 1.6); }
       else if (k.kind === 'kefir') { P.hp = Math.min(100, P.hp + 45); lv.stats.food++; lv.say('Кефир! +45', 1.2); }
@@ -393,7 +394,7 @@
           c.strokeStyle = 'rgba(255,236,140,' + (0.55 + pu * 0.4) + ')'; c.lineWidth = 1.5; c.beginPath(); c.ellipse(k.x, k.y - 2, 22 + pu * 4, 6 + pu, 0, 0, Math.PI * 2); c.stroke();
           c.fillStyle = 'rgba(255,220,120,0.10)'; c.beginPath(); c.arc(k.x, k.y - 18, 20 + pu * 3, 0, Math.PI * 2); c.fill(); c.restore();
         }
-        if (k.kind === 'pelmeni' || k.kind === 'kefir') { c.save(); c.globalAlpha = 0.25 + Math.sin(k.t * 6) * 0.12; c.fillStyle = '#fff6a0'; c.beginPath(); c.arc(k.x, k.y - 14 + bob, 13, 0, Math.PI * 2); c.fill(); c.restore(); Art.item(c, k.kind, k.x, k.y - 14 + bob, 0, 1); continue; }     // еда как на прошлых уровнях
+        if (k.kind === 'pelmeni' || k.kind === 'kefir' || k.kind === 'badge') { c.save(); c.globalAlpha = 0.25 + Math.sin(k.t * 6) * 0.12; c.fillStyle = '#fff6a0'; c.beginPath(); c.arc(k.x, k.y - 14 + bob, 13, 0, Math.PI * 2); c.fill(); c.restore(); Art.item(c, k.kind, k.x, k.y - 14 + bob, 0, 1); continue; }     // еда как на прошлых уровнях
         S(c, 'fxL9', 'spark', k.x, k.y - 14, 0.4 + Math.sin(k.t * 5) * 0.08, { add: 1 }); S(c, 'pick9', k.kind, k.x, k.y - 16 + bob, 1);
       }
       // шахта подъёмника: две цельные стойки от лебёдки до дна, лебёдка под потолком, тросы до траверсы кабины

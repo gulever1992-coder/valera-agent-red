@@ -154,7 +154,7 @@ WHO.semen = WHO.semen || { name: 'СЕМЁН', color: '#7cff6a', voice: 60 };
     }
     kill(text) { const P = this.P; if (this.dead) return; P.hp = 0; this.dead = 0.001; this.stats.deaths++; this.deathText = text; if (P.onDie) P.onDie(this); }
     update(dt) {
-      if (this.loading) return;
+      if (this.loading) { if (this.err && (G.Input.pressed('start') || G.Input.pressed('pause'))) setState('title'); return; }
       this.t += dt; this.fadeIn -= dt; if (this.msgT > 0) this.msgT -= dt;
       if (Scene.active) { Scene.tick(dt); if (this.P.cutUpdate) this.P.cutUpdate(this, dt); return; }
       if (this.dead) { this.dead += dt; if (this.P.deadUpdate) this.P.deadUpdate(this, dt); if (this.dead > (this.P.deadTime || 2.6)) { this.deathText = null; this.reset(); } return; }
@@ -164,7 +164,7 @@ WHO.semen = WHO.semen || { name: 'СЕМЁН', color: '#7cff6a', voice: 60 };
       if (L10.Drops) L10.Drops.update(this, dt);
     }
     draw(c) {
-      if (this.loading) { c.fillStyle = '#000'; c.fillRect(0, 0, 640, 360); G.text(this.err ? 'ОШИБКА: ' + this.err.slice(0, 60) : 'ЗАГРУЗКА...', 320, 170, { align: 'center' }); return; }
+      if (this.loading) { c.fillStyle = '#000'; c.fillRect(0, 0, 640, 360); G.text(this.err ? 'ОШИБКА ЗАГРУЗКИ' : 'ЗАГРУЗКА...', 320, 170, { align: 'center' }); if (this.err) G.text('ENTER - В МЕНЮ', 320, 192, { align: 'center' }); return; }
       this.P.draw(this, c);
       if (L10.Drops && !Scene.active) L10.Drops.draw(this, c);
       if (!Scene.active && !this.P.noHud) this.drawHud(c);

@@ -222,7 +222,7 @@ V4.MAPS.D = function (run) {
   };
   D.onLoad = r => {
     const pl = r.player, wd = r.world, cp = r.flags.dCp || 0;
-    r.level.stats.secretsTotal = 5; r.level.stats.eggsTotal = EGGS.length + 1;
+    r.level.stats.secretsTotal = 3; r.level.stats.eggsTotal = EGGS.length + 1;
     for (const p of PR) if (p.pl === 'f') r.covers.push({ x1: p.x - p.w * 0.45, x2: p.x + p.w * 0.45, y: T[p.f] });
     for (const cam of r.cams) cam.draw = function (c, cx, cy, rr) {   // камера из Flow + луч (свет)
       const x = this.x - cx, y = this.y - cy, mid = (this.a0 + this.a1) / 2, left = Math.cos(mid) < 0, im = V4.img.tw_cam;   // сторона — по середине сектора, головка плавно поворачивается
@@ -349,7 +349,7 @@ V4.room = function (run, k, floor, side, o) {
   return D;
 };
 const pkFood = (id, x, txt) => ({ id, x, sh: 'bfx4', fr: 14, s: 0.5, take: r => { r.player.heal(30); r.level.stats.food++; G.say(r.player, txt, 1.4); } });
-const pkBonus = (id, x, txt, sc = 1000) => ({ id, x, take: r => { r.world.addScore(sc); r.level.stats.secrets++; FX.popText(x, V4.GY - 70, '+' + sc, '#ffd84a'); G.say(r.player, txt, 1.8); } });
+const pkBonus = (id, x, txt, sc = 1000) => ({ id, x, take: r => { r.world.addScore(sc); FX.popText(x, V4.GY - 70, '+' + sc, '#ffd84a'); G.say(r.player, txt, 1.8); } });
 // этаж 4: пост охраны (щиток камер; охранник спит у мониторов) и спортзал
 V4.MAPS.RA1 = run => V4.room(run, 'roomA1', 4, 'L', {
   sleepers: [new V4.Sleeper({ x: 330, fr: 6, frW: 7, line: 'Э! Ты кто?! Пост 4, тревога!!!' })],

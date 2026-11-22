@@ -40,6 +40,8 @@ L5.Level = class {
       const a = L5.at(q, { lane: (i % 3 - 1) * 28 });
       this.pick.push({ x: a.x, y: a.y, kind: PK[i % 6], t: Math.random() * 6 });
     }
+    this.badgeGot = this.badgeGot || {};
+    [0.22, 0.4, 0.78].forEach((f, i) => { const q = Math.round(L5.LEN * f); if (this.badgeGot[i] || q < s + 200) return; const a = L5.at(q, { lane: (i - 1) * 28 }); this.pick.push({ x: a.x, y: a.y, kind: 'badge', bi: i, t: 0 }); });
     this.nameIdx = -1;
     if (!o.silent) { this.mode = 'drive'; Music.play('chase'); this.hint = 7; }
     for (let i = 0; i < 2 && !o.silent && s < L5.S_MATCH - 700; i++) this.spawnCop('patrol', true);
@@ -557,10 +559,21 @@ L5.Level = class {
       return;
     }
     if (this.mode === 'race' || this.mode === 'count' || this.mode === 'drive') { if (this.mode !== 'count') this.stats.time += dt; this.worldTick(dt, false); }
-    if (this.mode === 'win' || this.mode === 'lose') { this.endT += dt; this.worldTick(dt, true); if (this.endT > 2.2) this.modeDone(); }
+    if (this.mode === 'win' || this.mode === 'lose') { this.endT += dt; const k = Math.exp(-dt * 6); for (const c of this.cars) if (c === this.pl || c.isMatiz) { c.vx *= k; c.vy *= k; } this.worldTick(dt, true); this.holdAtFinish(); if (this.endT > 2.2) this.modeDone(); }
     FX.update(dt); G.updateBubbles(dt);
   }
-  respawn() { if (this.raceStarted) { this.startRaceSetup(); return; } this.beginDrive(this.cp); this.hint = 0; }
+  respawn() {
+    if (this.raceStarted) { this.startRaceSetup(); return; }
+    // события впереди контрольной точки должны повториться
+    const cp = this.cp, bd = this.bossesDone || {}, rb = this.rbDone || {};
+    if (cp < 6200) delete bd.riot;
+    if (cp < 7900) delete bd.copbus;
+    for (const k of Object.keys(bd)) if (k.startsWith('sup') && +k.slice(3) > cp) delete bd[k];
+    for (const k of Object.keys(rb)) if (k[0] === 'r') delete rb[k]; else if (+k > cp) delete rb[k];
+    if (this.spikeDone) for (const k of Object.keys(this.spikeDone)) if (+k > cp) delete this.spikeDone[k];
+    this.spikes = [];
+    this.beginDrive(cp); this.hint = 0;
+  }
   worldTick(dt, frozen) {
     const pl = this.pl;
     if (!frozen && this.extraTick) this.extraTick(dt);
@@ -589,7 +602,8 @@ L5.Level = class {
     for (const p of this.pick) {
       if (p.got || Math.hypot(p.x - pl.x, p.y - pl.y) > 34 || pl.dead) continue;
       p.got = true;
-      if (p.kind === 'ammo') { this.ammo = Math.min(150, this.ammo + 45); FX.popText(p.x, p.y - 18, 'ПАТРОНЫ +45', '#9cff40'); Sound.play('pickup'); }
+      if (p.kind === 'badge') { this.badgeGot[p.bi] = 1; this.stats.secrets++; this.score += 1000; FX.popText(p.x, p.y - 18, 'ЗНАЧОК «УДАРНИК»!', '#ffd84a'); Sound.play('checkpoint'); }
+      else if (p.kind === 'ammo') { this.ammo = Math.min(150, this.ammo + 45); FX.popText(p.x, p.y - 18, 'ПАТРОНЫ +45', '#9cff40'); Sound.play('pickup'); }
       else if (p.kind === 'nitro') { pl.nitro = 3.2; FX.popText(p.x, p.y - 18, 'НИТРО!', '#60b0ff'); Sound.play('checkpoint'); G.flash(0.08, '#60b0ff'); }
       else { pl.hp = Math.min(pl.maxhp, pl.hp + 35); FX.popText(p.x, p.y - 18, 'РЕМОНТ +35', '#8cf08c'); Sound.play('heal'); }
     }
@@ -653,11 +667,22 @@ L5.Level = class {
   raceTick() {
     const pl = this.pl, m = this.matiz;
     if (this.race.done) return;
-    const pw = pl.s >= L5.S_END, mw = m.s >= L5.S_END;
+    const pw = pl.s >= L5.S_FIN, mw = m.s >= L5.S_FIN;
     if (pw || mw) {
       this.race.done = true; this.endT = 0; this.mode = pw ? 'win' : 'lose';
       if (this.mode === 'win') { this.score += 6000; Sound.play('checkpoint'); G.flash(0.3, '#ffffff'); this.titleText = 'ПОБЕДА!'; } else { Sound.play('sting'); this.titleText = 'ГРАБЛИОНОК ПЕРВЫЙ'; G.say(m, 'Ха! Кто тут пешеход?!', 2.4, { sound: false }); }
       this.titleT = 3;
+    }
+  }
+  // после финиша машины не уезжают за линию: всё, что пересекло её, ставим на линию и гасим ход вперёд
+  holdAtFinish() {
+    const f = L5.at(L5.S_FIN);
+    for (const c of this.cars) {
+      if (c !== this.pl && !c.isMatiz) continue;
+      const over = (c.x - f.x) * f.dx + (c.y - f.y) * f.dy;
+      if (over <= 0) continue;
+      c.x -= f.dx * over; c.y -= f.dy * over; c.s = L5.S_FIN;
+      const fw = c.vx * f.dx + c.vy * f.dy; if (fw > 0) { c.vx -= f.dx * fw; c.vy -= f.dy * fw; }
     }
   }
   modeDone() {

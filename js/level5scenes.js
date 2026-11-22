@@ -166,9 +166,10 @@ L5.sceneEnd = level => function* () {
     if (carVis) L5.drawCar(c, carFr, carX, carY, 1, 1, t, { speed: 0, rot: carRot });
     if (mVis && L5.has('l5msd')) {
       // золотистый матиз Граблионка: кузов (кадры 0 цел, 1 разбит) + вращающиеся колёса (кадр 2)
-      const [bw, bh] = Spr.size('l5msd', mFr), cy = GY + 12 - (bh || 60) / 2 + 10, rot = mx / 14.5 + (mFr ? t * 3 : 0);
-      for (const fx of [0.117, 0.80]) Spr.drawC(c, 'l5msd', 2, mx + (fx - 0.5) * bw, cy + (bh || 60) / 2 - 0.085 * bw, rot, 1);
-      Spr.drawC(c, 'l5msd', mFr, mx, cy, 0, 1);
+      // арки замерены по листу (dx от центра кадра, dy оси от низа кузова): цел −100/+94, разбит −101/+91; колёса 0.82, верх колеса = верх арки
+      const [, bhF] = Spr.size('l5msd', mFr), B = GY + 10, rot = mx / 14.5 + (mFr ? t * 3 : 0), ax = mFr ? [[-101, -13], [91, -12]] : [[-100, -10], [94, -9]];
+      Spr.drawC(c, 'l5msd', mFr, mx, B - (bhF || 196) / 2, 0, 1);
+      for (const [dx, dy] of ax) Spr.drawC(c, 'l5msd', 2, mx + dx, B + dy, rot, 0.82); // колёса поверх кузова, в арках
     }
     vov.draw(c); val.draw(c);
     FX.draw(c);

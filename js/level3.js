@@ -426,7 +426,7 @@ L3.build = function () {
   f('fridge', 3820); f('stove', 4100); f('table', 4420); f('sink', 4720); f('washer', 5000); f('fridge', 5520); f('table', 5900); f('stove', 6220);
   acid(3930, 4040); acid(4540, 4650); acid(5080, 5380); acid(5640, 5790); acid(6050, 6150);
   bug('bedbug', 3950); bug('bedbug', 4300); bug('roach', 4560); bug('fly', 4650); bug('moth', 4850); bug('fly', 5050); bug('roach', 5350); bug('moth', 5600); bug('bedbug', 5750); bug('spider', 5950); bug('roach', 6120); bug('mini', 6300); bug('mini', 6330); bug('mini', 6360);
-  pick('jar', 3820, 'fridge'); pick('pelmeni3', 4420, 'table'); pick('battery', 5230); pick('jar', 5520, 'fridge'); pick('chalkbox', 6220, 'stove');
+  pick('jar', 3820, 'fridge'); pick('badge', 5000, 'washer'); pick('pelmeni3', 4420, 'table'); pick('battery', 5230); pick('jar', 5520, 'fridge'); pick('chalkbox', 6220, 'stove');
   D.hints.push({ x: 3700, w: 260, text: 'На холодильнике — коробка мелков! {switch} — сменить оружие, {up}+{punch} — бросок вверх.' });
   // 3. ГОСТИНАЯ
   D.checkpoints.push({ x: 6460 });
@@ -434,7 +434,7 @@ L3.build = function () {
   acid(6860, 6950); acid(7560, 7700); acid(8150, 8450); acid(8760, 8900); acid(9160, 9320);
   ch(8000);
   bug('roach', 6620); bug('roach', 6780); bug('fly', 7000); bug('fly', 7120); bug('bedbug', 7300); bug('spider', 7560); bug('roach', 7950); bug('mini', 8100); bug('mini', 8130); bug('mini', 8160); bug('fly', 8500); bug('roach', 8700); bug('bedbug', 8950); bug('moth', 9100); bug('roach', 9300); bug('fly', 9550); bug('roach', 9680);
-  pick('jar', 7020, 'tv'); pick('dichlorvos', 7420, 'unit'); pick('battery', 8300, 'ctable'); pick('bread', 8620, 'sofa'); pick('chalkbox', 9020, 'unit'); pick('pelmeni3', 9420, 'armchair');
+  pick('jar', 7020, 'tv'); pick('badge', 6700, 'sofa'); pick('dichlorvos', 7420, 'unit'); pick('battery', 8300, 'ctable'); pick('bread', 8620, 'sofa'); pick('chalkbox', 9020, 'unit'); pick('pelmeni3', 9420, 'armchair');
   D.hints.push({ x: 7300, w: 200, text: 'На стенке — ДИХЛОФОС: уничтожает всех насекомых на экране!' });
   // 4. СПАЛЬНЯ
   D.checkpoints.push({ x: 9860 });
@@ -448,7 +448,7 @@ L3.build = function () {
   f('shelf', 13000); f('fridge2', 13320); f('boxes', 13620); f('shelf', 14000); f('boxes', 14320); f('fridge2', 14720); f('boxes', 15020);
   acid(13100, 13250); acid(13700, 13900); acid(14420, 14620); acid(14800, 14950);
   bug('fly', 13000); bug('fly', 13200); bug('fly', 13500); bug('roach', 13420); bug('bedbug', 13820); bug('spider', 14100); bug('roach', 14220); bug('fly', 14500); bug('bedbug', 14640); bug('roach', 14900); bug('fly', 15100); bug('roach', 15220);
-  pick('jar', 13320, 'fridge2'); pick('pelmeni3', 14000, 'shelf'); pick('battery', 14720, 'fridge2'); pick('chalkbox', 15020, 'boxes');
+  pick('jar', 13320, 'fridge2'); pick('badge', 14320, 'boxes'); pick('pelmeni3', 14000, 'shelf'); pick('battery', 14720, 'fridge2'); pick('chalkbox', 15020, 'boxes');
   return D;
 };
 

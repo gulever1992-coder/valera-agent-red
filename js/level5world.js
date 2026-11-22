@@ -94,10 +94,10 @@ L5.R.world = function (lv, c) {
         }
       }
     }
-    for (const s2 of [L5.S_END]) { // стартовую линию убрали
+    for (const s2 of [L5.S_FIN]) { // стартовую линию убрали
       if (s2 === L5.S_RACE && !lv.raceStarted) continue;
       const a = L5.at(s2); if (a.x < x0 - 200 || a.x > x1 + 200 || a.y < y0 - 200 || a.y > y1 + 200) continue;
-      D(s2 === L5.S_END ? 2 : 5, a.x, a.y, Math.abs(a.dx) > 0.5 ? Math.PI / 2 : 0, 1);
+      D(s2 === L5.S_FIN ? 2 : 5, a.x, a.y, Math.abs(a.dx) > 0.5 ? Math.PI / 2 : 0, 1);
     }
   }
   if (L5.R.rails) L5.R.rails(c, lv, x0, y0, x1, y1, t);
@@ -140,7 +140,8 @@ L5.R.world = function (lv, c) {
       case 'spikeBurst': if (L5.has('l5spike')) Spr.drawC(c, 'l5spike', 7, o.b.x, o.b.y, 0, 0.6 + o.b.t * 1.6); break;
       case 'sign': break;
       case 'pick': { const p = o.p, b = Math.sin(p.t + t * 4) * 2;
-        if (p.kind === 'ammo') Spr.drawC(c, Spr.sheets.seedcan ? 'seedcan' : 'l5dec', Spr.sheets.seedcan ? 0 : 16, p.x, p.y - 4 + b, 0, 1.1);
+        if (p.kind === 'badge') { c.globalAlpha = 0.3 + Math.sin(t * 6) * 0.15; c.fillStyle = '#fff6a0'; c.beginPath(); c.arc(p.x, p.y - 4 + b, 13, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1; Art.item(c, 'badge', p.x, p.y - 4 + b, 0); }
+        else if (p.kind === 'ammo') Spr.drawC(c, Spr.sheets.seedcan ? 'seedcan' : 'l5dec', Spr.sheets.seedcan ? 0 : 16, p.x, p.y - 4 + b, 0, 1.1);
         else if (L5.has('l5dec')) Spr.drawC(c, 'l5dec', p.kind === 'nitro' ? 13 : 20, p.x, p.y - 4 + b, 0, 1);
         break; }
       default: if (o.kind === 'parked') break; L5.R.prop(c, C, o, t);

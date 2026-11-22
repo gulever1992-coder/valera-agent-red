@@ -22,6 +22,7 @@ const r7 = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
 L7.setupAnims = function () {
   L7.addSongs();
   Spr.ANIM.valera7 = Object.assign({}, Spr.ANIM.valera6, {
+    stand: A7('v6_tap', [7, 7, 7, 7, 1, 2, 3, 4, 5, 6, 7], 5),   // кадр 0 (анфас) владелец убрал
     crouch: A7('v7a', [0]), sneak: A7('v7a', [0, 1, 2, 3, 4], 7), wall: A7('v7a', [5]), scared: A7('v7a', [7]), handsUp: A7('v7a', [8]), crawl: A7('v7a', [10]),
     peek: A7('v7b', [21]), chop: A7('v7b', [8]), throwN: A7('v7b', [9, 10], 8), climb: A7('v7b', [0, 1, 2, 3], 6), hang: A7('v7b', [4, 5], 3),
     thumb: A7('v7b', [6, 7], 2), tied: A7('v7b', [11]), sit: A7('v7b', [12]), sitCross: A7('v7b', [13]), shoutFist: A7('v7b', [14, 15], 4), sigh: A7('v7b', [16]),

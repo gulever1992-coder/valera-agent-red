@@ -30,6 +30,7 @@ const HUD = {};
       if (pl.hasWand) l.push({ id: 'wand', icon: HUD.imgIcon('wand', 'ПАЛОЧКА'), n: Infinity, cool: pl.rapid ? (pl.heat || 0) : pl.castCool > 0 ? 1 - pl.castCool / (pl.castMax || 5) : 0, hot: pl.rapid ? (pl.overheat ? 2 : 1) : 0 });   // на арене ур.6 — шкала нагрева палочки
       return { list: l, cur: pl.hasWand && pl.wmode === 'wand' ? 1 : 0 };
     }
+    if (pl.ammo3 && !('swatter' in pl.ammo3)) return { list: [{ id: 'fists', icon: fistIcon, n: Infinity }], cur: 0 };   // ур.7: только кулаки
     if (pl.ammo3) {
       const l4 = 'seed' in pl.ammo3;
       const l = [{ id: 'swatter', icon: HUD.imgIcon('racket', 'МУХОБОЙКА'), n: pl.ammo3.swatter + '%' }];     // та же электромухобойка, что в руках (и ракетка ур.10)
@@ -92,19 +93,27 @@ const HUD = {};
     G.text((neg ? '-' : '') + Pager.fmt(Math.abs(b)), hx + 9, by2, { size: 8, color: col, outline: true });
   };
 
+  // что реально можно собрать на уровне — для HUD, меню и итогов (не показываем то, чего на уровне нет)
+  const HAS = { 1: { badges: 3, food: 1, deflect: 1 }, 2: { badges: 3, food: 1, deflect: 1 }, 3: { badges: 3 }, 4: { badges: 3 }, 5: { badges: 3 },
+    6: { badges: 3, food: 1 }, 7: { badges: 3, food: 1 }, 8: { badges: 3, food: 1 }, 9: { badges: 3, food: 1 }, 10: { badges: 3, food: 1 } };
+  G.levelHas = function (id, st) {
+    const h = HAS[id] || {}; st = st || {};
+    return { badges: h.badges || 0, food: !!h.food, deflect: !!h.deflect };
+  };
   // правый верхний угол: очки и значки
   HUD.drawRight = function (c, world) {
     const lv = App.level || {}, st = lv.stats || (world && world.stats) || {};
     const score = world && world.score != null ? world.score : lv.score || 0;
     G.text('ОЧКИ ' + String(score).padStart(6, '0'), W - 8, 6, { size: 8, align: 'right', color: '#ffd84a', outline: true });
-    // значки «Ударник»: плашка с подписью, 3 ячейки и счёт
-    const got = Math.min(3, st.secrets || 0), lw = Math.ceil(Math.max(G.textWidth('УДАРНИК', 7), G.textWidth('3/3', 8))) + 10, pw = lw + 3 * 19 + 6, px = W - 6 - pw, py = 17, ph = 24;     // ширина — по тексту, ячейки после подписи
+    // значки «Ударник»: плашка с подписью, 3 ячейки и счёт; на уровнях без значков — не рисуем
+    const N = G.levelHas(lv.id || 1, st).badges; if (!N) return;     // ячеек столько, сколько значков на уровне
+    const got = Math.min(N, st.secrets || 0), lw = Math.ceil(Math.max(G.textWidth('УДАРНИК', 7), G.textWidth(N + '/' + N, 8))) + 10, pw = lw + N * 19 + 6, px = W - 6 - pw, py = 17, ph = 24;     // ширина — по тексту, ячейки после подписи
     // без рамки: подпись, счёт и 3 значка; несобранный — серый и тёмный, поднятый — загорается
     G.text('УДАРНИК', px + 5, py + 4, { size: 7, color: '#ffd84a', outline: true });
-    G.text(got + '/3', px + 5, py + 13, { size: 8, color: got >= 3 ? '#8cf08c' : '#fff', outline: true });
+    G.text(got + '/' + N, px + 5, py + 13, { size: 8, color: got >= N ? '#8cf08c' : '#fff', outline: true });
     if (HUD.badgeT > 0) HUD.badgeT -= G.dt;
     if (got > HUD._got) HUD.badgeT = 1; HUD._got = got;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < N; i++) {
       const x = px + lw + 10 + i * 19, y = py + ph / 2, on = i < got, fresh = on && i === got - 1 && HUD.badgeT > 0;
       const pop = fresh ? 1 + Math.sin(HUD.badgeT * 12) * 0.25 * HUD.badgeT : 1;
       if (fresh) { c.save(); c.globalAlpha = HUD.badgeT * 0.6; c.fillStyle = '#fff6a0'; c.beginPath(); c.arc(x, y, 12 * pop, 0, Math.PI * 2); c.fill(); c.restore(); }     // вспышка при подборе
@@ -366,7 +375,7 @@ const Pager = {
     if (m.calm) return;
     // топает ногой
     if (pl && 'idleT' in pl && pl.onGround) { pl.idle = { kind: 'hips', t: 0, dur: 2.4 }; pl.idleT = 3.3; }
-    [0, 0.35, 0.7].forEach(d => setTimeout(() => { Sound.play('stomp'); G.shake(m.big ? 3 : 2, 0.12); }, d * 1000));
+    [0, 0.35, 0.7].forEach(d => G.later(() => { Sound.play('stomp'); G.shake(m.big ? 3 : 2, 0.12); }, d * 1000));
   },
 
   // рисуется поверх уровня (main.js)

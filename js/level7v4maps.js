@@ -53,8 +53,8 @@ V4.SEW_L = 200; V4.SEW_R = 2040;   // x лестниц в канализации
 // лестница в канализации (Flow, sew_ladder.png — только лестница, без люка): от пола уходит за верх экрана (копии стыкуются по шагу ступеней)
 V4.drawSewLadder = function (c, x) {
   const img = V4.img.sew_ladder; if (!img) return;
-  const s = 0.4, w = img.width * s, h = img.height * s;
-  for (let y = V4.GY + 2 - h; y > -h; y -= h) c.drawImage(img, Math.round(x - w / 2), y, w, h);
+  const w = 42, top = -30, h = V4.GY + 6 - top;   // цельная лестница ур.9 (lad9): крюки уходят за верх экрана
+  c.drawImage(img, Math.round(x - w / 2), top, w, h);
 };
 V4.MAPS.B = function (run) {
   const D = { w: 2200, bg: { k: 'sewer', s: 0.62, fy: 504 }, dark: 0.12, task: 'пройти канализацию к люку', suspK: 0 };

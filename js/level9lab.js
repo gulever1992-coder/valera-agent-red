@@ -7,7 +7,7 @@
   const WEAP = {
     rifle: { name: 'АВТОМАТ', rate: 0.13, dmg: 1, sp: 640, ammo: null, fx: 'tracer' },
     pist: { name: 'ПИСТОЛЕТ', rate: 0.09, dmg: 1, sp: 760, ammo: 140, fx: 'tracer' },
-    mini: { name: 'МИНИГАН', rate: 0.055, dmg: 0.8, sp: 700, ammo: 320, fx: 'tracer', spread: 0.09 },
+    mini: { name: 'МИНИГАН', rate: 0.07, dmg: 0.8, sp: 700, ammo: 240, fx: 'tracer', spread: 0.09 },
     plasma: { name: 'ПЛАЗМОГАН', rate: 0.32, dmg: 3.5, sp: 460, ammo: 40, fx: 'plasma', pierce: 1 },
     rocket: { name: 'РАКЕТНИЦА', rate: 0.75, dmg: 6, sp: 380, ammo: 12, fx: 'rocket', blast: 46 },
   };

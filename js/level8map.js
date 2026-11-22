@@ -27,8 +27,8 @@
       // окна лож (центры, мир): три блока — прямой, зеркальный, прямой
       const W1 = [210, 253, 297, 340, 383, 427], W2 = W1.map(x => 912 - x), W3 = W1.map(x => x + 543);
       m.prop('chand', 440, { y: 2, hp: 5, sc: 1.15 }); m.prop('chand', 745, { y: 10, hp: 5, sc: 0.85 }); m.prop('chand', 1000, { y: 4, hp: 5 });
-      m.prop('vase', 168, { z: 0.08, hp: 2, drop: 'mag' }); m.prop('vase', 405, { z: 0.2, hp: 2, drop: 'kefir', sc: 1.1 }); m.prop('vase', 668, { z: 0.06, hp: 2, drop: 'vest' }); m.prop('vase', 1046, { z: 0.14, hp: 2, drop: 'mag' });
-      const t1 = m.prop('table', 296, { z: 0.4, hp: 10, drop: 'mag' }), t2 = m.prop('table', 590, { z: 0.26, hp: 10, drop: 'vog' }), t3 = m.prop('table', 884, { z: 0.44, hp: 10, drop: 'kefir' });
+      m.prop('vase', 168, { z: 0.08, hp: 2, drop: 'mag', badge: 0 }); m.prop('vase', 405, { z: 0.2, hp: 2, drop: 'kefir', sc: 1.1 }); m.prop('vase', 668, { z: 0.06, hp: 2, drop: 'vest' }); m.prop('vase', 1046, { z: 0.14, hp: 2, drop: 'mag', badge: 2 });
+      const t1 = m.prop('table', 296, { z: 0.4, hp: 10, drop: 'mag' }), t2 = m.prop('table', 590, { z: 0.26, hp: 10, drop: 'vog', badge: 1 }), t3 = m.prop('table', 884, { z: 0.44, hp: 10, drop: 'kefir' });
       return [
         [1.0, m.zomb(1, 0.25, 2)], [2.5, m.zomb(-1, 0.3, 1)], [4.5, m.zomb(1, 0.15, 2)],
         [6.0, m.gren(-20, 70, STAGE)], [8.0, m.zomb(1, 0.35, 2)], [9.5, m.behind(t1, 0.4)],

@@ -8,10 +8,10 @@ WHO.mrx = WHO.mrx || { name: 'ГОСПОДИН ИКС', color: '#ff4040', voice:
   L9.N = {};                         // имя кадра -> индекс, по листам
   L9.load = async () => {
     if (L9.ready) return;
-    const names = Object.keys(D()).filter(n => n[0] !== '_');
+    const names = Object.keys(D()).filter(n => n[0] !== '_' && D()[n].f);
     L9.img = L9.img || {};
     await Promise.all(names.map(async n => { L9.img[n] = await G.loadImage('assets/l9/' + n + (D()[n].add ? '.jpg' : '.png')); }));
-    await Promise.all(Object.keys(D()._bg || {}).map(async n => { L9.img[n] = await G.loadImage('assets/l9/' + n + '.jpg'); }));
+    await Promise.all(Object.keys(D()._bg || {}).map(async n => { L9.img[n] = await G.loadImage('assets/l9/' + n + (window.WEBP_OK && WEBP_OK.has('assets/l9/' + n + '.png') ? '.png' : '.jpg')); }));
     await Promise.all(Object.keys(D()._bgp || {}).map(async n => { L9.img[n] = await G.loadImage('assets/l9/' + n + '.png'); }));
     for (const n of names) { L9.N[n] = {}; (D()[n].n || []).forEach((nm, i) => L9.N[n][nm] = i); }
     L9.img.props8 = await G.loadImage('assets/l8/props8.png');   // тень из ур.8 (Flow)
@@ -44,7 +44,7 @@ WHO.mrx = WHO.mrx || { name: 'ГОСПОДИН ИКС', color: '#ff4040', voice:
     start(opts = {}) {
       Scene.active = false; Scene.dialog = null;
       this.opts = opts; this.loading = true; this.partName = L9.PARTS[opts.part] ? opts.part : L9.ORDER[0]; this.ck = opts.ck || 0;
-      L9.load().then(() => { this.loading = false; this.reset(); });
+      L9.load().then(() => { this.loading = false; this.reset(); }).catch(e => { console.error(e); this.err = String(e); });
     }
     reset() {
       this.t = 0; this.dead = 0; this.done = false; this.fadeIn = 0.7; this.msg = null; this.msgT = 0; this.tv = null; this.tvT = 0;
@@ -64,7 +64,7 @@ WHO.mrx = WHO.mrx || { name: 'ГОСПОДИН ИКС', color: '#ff4040', voice:
       if (this.P.hp <= 0) { this.P.hp = 0; this.dead = 0.001; this.stats.deaths++; if (this.P.onDie) this.P.onDie(this); }
     }
     update(dt) {
-      if (this.loading) return;
+      if (this.loading) { if (this.err && (G.Input.pressed('start') || G.Input.pressed('pause'))) setState('title'); return; }
       this.t += dt; this.fadeIn -= dt; if (this.msgT > 0) this.msgT -= dt; if (this.tvT > 0) this.tvT -= dt;
       if (Scene.active) { Scene.tick(dt); if (this.P.cutUpdate) this.P.cutUpdate(this, dt); return; }
       if (this.dead) { this.dead += dt; if (this.P.deadUpdate) this.P.deadUpdate(this, dt); if (this.dead > 2.4) this.reset(); return; }
@@ -72,7 +72,7 @@ WHO.mrx = WHO.mrx || { name: 'ГОСПОДИН ИКС', color: '#ff4040', voice:
       this.P.update(this, dt);
     }
     draw(c) {
-      if (this.loading) { c.fillStyle = '#000'; c.fillRect(0, 0, 640, 360); G.text('ЗАГРУЗКА...', 320, 170, { align: 'center' }); return; }
+      if (this.loading) { c.fillStyle = '#000'; c.fillRect(0, 0, 640, 360); G.text(this.err ? 'ОШИБКА ЗАГРУЗКИ' : 'ЗАГРУЗКА...', 320, 170, { align: 'center' }); if (this.err) G.text('ENTER - В МЕНЮ', 320, 192, { align: 'center' }); return; }
       this.P.draw(this, c);
       if (!Scene.active) this.drawHud(c);
       if (this.tvT > 0 && !Scene.active) {     // плашка Икса (в тоннеле — сверху, чтобы не закрывать полосы)

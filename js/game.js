@@ -9,7 +9,7 @@ const GRAV = 1500, MAXFALL = 720, RUN = 165, JUMPV = 560;
 G.bubbles = [];
 G.say = function (target, text, dur = 2.2, o = {}) {
   G.bubbles = G.bubbles.filter(b => b.target !== target);
-  G.bubbles.push({ target, text, t: 0, dur, shout: !!o.shout, color: o.color });
+  G.bubbles.push({ target, text, t: 0, dur, shout: !!o.shout, color: o.color, top: o.top });
   if (o.sound !== false) Sound.play('blip', target.voice || 300);
 };
 G.updateBubbles = dt => { for (const b of G.bubbles) b.t += dt; G.bubbles = G.bubbles.filter(b => b.t < b.dur && !(b.target && b.target.gone)); };
@@ -20,7 +20,7 @@ G.drawBubble = function (c, x, y, text, o = {}) {
   let w = 0; for (const l of lines) w = Math.max(w, G.textWidth(l, size));
   const bw = w + 12, bh = lines.length * lh + 8;
   let bx = Math.round(U.clamp(x - bw / 2, 4, W - bw - 4)), by = Math.round(y - bh - 10);
-  if (by < 4) by = 4;
+  if (by < (o.top || 4)) by = o.top || 4;   // top — не залезать на HUD
   const jx = o.shout ? U.rand(-2, 2) : 0, jy = o.shout ? U.rand(-2, 2) : 0;
   bx += jx; by += jy;
   c.fillStyle = '#111';
@@ -69,7 +69,7 @@ G.drawBubbles = function (c, camX, camY) {
     const k = Math.min(1, b.t * 8);
     c.globalAlpha = k;
     const tl = tg.tail ? [tg.tail[0] - camX, tg.tail[1] - camY] : null;
-    G.drawBubble(c, hx, hy, b.text, { shout: b.shout, color: b.color, tail: tl });
+    G.drawBubble(c, hx, hy, b.text, { shout: b.shout, color: b.color, tail: tl, top: b.top });
     c.globalAlpha = 1;
   }
 };
@@ -149,7 +149,7 @@ Game.Player = class {
     FX.burst(this.x, this.y - 40, 8, { colors: ['#fff', '#ffd84a'], speed: 150, grav: 300, life: 0.4 });
     this.idleT = 0; this.idle = null;
     if (this.hp <= 0) { this.hp = 0; this.dead = true; this.deadT = 0; Sound.play('boom'); G.say(this, U.choice(['Эх...', 'Ну ё-моё...', 'Я прилягу...']), 1.8); }
-    else if (Math.random() < 0.35) G.say(this, U.choice(['Ай!', 'Больно же!', 'Кто кидает?!', 'Ну ёлки!', 'Моя голова!']), 1.1);
+    else if (Math.random() < 0.35) G.say(this, U.choice(['Ай!', 'Больно же!', 'Кто кидает?!', 'Ну ёлки!', 'Моя голова!']), 1.1, { top: 44 });
     return true;
   }
   fling(fromX, vx, vy) { if (this.dead) return; const d = this.x < fromX ? -1 : 1; this.vx = d * vx; this.vy = -vy; this.hurtT = 0.6; this.onGround = false; this.climb = null; G.shake(9, 0.35); }   // сильный отброс (наказание боссом за «кемпинг»)

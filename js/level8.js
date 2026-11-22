@@ -181,7 +181,7 @@ G.loadImage('assets/l8/card.jpg').then(im => { L8.card = im; });
     capsule: { sh: 'prTech8', f: 'capsule', dead: 'capsuleDead', s: 1.0, snd: 'glass', fx: 'glass' },
   };
   class Prop {
-    constructor(lv, kind, x, o = {}) { this.lv = lv; this.kind = kind; this.d = PDEF[kind]; this.x = x; this.z = o.z || 0; this.hp = o.hp || 4; this.broken = false; this.drop = o.drop || null; this.sc = o.sc || 1; this.vy = 0; this.yy = o.y != null ? o.y : null; this.flashT = 0; this.t = 0; this.hang = !!this.d.hang; this.fallZ = o.fallZ; this.spawn = o.spawn; }
+    constructor(lv, kind, x, o = {}) { this.lv = lv; this.kind = kind; this.d = PDEF[kind]; this.x = x; this.z = o.z || 0; this.hp = o.hp || 4; this.broken = false; this.drop = o.drop || null; this.badge = o.badge != null ? o.badge : null; this.sc = o.sc || 1; this.vy = 0; this.yy = o.y != null ? o.y : null; this.flashT = 0; this.t = 0; this.hang = !!this.d.hang; this.fallZ = o.fallZ; this.spawn = o.spawn; }
     get y() { return this.hang ? this.yy : zy(this.z); }
     get s() { return (this.hang ? this.d.s : zs(this.z) * this.d.s) * this.sc; }
     frame() { const d = this.d, n = D()[d.sh].n; return n.indexOf(this.landed || (this.broken && !d.hang) ? d.dead : this.broken ? d.fall : d.f); }
@@ -191,7 +191,7 @@ G.loadImage('assets/l8/card.jpg').then(im => { L8.card = im; });
       if (this.hp > 0) return;
       const lv = this.lv; this.broken = true; Sound.play(this.d.snd); lv.score += 50;
       if (this.hang) return;
-      lv.puff(this.x, this.y - 14 * this.s, 1.2); if (this.drop) lv.pickup(this.drop, this.x, this.z);
+      lv.puff(this.x, this.y - 14 * this.s, 1.2); if (this.drop) lv.pickup(this.drop, this.x, this.z); if (this.badge != null && !(lv.badgeGot || {})[this.badge]) { lv.pickup('badge', this.x + 14, this.z); lv.picks[lv.picks.length - 1].bi = this.badge; }
       if (this.d.fx === 'foam') lv.foams.push({ x: this.x, z: this.z, t: 0, life: 6 });
       if (this.d.fx === 'fire') { lv.boom(this.x, this.y - 24, 1); lv.blast(this.x, this.y - 20, 70, 4); lv.fires.push({ x: this.x, z: this.z, t: 0, life: 6 }); for (const o of lv.props) if (o !== this && o.kind === 'vodka' && !o.broken && Math.abs(o.x - this.x) < 170) lv.later(0.3, () => o.hit(99)); }
       if (this.d.fx === 'glass') { lv.fx.push({ sh: 'fxD8', fr: [6], x: this.x, y: this.y - 40 * this.s, s: 1, t: 0, life: 0.35, fade: 1 }); if (this.spawn) lv.later(0.4, () => this.spawn(this)); }
@@ -303,6 +303,7 @@ G.loadImage('assets/l8/card.jpg').then(im => { L8.card = im; });
     take(k) {
       const p = this.pl; k.dead = true; Sound.play('pickup'); this.score += 50;
       if (k.kind === 'flare') { this.flareT = 7; return; }
+      if (k.kind === 'badge') { this.badgeGot = this.badgeGot || {}; if (!this.badgeGot[k.bi]) { this.badgeGot[k.bi] = 1; this.stats.secrets++; this.score += 950; this.msg = 'ЗНАЧОК «УДАРНИК»! ' + this.stats.secrets + ' / 3'; this.msgT = 2; } return; }
       if (k.kind === 'mag') p.res = Math.min(400, p.res + 30); else if (k.kind === 'vog') p.vog = Math.min(6, p.vog + 1); else if (k.kind === 'kefir') { p.hp = Math.min(100, p.hp + 50); this.stats.food++; } else if (k.kind === 'vest') p.vest = 3;
     }
     // ---- обновление
@@ -393,7 +394,7 @@ G.loadImage('assets/l8/card.jpg').then(im => { L8.card = im; });
       }
       this.haz = this.haz.filter(h => !h.dead);
       for (const v of this.vogs) { v.t += dt; if (v.t >= v.life) { v.dead = true; this.boom(v.tx, v.ty, 0.9); this.blast(v.tx, v.ty, 62, 6); } }
-      for (const k of this.picks) { k.t += dt; k.vy += 420 * dt; k.oy = Math.min(0, k.oy + k.vy * dt); if (k.oy === 0 && k.vy > 0) k.vy = 0; if (k.t > 8) k.dead = true; }
+      for (const k of this.picks) { k.t += dt; k.vy += 420 * dt; k.oy = Math.min(0, k.oy + k.vy * dt); if (k.oy === 0 && k.vy > 0) k.vy = 0; if (k.t > 8 && k.kind !== 'badge') k.dead = true; }
       for (const t of this.tracers) t.t += dt;
       this.shots = this.shots.filter(s => !s.dead); this.grens = this.grens.filter(g => !g.dead); this.vogs = this.vogs.filter(v => !v.dead);
       this.picks = this.picks.filter(k => !k.dead); this.tracers = this.tracers.filter(t => t.t < 0.07);
@@ -425,7 +426,7 @@ G.loadImage('assets/l8/card.jpg').then(im => { L8.card = im; });
       list.sort((a, b) => a[0] - b[0]);
       for (const g of this.grens) { const k = g.t / g.life; L8.spr(c, 'props8', PRN.shadow, g.tx - cam, g.ty + 3, 0.25 + 0.5 * k, { a: 0.35 + 0.4 * k }); }
       for (const [, o] of list) o.draw(c, cam);
-      for (const k of this.picks) { if (k.t > 6 && (k.t * 10 | 0) % 2) continue; const y = zy(k.z) + k.oy; L8.spr(c, 'props8', PRN.shadow, k.x - cam, y + 2, 0.3, { a: 0.5 }); if (k.kind === 'flare') L8.spr(c, 'fxC8', 3, k.x - cam, y - 14, 0.4); else L8.spr(c, 'fx8', FXN[k.kind], k.x - cam, y - 12 + Math.sin(k.t * 5) * 1.5, 0.75); }
+      for (const k of this.picks) { if (k.kind !== 'badge' && k.t > 6 && (k.t * 10 | 0) % 2) continue; const y = zy(k.z) + k.oy; L8.spr(c, 'props8', PRN.shadow, k.x - cam, y + 2, 0.3, { a: 0.5 }); if (k.kind === 'flare') L8.spr(c, 'fxC8', 3, k.x - cam, y - 14, 0.4); else if (k.kind === 'badge') { c.globalAlpha = 0.35; c.fillStyle = '#fff6a0'; c.beginPath(); c.arc(k.x - cam, y - 12, 11, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1; Art.item(c, 'badge', k.x - cam, y - 12 + Math.sin(k.t * 5) * 1.5, 0); } else L8.spr(c, 'fx8', FXN[k.kind], k.x - cam, y - 12 + Math.sin(k.t * 5) * 1.5, 0.75); }
       for (const h of this.haz) { const k = h.t / h.life; L8.spr(c, 'props8', PRN.shadow, h.tx - cam, h.ty + 4, (0.3 + 0.5 * k) * (h.r / 26), { a: 0.3 + 0.5 * k }); if ((h.t * 10 | 0) % 2) L8.spr(c, 'fx8', FXN.warn, h.tx - cam, h.ty - 6, 0.5); if (h.sh) L8.spr(c, h.sh, h.fr, h.x - cam, h.y, h.s, { rot: h.rot != null ? h.rot : h.t * h.spin }); }
       for (const g of this.grens) L8.spr(c, 'fx8', (g.t * 12 | 0) % 2 ? FXN.gren : FXN.gren2, g.x - cam, g.y, 0.35 + g.s * 0.85, { rot: g.t * 9 });
       for (const s of this.shots) { const k = s.t / s.life, x = s.x0 + (s.tx - s.x0) * k, y = s.y0 + (s.ty - s.y0) * k; L8.spr(c, 'fx8', k > 0.7 ? FXN.ebul2 : FXN.ebul, x - cam, y, k > 0.7 ? 0.5 + k * 0.5 : 0.4 + k * 1.1); }

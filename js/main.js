@@ -136,7 +136,7 @@ const titleActor = { a: null, dir: 1 };
 const snow = [];
 for (let i = 0; i < 90; i++) snow.push({ x: Math.random() * W, y: Math.random() * H, s: 10 + Math.random() * 25, d: Math.random() * 6 });
 
-function setState(s) { App.state = s; App.t = 0; }
+function setState(s) { if (s !== App.state) G.epoch++; App.state = s; App.t = 0; }
 
 G.onLevelComplete = function (level) {
   const st = level.stats;
@@ -153,6 +153,8 @@ G.onLevelComplete = function (level) {
     const best = JSON.parse(localStorage.getItem(key) || 'null');
     App.results.best = best;
     if (!best || total > best.total) localStorage.setItem(key, JSON.stringify({ total, rank, time: st.time }));
+    const sk = 'valera_stars_l' + (level.id || 1), sb = JSON.parse(localStorage.getItem(sk) || 'null'), of = G.levelHas(level.id || 1, st).badges;   // лучший сбор значков «Ударник» за уровень (0 — на уровне их нет)
+    if (!of) localStorage.removeItem(sk); else if (!sb || st.secrets > sb.n || sb.of !== of) localStorage.setItem(sk, JSON.stringify({ n: Math.max(st.secrets, sb && sb.of === of ? sb.n : 0), of }));
     const prog = +(localStorage.getItem('valera_progress') || 1);
     localStorage.setItem('valera_progress', String(Math.max(prog, (level.id || 1) + 1)));
   } catch (e) {}
@@ -307,6 +309,7 @@ function update(dt) {
       if (App.t > 0.2 && (I.pressed('start') || I.pressed('jump') || I.pressed('punch') || I.pressed('pause'))) { Sound.play('select'); setState('title'); }
       break;
     case 'play': {
+      if (App.level && App.lastSaved !== App.level) { App.lastSaved = App.level; try { localStorage.setItem('valera_last', String(Pager.levelId(App.level))); } catch (e) {} }   // фон меню = последний уровень
       const lv = App.level;
       if (App.paused) {
         if (I.pressed('up') || I.pressed('down')) { App.pauseSel = 1 - App.pauseSel; Sound.play('select'); }
@@ -336,10 +339,47 @@ function update(dt) {
 }
 
 // ---------- отрисовка ----------
+// фон меню — по уровню, на котором игрок остановился (valera_last пишет update, case 'play'); AI-фоны самих уровней
+const MENU_BG = { 1: ['assets/bg_hall.jpg', 0.5, 328], 3: ['assets/wall_living.jpg', 0.5, 322], 4: ['assets/menu_l4_city.jpg', 0.5, 0], 5: ['assets/l5_hq.jpg', 0.5, 322],
+  6: ['assets/l6/bgf.jpg', 0.3, 306], 7: ['assets/l7v4/shopbig.jpg', 0.5, 336], 8: ['assets/l8/back.jpg', 0.5, 318], 9: ['assets/l9/lab3a.jpg', 0.5, 266], 10: ['assets/l10/mid/glade.jpg', 0.5, 322] };
+const menuBg = { id: null, im: null };
+function menuBgImg() {
+  let id = 0; try { id = +(localStorage.getItem('valera_last') || 0); } catch (e) {}
+  if (!MENU_BG[id]) return null;
+  if (menuBg.id !== id) { menuBg.id = id; menuBg.im = null; G.loadImage(MENU_BG[id][0]).then(im => { if (menuBg.id === id) menuBg.im = im; }); }
+  return menuBg.im;
+}
+// ур.10: поляна из финала — Вова-гриб, таракан бегает по шляпке, грустный Басов с гитарой (кадры assets/l10/mid, как в level10cut.js glade)
+const MG = {};
+function menuGlade(c) {
+  const im = n => { if (!(n in MG)) { MG[n] = null; G.loadImage('assets/l10/mid/' + n + '.png').then(i => MG[n] = i); } return MG[n]; };
+  const dr = (n, x, y, h, flip) => { const i = im(n); if (!i) return; const w = i.width * h / i.height; c.save(); c.translate(x, y); if (flip) c.scale(-1, 1); c.drawImage(i, -w / 2, -h, w, h); c.restore(); };
+  const t = performance.now() / 1000, fr = (fps, n) => ((t * fps) | 0) % n;
+  for (let k = 0; k < 7; k++) im('vova' + k); for (let k = 0; k < 4; k++) im('bs' + k);
+  dr('vova' + (fr(0.7, 6) === 5 ? 1 : 2), 330, 300, 135);
+  const p = (t * 0.6) % 2, u = p < 1 ? p : 2 - p, rx = 290 + u * 80;
+  dr('vova' + (3 + fr(10, 4)), rx, 300 - 126 + ((rx - 330) / 40) ** 2 * 14 - 4, 32, p >= 1);
+  dr('bs' + fr(2.2, 4), 520, 320, 104);
+}
+// ур.4: вид сверху (тайлы ур.5), Валера паркуется задом между фургоном и джипом: 1-я попытка — бум, 2-я — встал
+const PARK_K = [[0, -50, 212, 0], [2.6, 468, 212, 0], [3.0, 468, 212, 0], [4.8, 374, 238, -0.55], [5.3, 378, 236, -0.55], [6.8, 468, 212, 0], [7.2, 468, 212, 0], [8.4, 420, 234, -0.45], [9.6, 390, 248, 0], [10.0, 394, 248, 0], [14, 394, 248, 0]];
+function menuPark(c) {
+  if (!Spr.sheets.l5cars) return;
+  const t = (performance.now() / 1000) % 14; let i = 0; while (i < PARK_K.length - 2 && t > PARK_K[i + 1][0]) i++;
+  const a = PARK_K[i], b = PARK_K[i + 1], u = Math.min(1, (t - a[0]) / (b[0] - a[0])), e = u * u * (3 - 2 * u), L = (k) => a[k] + (b[k] - a[k]) * e;
+  let x = L(1), y = L(2); const an = L(3);
+  if (t > 4.8 && t < 5.1) { x += Math.sin(t * 90) * 2; y += Math.cos(t * 70); }
+  if (L5.R && L5.R.SH) L5.R.SH(1, x + 2, y + 4, 62, 31, 0.55, an);
+  Spr.drawC(c, 'l5cars', 0, x, y, an, 0.8);
+  if (t > 4.8 && t < 5.6) G.text('БУМ!', 330, 222 - (t - 4.8) * 20, { size: 12, align: 'center', color: '#ffd040', outline: true });
+}
 function drawTitle(c) {
-  if (G.img.street) c.drawImage(G.img.street, 0, 0, W, H);
+  const mb = menuBgImg();
+  if (mb) { const k = Math.max(W / mb.width, H / mb.height), w = mb.width * k, h = mb.height * k, cx = MENU_BG[menuBg.id][1];
+    c.drawImage(mb, Math.min(0, Math.max(W - w, W / 2 - w * cx)), (H - h) / 2, w, h); if (menuBg.id === 10) menuGlade(c); if (menuBg.id === 4) menuPark(c); }
+  else if (G.img.street) c.drawImage(G.img.street, 0, 0, W, H);
   c.fillStyle = 'rgba(10,12,16,0.45)'; c.fillRect(0, 0, W, H);
-  for (const s of snow) {
+  if (!mb || menuBg.id === 7) for (const s of snow) {
     s.y += s.s * G.dt; s.x += Math.sin(G.t + s.d) * 8 * G.dt;
     if (s.y > H) { s.y = -4; s.x = Math.random() * W; }
     Art.R(c, s.x, s.y, 2, 2, 'rgba(230,236,240,0.8)');
@@ -348,9 +388,8 @@ function drawTitle(c) {
   const bob = Math.sin(G.t * 2) * 2;
   G.text('ВАЛЕРА', W / 2, 36 + bob, { size: 40, align: 'center', color: '#f06a14', outline: true });
   G.text('АГЕНТ RED', W / 2, 84 + bob, { size: 16, align: 'center', color: '#e03030', outline: true });
-  G.text('ВЫБОРГСК · ЛЕМУРИЯ · 2000-е', W / 2, 108, { size: 8, align: 'center', color: '#c8d0d8' });
-  if (titleActor.a) titleActor.a.draw(c);
-  if (G.bg.fgCars) c.drawImage(G.bg.fgCars, 0, 0, W, H);
+  if (titleActor.a && !(mb && menuBg.id === 4)) { titleActor.a.y = mb ? MENU_BG[menuBg.id][2] : 312; titleActor.a.draw(c); }
+  if (G.bg.fgCars && !mb) c.drawImage(G.bg.fgCars, 0, 0, W, H);
   // меню
   const items = menuItems().map(m => m[0]);
   items.forEach((s, i) => {
@@ -431,9 +470,14 @@ function drawLevels(c) {
     c.restore();
     G.text('УРОВЕНЬ ' + L.id, x + cw / 2, y + 164, { align: 'center', color: locked ? '#6a6e74' : '#ffd84a' });
     G.text(L.name, x + cw / 2, y + 180, { align: 'center', size: L.name.length > 10 ? 12 : 16, color: locked ? '#6a6e74' : '#f4f0e4', outline: true });
-    G.wrap(L.sub, cw - 14, 8).slice(0, 2).forEach((ln, k) => G.text(ln, x + cw / 2, y + 202 + k * 11, { align: 'center', color: '#9aa4ae' }));
+    const subL = G.wrap(L.sub, cw - 14, 8).slice(0, 2), sy = y + 202 + (subL.length - 1) * 11 + 20;   // звёзды сразу под подзаголовком
+    subL.forEach((ln, k) => G.text(ln, x + cw / 2, y + 202 + k * 11, { align: 'center', color: '#9aa4ae' }));
     let best = null; try { best = JSON.parse(localStorage.getItem('valera_best_l' + L.id) || 'null'); } catch (e) {}
-    if (best && !locked) G.text('Рекорд: ' + best.total + ' (' + best.rank + ')', x + cw / 2, y + 226, { align: 'center', size: 8, color: '#8cf08c' });
+    if (best && !locked) G.text('Рекорд: ' + best.total + ' (' + best.rank + ')', x + cw / 2, sy + 20, { align: 'center', size: 8, color: '#8cf08c' });
+    if (!locked) { let sb = null; try { sb = JSON.parse(localStorage.getItem('valera_stars_l' + L.id) || 'null'); } catch (e) {}
+      const of = G.levelHas(L.id).badges, n = sb ? Math.min(sb.n || 0, of) : 0;     // уровни без значков — без ряда серых значков
+          // значки «Ударник»: собранные цветные, остальные серые
+      for (let i = 0; i < of; i++) { c.save(); if (i >= n) { c.filter = 'grayscale(1) brightness(0.75)'; c.globalAlpha = 0.85; } Art.item(c, 'badge', x + cw / 2 + (i - (of - 1) / 2) * 22, sy, 0, 0.95); c.restore(); } }
     if (locked) G.text(L.start ? 'Пройди уровень ' + (L.id - 1) : 'В разработке', x + cw / 2, y + 226, { align: 'center', size: 8, color: '#a86a5a' });
   });
   if (App.lockedT > 0) G.text('ЭТОТ УРОВЕНЬ ЕЩЁ ЗАКРЫТ!', W / 2, 322, { align: 'center', color: '#ff5a3a', outline: true });
@@ -463,17 +507,18 @@ function drawControls(c) {
 }
 
 function drawResults(c) {
-  const r = App.results, st = r.st;
+  const r = App.results, st = r.st, has = G.levelHas(r.id, st);
   Art.R(c, 0, 0, W, H, '#14171c');
   if (G.img.street) { c.globalAlpha = 0.18; c.drawImage(G.img.street, 0, 0, W, H); c.globalAlpha = 1; }
   G.text('УРОВЕНЬ ' + r.id + ' ПРОЙДЕН!', W / 2, 18, { size: 16, align: 'center', color: '#ffd84a', outline: true });
-  G.text(['', '«Севмолот. День первый»', '«Дорога домой»', '«Глюки»', '«Дикие кошки»'][r.id] || '', W / 2, 42, { align: 'center', color: '#c8d0d8' });
+  G.text(['', '«Севмолот. День первый»', '«Дорога домой»', '«Глюки»', '«Дикие кошки»', '«Погоня»', '«Грибной дождь»', '«Заводоуправление»', '«Закулисье»', '«Подземка»', '«Финал»'][r.id] || '', W / 2, 42, { align: 'center', color: '#c8d0d8' });
   const rows = [
     ['Время', fmtTime(st.time)],
     ['Врагов повержено', st.kills],
-    ['Отбито предметов', st.deflect],
-    ['Съедено вкусняшек', st.food],
-    ['Значков «Ударник»', st.secrets + ' / ' + (st.secretsTotal || 3)],
+    ...(has.deflect ? [['Отбито предметов', st.deflect]] : []),       // только то, что на уровне реально есть
+    ...(has.food ? [['Съедено вкусняшек', st.food]] : []),
+    ...(has.badges ? [['Значков «Ударник»', Math.min(st.secrets, has.badges) + ' / ' + has.badges]] : []),
+    ...(st.shots ? [['Точность', Math.min(100, Math.round(100 * (st.hits || 0) / st.shots)) + '%']] : []),
     ...(st.eggsTotal ? [['Пасхалок найдено', (st.eggs || 0) + ' / ' + st.eggsTotal]] : []),
     ['Получено урона', Math.round(st.dmg)],
     ['Падений (смертей)', st.deaths],
@@ -551,6 +596,7 @@ function splashWord(c, str, y, size, depth) {
 function drawSplash(c) {
   // пока шрифт не загружен — чёрный экран, иначе надпись выходит запасным узким шрифтом
   if (!App.fontOK) { App.t = 0; return; }
+  if (App.bootErr) { G.text('ОШИБКА ЗАГРУЗКИ', W / 2, 160, { align: 'center' }); G.text('ОБНОВИТЕ СТРАНИЦУ (F5)', W / 2, 184, { align: 'center' }); return; }
   const t = App.t;
   let a = Math.min(1, t / 0.7);
   if (App.splashOut != null) a = Math.max(0, 1 - (t - App.splashOut) / SPLASH_FADE);
@@ -615,7 +661,8 @@ function frame(now) {
     Promise.all([document.fonts.load('8px "Press Start 2P"', 'AZ'), document.fonts.load('8px "Press Start 2P"', 'АЯ')]),
     new Promise(r => setTimeout(r, 2500))]).catch(() => {}).then(() => { App.fontOK = true; });
   requestAnimationFrame(frame);
-  const [head, street] = await Promise.all([G.loadImage('assets/valera_head.png'), G.loadImage('assets/street.jpg'), Spr.load(), Spr.loadBGs(), L2.load(), L3.load(), L4.load(), L5.load(), L6.load(), L7.load(), V4.load()]);
+  const [head, street] = await Promise.all([G.loadImage('assets/valera_head.png'), G.loadImage('assets/street.jpg'), Spr.load(), Spr.loadBGs(), L2.load(), L3.load(), L4.load(), L5.load(), L6.load(), L7.load(), V4.load()]).catch(e => { console.error(e); App.bootErr = String(e); return []; });
+  if (App.bootErr) return;
   G.img.valeraHeadSrc = head; G.img.street = street;
   await fontWait;
   G.img.valeraHud = G.downscale(head, 52, 54);

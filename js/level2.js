@@ -194,7 +194,7 @@ L2.Matiz = class {
     this.x -= 400 * dt;
     if (!this.said && this.x < cam + W - 60) {
       this.said = true; G.say(this, U.choice(MATIZ_LINES), 1.6, { sound: false }); Sound.play('honk');
-      if (this.first || Math.random() < 0.5) { this.first = false; setTimeout(() => G.say(pl, 'ГРАБЛИОНОК!', 1.4, { shout: true }), 600); }
+      if (this.first || Math.random() < 0.5) { this.first = false; G.later(() => G.say(pl, 'ГРАБЛИОНОК!', 1.4, { shout: true }), 600); }
     }
     if (Math.random() < dt * 20) FX.spawn({ x: this.x + 50, y: L2.GROUND - 6, vx: 60, vy: -20, grav: -10, life: 0.6, color: '#6a6a6a', size: 3, type: 'puff' });
     if (U.overlap(this.box, pl.box) && !pl.dead) { if (pl.hurt(18, this.x + 100, wd)) { pl.vx = -300; pl.vy = -360; G.shake(6, 0.3); Sound.play('brick'); } }
@@ -754,7 +754,7 @@ L2.Arena = class {
     this.fighting = false; this.player.controls = false; this.bullets = [];
     this.world.addScore(6000); this.level.stats.kills++;
     G.shake(8, 0.5); G.flash(0.2); Music.stop(); Sound.play('boom'); this.birds = true;
-    setTimeout(() => this.level.bossDefeated(), 1400);
+    G.later(() => this.level.bossDefeated(), 1400);
   }
   update(dt) {
     const wd = this.world, pl = this.player, b = this.boss;
@@ -779,7 +779,7 @@ L2.Arena = class {
       [46, 22].forEach(th => { if (b.hp <= th && !this.dropped[th]) { this.dropped[th] = 1; const p = new Game.Pickup(th === 46 ? 'beer' : 'kefir', L2.ARENA_X + U.rand(120, 520), -10); p.falling = true; wd.pickups.push(p); } });
       this.quipT -= dt;
       if (this.quipT <= 0) { this.quipT = U.rand(7, 10); G.say(pl, U.choice(['Кеша, иди проспись!', 'Порошок не поможет!', 'Граблионок!', 'Я просто хочу домой!']), 1.6); }
-      if (pl.dead && pl.deadT > 1.6 && !this.resetting) { this.resetting = true; this.level.stats.deaths++; setTimeout(() => { this.resetting = false; this.level.restartBoss(); }, 400); }
+      if (pl.dead && pl.deadT > 1.6 && !this.resetting) { this.resetting = true; this.level.stats.deaths++; G.later(() => { this.resetting = false; this.level.restartBoss(); }, 400); }
     }
     if (this.hintT > 0) { this.hintT -= dt; this.hintA = Math.min(1, this.hintA + dt * 4); } else this.hintA = Math.max(0, this.hintA - dt * 3);
   }

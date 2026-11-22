@@ -29,7 +29,8 @@ L5.segs = [];
 L5.S_START = 560;
 L5.S_RACE = Math.round(L5.LEN / 2);      // линия старта гонки — ровно середина маршрута (там и договариваются погоняться)
 L5.S_MATCH = L5.S_RACE - 1170;      // здесь появляется Граблионок и догоняет
-L5.S_END = L5.LEN - 170;            // финиш у заводоуправления
+L5.S_END = L5.LEN - 170;            // опорная точка финальной зоны (расстановка)
+L5.S_FIN = L5.LEN - 15;             // финиш — там, где асфальт переходит в песок
 L5.at = function (s, o = {}) {
   s = U.clamp(s, 0, L5.LEN);
   let g = L5.segs[L5.segs.length - 1];
@@ -187,8 +188,8 @@ L5.LAND = [
   // Железнодорожная (на запад, y=325)
   { axis: 'h', c: 325, t: 520, side: -1, r: 'r9', name: 'БОЛЬНИЦА', fw: 360, dp: 110, H: 70, e: 'e10', tint: '#e8d8a0', x: { portico: true }, feats: ['vents'] },
   { axis: 'h', c: 325, t: 500, side: 1, r: 'r12', name: 'ТЕАТР', fw: 300, dp: 130, H: 66, e: 'e14', tint: '#b09080' },
-  // Аллея Молодёжи (на юг, x=430) и кинотеатр «Россия»
-  { axis: 'v', c: 430, t: 395, side: 1, r: 'r1', name: 'КИНО «РОССИЯ»', fw: 250, dp: 120, H: 92, e: 'e1', tint: '#e6e6e0', x: { sign: 'РОССИЯ', signColor: '#d02818', signRot: true }, feats: ['mast'] },
+  // Аллея Молодёжи (на юг, x=430) и кинотеатр «Выборгск»
+  { axis: 'v', c: 430, t: 395, side: 1, r: 'r1', name: 'КИНО «ВЫБОРГСК»', fw: 250, dp: 120, H: 92, e: 'e1', tint: '#e6e6e0', x: { sign: 'ВЫБОРГСК', signColor: '#d02818', signRot: true }, feats: ['mast'] },
   { axis: 'v', c: 430, t: 480, side: -1, r: 'r4', name: 'МАКСИ', fw: 300, dp: 150, H: 42, e: 'e4', tint: '#e05030', x: { sign: 'МАКСИ', signColor: '#ffe030', signRot: true } },
   { axis: 'v', c: 430, t: 580, side: 1, r: 'r13', name: 'ПАНЕЛЬНАЯ 9-ЭТАЖКА', fw: 210, dp: 100, H: 150, e: 'e15', tint: '#e8c8c8', feats: ['machine', 'antenna'] },
   // Ломоносова (на запад, y=640): ЦУМ

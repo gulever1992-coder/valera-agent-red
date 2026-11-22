@@ -762,7 +762,7 @@ L1.Arena = class {
     this.world.addScore(5000); this.level.stats.kills++;
     G.shake(8, 0.5); G.flash(0.2);
     Music.stop(); Sound.play('boom');
-    setTimeout(() => this.level.bossDefeated(), 1400);
+    G.later(() => this.level.bossDefeated(), 1400);
   }
   update(dt) {
     const wd = this.world, pl = this.player, b = this.boss;
@@ -786,7 +786,7 @@ L1.Arena = class {
       if (this.quipT <= 0) { this.quipT = U.rand(6, 9); G.say(pl, U.choice(['Слабая женщина!', 'Это всё в твоей голове, сног!', 'Ахахахах!', 'Лол!', 'Чё, рак, ты живой?']), 1.8); }
       if (pl.dead && pl.deadT > 1.6 && !this.resetting) {
         this.resetting = true; this.level.stats.deaths++;
-        setTimeout(() => { this.resetting = false; this.level.restartBoss(); }, 400);
+        G.later(() => { this.resetting = false; this.level.restartBoss(); }, 400);
       }
     }
     if (this.hintT > 0) { this.hintT -= dt; this.hintA = Math.min(1, this.hintA + dt * 4); } else this.hintA = Math.max(0, this.hintA - dt * 3);
@@ -1136,7 +1136,7 @@ L1.Level = class {
   climbDone() {
     const pl = this.climb.player;
     this.carry = { ammo: pl.ammo, weapon: pl.weapon, hp: pl.hp };
-    setTimeout(() => {
+    G.later(() => {
       Music.stop();
       FX.list = []; G.bubbles = [];
       this.arena = new L1.Arena(this);

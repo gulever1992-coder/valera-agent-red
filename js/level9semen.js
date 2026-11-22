@@ -267,7 +267,7 @@
       walks: [], ladders: [[LAD_X, GY - 190, GY]], cks: [[60, GY]], picks: [],
     };
     M.killAt = () => M.killY;
-    M.dmgK = 0.65;     // долгий бой: урон по Валере x0.75
+    M.dmgK = 0.85;     // долгий бой: урон по Валере x0.6 (0.7*0.85)
     M.camY = gy => GY - 180;
     M.init = (P, lv, ck) => {
       if (!Sem) Sem = mkSem();

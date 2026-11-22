@@ -72,7 +72,6 @@
     const LOCKER = X(43, 0.335);
     D.KC = KC;
     const COLL = [
-      { id: 'ab1', n: 'badge', x: X(43, 0.8), f: 3 }, { id: 'ab2', n: 'badge', x: X(42, 0.3), f: 3 }, { id: 'ab3', n: 'badge', x: X(15, 0.36), f: 0, hid: 0 }, { id: 'ab4', n: 'badge', x: X(17, 0.2), f: 0 },
       { id: 'akef', n: 'kefir', x: X(33, 0.4), f: 2, say: 'Кефир из буфета начальства. Жирность — как у их премий.' }, { id: 'acan', n: 'can', x: X(12, 0.78), f: 0, say: 'Тушёнка в приёмной. Взятка натурой.' },
       { id: 'aroll', n: 'roll', x: X(42, 0.72), f: 3, say: 'Туалетка за три рубля! И здесь она. Улика номер два.' },
       { id: 'amed', n: 'kefir', x: X(35, 0.45), f: 2, say: 'Кефир в медпункте. Лечит всё, кроме начальства.' }, { id: 'acan2', n: 'can', x: X(36, 0.7), f: 2, say: 'Тушёнка на бильярде. Играли на интерес.' },
@@ -114,6 +113,9 @@
     D.bgFn = (c, cx, r) => {
       const Im = I();
       for (let n = 0; n < NF; n++) { const im = strip(r, n); if (im) c.drawImage(im, -cx, T[n] - TOP, LAY.w, PITCH); }
+      { const im = strip(r, 1), DG = { 3: [2878, 32], 7: [2910, 28], 1: [2938, 24], 9: [2962, 31] };   // код на доске — те же цифры мелом в порядке r.code
+        if (im && r.code && r.code !== '3719') { let x = 2878; const y0 = T[1] - TOP;   // клетки цифр вплотную, суммарная ширина та же — старые цифры перекрываются целиком
+          for (const ch of r.code) { const g = DG[ch]; c.drawImage(im, g[0], 166, g[1], 48, x / 2 - cx, y0 + 83, g[1] / 2, 24); x += g[1]; } } }
       c.fillStyle = '#05070a'; c.fillRect(0, T[0] + LOWB, W, 80); { const im = Im.af1, sx = 440, sw = 560; if (im) for (let k = 0; k < 4; k++) for (let x = -(cx % (sw / 2)); x < W; x += sw / 2) c.drawImage(im, sx, 2, sw, 24, x, T[0] + LOWB + k * 12, sw / 2, 12); }   // цоколь: тот же бетон, что в перекрытиях
       for (const h of D.hides) drawHide(c, cx, h);
       for (const p of COLL) if (!got(r).has(p.id) && p.hid == null) { const im = Im['pr_' + p.n], z = PC[p.n]; if (im && z) { const y = T[p.f] - 6 + Math.sin(G.t * 3 + p.x) * 1.5; c.fillStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(p.x - cx, T[p.f] - 5, z[0] * 0.5, 2.5, 0, 0, 6.3); c.fill(); c.drawImage(im, Math.round(p.x - z[0] / 2 - cx), y - z[1], z[0], z[1]); } }
@@ -150,7 +152,7 @@
       if (!r.level.scene) for (const e of [...r.guards, ...r.dogs]) { if (e.alive === false || e.state === 'stagger' || e.state === 'sleep' || Math.abs(e.y - pl.y) > 40) continue; const ex = e.x - cx; if ((ex > -8 && ex < W + 8) || Math.abs(e.x - pl.x) > (e.chief ? 760 : 560)) continue;
         const x = ex < 0 ? 16 : W - 16, y = e.y - cy - 60 + Math.sin(G.t * 8) * 2, big = e.chief ? 1.5 : 1; c.fillStyle = e.chief ? '#ff9a18' : '#e02818'; c.beginPath(); c.moveTo(x, y - 11 * big); c.lineTo(x + 11 * big, y + 8 * big); c.lineTo(x - 11 * big, y + 8 * big); c.closePath(); c.fill(); G.text('!', x, y - 5, { align: 'center', size: 8, color: '#fff' }); }
       // ключ-карты: 4 гнезда в углу экрана
-      for (let i = 0; i < 4; i++) { const q = CARDS[i], im = Im['pa_card_' + q[0]], x = W - 92 + i * 21, y = 30; c.fillStyle = 'rgba(8,10,14,0.7)'; c.fillRect(x - 1, y - 1, 19, 15); c.strokeStyle = has(r, q[0]) ? q[2] : 'rgba(255,255,255,0.22)'; c.lineWidth = 1; c.strokeRect(x - 0.5, y - 0.5, 18, 14);
+      for (let i = 0; i < 4; i++) { const q = CARDS[i], im = Im['pa_card_' + q[0]], x = W - 92 + i * 21, y = 46; c.fillStyle = 'rgba(8,10,14,0.7)'; c.fillRect(x - 1, y - 1, 19, 15); c.strokeStyle = has(r, q[0]) ? q[2] : 'rgba(255,255,255,0.22)'; c.lineWidth = 1; c.strokeRect(x - 0.5, y - 0.5, 18, 14);
         if (im) { c.globalAlpha = has(r, q[0]) ? 1 : 0.16; c.drawImage(im, x + 1, y + 1, 16, 12); c.globalAlpha = 1; } }
       c.restore();
     };
@@ -190,7 +192,7 @@
       if (!r.level.scene && !r.caught) {
         for (const p of COLL) if (!got(r).has(p.id) && (p.hid != null ? pl.seq && pl.seq.phase === 'hid' && pl.seq.h === r.hides[p.hid] : Math.abs(pl.x - p.x) < 18 && Math.abs(pl.y - T[p.f]) < 8)) take(r, p);
         for (const k of KC) if (!has(r, k.c) && Math.abs(pl.x - k.x) < 16 && Math.abs(pl.y - T[k.f]) < 8) giveCard(r, k.c, k.x, T[k.f]);
-        if (!r.flags.note && f === 1 && Math.abs(pl.x - BOARD) < 30) { r.flags.note = 1; save(r); Sound.play('coin'); G.say(pl, 'На доске мелом — четыре цифры: 3719. Похоже на чей-то код. Запомню.', 3.2); }
+        if (!r.flags.note && f === 1 && Math.abs(pl.x - BOARD) < 30) { r.flags.note = 1; save(r); Sound.play('coin'); G.say(pl, 'На доске мелом — четыре цифры: ' + r.code + '. Похоже на чей-то код. Запомню.', 3.2); }
       }
       if (a && a.stair) r.stairT = 4;
       if (a && a.stair) pl.animT -= dt * 0.4;   // шаг на лестнице реже: ноги не проскальзывают
@@ -210,9 +212,9 @@
     };
     D.onLoad = r => {
       const pl = r.player, wd = r.world, first = !r.flags.fIn, fl = r.flags.fAt == null ? 3 : r.flags.fAt;
-      if (first) { r.level.stats.secretsTotal = (r.level.stats.secretsTotal || 0) + 3; r.level.stats.eggsTotal = (r.level.stats.eggsTotal || 0) + EGGS.length + 1; }
+      if (first) { r.level.stats.eggsTotal = (r.level.stats.eggsTotal || 0) + EGGS.length + 1; }
       for (const p of PR) r.covers.push({ x1: p.x - p.w * 0.45, x2: p.x + p.w * 0.45, y: T[p.f] });
-      r.flags.chairs = SLEEP.map(s => [s[0], s[1]]); r.code = '3719'; r.lift = null; r.hidePlayer = false; r.camLock = false;   // код сейфа нарисован мелом на доске в классе (эт.2)
+      r.flags.chairs = SLEEP.map(s => [s[0], s[1]]); { const d = ['3', '7', '1', '9']; for (let i = 3; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [d[i], d[j]] = [d[j], d[i]]; } r.code = d.join(''); if (!r.flags.card_y) r.flags.note = 0; } r.lift = null; r.hidePlayer = false; r.camLock = false;   // код сейфа нарисован мелом на доске в классе (эт.2)
       for (const g of r.guards) if (g.kind === 'sleep') { g.chair = true; g.draw = sleepDraw; } else if (g.kind === 'post') { g.noKO = true; g.stT = 1e9; }   // пост «спина к спине»: не отворачиваются, со спины не взять
       if (r.flags.flood) { r.guards = r.guards.filter(g => !(g.kind === 'post')); r.floodT = 9; }
       r.drawMenu = function (c) { const m = this.menu, im = I().liftp; if (!m.lift || !im) return V4.Run.prototype.drawMenu.call(this, c);   // панель лифта — картинка из Flow, подсвечивается выбранная кнопка
@@ -357,20 +359,28 @@
       else a = pick([[3, 'aim'], [ph >= 2 ? 2.5 : 1.5, 'dash'], [uT ? 0 : 5.5, 'pounce'], [2, 'walk'], [free ? 1.5 : 0, 'grenade'], [2, 'table'], [ph === 1 ? 1 : 0.3, 'taunt']], L);
       this.act(a, pl); }
     evade(pl) { const ph = this.ph, away = Math.sign(this.x - pl.x) || 1, wall = (away > 0 ? W - 30 - this.x : this.x - 30) < 70, onT = this.y < V4.GY - 1;
-      this.dcd = [0.9, 0.7, 0.5][ph - 1] + Math.random() * 0.2; this.ifr = 0.45; this.hitDone = false; this.stats.ev++; G.hitStop = 0.04;
+      this.dcd = 1.5; this.ifr = 0.45; this.hitDone = false; this.stats.ev++; G.hitStop = 0.04;
       const v = pick([[wall ? 0 : 5, 'back'], [wall || onT ? 0 : 3, 'wheel'], [2, 'duck'], [wall ? 4 : 2, 'roll'], [onT ? 0 : 1.5, 'hop']]);
       if (Math.random() < 0.35) G.say(this, U.choice(['Мимо!', 'Матрица, детка!', 'Слишком медленно!', 'Хе-хе!', 'Не попал!']), 0.9);
-      if (v === 'hop') { this.leap(pl.x - away * 60, -420); this.safeLand = 1; this.q.unshift(Math.random() < 0.6 ? 'jab' : 'grab'); return; }   // перепрыгнул через Валеру — и сразу в спину
-      if (v === 'roll') { this.set('flank', 'roll'); this.rollDir = -away; this.ifr = 0.6; this.cnt = Math.random() < 0.8; return; }
+      if (v === 'hop') { this.leap(pl.x - away * 60, -420); this.safeLand = 1; if (Math.random() < 0.85 + 0.05 * ph) this.q.unshift((this.tableT || 0) > 0.3 ? 'table' : Math.random() < 0.6 ? 'jab' : 'grab'); return; }   // перепрыгнул через Валеру — и сразу в спину
+      if (v === 'roll') { this.set('flank', 'roll'); this.rollDir = -away; this.ifr = 0.6; this.cnt = Math.random() < 0.85 + 0.05 * ph; return; }
+      if (Math.random() < 0.85 + 0.05 * ph) this.q.unshift((this.tableT || 0) > 0.3 && !onT ? 'table' : U.choice(['jab', 'pounce', 'dash']));   // уклонился — сразу контратака
       this.set('evade', v === 'back' ? 'c2back' : v === 'wheel' ? 'cart' : 'dodge'); this.ev = v; this.evDir = away; if (v === 'duck') this.ifr = 0.45; if (v === 'wheel') { this.ifr = 0.55; this.evT = 0.4; } }   // колесо — уходит колесом
+    // выносливость: настоящая одышка (окно уязвимости) — только каждый 3-й промах/серия, иначе короткая передышка в стойке
+    puff(dur, anim) { this.set('tired', anim || 'c2tired'); this.tT = dur; this.tHits = 0; this.tLeft = 0; }   // выдохся: окно, в которое можно успеть 3 удара
     update(dt, run) { const m0 = G.DMG_MULT; G.DMG_MULT = (m0 || 1.5) * 0.7; try { this.upd(dt, run); } finally { G.DMG_MULT = m0; } }   // атак у главаря много — каждая бьёт слабее
     upd(dt, run) { const pl = run.player, was = this.state, php0 = pl.hp;
       this.clk = (this.clk || 0) + dt; if (this.dcd > 0) this.dcd -= dt; if (this.dzCd > 0) this.dzCd -= dt; if (this.ifr > 0) this.ifr -= dt; if (this.blockT > 0) this.blockT -= dt; else this.blocks = 0;
       if (pl.hurtT > 0) this.kb = 1; else if (pl.onGround) this.kb = 0;   // отброс ударом — не считается движением
-      const mv = !this.kb && (!pl.onGround || Math.abs(pl.vx) > 30); this.mvT = mv ? (this.mvT || 0) + dt : 0;
-      if (this.mvT > 0.2) this.camp = 0; else this.camp += dt;   // сколько Валера стоит на месте (сам не двигается)
+      if (this.kb || pl.dead) this.cx0 = pl.x;   // отброс ударом — не считается движением
+      if (this.cx0 == null || Math.abs(pl.x - this.cx0) > 60) { this.cx0 = pl.x; this.camp = 0; } else this.camp += dt;   // стоит на пятачке ±60 px (мелкие шажки не спасают)
       if (this.zx == null || Math.abs(pl.x - this.zx) > 75 || Math.abs(pl.y - this.zy) > 90) { this.zx = pl.x; this.zy = pl.y; this.zoneT = 0; } else if (!pl.dead) this.zoneT = (this.zoneT || 0) + dt;   // топчется на пятачке ~150 px
       if (this.punCD > 0) this.punCD -= dt; if (this.pun > 0) this.pun -= dt;
+      this.tableT = (pl.onGround && !pl.dead && pl.y < V4.GY - 20 && pl.x > this.table.x1 - 6 && pl.x < this.table.x2 + 6) ? (this.tableT || 0) + dt : 0;   // Валера сидит на столе
+      if (this.tableT > 1.5 && ['idle', 'walk', 'guard', 'aim', 'taunt', 'gloat', 'land', 'reload', 'shout'].includes(this.state) && !this.air && this.y < V4.GY - 1 && Math.abs(this.y - pl.y) < 12) { this.tableT = 0; this.q.length = 0; this.stats.punHop = (this.stats.punHop || 0) + 1; this.face(pl); this.act('combo', pl); }   // сам на столе — сразу бьёт
+      if (this.tableT > 1.5 && ['idle', 'walk', 'guard', 'aim', 'taunt', 'gloat', 'land', 'reload', 'shout'].includes(this.state) && this.y >= V4.GY - 1 && !this.air) { this.tableT = 0; this.q.length = 0; this.stats.punHop = (this.stats.punHop || 0) + 1;
+        if (Math.random() < 0.5) G.say(this, U.choice(['Со стола слезай!', 'Думал, не достану?', 'Стол мой!']), 0.9);
+        this.leap(Math.max(this.table.x1 + 10, Math.min(this.table.x2 - 10, pl.x)), -400, this.table.y); this.stomp = 1; this.q.push('combo'); }   // прыжок на стол с ударом
       if (this.state === 'escape') { this.row = 0; this.q.length = 0; this.rlKeep = null; this.dcd = 0; if (this.ammo < 5) this.ammo = 5;   // магазин вставил на ходу — сразу отвечает
         this.q.push(U.choice(this.ph >= 2 ? ['aim', 'dash', 'flank', 'grenade', 'walk'] : ['aim', 'dash', 'walk'])); if (Math.random() < 0.5) G.say(this, U.choice(['Не дождёшься!', 'Хватит с тебя!', 'Дважды — и хватит!']), 0.9);
         if (Math.abs(pl.x - this.x) < 70 && Math.abs(pl.y - this.y) < 40 && Math.random() < 0.3) { this.act('kickback', pl); this.ifr = 0.7; }   // отпихнул ногой и остался
@@ -383,13 +393,14 @@
       if (was === 'aim' && S === 'shoot') { this.shots = Math.min(this.ammo, [3, 3, 4][ph - 1]); this.low = this.pLow != null ? this.pLow : Math.random() < 0.45; this.anim = this.low ? 'crouchShoot' : 'shoot';
         if (ph >= 3 && this.ammo - this.shots >= 2 && this.forceLow == null) this.q.push(this.low ? 'aimHigh' : 'aimLow'); else if (ph >= 2 && Math.random() < 0.35) this.q.push('dash'); }
       if (was === 'jump' && S === 'land' && this.stomp) { this.stomp = 0; G.shake(4, 0.2); FX.burst(this.x, this.y - 2, 10, { colors: ['#c8b8a0', '#fff'], speed: 140, grav: 300, life: 0.4 }); Sound.play('stomp');
-        if (d < 36 && dy < 20) { pl.hurt(14, this.x, run.world); this.set('tired', 'c2stomp'); this.tT = 0.55; } else { this.set('tired', 'c2stomp'); this.tT = [1.3, 1.1, 0.95][ph - 1]; } }
+        if (d < 36 && dy < 20) { pl.hurt(14, this.x, run.world); this.set('tired', 'c2stomp'); this.tT = 0.55; } else this.puff([2.2, 1.9, 1.6][ph - 1], 'c2stomp'); }
+      if (was === 'hurt' && S === 'idle' && this.tLeft > 0) { this.set('tired', 'c2tired'); this.tT = this.tLeft; this.tLeft = 0; }   // удар не обрывает «выдохся»
       if (was === 'hurt' && S === 'reload' && this.rlKeep != null) { this.t = this.rlKeep; this.rlKeep = null; }
       if (was === 'reload' && S === 'idle') { this.ammo = 8; if (Math.random() < 0.6) this.q.push('aimLow'); }   // у главаря магазин побольше
       if (was === 'jump' && S === 'land' && this.safeLand) { this.safeLand = 0; this.next(); }   // уходил прыжком — приземлился и сразу в бой
       if (S === 'reload' && this.ph >= 2 && this.dcd <= 0 && this.t < 1.6 && d < 70 && dy < 40) { this.rlGo = this.t; this.dcd = 1.6; this.act('rollaway', pl); G.say(this, U.choice(['Не так быстро!', 'Я перезаряжусь в сторонке!']), 0.9); }   // подошёл к перезаряжающемуся — откатывается, досчитывает там
       if (was === 'eat' && S === 'idle') { this.hp = Math.max(this.hp, Math.round(this.max * 0.75)); this.ate++; Sound.play('coin'); FX.popText(this.x, this.y - 112, 'ГЛАВАРЬ ЗДОРОВ!', '#ff8a6a'); G.say(this, U.choice(['Как новенький!', 'Курица — сила!', 'Ну что, сначала?']), 1.2); }
-      const a0 = pl.atk; if (a0 && !a0.seen && a0.t < 0.08 && d < 68 && dy < 40) { a0.seen = 1; if (this.dcd <= 0 && CH_EV.includes(this.state) && this.ifr <= 0 && !this.air && Math.random() < [0.82, 0.88, 0.94][ph - 1]) this.evade(pl); }   // видит замах — уходит заранее
+      const a0 = pl.atk; if (a0 && !a0.seen && a0.t < 0.08 && d < 68 && dy < 40) { a0.seen = 1; if (this.dcd <= 0 && CH_EV.includes(this.state) && this.ifr <= 0 && !this.air && Math.random() < (this.state === 'combo' || this.q.length ? 0.15 : [0.82, 0.88, 0.94][ph - 1])) this.evade(pl); }   // видит замах — уходит заранее
       else if (this.dcd <= 0 && (this.state === 'idle' || this.state === 'walk') && d < 46 && dy < 30 && Math.random() < 0.04) { this.dcd = 0.8; this.act(pick([[2, 'kickback'], [1, 'backshot'], [1, 'grab']]), pl); }   // подошёл вплотную — отскок или захват
       const t = this.t;
       if (S === 'walk') { this.face(pl); const tx = pl.x - this.facing * 58; this.x = U.approach(this.x, tx, 115 * sdt); if (Math.abs(this.x - tx) < 6 || t > 1.2) { if (d < 80 && Math.random() < 0.6) this.act(pick([[2, 'jab'], [2, 'kickback'], [1.5, 'grab']]), pl); else this.next(); } }
@@ -397,7 +408,7 @@
         if (!this.cHit) { this.anim = t < this.wu * 0.45 ? 'block' : 'c2punch'; if (t < this.wu * 0.6) this.face(pl);   // замах: стойка -> кулак вперёд, потом удар
           if (t >= this.wu) { this.cHit = true; this.t = 0; this.anim = this.cs % 2 ? 'kick' : 'punch'; this.animT = 0; this.x += this.facing * 12; Sound.play('swing');
             if (Math.abs(pl.x - this.x) < 58 && dy < 40 && Math.sign(pl.x - this.x) !== -this.facing) { if (pl.hurt(this.cs % 2 ? 13 : 10, this.x, run.world)) { G.shake(3, 0.12); if (this.cs % 2) { pl.vx = this.facing * 340; pl.vy = -280; } this.flingPl(pl); } } } }
-        else if (t > 0.24) { this.cs++; this.cHit = false; this.t = 0; this.wu = 0.2; if (this.cs >= this.cn) { this.set('recover', 'c2tired'); this.rec = [0.9, 0.75, 0.65][ph - 1]; } else Sound.play('clank'); } }
+        else if (t > 0.24) { this.cs++; this.cHit = false; this.t = 0; this.wu = 0.2; if (this.cs >= this.cn) this.puff([1.6, 1.4, 1.2][ph - 1]); else Sound.play('clank'); } }
       else if (S === 'recover') { if (t > this.rec * (this.camp > 2 ? 0.5 : 1)) this.set('idle'); }   // стоящему столбом окна короче
       else if (S === 'tired') { if (this.anim === 'c2stomp' && t > 0.4) this.anim = 'c2tired'; if (t > this.tT * (this.camp > 2 ? 0.5 : 1)) this.set('idle'); }
       else if (S === 'dash') { this.face(pl); if (t > (this.dWu || [0.5, 0.42, 0.36][ph - 1])) { this.dGrab = !this.dRam && Math.random() < 0.5; this.dWu = 0; this.ramGo = this.dRam; this.dRam = 0; this.set('dashgo', this.dGrab ? 'c2grab' : this.ramGo ? 'c2punch' : 'run'); this.dDir = this.facing; this.dLeg = Math.random() < 0.2; this.dCrash = Math.random() < 0.5; } }   // половина рывков — с вытянутой рукой (захват на бегу)
@@ -405,11 +416,11 @@
         if (U.overlap(this.box, pl.box) && pl.y > this.y - 36 && pl.inv <= 0 && !pl.dead && this.dGrab && !pl.hidden) { this.set('hold', 'c2grab'); G.say(this, U.choice(['Попался!', 'Иди сюда!']), 0.9); }
         else if (U.overlap(this.box, pl.box) && pl.y > this.y - 36 && pl.inv <= 0 && !pl.dead) { pl.hurt(12, this.x - this.dDir * 20, run.world); pl.vx = this.dDir * 260; G.shake(4, 0.15); this.flingPl(pl); this.set('idle', 'punch'); }
         else if (!(this.dzCd > 0) && (((this.x <= 31 || this.x >= W - 31) && this.dCrash) || (this.dLeg && this.y >= V4.GY - 1 && [this.table.x1 + 8, this.table.x2 - 8].some(L => (this.x - L) * (this.x - this.dDir * 340 * sdt - L) <= 0)))) { this.set('dizzy'); this.dzT = 0.9; this.dzEsc = 0; this.dzCd = 12; Sound.play('hit'); G.shake(4, 0.2); FX.burst(this.x + this.dDir * 12, this.y - 60, 8, { colors: ['#fff', '#ffd84a'], speed: 110, life: 0.35, grav: 0 }); G.say(this, U.choice(['Ой... Стена...', 'Кто тут стол поставил?!', 'Звёздочки...']), 1); }   // врезался — оглушён (окно)
-        else if (t > 0.8 || (this.x - pl.x) * this.dDir > 55 || this.x <= 31 || this.x >= W - 31) { if (this.ramGo) { this.ramGo = 0; this.face(pl); this.q.push(this.ammo > 0 && Math.random() < 0.75 ? 'aimLow' : U.choice(['pounce', 'grab', 'kickback'])); this.next(); } else { this.set('tired', 'c2tired'); this.tT = [1.1, 0.95, 0.8][ph - 1]; } if (Math.random() < 0.3) G.say(this, U.choice(['Уф...', 'Промазал!', 'Тормоза отказали...']), 0.9); } }
+        else if (t > 0.8 || (this.x - pl.x) * this.dDir > 55 || this.x <= 31 || this.x >= W - 31) { if (this.ramGo) { this.ramGo = 0; this.face(pl); this.q.push(this.ammo > 0 && Math.random() < 0.75 ? 'aimLow' : U.choice(['pounce', 'grab', 'kickback'])); this.next(); } else this.puff([1.9, 1.6, 1.4][ph - 1]); if (Math.random() < 0.3) G.say(this, U.choice(['Уф...', 'Промазал!', 'Тормоза отказали...']), 0.9); } }
       else if (S === 'grab') { this.face(pl); if (d > 34) this.x += this.facing * Math.min(d - 34, 160 * sdt);   // тянется к Валере
         if (t > [0.45, 0.4, 0.34][ph - 1]) {
           if (d < 50 && dy < 30 && pl.inv <= 0 && !pl.dead && !pl.hidden) { this.set('hold', 'c2grab'); G.say(this, U.choice(['Попался!', 'Иди сюда!', 'Строп — это я!']), 0.9); }
-          else { this.set('recover', 'c2tired'); this.rec = 0.8; } } }
+          else this.puff(1.5); } }
       else if (S === 'hold') { this.animT = 0; pl.x = this.x + this.facing * 24; pl.vx = 0; pl.vy = 0; pl.atk = null;
         if (t > 0.6) { pl.hurt(13, this.x, run.world); pl.vx = this.facing * 320; pl.vy = -260; Sound.play('hit'); G.shake(4, 0.2); this.set('recover', 'c2tired'); this.rec = 0.6; } }
       else if (S === 'flank') { this.anim = 'roll'; this.x += this.rollDir * 240 * sdt;
@@ -440,16 +451,18 @@
     playerHit(hb, dmg, atk, pl) {
       if (['ko', 'sit', 'wait'].includes(this.state) || atk.hit.has(this) || !U.overlap(hb, this.box)) return;
       if (this.vuln) {
+        const tl = this.state === 'tired' ? this.tT - this.t : this.state === 'hurt' ? this.tLeft : 0, tw = tl > 0.15 && (this.tHits || 0) < 3;
         const hp0 = this.hp, rl = this.state === 'reload' ? this.t : this.state === 'hurt' && this.after === 'reload' ? this.rlKeep : null; super.playerHit(hb, dmg, atk, pl);
         if (this.hp < hp0 && this.camp > 2 && this.hp > 0) this.hp = Math.min(hp0, this.hp + 0.5);   // бьёт стоя столбом — вполсилы
         if (rl != null) this.rlKeep = Math.min(2.3, rl + 0.35);   // удар не продлевает перезарядку: досчитает с того же места
-        if (this.hp < hp0) { this.stats.hits++; this.q.length = 0; if (this.state === 'hurt') { this.row++; if (this.combo >= 3 && Math.random() > 0.08) this.combo = 0;   // оглушить почти нереально
+        if (this.hp < hp0 && tw) { this.stats.hits++; this.q.length = 0; this.tHits = (this.tHits || 0) + 1; this.tLeft = Math.max(0.3, tl - 0.15); this.row = 0; this.hl = []; return; }   // в окне «выдохся» не убегает
+        if (this.hp < hp0) { this.tLeft = 0; this.stats.hits++; this.q.length = 0; if (this.state === 'hurt') { this.row++; if (this.combo >= 3 && Math.random() > 0.08) this.combo = 0;   // оглушить почти нереально
           if (this.hp > 0 && this.quick()) this.urgent(pl);   // 2 быстрых попадания — срочная реакция
           else if (this.hp > 0 && this.row >= (this.camp > 2 ? 1 : 2)) { this.row = 0; this.ifr = 0.7; this.set('escape'); } } } return; }   // серия пропущена — сразу уходит (без «станлока»)
       atk.hit.add(this);
       if (this.air || this.ifr > 0) return;
-      if (this.dcd <= 0 && CH_EV.includes(this.state) && Math.random() < 0.85) return this.evade(pl);
-      this.hp = Math.max(0, this.hp - 0.3); this.stats.chip++; if (this.hp <= 0) { this.set('ko'); return; }   // вне окна — только царапина
+      if (this.dcd <= 0 && CH_EV.includes(this.state) && Math.random() < (this.state === 'combo' || this.q.length ? 0.15 : 0.85)) return this.evade(pl);
+      { const fl = this.hp > this.max * 0.64 ? this.max * 0.64 + 0.5 : this.hp > this.max * 0.32 ? this.max * 0.32 + 0.5 : 1; this.hp = Math.max(Math.min(this.hp, fl), this.hp - 0.3); this.stats.chip++; }   // вне окна — только царапина: не переводит фазу и не добивает
       if (this.quick()) return this.urgent(pl);
       this.stats.blk++; Sound.play('clank'); FX.burst(this.x + this.facing * 10, this.y - 54, 5, { colors: ['#fff', '#9ad0ff'], speed: 90, life: 0.2, grav: 0 });   // блок: урона нет
       if (CH_EV.includes(this.state)) { this.blocks++; this.blockT = 1.6; this.set('guard', 'block'); } }

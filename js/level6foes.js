@@ -362,7 +362,7 @@ L6.Fx.Ash = class {
 L6.Fx.Bolt = class {
   constructor(s, run) {
     this.s = s; this.t = 0; Sound.play('zap'); FX.popText(s.x, s.y - s.h - 8, 'ШОК!', '#ffe860');
-    for (const e of run.world.enemies) if (e !== run.skip && !e.dead && e.dieT == null && Math.abs(e.x - s.x) < 150 && Math.abs(e.y - s.y) < 90 && !s.chained) { const sn = e; setTimeout(() => { if (!sn.dead && sn.dieT == null) { run.chain = true; sn.zap(2, run); run.chain = false; } }, 160); }
+    for (const e of run.world.enemies) if (e !== run.skip && !e.dead && e.dieT == null && Math.abs(e.x - s.x) < 150 && Math.abs(e.y - s.y) < 90 && !s.chained) { const sn = e; G.later(() => { if (!sn.dead && sn.dieT == null) { run.chain = true; sn.zap(2, run); run.chain = false; } }, 160); }
   }
   update(dt) { this.t += dt; if (this.t < 0.9 && Math.random() < dt * 50) FX.spawn({ x: this.s.x + U.rand(-16, 16), y: this.s.y - U.rand(4, this.s.h), vx: U.rand(-80, 80), vy: U.rand(-80, 80), grav: 0, life: 0.2, size: 2, color: ['#ffe860', '#ffffff', '#8cd0ff'][U.randi(0, 2)] }); return this.t < 2.1; }
   draw(c, cx) {

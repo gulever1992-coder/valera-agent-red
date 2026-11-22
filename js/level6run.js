@@ -58,7 +58,6 @@ L6.build = function () {
   // предметы для итоговой статистики: монеты, еда, значки-секреты (на верхушках деревьев-ворот)
   { const rc = U.seeded(17); for (let x = 400; x < L6.ARENA_X - 200; x += rc.int(240, 420)) { if (L6.GATES.some(g => x > g.x - 200 && x < g.x + 400)) continue; pick('coin', x); } }
   [1300, 5200, 8600, 12000].forEach(x => pick('pie', x)); pick('kefir', 10500);
-  D.pickups.push({ kind: 'badge', x: 60 });
   if (window.TREE6) for (const g of L6.GATES) { const pl_ = window.TREE6.plats;
     for (const [dx, hh, ww] of pl_) if (hh > 150 && hh < 500) D.pickups.push({ kind: 'coin', x: g.x + dx + ww * 0.5, y: L6.GROUND - hh - 40 });
     const top = pl_[pl_.length - 1]; D.pickups.push({ kind: 'badge', x: g.x + top[0] + top[2] / 2, y: L6.GROUND - top[1] - 40 }); }

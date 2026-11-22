@@ -41,6 +41,7 @@ Spr.ANIM.valera6w = Object.assign({}, Spr.ANIM.valera6, {   // (кадры пи�
 Spr.ANIM.vova6 = {
   stand: A6('vova6', [0]), run: A6('vovarun', [0, 1, 2, 3], 10), walk: A6('vovarun', [4, 5, 6, 7], 7), point: A6('vova6', [3]), push: A6('vova6', [4]), laugh: A6('vova6', [5]), head: A6('vova6', [6]), shroom: A6('vova6', [7]),
 };
+const TS6 = { sc: 1.16 };   // лист b_taunt нарисован мельче (~155 px против 180) — подгоняем рост
 Spr.ANIM.vande = {
   idle: A6('b_loco', [0, 1, 2, 3], 7), walk: A6('vandewalk', [4, 5, 6, 7], 7), run: A6('vandewalk', [0, 1, 2, 3], 11),
   crouch: A6('b_evade', [0]), jumpUp: A6('b_evade', [1]), apex: A6('b_evade', [2]), fall: A6('b_evade', [3]), land: A6('b_evade', [4]),
@@ -48,8 +49,8 @@ Spr.ANIM.vande = {
   raise: A6('b_cast', [0]), draw: A6('b_cast', [1]), slam: A6('b_cast', [2]), glow: A6('b_cast', [3]), kneelCast: A6('b_cast', [4]), burst: A6('b_cast', [5]), orbA: A6('b_cast', [6]),
   punchGround: A6('b_cast', [7]), pointGround: A6('b_cast', [8]), beam: A6('b_cast', [9]), orbUp: A6('b_cast', [10]), recoil: A6('b_cast', [11]),
   pyPull: A6('b_py', [0]), pyWind: A6('b_py', [1]), pyWhip: A6('b_py', [2]), pyFollow: A6('b_py', [3]), beckon: A6('b_py', [8]), smirk: A6('b_py', [9]), hiss: A6('b_py', [10]), stroke: A6('b_py', [11]),
-  skyArms: A6('b_taunt', [0]), laugh: A6('b_taunt', [1]), shout: A6('b_taunt', [2]), aura: A6('b_taunt', [3]), rage: A6('b_taunt', [4]), point: A6('b_taunt', [5]), crossed: A6('b_taunt', [6]), cackle: A6('b_taunt', [7]),
-  hood: A6('b_taunt', [8]), stare: A6('b_taunt', [9]), clap: A6('b_taunt', [10]), bow: A6('b_taunt', [11]),
+  skyArms: A6('b_taunt', [0], 8, TS6), laugh: A6('b_taunt', [1], 8, TS6), shout: A6('b_taunt', [2], 8, TS6), aura: A6('b_taunt', [3], 8, TS6), rage: A6('b_taunt', [4], 8, TS6), point: A6('b_taunt', [5], 8, TS6), crossed: A6('b_taunt', [6], 8, TS6), cackle: A6('b_taunt', [7], 8, TS6),
+  hood: A6('b_taunt', [8], 8, TS6), stare: A6('b_taunt', [9], 8, TS6), clap: A6('b_taunt', [10], 8, TS6), bow: A6('b_taunt', [11], 8, TS6),
   hurt1: A6('b_hurt', [0]), hurt2: A6('b_hurt', [1]), stagger: A6('b_hurt', [2]), dizzy: A6('b_hurt', [3]), knee: A6('b_hurt', [4]), clutch: A6('b_hurt', [5]), fallBack: A6('b_hurt', [6]),
   lieShrooms: A6('b_hurt', [8]), lieSide: A6('b_hurt', [8]), sit: A6('b_hurt', [9]), reach: A6('b_hurt', [10]), ko: A6('b_hurt', [11]),
   tired: A6('vande2', [0, 1], 3), slamLand: A6('vande2', [2]), palmHit: A6('vande2', [3]), palmWind: A6('vande2', [4]),   // build_bossposes.py: выдохся, удар о землю, ладонь, замах

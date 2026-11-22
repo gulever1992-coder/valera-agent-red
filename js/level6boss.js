@@ -244,6 +244,9 @@ L6.Vande = class {
     if (this.state !== 'act') this.aggro -= dt * (camping ? 2.2 : 1);
     if (this.stun > 0) { this.stun -= dt; this.play(this.vuln > 0 ? 'tired' : 'dizzy'); if (this.stun <= 0) { this.state = 'idle'; this.st = 0; } return; }
     if (this.state === 'tired') { this.tiredT -= dt; this.play('tired'); if (Math.random() < dt * 6) FX.spawn({ x: this.x + U.rand(-8, 8), y: this.y - 92, vx: U.rand(-20, 20), vy: -30, grav: 60, life: 0.5, size: 2, color: '#bfe8ff' }); if (this.tiredT <= 0) { this.state = 'idle'; this.st = 0; } return; }
+    // Валера стоит на дюне дольше 1.5 с — Ванделорд из спокойной позы прыгает к нему и бьёт
+    if (pl.onGround && !pl.dead && pl.y < L6.GROUND - 20) this.tableT = (this.tableT || 0) + dt; else this.tableT = 0;
+    if (this.tableT > 1.5 && (this.state === 'idle' || this.state === 'hurt') && this.vuln <= 0 && this.punHop(ar)) return;
     if (this.platX) { this.perchT = Math.max(0.01, this.perchT - dt); if (this.perchT <= 0.01 && this.state === 'idle') { this.perchT = 0; this.perform(Math.random() < 0.55 ? 'dive' : 'tp', ar); return; } }   // на дюне недолго: время идёт и во время колдовства
     // ---- уклонения: видит снаряды (успеет ли долететь и на какой высоте) и замах кулака ----
     const canDodge = (this.state === 'idle' || this.state === 'hurt') && this.stam >= 1 && this.dodgeCool <= 0 && this.vuln <= 0;
@@ -256,12 +259,12 @@ L6.Vande = class {
         const py = s.y + (s.seek || s.wave ? 0 : s.vy * tt);
         if (py < this.y - 104 || py > this.y + 12) { if (tt < 0.12) s.reacted = true; continue; }   // мимо — не тратит силы
         s.reacted = true;
-        if (Math.random() < [0, 0.8, 0.88, 0.94][P]) { this.dodge({ vx: s.vx || -rx, y: py, seek: s.seek }, ar); break; }
+        if (Math.random() < (this.chain.length || this.comboN > 0 ? 0.15 : [0, 0.8, 0.88, 0.94][P])) { this.dodge({ vx: s.vx || -rx, y: py, seek: s.seek }, ar); break; }
       }
     }
     if (this.state !== 'dodge' && canDodge && pl.atk && pl.atk.t < 0.05 && !pl.atk.seen && adx < 66 && pl.facing * dx < 0) {
       pl.atk.seen = true;
-      if (Math.random() < [0, 0.8, 0.88, 0.94][P]) { this.dodge({ vx: pl.facing, y: this.y - 50, fist: true }, ar); if (Math.random() < 0.75) this.counter = 'palm'; }
+      if (Math.random() < (this.chain.length || this.comboN > 0 ? 0.15 : [0, 0.8, 0.88, 0.94][P])) { this.dodge({ vx: pl.facing, y: this.y - 50, fist: true }, ar); if (Math.random() < 0.85 + 0.05 * P) this.counter = 'palm'; }
     }
     switch (this.state) {
       case 'idle': {
@@ -302,7 +305,8 @@ L6.Vande = class {
         if (this.platX && this.perchT > 0) this.x = U.clamp(this.x, this.platX[0], this.platX[1]);
         if (this.dt2 >= this.dDur) { this.y = this.baseY; this.alpha = 1; this.state = 'idle'; this.st = 0; faceP();
           if (!this.counter && Math.random() < 0.3) this.gloat = true;   // увернулся — дразнит
-          if (this.counter && this.perchT <= 0) { const c = this.counter; this.counter = null; this.perform(c === 'palm' && adx > 130 ? 'dash' : c === 'bolt' && adx < 150 ? 'palm' : c, ar); } else this.counter = null; }
+          if (this.counter && (this.tableT > 0.3 || this.perchT > 0)) { this.counter = null; if (!this.punHop(ar) && this.perchT > 0) this.perform('dive', ar); }
+          else if (this.counter) { const c = this.counter; this.counter = null; this.perform(c === 'palm' && adx > 130 ? 'dash' : c === 'bolt' && adx < 150 ? 'palm' : c, ar); } else this.counter = null; }
         break;
       }
       case 'hurt':
@@ -339,6 +343,20 @@ L6.Vande = class {
       if (h.onLand) { h.onLand(); if (this.state === 'act') return; }   // удар о землю — своя короткая поза (окно для атаки)
       this.afterAct(); this.st = 0; if (!h.onLand && !this.chain.length) this.aggro = Math.min(this.aggro, 0.5); }
   }
+  punHop(ar) {   // прыжок на дюну, где стоит Валера: присел (телеграф) — прыжок — удар
+    const pl = ar.player; if (pl.dead || !pl.onGround || pl.y >= L6.GROUND - 20) return false;
+    const p = this.arenaPlats(ar).find(q => pl.x > q.x - 6 && pl.x < q.x + q.w + 6 && Math.abs(pl.y - q.y) < 14); if (!p) return false;
+    this.tableT = 0; this.chain = []; this.comboN = 0; this.stats.punHop = (this.stats.punHop || 0) + 1; this.facing = pl.x > this.x ? 1 : -1;
+    if (Math.random() < 0.6) this.say(U.choice(['С дюны не спрячешься!', 'Наверху тебе не рай!', 'Слезай, грибок!']));
+    this.doSeq('punHop', [{ a: 'crouch', d: 0.32, lock: true, tele: true, on: () => FX.dust(this.x, this.y, 4) },
+      { a: 'crouch', d: 0.01, on: () => { const tx = U.clamp(pl.x, p.x + 10, p.x + p.w - 10); this.hopTo(tx, p.y, p, { d: 0.6, h: 110, onLand: () => this.punLand(ar, p) }); } }]);
+    return true;
+  }
+  punLand(ar, p) {
+    const pl = ar.player; G.shake(4, 0.25); Sound.play('boom', 0.8); FX.dust(this.x, this.y, 8);
+    if (!pl.dead && Math.abs(pl.x - this.x) < 44 * Math.max(1, (pl.sc || 1) * 0.8) && Math.abs(pl.y - this.y) < 46) { pl.hurt(9, this.x, ar.world); if (pl.fling) pl.fling(this.x, (pl.x >= this.x ? 1 : -1) * 220, -260); }
+    this.perchT = 1.2; this.doSeq('punHop', [{ a: 'slamLand', d: 0.45, fixed: true }, { a: 'idle', d: 0.1 }]);
+  }
   slam(ar) {   // приземление с прыжка: ударная волна под ногами
     const pl = ar.player; G.shake(5, 0.3); Sound.play('boom', 0.9); FX.dust(this.x, this.y, 8);
     FX.burst(this.x, L6.GROUND - 4, 12, { colors: ['#6a4020', '#c8a070', '#ffd84a'], speed: 120, life: 0.5, grav: 300 });
@@ -364,7 +382,7 @@ L6.Vande = class {
   }
   seqLocked() { return this.state === 'act' && this.seq && this.seq[this.sq] && this.seq[this.sq].lock; }
   dodge(s, ar) {
-    this.state = 'dodge'; this.dt2 = 0; this.seq = null; this.teleported = false; this.stam--; this.dodgeCool = 0.2; this.stats.dodges++;
+    this.state = 'dodge'; this.dt2 = 0; this.seq = null; this.teleported = false; this.stam--; this.dodgeCool = 1.5; this.stats.dodges++;
     const P = this.phase, back = s.vx > 0 ? 1 : -1, high = s.y < this.y - 62;
     const wallBack = (back < 0 && this.x < BG6() + 90) || (back > 0 && this.x > BG6() + 550);
     let kind;
@@ -381,7 +399,7 @@ L6.Vande = class {
     else if (kind === 'flip') { this.dDur = 0.55; this.dvx = back * 200; this.play('flip'); }
     else if (kind === 'side') { this.dDur = 0.4; this.dvx = back * 270; this.play('side'); }
     else { this.dDur = 0.8; this.dvx = 0; this.play('vanish'); if (Math.random() < 0.5) this.say('Мимо!'); }
-    if (!s.fist && Math.random() < [0, 0.5, 0.65, 0.8][P]) this.counter = U.choice(['bolt', 'palm', 'palm', 'dash']);   // уклонился — сразу отвечает
+    if (!s.fist && Math.random() < 0.85 + 0.05 * P) this.counter = U.choice(['bolt', 'palm', 'palm', 'dash']);   // уклонился — сразу отвечает
     FX.popText(this.x, this.y - 104, 'УВЕРНУЛСЯ!', '#8cd0ff');
   }
   enrage(ar) {
@@ -446,7 +464,7 @@ L6.Vande = class {
     return [{ a: 'palmWind', d: 0.42, lock: true, tele: true, move: 50, on: () => { this.facing = pl.x > this.x ? 1 : -1; Sound.play('squeak', 0.7); FX.burst(this.x + this.facing * 20, this.y - 70, 8, { colors: ['#ffd84a', '#ff2060', '#fff'], speed: 50, life: 0.45, grav: 0 }); } },
       { a: 'palmHit', d: 0.24, lock: true, on: () => { const hx = this.x + this.facing * 34; G.shake(3, 0.2); Sound.play('boom', 0.8);
         FX.burst(hx, this.y - 50, 14, { colors: ['#ff2060', '#ffd84a', '#ffffff', '#802040'], speed: 170, life: 0.4, grav: 0 });
-        if (!pl.dead && Math.abs(pl.x - hx) < 44 * Math.max(1, pl.sc * 0.8) && pl.y > this.y - 100 && pl.y < this.y + 30) pl.hurt(8, this.x, ar.world); } },
+        if (!pl.dead && Math.abs(pl.x - hx) < 44 * Math.max(1, (pl.sc || 1) * 0.8) && pl.y > this.y - 100 && pl.y < this.y + 30) pl.hurt(8, this.x, ar.world); } },
       { a: 'recoil', d: 0.45 }];
   }
   perform(k, ar) {
@@ -596,6 +614,7 @@ L6.Vande = class {
     // ПРАВИЛО: 2 попадания Валеры примерно за секунду — срочная реакция (телепорт / перебежка / таран)
     this.hitQ = (this.hitQ || []).filter(t => this.t - t < 1.0); this.hitQ.push(this.t);
     const react = this.hitQ.length >= 2 && !win && this.reactCool <= 0 && ar && this.canReact();
+    if (!win) { const fl = this.maxHp * [0, 0.66, 0.33, 0.15][this.phase] + 1; n = Math.max(0, Math.min(n, this.hp - fl)); }   // вне окон: не переводит фазу и не добивает — стоя спамом не убить
     if (react) { this.hitQ = []; this.hp -= n; this.flash = 0.12; Sound.play('hit'); if (this.hp <= 0) { this.hp = 0; this.die(ar); return true; } this.urgent(ar); return false; }
     if (!win) {   // вне окон серия заклинаний гасится: проходит не больше одного попадания в секунду — спамом не взять
       if (this.t - (this.chipT || -9) < 1.0) { this.flash = 0.06; this.flashCol = '#8cd0ff'; if (Math.random() < 0.15) FX.popText(this.x, this.y - 100, 'ВСКОЛЬЗЬ!', '#8cd0ff'); return false; }
@@ -683,10 +702,10 @@ L6.Arena = class {
     for (const s of this.shrooms) if (s.grown && !s.dead && !atk.hit.has(s) && U.overlap(hb, s.box)) { atk.hit.add(s); const k = s.hit(dmg); if (k) this.world.addScore(300); FX.burst(s.x, s.y - 40, 5, { colors: ['#fff', '#c02030'], speed: 100, life: 0.3, grav: 0 }); }
     for (const s of this.spores) if (!s.dead && U.overlap(hb, s.box)) s.hit();
     for (const e of this.foes) if (!e.dead && e.dieT == null && !atk.hit.has(e) && U.overlap(hb, e.box)) { atk.hit.add(e); const k = e.hit(dmg, pl.facing); Sound.play('hit'); if (k) this.world.addScore(e.score); }
-    if (this.fighting && !atk.hit.has(b) && U.overlap(hb, b.box)) { atk.hit.add(b); if (b.hit(dmg, pl.facing, this) !== false || !b.invul) { G.shake(2, 0.1); FX.burst(hb.x + hb.w / 2, hb.y + hb.h / 2, 7, { colors: ['#fff', '#ffd84a'], speed: 130, life: 0.25, grav: 0 }); this.world.addScore(80 * dmg); } }
+    if (this.fighting && !atk.hit.has(b) && U.overlap(hb, b.box)) { atk.hit.add(b); const hp0 = b.hp; if (b.hit(dmg, pl.facing, this) !== false || !b.invul) { G.shake(2, 0.1); FX.burst(hb.x + hb.w / 2, hb.y + hb.h / 2, 7, { colors: ['#fff', '#ffd84a'], speed: 130, life: 0.25, grav: 0 }); if (b.hp < hp0) this.world.addScore(80 * dmg); } }
   }
   onBossDying() { this.fighting = false; this.player.controls = false; this.shots = []; this.drops = []; this.rainT = 0; this.portals = []; this.pyshots = []; this.quakes = []; this.marks = []; this.spores = []; for (const e of this.foes) { e.dead = true; } this.shrooms = []; Music.stop(); G.shake(8, 0.6); G.flash(0.2); Sound.play('boom'); }
-  bossDown() { this.world.addScore(8000); this.level.stats.kills++; setTimeout(() => this.level.bossDefeated(), 600); }
+  bossDown() { this.world.addScore(8000); this.level.stats.kills++; G.later(() => this.level.bossDefeated(), 600); }
   update(dt) {
     const wd = this.world, pl = this.player, b = this.boss;
     wd.t += dt; if (this.fighting) this.level.stats.time += dt;
@@ -730,7 +749,7 @@ L6.Arena = class {
       for (const p of wd.pickups) p.update(dt, wd, pl); wd.pickups = wd.pickups.filter(p => !p.dead);
       this.quipT -= dt;
       if (this.quipT <= 0) { this.quipT = U.rand(8, 12); G.say(pl, U.choice(['Отдай Вову!', 'Грибы — не еда для всех!', 'Сейчас колдану!', 'Змеи — это перебор!']), 1.6); }
-      if (pl.dead && pl.deadT > 1.6 && !this.resetting) { this.resetting = true; this.level.stats.deaths++; setTimeout(() => { this.resetting = false; this.level.restartBoss(); }, 400); }
+      if (pl.dead && pl.deadT > 1.6 && !this.resetting) { this.resetting = true; this.level.stats.deaths++; G.later(() => { this.resetting = false; this.level.restartBoss(); }, 400); }
     }
     if (this.hintT > 0) { this.hintT -= dt; this.hintA = Math.min(1, this.hintA + dt * 4); } else this.hintA = Math.max(0, this.hintA - dt * 3);
   }
