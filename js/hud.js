@@ -279,14 +279,15 @@ const Pager = {
     return 1;
   },
   onLevel(lv) {
-    this.lv = lv; this.lvId = this.levelId(lv); this.playT = 0; this.lastT = -99; this.msg = null; this.queue = this.queue.filter(m => m.lv === lv); this.said = 0; this.seen = {}; this.tips = {};
-    this.bal = this.START[this.lvId] != null ? this.START[this.lvId] : this.bal;
-    const id = this.lvId, ev = [];
-    // 2-3 налога за уровень, суммы сходятся к балансу следующего уровня
-    ev.push({ t: U.rand(40, 100), kind: 'debit' }, { t: U.rand(170, 260), kind: 'debit' });
-    if (id === 6 || Math.random() < 0.25) ev.push({ t: U.rand(320, 400), kind: 'debit' });
-    // смс с кодом: на ур.2 всегда, на остальных — шанс 30%
-    if (id === 2 || Math.random() < 0.3) ev.push({ t: U.rand(110, 230), kind: 'code' });
+    const id = this.levelId(lv), same = id === this.lvId && this.events.length;
+    this.lv = lv; this.lvId = id; this.msg = null; this.queue = this.queue.filter(m => m.lv === lv); this.said = 0;
+    // тот же уровень (бой с боссом, подуровень, рестарт после смерти) — не пересоздавать события и не повторять подсказки
+    if (same) { this.lastT = Math.min(this.lastT, this.playT); return; }
+    this.playT = 0; this.lastT = -99; this.seen = {}; this.tips = {};
+    this.bal = this.START[id] != null ? this.START[id] : this.bal;
+    // одно списание за уровень (сумма сходится к балансу следующего уровня); смс с кодом — только на ур.2
+    const ev = [{ t: U.rand(90, 150), kind: 'debit' }];
+    if (id === 2) ev.push({ t: U.rand(240, 320), kind: 'code' });
     this.events = ev.sort((a, b) => a.t - b.t);
   },
   // внешние вызовы
@@ -355,13 +356,13 @@ const Pager = {
     if (!this.live(lv)) { this.calmT = 0; return false; }
     this.playT += dt;
     const bk = this.detect(lv); if (bk) this.boss(this.lvId + ':' + bk);
-    // не дёргать игрока: подсказки не чаще раза в 12 с, банк — не чаще раза в 50 с и не во время боя с боссом
+    // не дёргать игрока: подсказки не чаще раза в 30 с, банк — не чаще раза в 90 с и не во время боя с боссом
     this.calmT = (this.calmT || 0) + dt; if (this.calmT < 2.5) return false;     // после затемнения дать игроку 2,5 с осмотреться
     // бой с боссом: только оставленные подсказки, никаких списаний/смс
     const fight = !!bk || lv.mode === 'boss' || this.bossLv === lv;
-    const gap = this.playT - this.lastT, qi = this.queue.findIndex(m => (m.kind === 'boss' || gap >= 12) && (!fight || m.kind === 'tip'));
+    const gap = this.playT - this.lastT, qi = this.queue.findIndex(m => (m.kind === 'boss' || gap >= 30) && (!fight || m.kind === 'tip'));
     if (qi >= 0) { this.show(this.queue.splice(qi, 1)[0]); return true; }
-    const e = !fight && !this.queue.length && gap >= 50 && this.events.find(e => !e.done && this.playT >= e.t);
+    const e = !fight && !this.queue.length && gap >= 90 && this.events.find(e => !e.done && this.playT >= e.t);
     if (e) { e.done = true; const m = this.make(e); if (m) { this.show(m); return true; } }
     return false;
   },
